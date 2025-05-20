@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	_ "embed"
 	"hash"
 )
 
@@ -16,4 +17,12 @@ var (
 		"sha256": sha256.New,
 		"sha512": sha512.New,
 	}
+
+	// 输出哈希值的文件名
+	OutputFileName = "checksum.hash"
 )
+
+// hash 子命令帮助信息
+//
+//go:embed help/help_hash.txt
+var HashHelp string

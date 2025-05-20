@@ -5,7 +5,6 @@ import "flag"
 var (
 	// versionF 版本信息
 	versionF = flag.Bool("v", false, "打印版本信息并退出")
-
 	// helpF 帮助信息
 	helpF = flag.Bool("h", false, "打印帮助信息并退出")
 
@@ -15,6 +14,7 @@ var (
 	hashCmdType      = hashCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
 	hashCmdRecursion = hashCmd.Bool("r", false, "递归处理目录")
 	hashCmdJob       = hashCmd.Int("j", 1, "指定并发数量")
+	hashCmdWrite     = hashCmd.Bool("w", false, "将哈希值写入文件, 文件名为checksum.hash")
 
 	// size 子命令
 	sizeCmd          = flag.NewFlagSet("size", flag.ExitOnError)

@@ -11,10 +11,10 @@ import (
 func main() {
 	// 初始化颜色库
 	cl := colorlib.NewColorLib()
-	
+
 	// 运行命令
-	if runErr := cmd.Run(cl) ; runErr != nil {
-		cl.PrintError(runErr.Error())
+	if runErr := cmd.Run(cl); runErr != nil {
+		cl.PrintErr(runErr.Error())
 		os.Exit(1)
 	}
 }

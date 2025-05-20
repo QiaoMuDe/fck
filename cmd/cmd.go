@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/fck/globals"
 	"gitee.com/MM-Q/verman"
 )
 
@@ -32,6 +33,7 @@ func Run(cl *colorlib.ColorLib) error {
 	// 如果是 -h 或 没有参数或者第一个参数是 help，则打印帮助信息并退出
 	if *helpF || flag.NArg() == 0 || flag.Arg(0) == "help" {
 		//
+		cl.Greenf("Usage: fck [options] <command> [arguments]\n\n")
 		return nil
 	}
 
@@ -41,7 +43,7 @@ func Run(cl *colorlib.ColorLib) error {
 		hashCmd.Parse(flag.Args()[1:])
 		// 如果是 -h 或 help，则打印帮助信息并退出
 		if *hashCmdHelp {
-			//
+			fmt.Println(globals.HashHelp)
 			return nil
 		}
 		// 执行 hash 子命令
