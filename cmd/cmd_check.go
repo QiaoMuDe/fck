@@ -146,6 +146,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 	}
 
 	// 对比哈希值
+	var checkCount int
 	for filePath, checkHash := range checkFileHashes {
 		// 获取实际的哈希值
 		targetHash, ok := targetDirHashes[filePath]
@@ -154,11 +155,16 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 			continue
 		}
 
-		if targetHash == checkHash { // 比较哈希值
-			cl.PrintOkf("文件 %s 的哈希值匹配", filePath)
-		} else {
-			cl.PrintErrf("文件 %s 的哈希值不匹配, 预期Hash值: %s, 实际Hash值: %s", filePath, checkHash, targetHash)
+		// 比较哈希值
+		if targetHash != checkHash {
+			cl.PrintErrf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s", filePath, checkHash[len(checkHash)-8:], targetHash[len(targetHash)-8:])
+			checkCount++
 		}
+	}
+
+	// 检查checkCount是否为0
+	if checkCount == 0 {
+		cl.PrintOk("校验成功，无文件差异")
 	}
 
 	return nil
