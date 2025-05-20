@@ -2,16 +2,34 @@ fck find - 文件和目录查找工具
 
 功能：在指定路径下查找匹配关键字或正则表达式的文件或目录
 
-参数：
+用法: fck find [选项] <路径>
+
+选项:
   -p <path>       指定要查找的路径（默认：当前目录）
   -k <keyword>    指定要查找的关键字或正则表达式
-  -m <depth>      指定查找的最大深度，-1 表示不限制（默认：-1）
-  -f              限制只查找文件
-  -d              限制只查找目录
-  -h              打印帮助信息并退出
+  -f              仅查找文件
+  -d              仅查找目录
+  -l              仅查找符号链接
+  -m <depth>      最大搜索深度（-1表示无限制）
+  -size [+-]SIZE  按文件大小查找（如+5M表示大于5MB，-5M表示小于5MB）
+  -mtime [+-]DAYS 按修改时间查找（如+7表示7天前修改，-7表示7天内修改）
+  -ctime [+-]DAYS 按创建时间查找（如+7表示7天前创建，-7表示7天内创建）
+  -h, --help      显示帮助信息
 
-示例：
-  fck find -p /path/to/search -k "*.txt" -m 3
-  fck find -p /path/to/search -k "example" -f
-  fck find -p /path/to/search -d
-  fck find -k "pattern" -m 2
+示例:
+  1. 在当前目录下查找所有包含"hello"的文件
+  fck find -p  . -k hello
+
+  2. 在当前目录下查找所有以".txt"结尾的文件
+  fck find -p  . -k "*.txt"
+
+  3. 在当前目录下查找所有修改时间在7天前的文件
+  fck find -p  . -mtime -7
+
+  4. 在当前目录下查找所有大于5MB的文件
+  fck find -p  . -size +5M
+
+注意:
+1. 大小单位支持B/K/M/G（必须大写）
+2. 时间参数以天为单位
+3. 不能同时指定-f、-d和-l标志

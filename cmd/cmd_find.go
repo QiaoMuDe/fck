@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // findCmdMain 是 find 子命令的主函数
@@ -93,6 +94,28 @@ func findCmdMain() error {
 					return nil
 				}
 			}
+
+			// 检查修改时间是否符合要求
+			if *findCmdModTime != "" {
+				fileInfo, err := entry.Info()
+				if err != nil {
+					return nil
+				}
+				if !matchFileTime(fileInfo.ModTime(), *findCmdModTime) {
+					return nil
+				}
+			}
+
+			// 检查创建时间是否符合要求
+			if *findCmdCrtTime != "" {
+				fileInfo, err := entry.Info()
+				if err != nil {
+					return nil
+				}
+				if !matchFileTime(fileInfo.ModTime(), *findCmdCrtTime) {
+					return nil
+				}
+			}
 			// 输出匹配的路径
 			fmt.Println(path)
 		}
@@ -147,6 +170,37 @@ func matchFileSize(fileSize int64, sizeCondition string) bool {
 		return float64(fileSize) > sizeInBytes
 	case '-':
 		return float64(fileSize) < sizeInBytes
+	default:
+		return false
+	}
+}
+
+// matchFileTime 检查文件时间是否符合指定的条件
+func matchFileTime(fileTime time.Time, timeCondition string) bool {
+	// 检查时间条件是否为空
+	if len(timeCondition) < 2 {
+		return false
+	}
+
+	// 获取比较符号和数值部分
+	comparator := timeCondition[0]
+	daysStr := timeCondition[1:]
+
+	// 转换天数
+	days, err := strconv.Atoi(daysStr)
+	if err != nil {
+		return false
+	}
+
+	// 计算时间阈值
+	threshold := time.Now().AddDate(0, 0, -days)
+
+	// 根据比较符号进行比较
+	switch comparator {
+	case '+':
+		return fileTime.After(threshold) // 检查文件时间是否在阈值之后
+	case '-':
+		return fileTime.Before(threshold) // 检查文件时间是否在阈值之前
 	default:
 		return false
 	}

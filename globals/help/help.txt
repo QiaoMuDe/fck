@@ -1,20 +1,41 @@
-fck - 文件处理工具集
+fck - 多功能文件处理工具集
 
-功能：提供多种文件处理功能，包括哈希计算、大小统计、查找等
+功能：提供文件哈希计算、大小统计、查找和校验等实用功能
 
 可用子命令：
-  size     计算文件或目录大小
-  hash     计算文件哈希值
-  find     查找文件
-  check    文件检查
+  hash     计算文件哈希值（支持MD5/SHA1/SHA256/SHA512算法）
+  size     计算文件或目录大小（支持递归计算和人类可读格式）
+  find     查找文件（支持关键字、正则表达式和多种过滤条件）
+  check    文件校验（支持源目录和目标目录比对）
 
 全局参数：
-  -h       打印帮助信息并退出
+  -v       显示版本信息
+  -h       显示帮助信息
+
+基本用法：
+  fck <子命令> [选项] [参数]
+
+子命令帮助：
+  使用 'fck <子命令> -h' 查看各子命令详细帮助
 
 示例：
-  fck size /path/to/file
-  fck hash -t sha256 /path/to/file
-  fck find /path/to/search
-  fck check /path/to/file
+  1. 计算文件哈希值：
+     fck hash -t sha256 /path/to/file
+     fck hash -r -j 4 /path/to/directory
 
-使用 'fck <子命令> -h' 查看各子命令详细帮助
+  2. 计算目录大小：
+     fck size /path/to/directory
+     fck size /path/to/*.txt
+
+  3. 查找文件：
+     fck find -p /path -k "*.go" -m 2
+     fck find -p /path -size +10M
+
+  4. 文件校验：
+     fck check -f checksum.txt -s /source
+     fck check -f checksum.txt -t /target
+
+注意事项：
+  1. 所有路径参数支持Windows和Unix风格
+  2. 递归处理大目录时建议使用并发参数(-j)
+  3. 各子命令有独立帮助文档，可通过-h参数查看，例如 'fck <子命令> -h' 查看各子命令详细帮助

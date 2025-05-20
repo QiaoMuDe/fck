@@ -1,17 +1,47 @@
 fck hash - 文件哈希计算工具
 
-功能：计算指定文件或目录的哈希值
+功能：计算指定文件或目录的哈希值，支持多种哈希算法和并发处理
 
-参数：
-  -t <algorithm>   指定哈希算法，支持 md5、sha1、sha256、sha512（默认：md5）
-  -r               递归处理目录（默认：不递归）
-  -j <number>      指定并发数量（默认：1）
-  -w               将哈希值写入文件，文件名为 checksum.hash（默认：不写入文件）
-  -h               打印帮助信息并退出
+用法：fck hash [选项] [文件/目录]
 
-示例：
-  fck hash -t sha256 -r -j 4 -w /path/to/directory
-  fck hash -t sha1 -r /path/to/directory
-  fck hash -t md5 /path/to/file
-  fck hash -t sha256 -j 2 /path/to/file
-  fck hash -t sha512 -w /path/to/file
+参数说明：
+  -t <algorithm>   指定哈希算法类型，支持以下算法：
+                   md5    - 生成128位MD5哈希值
+                   sha1   - 生成160位SHA-1哈希值  
+                   sha256 - 生成256位SHA-256哈希值
+                   sha512 - 生成512位SHA-512哈希值
+                  （默认使用md5算法）
+  
+  -r               递归处理目录及其子目录中的所有文件
+                  （默认仅处理指定文件或目录顶层文件）
+  
+  -j <number>      指定并发处理数量，提高大文件或多文件处理效率
+                  （默认值为1，表示单线程处理）
+                  （建议值：1-8，根据CPU核心数调整）
+  
+  -w               将计算结果写入checksum.hash文件
+                  （默认仅输出到终端）
+  
+  -h               显示本帮助信息并退出
+
+使用示例：
+  1. 计算单个文件的MD5哈希值：
+     fck hash -t md5 /path/to/file
+  
+  2. 递归计算目录下所有文件的SHA256哈希值：
+     fck hash -t sha256 -r /path/to/directory
+  
+  3. 使用4个线程并发计算SHA1哈希值并写入文件：
+     fck hash -t sha1 -j 4 -w /path/to/directory
+  
+  4. 计算文件的SHA512哈希值：
+     fck hash -t sha512 /path/to/file
+
+输出格式：
+  - 输出到终端的格式为：[哈希值] [文件路径]
+  - 写入文件的内容为：[哈希值] "[文件路径]"
+  
+注意事项：
+  - 递归处理大目录时建议使用-j参数提高效率
+  - 写入文件功能会覆盖同名的checksum.hash文件
+  - 并发数量过高可能导致内存占用增加

@@ -1,14 +1,49 @@
 fck check - 文件校验工具
 
-功能：根据校验值文件对源目录和目标目录进行校验
+功能：根据校验值文件对源目录和目标目录进行校验，支持多种哈希算法
 
-参数：
-  -f <file>               指定校验值文件，根据文件中的哈希值进行校验
-  -s <source_path>        指定要校验的源目录
-  -t <target_path>        指定要校验的目标目录
-  -h                      打印帮助信息并退出
+用法：fck check [选项] 
+
+参数说明：
+  -f <file>       指定校验值文件（必须包含#hashType#timestamp头信息）
+                  （默认查找当前目录下的checksum.hash文件）
+  
+  -s <source_path> 指定要校验的源目录
+                  （与校验文件中的哈希值进行比对）
+  
+  -t <target_path> 指定要校验的目标目录
+                  （与校验文件中的哈希值进行比对）
+  
+  -h             显示本帮助信息并退出
+
+使用说明：
+1. 校验文件格式要求：
+   - 必须以#hashType#timestamp开头（如#sha256#20240101）
+   - 每行格式为：[哈希值] [文件路径]
+   - 支持MD5/SHA1/SHA256/SHA512算法
+
+2. 校验流程：
+   - 读取校验文件头获取哈希算法
+   - 计算源目录/目标目录文件的哈希值
+   - 与校验文件中的哈希值进行比对
+   - 输出不一致的文件信息
 
 示例：
-  fck check -f checksum.txt -s /path/to/source -t /path/to/target
-  fck check -f checksum.txt -s /path/to/source
-  fck check -f checksum.txt -t /path/to/target
+1. 校验源目录与校验文件：
+   fck check -f checksum.txt -s /path/to/source
+
+2. 校验目标目录与校验文件：
+   fck check -f checksum.txt -t /path/to/target
+
+3. 同时校验源目录和目标目录：
+   fck check -f checksum.txt -s /path/to/source -t /path/to/target
+
+输出格式：
+- 校验成功：显示"校验成功，无文件差异"
+- 校验失败：显示不一致文件的路径和哈希值后8位
+
+注意事项：
+1. 校验文件必须包含有效的头信息
+2. 大目录校验可能需要较长时间
+3. 支持Windows和Unix风格的路径
+4. 校验时会自动跳过空行和注释行（以#开头的行）
