@@ -18,7 +18,7 @@ BASE_OUTPUT_NAME = "fck"
 DEFAULT_OUTPUT_DIR = "output"
 # 默认入口文件的位置
 DEFAULT_ENTRY_FILE = "./main.go"
-# 默认的 Go 编译器，使用全局 PATH 中的 go
+# 默认的 Go 编译器, 使用全局 PATH 中的 go
 DEFAULT_GO_COMPILER = "go"
 # 默认不使用 vendor 克隆依赖
 DEFAULT_USE_VENDOR = False
@@ -89,7 +89,7 @@ def check_go_installed(go_compiler):
         return True
     except subprocess.CalledProcessError:
         print_error(
-            f"未检测到 {go_compiler} 编译器，请确保已安装并添加到 PATH 中，或者指定正确的路径。"
+            f"未检测到 {go_compiler} 编译器, 请确保已安装并添加到 PATH 中, 或者指定正确的路径。"
         )
         return False
 
@@ -121,7 +121,7 @@ def run_go_mod_vendor(go_compiler):
         subprocess.run(
             [go_compiler, "mod", "vendor"], capture_output=True, text=True, check=True
         )
-        print_success("go mod vendor 执行成功，依赖已克隆到 vendor 目录。")
+        print_success("go mod vendor 执行成功, 依赖已克隆到 vendor 目录。")
     except subprocess.CalledProcessError as e:
         print_error("go mod vendor 执行失败：")
         print_error(e.stderr.strip())
@@ -169,14 +169,20 @@ def run_gofmt(go_compiler):
 
 
 def build_go_app(
-    go_compiler, output_file, entry_file, ldflags, use_vendor_in_build, is_batch=False, args=None
+    go_compiler,
+    output_file,
+    entry_file,
+    ldflags,
+    use_vendor_in_build,
+    is_batch=False,
+    args=None,
 ):
     """组装并执行构建命令"""
     command = [go_compiler, "build", "-o", output_file, "-ldflags", ldflags]
     if use_vendor_in_build:
         # 检查 vendor 目录是否存在
         if not os.path.exists("vendor"):
-            print_error("vendor 目录不存在，无法使用 -mod=vendor 选项。")
+            print_error("vendor 目录不存在, 无法使用 -mod=vendor 选项。")
             return False
         command.extend(["-mod=vendor"])
     command.append(entry_file)
@@ -185,7 +191,7 @@ def build_go_app(
         env = os.environ.copy()
         # 添加默认环境变量
         env.update(DEFAULT_ENV_VARS)
-        
+
         # 为arm64架构设置特定的交叉编译工具链
         if env.get("GOARCH") == "arm64":
             env["CC"] = "aarch64-linux-gnu-gcc"
@@ -226,7 +232,7 @@ def build_go_app(
         subprocess.run(command, capture_output=True, text=True, check=True, env=env)
 
         if not is_batch:
-            print_success(f"构建成功，输出文件：{output_file}")
+            print_success(f"构建成功, 输出文件：{output_file}")
         return True
     except subprocess.CalledProcessError as e:
         print_error("构建失败：")
@@ -270,7 +276,7 @@ def batch_build(args):
     if args.git:
         print_success("正在获取 Git 信息...")
         if _git_info_cache["version"] is None:
-            print_error("Git 信息获取失败，请检查 Git 环境是否正确配置。")
+            print_error("Git 信息获取失败, 请检查 Git 环境是否正确配置。")
             sys.exit(1)
 
     # 创建临时args对象用于批量构建
@@ -299,7 +305,7 @@ def batch_build(args):
         if parse_arguments() is None:
             return
 
-        # 如果使用简单文件名格式，则生成输出文件名时不包含系统和架构信息
+        # 如果使用简单文件名格式, 则生成输出文件名时不包含系统和架构信息
         if args.simple_name:
             base_name = f"{BASE_OUTPUT_NAME}"
             git_version = _git_info_cache["version"] if args.git else None
@@ -334,7 +340,7 @@ def batch_build(args):
                     fail_count += 1
                 completed_count = success_count + fail_count
                 print_success(
-                    f"已完成 {completed_count}/{total_tasks} 个任务 (成功 {success_count} 个，失败 {fail_count} 个，跳过 {skip_count} 个)"
+                    f"已完成 {completed_count}/{total_tasks} 个任务 (成功 {success_count} 个, 失败 {fail_count} 个, 跳过 {skip_count} 个)"
                 )
                 pass
         except Exception as e:
@@ -342,7 +348,7 @@ def batch_build(args):
                 fail_count += 1
                 completed_count = success_count + fail_count
                 print_success(
-                    f"已完成 {completed_count}/{total_tasks} 个任务 (成功 {success_count} 个，失败 {fail_count} 个，跳过 {skip_count} 个)"
+                    f"已完成 {completed_count}/{total_tasks} 个任务 (成功 {success_count} 个, 失败 {fail_count} 个, 跳过 {skip_count} 个)"
                 )
                 print_error(f"构建 {system}/{architecture} 时发生异常: {str(e)}")
 
@@ -354,19 +360,19 @@ def batch_build(args):
             for architecture in SUPPORTED_ARCHITECTURES:
                 futures.append(executor.submit(build_task, system, architecture))
 
-        # 等待所有任务完成，设置超时时间为30分钟
+        # 等待所有任务完成, 设置超时时间为30分钟
         try:
             for future in futures:
                 future.result(timeout=args.timeout)
         except concurrent.futures.TimeoutError:
-            print_error("任务执行超时，强制终止线程池")
+            print_error("任务执行超时, 强制终止线程池")
             executor._threads.clear()
             concurrent.futures.thread._threads_queues.clear()
             fail_count += len([f for f in futures if not f.done()])
 
     total_elapsed_time = time.time() - total_start_time
     print_success(
-        f"批量构建完成，成功 {success_count} 个，失败 {fail_count} 个，跳过 {skip_count} 个"
+        f"批量构建完成, 成功 {success_count} 个, 失败 {fail_count} 个, 跳过 {skip_count} 个"
     )
     print_success(f"总耗时: {total_elapsed_time:.2f} 秒")
 
@@ -419,7 +425,7 @@ def get_git_info():
     """获取 Git 版本信息"""
     global _git_info_cache
 
-    # 如果缓存不存在或无效，则尝试获取git信息
+    # 如果缓存不存在或无效, 则尝试获取git信息
     if _git_info_cache["version"] is None:
         try:
             git_version = subprocess.run(
@@ -461,7 +467,7 @@ def get_git_info():
             _git_info_cache["commit_time"] = format_time
             _git_info_cache["status"] = git_status
         except subprocess.CalledProcessError:
-            print_error("警告: 无法获取 Git 版本信息，可能是当前目录不是 Git 仓库。")
+            print_error("警告: 无法获取 Git 版本信息, 可能是当前目录不是 Git 仓库。")
             return None
         except subprocess.TimeoutExpired:
             print_error("获取 Git 版本信息超时。")
@@ -476,7 +482,7 @@ def get_git_info():
 
 
 def generate_output_file_name(base_name, system, git_version=None):
-    """根据操作系统生成默认输出文件名，可选的git版本号"""
+    """根据操作系统生成默认输出文件名, 可选的git版本号"""
     os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
     name = base_name
     if git_version is not None:
@@ -487,7 +493,7 @@ def generate_output_file_name(base_name, system, git_version=None):
 
 
 def generate_zip_file_name(output_base_name, system, architecture, git_version=None):
-    """根据输出文件名、操作系统和架构生成默认的 zip 文件名，可选的git版本号"""
+    """根据输出文件名、操作系统和架构生成默认的 zip 文件名, 可选的git版本号"""
     os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
     name = f"{output_base_name}_{system}_{architecture}"
     if git_version is not None:
@@ -600,7 +606,7 @@ def parse_arguments():
     parser.add_argument(
         "-batch",
         action="store_true",
-        help="启用批量构建模式，构建所有支持的平台和架构组合",
+        help="启用批量构建模式, 构建所有支持的平台和架构组合",
         default=False,
     )
     parser.add_argument(
@@ -616,6 +622,12 @@ def parse_arguments():
         type=int,
         help="批量构建模式下每个任务的超时时间(秒), 默认30分钟(1800秒)",
         default=DEFAULT_TIMEOUT,
+    )
+    parser.add_argument(
+        "-i",
+        "--install",
+        help="将可执行文件安装到GOPATH/bin目录",
+        default=None,
     )
     args = parser.parse_args()  # 解析命令行参数
 
@@ -636,6 +648,47 @@ def parse_arguments():
 
 
 # 主程序入口 #
+def install_executable(executable_path):
+    """将可执行文件安装到GOPATH/bin目录"""
+    # 检查GOPATH环境变量
+    gopath = os.getenv("GOPATH")
+    if not gopath:
+        print_error("未找到GOPATH环境变量, 请先设置GOPATH")
+        return False
+
+    # 检查可执行文件是否存在
+    if not os.path.exists(executable_path):
+        print_error(f"可执行文件 {executable_path} 不存在")
+        return False
+
+    # 创建GOPATH/bin目录(如果不存在)
+    bin_path = os.path.join(gopath, "bin")
+    if not os.path.exists(bin_path):
+        try:
+            os.makedirs(bin_path)
+            print_success(f"已创建目录 {bin_path}")
+        except OSError as e:
+            print_error(f"创建目录 {bin_path} 失败: {str(e)}")
+            return False
+
+    # 获取目标路径
+    target_path = os.path.join(bin_path, os.path.basename(executable_path))
+
+    # 检查目标文件是否已存在
+    if os.path.exists(target_path):
+        print_error(f"目标文件 {target_path} 已存在, 请先删除或重命名")
+        return False
+
+    # 移动文件
+    try:
+        os.rename(executable_path, target_path)
+        print_success(f"已安装到 {target_path}")
+        return True
+    except OSError as e:
+        print_error(f"安装失败: {str(e)}")
+        return False
+
+
 def main():
     # 记录开始时间
     start_time = time.time()
@@ -643,15 +696,22 @@ def main():
     # 解析命令行参数
     args = parse_arguments()
 
+    # 如果指定了安装参数
+    if args.install:
+        if not install_executable(args.install):
+            sys.exit(1)
+        sys.exit(0)
+
     # 检查批量构建模式下是否启用了简单文件名格式
     if args.batch and args.simple_name:
-        print_error("批量构建模式下不能使用简单文件名格式，请移除-s/--simple-name参数")
+        print_error("批量构建模式下不能使用简单文件名格式, 请移除-s/--simple-name参数")
         return None
 
-    # 如果启用了git标志，提前获取git信息
+    # 如果启用了git标志, 提前获取git信息
     if args.git:
         print_success("正在获取 Git 信息...")
-        get_git_info()
+        if not get_git_info():
+            sys.exit(1)
 
     # 如果是批量构建模式
     if args.batch:
@@ -765,13 +825,14 @@ def main():
         args.batch,
     )
 
+    # 判断构建结果
     if build_result:
         if not args.batch:
             print_success("构建完成。")
         if zip_flag:
             zip_executable(output_file, zip_file, args.batch)
     else:
-        print_error("构建失败，请检查错误信息。")
+        print_error("构建失败, 请检查错误信息。")
 
     # 记录结束时间
     end_time = time.time()
