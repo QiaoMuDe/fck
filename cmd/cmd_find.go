@@ -27,14 +27,15 @@ func findCmdMain() error {
 		return fmt.Errorf("查找最大深度不能小于 -1")
 	}
 
-	// 检查如果指定了文件大小, 格式是否正确, 单位必须为 B/K/M/G 同时为大写
+	// 检查如果指定了文件大小, 格式是否正确(格式为 +5M 或 -5M), 单位必须为 B/K/M/G 同时为大写
 	if *findCmdSize != "" {
-		sizeRegex := regexp.MustCompile(`^(\d+)([BKMG])$`)  // 匹配数字和单位
-		match := sizeRegex.FindStringSubmatch(*findCmdSize) // 查找匹配项
+		// 使用正则表达式匹配文件大小条件
+		sizeRegex := regexp.MustCompile(`^([+-])(\d+)([BKMGbkmg])$`) // 正确分组：符号、数字、单位
+		match := sizeRegex.FindStringSubmatch(*findCmdSize)          // 查找匹配项
 		if match == nil {
 			return fmt.Errorf("文件大小格式错误, 格式如+5M(大于5M)或-5M(小于5M), 支持单位B/K/M/G(大写)")
 		}
-		_, err := strconv.Atoi(match[1]) // 转换数字部分
+		_, err := strconv.Atoi(match[2]) // 转换数字部分(match[2])
 		if err != nil {
 			return fmt.Errorf("文件大小格式错误")
 		}
@@ -94,7 +95,6 @@ func findCmdMain() error {
 					return nil
 				}
 			}
-
 			// 检查修改时间是否符合要求
 			if *findCmdModTime != "" {
 				fileInfo, err := entry.Info()
@@ -144,11 +144,19 @@ func matchFileSize(fileSize int64, sizeCondition string) bool {
 	switch unit {
 	case 'B':
 		sizeInBytes = sizeValue
+	case 'b':
+		sizeInBytes = sizeValue
 	case 'K':
+		sizeInBytes = sizeValue * 1024
+	case 'k':
 		sizeInBytes = sizeValue * 1024
 	case 'M':
 		sizeInBytes = sizeValue * 1024 * 1024
+	case 'm':
+		sizeInBytes = sizeValue * 1024 * 1024
 	case 'G':
+		sizeInBytes = sizeValue * 1024 * 1024 * 1024
+	case 'g':
 		sizeInBytes = sizeValue * 1024 * 1024 * 1024
 	default:
 		return false
