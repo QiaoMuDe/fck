@@ -35,4 +35,6 @@ var (
 	findCmdMaxDepth = findCmd.Int("m", -1, "指定查找的最大深度, -1 表示不限制")
 	findCmdFile     = findCmd.Bool("f", false, "限制只查找文件")
 	findCmdDir      = findCmd.Bool("d", false, "限制只查找目录")
+	findCmdSymlink  = findCmd.Bool("l", false, "限制只查找软链接")
+	findCmdSize     = findCmd.String("s", "", "按文件大小过滤，格式如+5M(大于5M)或-5M(小于5M)，支持单位B/K/M/G")
 )
