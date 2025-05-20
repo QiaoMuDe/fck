@@ -1,0 +1,11 @@
+fck size - 文件或目录大小计算工具
+
+功能：计算指定文件或目录的大小
+
+参数：
+  -h               打印帮助信息并退出
+
+示例：
+  fck size /path/to/file
+  fck size /path/to/directory
+  fck size /path/to/*.txt

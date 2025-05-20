@@ -8,7 +8,7 @@ var (
 	// helpF 帮助信息
 	helpF = flag.Bool("h", false, "打印帮助信息并退出")
 
-	// hash 子命令
+	// fck hash 子命令
 	hashCmd          = flag.NewFlagSet("hash", flag.ExitOnError)
 	hashCmdHelp      = hashCmd.Bool("h", false, "打印帮助信息并退出")
 	hashCmdType      = hashCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
@@ -16,17 +16,20 @@ var (
 	hashCmdJob       = hashCmd.Int("j", 1, "指定并发数量")
 	hashCmdWrite     = hashCmd.Bool("w", false, "将哈希值写入文件, 文件名为checksum.hash")
 
-	// size 子命令
-	sizeCmd          = flag.NewFlagSet("size", flag.ExitOnError)
-	sizeCmdHelp      = sizeCmd.Bool("h", false, "打印帮助信息并退出")
-	sizeCmdRecursion = sizeCmd.Bool("r", false, "递归处理目录")
-	sizeCmdUnit      = sizeCmd.String("u", "", "指定单位，支持 B、KB、MB、GB")
+	// fck size 子命令
+	sizeCmd     = flag.NewFlagSet("size", flag.ExitOnError)
+	sizeCmdHelp = sizeCmd.Bool("h", false, "打印帮助信息并退出")
 
-	// check 子命令
-	checkCmd     = flag.NewFlagSet("check", flag.ExitOnError)
-	checkCmdHelp = checkCmd.Bool("h", false, "打印帮助信息并退出")
+	// fck check 子命令
+	checkCmd           = flag.NewFlagSet("check", flag.ExitOnError)
+	checkCmdHelp       = checkCmd.Bool("h", false, "打印帮助信息并退出")
+	checkCmdFile       = checkCmd.String("f", "", "指定校验值文件, 根据文件中的哈希值进行校验")
+	checkCmdDir        = checkCmd.String("d", "", "指定要检查的目录")
+	checkCmdCompareDir = checkCmd.String("cd", "", "指定要对比的目录")
+	checkCmdType       = checkCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
+	checkCmdJob        = checkCmd.Int("j", 1, "指定并发数量")
 
-	// find 子命令
+	// fck find 子命令
 	findCmd         = flag.NewFlagSet("find", flag.ExitOnError)
 	findCmdHelp     = findCmd.Bool("h", false, "打印帮助信息并退出")
 	findCmdPath     = findCmd.String("p", "", "指定要查找的路径")

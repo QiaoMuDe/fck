@@ -26,3 +26,8 @@ var (
 //
 //go:embed help/help_hash.txt
 var HashHelp string
+
+// size 子命令帮助信息
+//
+//go:embed help/help_size.txt
+var SizeHelp string

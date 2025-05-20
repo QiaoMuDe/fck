@@ -48,24 +48,30 @@ func Run(cl *colorlib.ColorLib) error {
 		}
 		// 执行 hash 子命令
 		if err := hashCmdMain(hashCmd, cl); err != nil {
-			// 打印错误信息并退出
 			return fmt.Errorf("执行hash子命令时发生了错误: %v", err)
 		}
 	case "size":
 		sizeCmd.Parse(flag.Args()[1:])
 		// 如果是 -h 或 help，则打印帮助信息并退出
 		if *sizeCmdHelp {
-			//
+			fmt.Println(globals.SizeHelp)
 			return nil
 		}
 		// 执行 size 子命令
-		//
+		if err := sizeCmdMain(sizeCmd); err != nil {
+			return fmt.Errorf("执行size子命令时发生了错误: %v", err)
+		}
 	case "check":
 		checkCmd.Parse(flag.Args()[1:])
 		// 如果是 -h 或 help，则打印帮助信息并退出
 		if *checkCmdHelp {
 			//
 			return nil
+		}
+
+		// 执行 check 子命令
+		if err := checkCmdMain(cl); err != nil {
+			return fmt.Errorf("执行check子命令时发生了错误: %v", err)
 		}
 	case "find":
 		findCmd.Parse(flag.Args()[1:])

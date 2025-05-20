@@ -1,0 +1,162 @@
+package cmd
+
+import (
+	"flag"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+// sizeCmdMain 是 size 子命令的主函数
+func sizeCmdMain(sizeCmd *flag.FlagSet) error {
+	// 获取指定的路径
+	targetPath := sizeCmd.Arg(0)
+
+	// 如果没有指定路径，则打印错误信息并退出
+	if targetPath == "" {
+		return fmt.Errorf("在计算文件大小时，必须指定一个路径")
+	}
+
+	// 清理路径
+	targetPath = filepath.Clean(targetPath)
+
+	// 如果路径包含通配符，则使用通配符匹配路径
+	if strings.Contains(targetPath, "*") {
+		filePaths, err := filepath.Glob(targetPath)
+		if err != nil {
+			return fmt.Errorf("通配符匹配失败: %v", err)
+		}
+		if len(filePaths) == 0 {
+			return fmt.Errorf("没有找到匹配的文件")
+		}
+		// 计算每个匹配路径的大小
+		for _, filePath := range filePaths {
+			size, err := getPathSize(filePath)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%-15s\t%s\n", humanReadableSize(size), filePath)
+		}
+		return nil
+	}
+
+	// 如果是文件，则直接计算大小
+	if info, err := os.Stat(targetPath); err != nil {
+		return fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", targetPath, err)
+	} else if !info.IsDir() {
+		fmt.Printf("%-15s\t%s\n", humanReadableSize(info.Size()), targetPath)
+		return nil
+	}
+
+	// 如果是目录，则递归计算大小
+	size, err := getPathSize(targetPath)
+	if err != nil {
+		return err
+	}
+
+	// 打印结果
+	fmt.Printf("%-15s\t%s\n", humanReadableSize(size), targetPath)
+	return nil
+}
+
+// getPathSize 获取路径大小
+func getPathSize(path string) (int64, error) {
+	// 获取文件信息
+	info, err := os.Stat(path)
+	if err != nil {
+		// 如果获取文件信息失败，返回错误
+		return 0, fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", path, err)
+	}
+
+	// 如果不是目录，则直接返回文件大小
+	if !info.IsDir() {
+		return info.Size(), nil
+	}
+
+	// 定义总大小
+	var totalSize int64
+	// 遍历目录
+	err = filepath.Walk(path, func(filePath string, fileInfo fs.FileInfo, err error) error {
+		if err != nil {
+			// 如果遍历目录失败，返回错误
+			return fmt.Errorf("遍历目录失败: 路径 %s 错误: %v", filePath, err)
+		}
+		// 如果是文件或者不是根目录，则累加文件大小
+		if !fileInfo.IsDir() || (fileInfo.IsDir() && filePath != path) {
+			totalSize += fileInfo.Size()
+		}
+		return nil
+	})
+
+	if err != nil {
+		// 如果遍历目录失败，返回错误
+		return 0, fmt.Errorf("遍历目录失败: %v", err)
+	}
+	// 返回总大小
+	return totalSize, nil
+}
+
+// humanReadableSize 函数用于将字节大小转换为可读的字符串格式
+// 该函数接收一个 int64 类型的字节大小参数，返回一个表示该大小的可读字符串
+func humanReadableSize(size int64) string {
+	// 定义存储字节单位的切片，按照从小到大的顺序排列
+	units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
+	// 定义字节单位之间的换算基数，这里使用 1024 作为二进制换算标准
+	base := float64(1024)
+
+	// 用于存储最终选择的合适单位
+	var unit string
+	// 将传入的 int64 类型的字节大小转换为 float64 类型，方便后续计算
+	sizeFloat := float64(size)
+
+	// 根据字节大小选择最合适的单位
+	// 如果字节大小小于 1024B，则直接使用 B 作为单位
+	if sizeFloat < base {
+		unit = units[0]
+		// 如果字节大小小于 1024KB，则使用 KB 作为单位，并将字节大小除以 1024 转换为 KB
+	} else if sizeFloat < base*base {
+		unit = units[1]
+		sizeFloat /= base
+		// 如果字节大小小于 1024MB，则使用 MB 作为单位，并将字节大小除以 1024*1024 转换为 MB
+	} else if sizeFloat < base*base*base {
+		unit = units[2]
+		sizeFloat /= base * base
+		// 如果字节大小小于 1024GB，则使用 GB 作为单位，并将字节大小除以 1024*1024*1024 转换为 GB
+	} else if sizeFloat < base*base*base*base {
+		unit = units[3]
+		sizeFloat /= base * base * base
+		// 如果字节大小小于 1024TB，则使用 TB 作为单位，并将字节大小除以 1024*1024*1024*1024 转换为 TB
+	} else if sizeFloat < base*base*base*base*base {
+		unit = units[4]
+		sizeFloat /= base * base * base * base
+		// 否则使用 PB 作为单位，并将字节大小除以 1024*1024*1024*1024*1024 转换为 PB
+	} else {
+		unit = units[5]
+		sizeFloat /= base * base * base * base * base
+	}
+
+	// 获取转换后的大小，并保留两位小数
+	sizeF := fmt.Sprintf("%.2f", sizeFloat)
+
+	// 去除小数部分末尾的 .00
+	if strings.HasSuffix(sizeF, ".00") {
+		sizeF = strings.TrimRight(sizeF, ".00")
+	}
+
+	// 去除小数部分末尾的 .0
+	if strings.HasSuffix(sizeF, ".0") {
+		sizeF = strings.TrimRight(sizeF, ".0")
+	}
+
+	// 去除小数点部分末尾的0
+	if strings.Contains(sizeF, ".") {
+		sizeF = strings.TrimRight(sizeF, "0")
+	}
+
+	// 先将转换后的大小和单位拼接成一个字符串
+	result := fmt.Sprintf("%s%s", sizeF, unit)
+
+	return result
+}
