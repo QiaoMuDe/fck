@@ -106,16 +106,6 @@ func findCmdMain() error {
 				}
 			}
 
-			// 检查创建时间是否符合要求
-			if *findCmdCrtTime != "" {
-				fileInfo, err := entry.Info()
-				if err != nil {
-					return nil
-				}
-				if !matchFileTime(fileInfo.ModTime(), *findCmdCrtTime) {
-					return nil
-				}
-			}
 			// 输出匹配的路径
 			fmt.Println(path)
 		}
