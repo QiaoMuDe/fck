@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -17,6 +18,7 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 	// 如果不一致，则打印错误信息
 	// 并检查两边的是否有校验文件中有的文件，目标目录中没有的文件
 	// 又或者是目标目录中有的文件，校验文件中没有的文件
+
 	if *checkCmdFile != "" {
 		if err := fileCheck(*checkCmdFile, cl); err != nil {
 			return err
@@ -43,18 +45,50 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 		return fmt.Errorf("校验文件不存在: %s", *checkCmdFile)
 	}
 
-	// 检查哈希算法是否有效
-	hashFunc, ok := globals.SupportedAlgorithms[*checkCmdType]
-	if !ok {
-		return fmt.Errorf("无效的哈希算法: %s", *checkCmdType)
-	}
-
 	// 读取校验文件
 	checkFileRead, openErr := os.OpenFile(*checkCmdFile, os.O_RDONLY, 0644)
 	if openErr != nil {
 		return fmt.Errorf("无法打开校验文件: %v", openErr)
 	}
 	defer checkFileRead.Close()
+
+	// 获取哈希算法
+	headerInfo := make([]byte, 1024)
+	n, readErr := checkFileRead.ReadAt(headerInfo, 0)
+	if readErr != nil && readErr != io.EOF {
+		return fmt.Errorf("读取校验文件时出错: %v", readErr)
+	}
+	headerInfo = headerInfo[:n] // 调整切片长度以匹配实际读取的字节数
+
+	// 检查是否是#开头的文件
+	// 原代码中 headerInfo 是 nil 切片，直接访问索引会报错，这里先检查切片长度
+	if len(headerInfo) == 0 || headerInfo[0] != '#' {
+		return fmt.Errorf("校验文件头格式错误, 必须以#开头")
+	}
+	// 解析哈希算法，以井号为分隔符
+	// 解析哈希算法和时间戳，以井号为分隔符
+	parts := strings.Split(string(headerInfo), "#")
+	if len(parts) < 3 {
+		fmt.Println("校验文件头格式错误, 格式应为 #hashType#timestamp")
+		return fmt.Errorf("校验文件头格式错误, 格式应为 #hashType#timestamp")
+	}
+	hashType := parts[1] // 哈希算法
+	if hashType == "" {
+		fmt.Println("校验文件头格式错误, 必须指定哈希算法")
+		return fmt.Errorf("校验文件头格式错误, 必须指定哈希算法")
+	}
+
+	// 检查哈希算法是否支持
+	hashFunc, ok := globals.SupportedAlgorithms[string(hashType)]
+	if !ok {
+		return fmt.Errorf("不支持的哈希算法: %s", string(hashType))
+	}
+
+	// 重置文件指针到开头
+	_, seekErr := checkFileRead.Seek(0, io.SeekStart)
+	if seekErr != nil {
+		return fmt.Errorf("重置文件指针时出错: %v", seekErr)
+	}
 
 	// 解析校验文件内容
 	scanner := bufio.NewScanner(checkFileRead)
@@ -68,7 +102,13 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 
 		lineCount++ // 计数器加 1
 
-		if line == "" { // 如果当前行是空行，则跳过
+		// 如果当前行是空行，则跳过
+		if line == "" {
+			continue
+		}
+
+		// 如果当前行以#开头，则跳过
+		if strings.HasPrefix(line, "#") {
 			continue
 		}
 

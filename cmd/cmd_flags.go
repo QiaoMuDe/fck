@@ -26,7 +26,6 @@ var (
 	checkCmdFile       = checkCmd.String("f", "", "指定校验值文件, 根据文件中的哈希值进行校验")
 	checkCmdDir        = checkCmd.String("d", "", "指定要检查的目录")
 	checkCmdCompareDir = checkCmd.String("cd", "", "指定要对比的目录")
-	checkCmdType       = checkCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
 	checkCmdJob        = checkCmd.Int("j", 1, "指定并发数量")
 
 	// fck find 子命令

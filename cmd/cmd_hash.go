@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/globals"
@@ -130,6 +131,15 @@ func hashRunTasks(ctx context.Context, files []string, hashType func() hash.Hash
 			return []error{fmt.Errorf("打开文件 %s 失败: %v", globals.OutputFileName, err)}
 		}
 		defer fileWrite.Close()
+
+		// 获取时间
+		now := time.Now()
+
+		// 写入文件头
+		if _, err := fileWrite.WriteString(fmt.Sprintf("#%s#%s\n", *hashCmdType, now.Format("2006-01-02 15:04:05"))); err != nil {
+			errors <- fmt.Errorf("写入文件头 %s 失败: %v", globals.OutputFileName, err)
+			return []error{fmt.Errorf("写入文件头 %s 失败: %v", globals.OutputFileName, err)}
+		}
 	}
 
 	// 遍历文件列表并启动任务
