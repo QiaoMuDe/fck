@@ -1,0 +1,14 @@
+fck check - 文件校验工具
+
+功能：根据校验值文件对源目录和目标目录进行校验
+
+参数：
+  -f <file>               指定校验值文件，根据文件中的哈希值进行校验
+  -s <source_path>        指定要校验的源目录
+  -t <target_path>        指定要校验的目标目录
+  -h                      打印帮助信息并退出
+
+示例：
+  fck check -f checksum.txt -s /path/to/source -t /path/to/target
+  fck check -f checksum.txt -s /path/to/source
+  fck check -f checksum.txt -t /path/to/target

@@ -32,8 +32,7 @@ func Run(cl *colorlib.ColorLib) error {
 
 	// 如果是 -h 或 没有参数或者第一个参数是 help，则打印帮助信息并退出
 	if *helpF || flag.NArg() == 0 || flag.Arg(0) == "help" {
-		//
-		cl.Greenf("Usage: fck [options] <command> [arguments]\n\n")
+		fmt.Println(globals.FckHelp)
 		return nil
 	}
 
@@ -87,7 +86,7 @@ func Run(cl *colorlib.ColorLib) error {
 		checkCmd.Parse(flag.Args()[1:])
 		// 如果是 -h 或 help，则打印帮助信息并退出
 		if *checkCmdHelp {
-			//
+			fmt.Println(globals.CheckHelp)
 			return nil
 		}
 
@@ -99,7 +98,7 @@ func Run(cl *colorlib.ColorLib) error {
 		checkCmd.Parse(flag.Args()[1:])
 		// 如果是 -h 或 help，则打印帮助信息并退出
 		if *checkCmdHelp {
-			//
+			fmt.Println(globals.CheckHelp)
 			return nil
 		}
 
@@ -111,11 +110,24 @@ func Run(cl *colorlib.ColorLib) error {
 		findCmd.Parse(flag.Args()[1:])
 		// 如果是 -h 或 help，则打印帮助信息并退出
 		if *findCmdHelp {
-			//
+			fmt.Println(globals.FindHelp)
 			return nil
 		}
 		// 执行 find 子命令
-		//
+		if err := findCmdMain(); err != nil {
+			return fmt.Errorf("执行find子命令时发生了错误: %v", err)
+		}
+	case "f":
+		findCmd.Parse(flag.Args()[1:])
+		// 如果是 -h 或 help，则打印帮助信息并退出
+		if *findCmdHelp {
+			fmt.Println(globals.FindHelp)
+			return nil
+		}
+		// 执行 find 子命令
+		if err := findCmdMain(); err != nil {
+			return fmt.Errorf("执行find子命令时发生了错误: %v", err)
+		}
 	default:
 		// 如果是未知的子命令，则打印帮助信息并退出
 		//

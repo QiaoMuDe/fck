@@ -1,0 +1,17 @@
+fck find - 文件和目录查找工具
+
+功能：在指定路径下查找匹配关键字或正则表达式的文件或目录
+
+参数：
+  -p <path>       指定要查找的路径（默认：当前目录）
+  -k <keyword>    指定要查找的关键字或正则表达式
+  -m <depth>      指定查找的最大深度，-1 表示不限制（默认：-1）
+  -f              限制只查找文件
+  -d              限制只查找目录
+  -h              打印帮助信息并退出
+
+示例：
+  fck find -p /path/to/search -k "*.txt" -m 3
+  fck find -p /path/to/search -k "example" -f
+  fck find -p /path/to/search -d
+  fck find -k "pattern" -m 2

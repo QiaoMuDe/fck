@@ -1,0 +1,20 @@
+fck - 文件处理工具集
+
+功能：提供多种文件处理功能，包括哈希计算、大小统计、查找等
+
+可用子命令：
+  size     计算文件或目录大小
+  hash     计算文件哈希值
+  find     查找文件
+  check    文件检查
+
+全局参数：
+  -h       打印帮助信息并退出
+
+示例：
+  fck size /path/to/file
+  fck hash -t sha256 /path/to/file
+  fck find /path/to/search
+  fck check /path/to/file
+
+使用 'fck <子命令> -h' 查看各子命令详细帮助

@@ -31,3 +31,18 @@ var HashHelp string
 //
 //go:embed help/help_size.txt
 var SizeHelp string
+
+// check 子命令帮助信息
+//
+//go:embed help/help_check.txt
+var CheckHelp string
+
+// find 子命令帮助信息
+//
+//go:embed help/help_find.txt
+var FindHelp string
+
+// fck 主命令帮助信息
+//
+//go:embed help/help.txt
+var FckHelp string
