@@ -68,7 +68,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return nil
 		}
 		// 执行 size 子命令
-		if err := sizeCmdMain(sizeCmd); err != nil {
+		if err := sizeCmdMain(sizeCmd, cl); err != nil {
 			return fmt.Errorf("执行size子命令时发生了错误: %v", err)
 		}
 	case "s":
@@ -79,7 +79,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return nil
 		}
 		// 执行 size 子命令
-		if err := sizeCmdMain(sizeCmd); err != nil {
+		if err := sizeCmdMain(sizeCmd, cl); err != nil {
 			return fmt.Errorf("执行size子命令时发生了错误: %v", err)
 		}
 	case "check":

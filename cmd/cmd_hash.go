@@ -32,33 +32,16 @@ const (
 // hashCmdMain 是 hash 子命令的主函数
 func hashCmdMain(cmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 	// 获取指定的路径
-	targetPath := cmd.Arg(0)
+	targetPaths := cmd.Args()
 
 	// 如果没有指定路径，则打印错误信息并退出
-	if targetPath == "" {
-		return fmt.Errorf("在校验哈希值时，必须指定一个路径")
+	if len(targetPaths) == 0 {
+		return fmt.Errorf("请指定要计算哈希值的路径")
 	}
 
 	// 检查并发数是否有效
 	if *hashCmdJob <= 0 {
 		return fmt.Errorf("在校验哈希值时，并发数必须大于 0")
-	}
-
-	// 清理路径
-	targetPath = filepath.Clean(targetPath)
-
-	// 定义一个切片来存储文件列表
-	var files []string
-
-	// 获取文件列表
-	files, err := collectFiles(targetPath, *hashCmdRecursion, cl)
-	if err != nil {
-		return fmt.Errorf("在校验哈希值时，收集文件失败: %v", err)
-	}
-
-	// 检查文件列表是否为空
-	if len(files) == 0 {
-		return fmt.Errorf("在校验哈希值时，路径 %s 没有找到任何文件", targetPath)
 	}
 
 	// 检查指定的哈希算法是否有效
@@ -80,22 +63,53 @@ func hashCmdMain(cmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		cl.PrintWarn("已取消所有任务")
 	}()
 
-	// 执行哈希任务
-	errors := hashRunTasks(ctx, files, hashType)
+	// 遍历路径
+	for _, targetPath := range targetPaths {
+		// 清理路径
+		targetPath = filepath.Clean(targetPath)
 
-	// 检查是否有错误发生
-	if len(errors) > 0 {
-		var errText string
-		// 打印错误信息
-		for _, err := range errors {
-			if errText != err.Error() {
-				cl.PrintErr(err.Error())
-			}
+		// 定义一个切片来存储文件列表
+		var files []string
+
+		// 获取文件列表
+		files, err := collectFiles(targetPath, *hashCmdRecursion, cl)
+		if err != nil {
+			// 如果收集文件失败，则打印错误信息并退出
+			cl.PrintErrf("在校验哈希值时，收集文件失败: %v", err)
+			continue
 		}
-	} else {
-		// 打印成功信息
-		if *hashCmdWrite {
-			cl.PrintOk(fmt.Sprintf("校验哈希值完成，共处理 %d 个文件, 并将哈希值写入文件 %s", len(files), globals.OutputFileName))
+
+		// 检查文件列表是否为空
+		if len(files) == 0 {
+			cl.PrintWarnf("在校验哈希值时，路径 %s 没有找到任何文件", targetPath)
+			continue
+		}
+
+		// 执行哈希任务
+		errors := hashRunTasks(ctx, files, hashType)
+
+		// 检查是否有错误发生
+		if len(errors) > 0 {
+			// 使用map去重错误信息，避免重复打印相同的错误信息
+			// 定义一个字符串到布尔值的映射，用于存储已经出现过的错误信息
+			errorMap := make(map[string]bool)
+			// 遍历错误列表
+			for _, err := range errors {
+				// 将错误对象转换为字符串
+				errStr := err.Error()
+				// 检查该错误信息是否已经在映射中
+				if !errorMap[errStr] {
+					// 如果不在映射中，将该错误信息添加到映射中，表示已经出现过
+					errorMap[errStr] = true
+					// 打印错误信息
+					cl.PrintErr(errStr)
+				}
+			}
+		} else {
+			// 打印成功信息
+			if *hashCmdWrite {
+				cl.PrintOk(fmt.Sprintf("校验哈希值完成，共处理 %d 个文件, 并将哈希值写入文件 %s", len(files), globals.OutputFileName))
+			}
 		}
 	}
 
@@ -168,6 +182,13 @@ func hashRunTasks(ctx context.Context, files []string, hashType func() hash.Hash
 					}
 				}()
 
+				// 检查文件路径是否存在
+				if _, err := os.Stat(file); err != nil {
+					errors <- fmt.Errorf("文件 %s 不存在或无法访问: %v", file, err)
+					once.Do(func() { cancel(fmt.Errorf("文件 %s 不存在或无法访问: %v", file, err)) }) // 只取消一次
+					return
+				}
+
 				// 执行任务并收集错误
 				if err := hashTask(ctx, file, hashType, fileWrite); err != nil {
 					// 发生错误时取消所有其他任务
@@ -209,6 +230,13 @@ func hashTask(ctx context.Context, filepath string, hashType func() hash.Hash, f
 	// 检查上下文是否已取消
 	if ctx.Err() != nil {
 		return ctx.Err()
+	}
+
+	// 检查文件如果是软链接，则跳过
+	if fileInfo, err := os.Lstat(filepath); err == nil {
+		if fileInfo.Mode()&fs.ModeSymlink != 0 {
+			return nil
+		}
 	}
 
 	// 计算文件哈希值

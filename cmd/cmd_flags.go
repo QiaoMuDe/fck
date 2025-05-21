@@ -36,6 +36,6 @@ var (
 	findCmdFile     = findCmd.Bool("f", false, "限制只查找文件")
 	findCmdDir      = findCmd.Bool("d", false, "限制只查找目录")
 	findCmdSymlink  = findCmd.Bool("l", false, "限制只查找软链接")
-	findCmdSize     = findCmd.String("s", "", "按文件大小过滤，格式如+5M(大于5M)或-5M(小于5M), 支持单位B/K/M/G")
+	findCmdSize     = findCmd.String("size", "", "按文件大小过滤，格式如+5M(大于5M)或-5M(小于5M), 支持单位B/K/M/G")
 	findCmdModTime  = findCmd.String("mtime", "", "按修改时间查找, 格式如+5(大于5天)或-5(小于5天)")
 )

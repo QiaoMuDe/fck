@@ -7,57 +7,74 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gitee.com/MM-Q/colorlib"
 )
 
 // sizeCmdMain 是 size 子命令的主函数
-func sizeCmdMain(sizeCmd *flag.FlagSet) error {
+func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 	// 获取指定的路径
-	targetPath := sizeCmd.Arg(0)
+	targetPaths := sizeCmd.Args()
 
 	// 如果没有指定路径，则打印错误信息并退出
-	if targetPath == "" {
-		return fmt.Errorf("在计算文件大小时，必须指定一个路径")
+	if len(targetPaths) == 0 {
+		return fmt.Errorf("请指定要计算大小的路径")
 	}
 
-	// 清理路径
-	targetPath = filepath.Clean(targetPath)
+	// 遍历路径
+	for _, targetPath := range targetPaths {
+		// 清理路径
+		targetPath = filepath.Clean(targetPath)
 
-	// 如果路径包含通配符，则使用通配符匹配路径
-	if strings.Contains(targetPath, "*") {
-		filePaths, err := filepath.Glob(targetPath)
-		if err != nil {
-			return fmt.Errorf("通配符匹配失败: %v", err)
-		}
-		if len(filePaths) == 0 {
-			return fmt.Errorf("没有找到匹配的文件")
-		}
-		// 计算每个匹配路径的大小
-		for _, filePath := range filePaths {
-			size, err := getPathSize(filePath)
+		// 如果路径包含通配符，则使用通配符匹配路径
+		if strings.Contains(targetPath, "*") {
+			filePaths, err := filepath.Glob(targetPath)
 			if err != nil {
-				return err
+				cl.PrintErrf("通配符匹配失败: %v", err)
+				continue
 			}
-			fmt.Printf("%-15s\t%s\n", humanReadableSize(size), filePath)
+
+			if len(filePaths) == 0 {
+				cl.PrintErr("没有找到匹配的文件")
+				continue
+			}
+			// 计算每个匹配路径的大小
+			for _, filePath := range filePaths {
+				size, err := getPathSize(filePath)
+				if err != nil {
+					cl.PrintErrf("计算文件大小失败: %v", err)
+					continue
+				}
+
+				// 打印结果
+				fmt.Printf("%-15s\t%s\n", humanReadableSize(size), filePath)
+				continue
+			}
+
+			return nil
 		}
-		return nil
+
+		// 如果是文件，则直接计算大小
+		if info, err := os.Stat(targetPath); err != nil {
+			cl.PrintErrf("获取文件信息失败: 路径 %s 错误: %v", targetPath, err)
+			continue
+		} else if !info.IsDir() {
+			fmt.Printf("%-15s\t%s\n", humanReadableSize(info.Size()), targetPath)
+			continue
+		}
+
+		// 如果是目录，则递归计算大小
+		size, err := getPathSize(targetPath)
+		if err != nil {
+			cl.PrintErrf("计算目录大小失败: 路径 %s 错误: %v", targetPath, err)
+			continue
+		}
+
+		// 打印结果
+		fmt.Printf("%-15s\t%s\n", humanReadableSize(size), targetPath)
+		continue
 	}
 
-	// 如果是文件，则直接计算大小
-	if info, err := os.Stat(targetPath); err != nil {
-		return fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", targetPath, err)
-	} else if !info.IsDir() {
-		fmt.Printf("%-15s\t%s\n", humanReadableSize(info.Size()), targetPath)
-		return nil
-	}
-
-	// 如果是目录，则递归计算大小
-	size, err := getPathSize(targetPath)
-	if err != nil {
-		return err
-	}
-
-	// 打印结果
-	fmt.Printf("%-15s\t%s\n", humanReadableSize(size), targetPath)
 	return nil
 }
 
@@ -139,6 +156,11 @@ func humanReadableSize(size int64) string {
 
 	// 获取转换后的大小，并保留两位小数
 	sizeF := fmt.Sprintf("%.2f", sizeFloat)
+
+	// 如果转换后的大小为 0，则返回 "0B"
+	if sizeF == "0.00" {
+		return "0B"
+	}
 
 	// 去除小数部分末尾的 .00
 	if strings.HasSuffix(sizeF, ".00") {
