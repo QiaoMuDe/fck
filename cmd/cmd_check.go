@@ -74,13 +74,18 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		now := time.Now()
 
 		// 写入文件头
-		if _, err := fileWrite.WriteString(fmt.Sprintf("#%s#%s\n", *checkCmdType, now.Format("2006-01-02 15:04:05"))); err != nil {
+		if _, err := fileWrite.WriteString(fmt.Sprintf("#%s#%s\n\n", *checkCmdType, now.Format("2006-01-02 15:04:05"))); err != nil {
 			return fmt.Errorf("写入文件头失败: %v", err)
 		}
 	}
 
 	// 比较两个目录的文件
 	compareFiles(filesA, filesB, hashType, cl, fileWrite)
+
+	// 如果是写入文件模式，则打印文件路径
+	if *checkCmdWrite {
+		cl.PrintOkf("比较结果已写入文件: %s", globals.OutputCheckFileName)
+	}
 
 	return nil
 }
