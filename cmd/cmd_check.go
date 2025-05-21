@@ -206,6 +206,12 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 
 	// 计算目标目录文件哈希值
 	for file := range checkFileHashes {
+		// 检查文件是否存在，若不存在则输出更详细的提示信息并跳过当前文件处理
+		if _, err := os.Stat(file); err != nil {
+			cl.PrintWarnf("在进行校验时，发现文件 %s 不存在，将跳过该文件的校验", file)
+			continue
+		}
+
 		var hash string       // 存储哈希值
 		var checksumErr error // 存储错误信息
 		// 计算哈希值
@@ -229,7 +235,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 
 		// 比较哈希值
 		if targetHash != checkHash {
-			cl.PrintErrf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s", filePath, checkHash[len(checkHash)-8:], targetHash[len(targetHash)-8:])
+			cl.PrintErrf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s", filePath, getLast8Chars(checkHash), getLast8Chars(targetHash))
 			checkCount++
 		}
 	}
@@ -327,9 +333,9 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 				diffCount++
 				sameNameCount++
 				if *checkCmdWrite {
-					fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, *checkCmdType, hashValueA[len(hashValueA)-8:], hashValueB[len(hashValueB)-8:]))
+					fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, *checkCmdType, getLast8Chars(hashValueA), getLast8Chars(hashValueB)))
 				} else {
-					fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, *checkCmdType, hashValueA[len(hashValueA)-8:], hashValueB[len(hashValueB)-8:])
+					fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, *checkCmdType, getLast8Chars(hashValueA), getLast8Chars(hashValueB))
 				}
 			} else {
 				sameCount++
