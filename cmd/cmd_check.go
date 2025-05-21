@@ -33,16 +33,17 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		if err := fileCheck(*checkCmdFile, cl); err != nil {
 			return err
 		}
-	}
-
-	// 检查参数是否有效
-	if *checkCmdDirA == "" || *checkCmdDirB == "" {
-		return fmt.Errorf("必须指定两个目录。")
+		return nil
 	}
 
 	// 检查三个参数是否都为空
 	if *checkCmdFile == "" && *checkCmdDirA == "" && *checkCmdDirB == "" {
 		return fmt.Errorf("必须指定一个校验文件或两个目录。或 -h 参数查看帮助信息。")
+	}
+
+	// 检查两个目录是否都为空
+	if *checkCmdDirA == "" || *checkCmdDirB == "" {
+		return fmt.Errorf("必须指定两个目录。或 -h 参数查看帮助信息。")
 	}
 
 	// 校验目录A 和 目录B //
@@ -293,6 +294,7 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	} else {
 		cl.Green("比较具有相同名称的文件：")
 	}
+	// 遍历目录 A 中的文件
 	for fileName, pathA := range filesA {
 		if pathB, ok := filesB[fileName]; ok {
 			// 如果目录 B 中存在同名文件，比较 MD5 值
@@ -312,14 +314,12 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 				} else {
 					fmt.Printf("文件 %s 的 MD5 值不同:\n  目录 A: %s\n  目录 B: %s\n", fileName, md5A, md5B)
 				}
-			} else {
-				if *checkCmdWrite {
-					fileWrite.WriteString(fmt.Sprintf("文件 %s 的 MD5 值相同: %s\n", fileName, md5A))
-				} else {
-					fmt.Printf("文件 %s 的 MD5 值相同: %s\n", fileName, md5A)
-				}
 			}
-			delete(filesB, fileName) // 从 filesB 中移除已比较的文件
+			// md5相同的无需输出
+			// xxx
+
+			// 从 filesB 中移除已比较的文件
+			delete(filesB, fileName)
 		}
 	}
 
