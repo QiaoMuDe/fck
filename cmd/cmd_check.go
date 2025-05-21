@@ -46,6 +46,14 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		return fmt.Errorf("必须指定两个目录。或 -h 参数查看帮助信息。")
 	}
 
+	// 检查目录A 和 目录B 是否存在
+	if _, err := os.Stat(*checkCmdDirA); err != nil {
+		return fmt.Errorf("目录A不存在: %s", *checkCmdDirA)
+	}
+	if _, err := os.Stat(*checkCmdDirB); err != nil {
+		return fmt.Errorf("目录B不存在: %s", *checkCmdDirB)
+	}
+
 	// 校验目录A 和 目录B //
 	// 检查指定的哈希算法是否有效
 	hashType, ok := globals.SupportedAlgorithms[*checkCmdType]
@@ -329,6 +337,8 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 
 			// 从 filesB 中移除已比较的文件
 			delete(filesB, fileName)
+			// 从 filesA 中移除已比较的文件
+			delete(filesA, fileName)
 		}
 	}
 
@@ -338,6 +348,15 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 			fileWrite.WriteString("暂无相同文件\n")
 		} else {
 			fmt.Println("暂无相同文件")
+		}
+	}
+
+	// 如果没有不同文件则输出提示
+	if diffCount == 0 {
+		if *checkCmdWrite {
+			fileWrite.WriteString("暂无不同文件\n")
+		} else {
+			fmt.Println("暂无不同文件")
 		}
 	}
 
