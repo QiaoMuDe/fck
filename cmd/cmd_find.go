@@ -85,8 +85,8 @@ func findCmdMain() error {
 					return nil
 				}
 			}
-			// 检查文件大小是否符合要求
 			if *findCmdSize != "" {
+				// 检查文件大小是否符合要求
 				fileInfo, err := entry.Info()
 				if err != nil {
 					return nil
@@ -95,12 +95,13 @@ func findCmdMain() error {
 					return nil
 				}
 			}
-			// 检查修改时间是否符合要求
 			if *findCmdModTime != "" {
+				// 检查修改时间是否符合要求
 				fileInfo, err := entry.Info()
 				if err != nil {
 					return nil
 				}
+				// 检查文件时间是否符合要求
 				if !matchFileTime(fileInfo.ModTime(), *findCmdModTime) {
 					return nil
 				}

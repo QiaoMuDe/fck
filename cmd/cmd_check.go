@@ -3,31 +3,89 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"hash"
 	"io"
 	"os"
+	"os/signal"
+	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/globals"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func checkCmdMain(cl *colorlib.ColorLib) error {
-	// 校验逻辑
-	// 先获取指定目录的所有文件的哈希值并存储到map中，键是文件名，值是哈希值
-	// 然后逐行读取checksum.hash文件，获取文件的哈希值和文件名并与map中的哈希值进行比较
-	// 如果不一致，则打印错误信息
-	// 并检查两边的是否有校验文件中有的文件，目标目录中没有的文件
-	// 又或者是目标目录中有的文件，校验文件中没有的文件
+	// 启动一个 goroutine，在用户按下 Ctrl+C 时取消操作
+	go func() {
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		<-sigs
+		// 使用自定义错误作为取消原因
+		fmt.Println("用户中断操作")
+	}()
 
+	// -f 参数逻辑优先执行
 	if *checkCmdFile != "" {
 		if err := fileCheck(*checkCmdFile, cl); err != nil {
 			return err
 		}
 	}
 
+	// 检查参数是否有效
+	if *checkCmdDirA == "" || *checkCmdDirB == "" {
+		return fmt.Errorf("必须指定两个目录。")
+	}
+
+	// 检查三个参数是否都为空
+	if *checkCmdFile == "" && *checkCmdDirA == "" && *checkCmdDirB == "" {
+		return fmt.Errorf("必须指定一个校验文件或两个目录。或 -h 参数查看帮助信息。")
+	}
+
+	// 校验目录A 和 目录B //
+	// 检查指定的哈希算法是否有效
+	hashType, ok := globals.SupportedAlgorithms[*checkCmdType]
+	if !ok {
+		return fmt.Errorf("在校验哈希值时，哈希算法 %s 无效", *checkCmdType)
+	}
+
+	// 获取两个目录下的文件列表
+	filesA, filesB, err := getFilesFromDirs(*checkCmdDirA, *checkCmdDirB)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return err
+	}
+
+	// 检查是否需要写入文件
+	var fileWrite *os.File
+	if *checkCmdWrite {
+		var err error
+		// 打开文件以写入
+		fileWrite, err = os.OpenFile(globals.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return fmt.Errorf("打开文件 %s 失败: %v", globals.OutputCheckFileName, err)
+		}
+		defer fileWrite.Close()
+
+		// 获取时间
+		now := time.Now()
+
+		// 写入文件头
+		if _, err := fileWrite.WriteString(fmt.Sprintf("#%s#%s\n", *checkCmdType, now.Format("2006-01-02 15:04:05"))); err != nil {
+			return fmt.Errorf("写入文件头失败: %v", err)
+		}
+	}
+
+	// 比较两个目录的文件
+	compareFiles(filesA, filesB, hashType, cl, fileWrite)
+
 	return nil
 }
 
+// fileCheck 检查校验文件是否正确
 func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 	// 存储校验值文件的map
 	checkFileHashes := make(map[string]string)
@@ -168,4 +226,123 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 	}
 
 	return nil
+}
+
+// getFilesFromDirs 获取两个目录下的文件列表
+func getFilesFromDirs(dirA, dirB string) (map[string]string, map[string]string, error) {
+	var eg errgroup.Group
+
+	// 获取目录 A 的文件列表
+	var filesA map[string]string
+	var getFilesAErr error
+	eg.Go(func() error {
+		filesA, getFilesAErr = getFiles(dirA)
+		return getFilesAErr
+	})
+
+	// 获取目录 B 的文件列表
+	var filesB map[string]string
+	var getFilesBErr error
+	eg.Go(func() error {
+		filesB, getFilesBErr = getFiles(dirB)
+		return getFilesBErr
+	})
+
+	// 等待两个目录的文件列表获取完成
+	if err := eg.Wait(); err != nil {
+		return nil, nil, fmt.Errorf("获取文件列表时出错: %v", err)
+	}
+
+	// 如果获取文件列表时出错，则返回错误
+	if getFilesAErr != nil {
+		return nil, nil, fmt.Errorf("读取目录 A 时出错: %v", getFilesAErr)
+	}
+	if getFilesBErr != nil {
+		return nil, nil, fmt.Errorf("读取目录 B 时出错: %v", getFilesBErr)
+	}
+
+	return filesA, filesB, nil
+}
+
+// getFiles 遍历指定目录，返回目录下所有文件的名称到路径的映射
+func getFiles(dir string) (map[string]string, error) {
+	files := make(map[string]string)
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		// 如果是文件，则加入到 map 中
+		if !d.IsDir() {
+			files[d.Name()] = path
+		}
+		return nil
+	})
+	return files, err
+}
+
+// compareFiles 比较两个目录的文件
+func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, cl *colorlib.ColorLib, fileWrite *os.File) {
+	// 比较相同文件名的文件
+	if *checkCmdWrite {
+		fileWrite.WriteString("比较具有相同名称的文件：\n")
+	} else {
+		cl.Green("比较具有相同名称的文件：")
+	}
+	for fileName, pathA := range filesA {
+		if pathB, ok := filesB[fileName]; ok {
+			// 如果目录 B 中存在同名文件，比较 MD5 值
+			md5A, err := checksum(pathA, hashType)
+			if err != nil {
+				cl.PrintErrf("计算文件 %s 的 MD5 值时出错: %v\n", pathA, err)
+				continue
+			}
+			md5B, err := checksum(pathB, hashType)
+			if err != nil {
+				cl.PrintErrf("计算文件 %s 的 MD5 值时出错: %v\n", pathB, err)
+				continue
+			}
+			if md5A != md5B {
+				if *checkCmdWrite {
+					fileWrite.WriteString(fmt.Sprintf("文件 %s 的 MD5 值不同: %s 和 %s\n", fileName, md5A, md5B))
+				} else {
+					fmt.Printf("文件 %s 的 MD5 值不同:\n  目录 A: %s\n  目录 B: %s\n", fileName, md5A, md5B)
+				}
+			} else {
+				if *checkCmdWrite {
+					fileWrite.WriteString(fmt.Sprintf("文件 %s 的 MD5 值相同: %s\n", fileName, md5A))
+				} else {
+					fmt.Printf("文件 %s 的 MD5 值相同: %s\n", fileName, md5A)
+				}
+			}
+			delete(filesB, fileName) // 从 filesB 中移除已比较的文件
+		}
+	}
+
+	// 检查仅存在于目录 A 的文件
+	if *checkCmdWrite {
+		fileWrite.WriteString("\n仅存在于目录 A 的文件：\n")
+	} else {
+		cl.Green("\n仅存在于目录 A 的文件：")
+	}
+	for fileName, pathA := range filesA {
+		if *checkCmdWrite {
+			fileWrite.WriteString(fmt.Sprintf("文件 %s 仅存在于目录 A: %s\n", fileName, pathA))
+		} else {
+			fmt.Printf("文件 %s 仅存在于目录 A: %s\n", fileName, pathA)
+		}
+	}
+
+	// 检查仅存在于目录 B 的文件
+	if *checkCmdWrite {
+		fileWrite.WriteString("\n仅存在于目录 B 的文件：\n")
+	} else {
+		cl.Green("\n仅存在于目录 B 的文件：")
+	}
+	for fileName, pathB := range filesB {
+		if *checkCmdWrite {
+			fileWrite.WriteString(fmt.Sprintf("文件 %s 仅存在于目录 B: %s\n", fileName, pathB))
+		} else {
+			fmt.Printf("文件 %s 仅存在于目录 B: %s\n", fileName, pathB)
+		}
+	}
 }

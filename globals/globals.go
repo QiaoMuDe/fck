@@ -20,6 +20,9 @@ var (
 
 	// 输出哈希值的文件名
 	OutputFileName = "checksum.hash"
+
+	// 输出对比结果的文件名
+	OutputCheckFileName = "check_dir.check"
 )
 
 // hash 子命令帮助信息
