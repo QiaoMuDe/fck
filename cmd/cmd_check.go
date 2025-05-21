@@ -304,32 +304,32 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 
 	// 比较相同文件名的文件
 	if *checkCmdWrite {
-		fileWrite.WriteString("比较具有相同名称的文件：\n")
+		fileWrite.WriteString("=== 比较具有相同名称的文件 ===\n")
 	} else {
-		cl.Green("比较具有相同名称的文件：")
+		cl.Green("=== 比较具有相同名称的文件 ===")
 	}
 	var sameNameCount int
 	// 遍历目录 A 中的文件
 	for fileName, pathA := range filesA {
 		if pathB, ok := filesB[fileName]; ok {
-			// 如果目录 B 中存在同名文件，比较 MD5 值
-			md5A, err := checksum(pathA, hashType)
+			// 如果目录 B 中存在同名文件，比较校验值
+			hashValueA, err := checksum(pathA, hashType)
 			if err != nil {
-				cl.PrintErrf("计算文件 %s 的 MD5 值时出错: %v\n", pathA, err)
+				cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *checkCmdType, pathA, err)
 				continue
 			}
-			md5B, err := checksum(pathB, hashType)
+			hashValueB, err := checksum(pathB, hashType)
 			if err != nil {
-				cl.PrintErrf("计算文件 %s 的 MD5 值时出错: %v\n", pathB, err)
+				cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *checkCmdType, pathB, err)
 				continue
 			}
-			if md5A != md5B {
+			if hashValueA != hashValueB {
 				diffCount++
 				sameNameCount++
 				if *checkCmdWrite {
-					fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 MD5 值不同: %s 和 %s\n", sameNameCount, fileName, md5A, md5B))
+					fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, *checkCmdType, hashValueA[len(hashValueA)-8:], hashValueB[len(hashValueB)-8:]))
 				} else {
-					fmt.Printf("%d. 文件 %s 的 MD5 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, md5A, md5B)
+					fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, *checkCmdType, hashValueA[len(hashValueA)-8:], hashValueB[len(hashValueB)-8:])
 				}
 			} else {
 				sameCount++
@@ -362,9 +362,9 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 
 	// 检查仅存在于目录 A 的文件
 	if *checkCmdWrite {
-		fileWrite.WriteString("\n仅存在于目录 A 的文件：\n")
+		fileWrite.WriteString("\n=== 仅存在于目录 A 的文件 ===\n")
 	} else {
-		cl.Green("\n仅存在于目录 A 的文件：")
+		cl.Green("\n=== 仅存在于目录 A 的文件 ===")
 	}
 	onlyACount = len(filesA)
 	var onlyACountDisplay int
@@ -386,9 +386,9 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 
 	// 检查仅存在于目录 B 的文件
 	if *checkCmdWrite {
-		fileWrite.WriteString("\n仅存在于目录 B 的文件：\n")
+		fileWrite.WriteString("\n=== 仅存在于目录 B 的文件 ===\n")
 	} else {
-		cl.Green("\n仅存在于目录 B 的文件：")
+		cl.Green("\n=== 仅存在于目录 B 的文件 ===")
 	}
 	onlyBCount = len(filesB)
 	var onlyBCountDisplay int
@@ -410,8 +410,8 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 
 	// 输出统计结果
 	if *checkCmdWrite {
-		fileWrite.WriteString(fmt.Sprintf("\n统计结果:\n相同文件: %d\n不同文件: %d\n仅A目录文件: %d\n仅B目录文件: %d\n", sameCount, diffCount, onlyACount, onlyBCount))
+		fileWrite.WriteString(fmt.Sprintf("\n=== 统计结果 ===\n相同文件: %d\n不同文件: %d\n仅A目录文件: %d\n仅B目录文件: %d\n", sameCount, diffCount, onlyACount, onlyBCount))
 	} else {
-		cl.Green(fmt.Sprintf("\n统计结果:\n相同文件: %d\n不同文件: %d\n仅A目录文件: %d\n仅B目录文件: %d", sameCount, diffCount, onlyACount, onlyBCount))
+		cl.Green(fmt.Sprintf("\n=== 统计结果 ===\n相同文件: %d\n不同文件: %d\n仅A目录文件: %d\n仅B目录文件: %d", sameCount, diffCount, onlyACount, onlyBCount))
 	}
 }
