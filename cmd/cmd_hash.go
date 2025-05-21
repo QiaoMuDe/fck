@@ -320,79 +320,141 @@ func calculateBufferSize(fileSize int64) int {
 	}
 }
 
-// collectFiles 收集指定路径下的所有文件，根据recursive标志决定是否递归
-func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+// walkDir 函数用于根据递归标志遍历指定目录并收集文件列表。
+// 参数 dirPath 是要遍历的目录路径。
+// 参数 recursive 表示是否进行递归遍历，如果为 true 则遍历目录及其子目录，否则只遍历当前目录。
+// 参数 cl 是一个颜色库实例，用于打印警告信息。
+// 返回值为收集到的文件路径切片和可能出现的错误。
+func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+	// 初始化一个字符串切片，用于存储收集到的文件路径
 	var files []string
 
-	// 检查路径是否包含通配符
+	// 判断是否开启递归模式
+	if recursive {
+		// 递归模式：遍历目录及其子目录中的所有文件
+		// 使用 filepath.WalkDir 函数递归遍历目录
+		err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+			// 检查遍历过程中是否出现错误
+			if err != nil {
+				// 如果出现错误，直接返回该错误
+				return err
+			}
+			// 判断当前条目是否为非目录文件
+			if !d.IsDir() {
+				// 如果是文件，将其路径添加到文件列表中
+				files = append(files, path)
+			}
+			// 继续遍历下一个条目
+			return nil
+		})
+		// 检查 filepath.WalkDir 函数是否返回错误
+		if err != nil {
+			// 如果出现错误，返回 nil 和包装后的错误信息
+			return nil, fmt.Errorf("遍历目录失败: %w", err)
+		}
+	} else {
+		// 非递归模式：只获取目录下的直接文件
+		// 读取指定目录下的所有条目
+		dir, err := os.ReadDir(dirPath)
+		// 检查读取目录是否失败
+		if err != nil {
+			// 如果失败，返回 nil 和包装后的错误信息
+			return nil, fmt.Errorf("读取目录失败: %w", err)
+		}
+		// 遍历目录中的所有条目
+		for _, entry := range dir {
+			// 判断当前条目是否为目录
+			if entry.IsDir() {
+				// 如果是目录，打印警告信息并跳过该目录
+				cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", entry.Name())
+				// 继续遍历下一个条目
+				continue
+			}
+			// 如果是文件，将其完整路径添加到文件列表中
+			files = append(files, filepath.Join(dirPath, entry.Name()))
+		}
+	}
+
+	// 返回收集到的文件列表和 nil 错误
+	return files, nil
+}
+
+// collectFiles 函数用于收集指定路径下的所有文件。该路径可以是普通路径（文件或目录），也可以是包含通配符的路径。
+// 参数 targetPath 是要处理的目标路径，可能包含通配符。
+// 参数 recursive 表示是否递归遍历目录，如果为 true 则会递归遍历目录及其子目录，否则只遍历当前目录。
+// 参数 cl 是一个颜色库实例，用于打印警告信息。
+// 返回值为收集到的文件路径切片和可能出现的错误。
+func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+	// 初始化一个字符串切片，用于存储收集到的文件路径
+	var files []string
+
+	// 检查路径是否包含通配符，通配符包括 *、?、[] 和 {}
 	if strings.ContainsAny(targetPath, "*?[]{}") {
-		// 处理包含通配符的路径
+		// 处理包含通配符的路径，使用 filepath.Glob 函数获取匹配的文件或目录列表
 		matchedFiles, err := filepath.Glob(targetPath)
 		if err != nil {
+			// 如果使用 filepath.Glob 函数时出现错误，返回错误信息，表示路径无效
 			return nil, fmt.Errorf("路径无效: %w", err)
 		}
 
+		// 检查是否有匹配的文件或目录
 		if len(matchedFiles) == 0 {
+			// 如果没有找到匹配的文件或目录，返回错误信息
 			return nil, fmt.Errorf("没有找到匹配的文件")
 		}
 
+		// 遍历所有匹配的文件或目录
 		for _, file := range matchedFiles {
-			if info, err := os.Stat(file); err != nil {
+			// 获取文件或目录的信息
+			info, err := os.Stat(file)
+			if err != nil {
+				// 如果无法获取文件或目录的信息，返回错误信息
 				return nil, fmt.Errorf("无法获取文件信息: %w", err)
-			} else if info.IsDir() { // 如果是目录，跳过
-				cl.PrintWarnf("跳过目录：%s", file)
-				continue
-			} else if !info.IsDir() { // 如果是文件，添加到文件列表
+			}
+			// 判断是否为目录
+			if info.IsDir() {
+				if recursive {
+					// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
+					filesInDir, err := walkDir(file, recursive, cl)
+					if err != nil {
+						// 如果遍历目录时出现错误，返回该错误
+						return nil, err
+					}
+					// 将目录中的文件添加到文件列表中
+					files = append(files, filesInDir...)
+				} else {
+					// 如果不是递归模式，打印警告信息并跳过该目录
+					cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", file)
+				}
+			} else {
+				// 如果是文件，直接添加到文件列表中
 				files = append(files, file)
-				continue
 			}
 		}
 	} else {
-		// 处理普通路径（可能是文件或目录）
+		// 处理普通路径（可能是文件或目录），获取路径的信息
 		info, err := os.Stat(targetPath)
 		if err != nil {
+			// 如果无法获取路径的信息，返回错误信息
 			return nil, fmt.Errorf("无法获取路径信息: %w", err)
 		}
 
+		// 判断是否为目录
 		if info.IsDir() {
-			// 如果是目录，根据递归标志决定处理方式
-			if recursive {
-				// 递归模式：遍历目录及其子目录中的所有文件
-				err := filepath.WalkDir(targetPath, func(path string, d fs.DirEntry, err error) error {
-					if err != nil {
-						return err
-					}
-					// 将非目录文件添加到文件列表
-					if !d.IsDir() {
-						files = append(files, path)
-					}
-					return nil
-				})
-				if err != nil {
-					return nil, fmt.Errorf("遍历目录失败: %w", err)
-				}
-			} else {
-				// 非递归模式：只获取目录下的直接文件
-				dir, err := os.ReadDir(targetPath)
-				if err != nil {
-					return nil, fmt.Errorf("读取目录失败: %w", err)
-				}
-				// 遍历目录中的所有文件
-				for _, entry := range dir {
-					if entry.IsDir() {
-						cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", entry.Name())
-						continue
-					}
-
-					// 将文件添加到文件列表
-					files = append(files, filepath.Join(targetPath, entry.Name()))
-				}
+			// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
+			filesInDir, err := walkDir(targetPath, recursive, cl)
+			if err != nil {
+				// 如果遍历目录时出现错误，返回该错误
+				return nil, err
 			}
+			// 将目录中的文件添加到文件列表中
+			files = append(files, filesInDir...)
 		} else {
-			// 如果是文件，直接添加到文件列表
+			// 如果是文件，直接将该文件路径添加到文件列表中
 			files = []string{targetPath}
 		}
 	}
 
+	// 返回收集到的文件列表和 nil 错误
 	return files, nil
 }
