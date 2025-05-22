@@ -46,10 +46,22 @@ func findCmdMain() error {
 		return fmt.Errorf("不能同时指定 -f、-d 和 -l 标志")
 	}
 
-	// 编译关键字为正则表达式
-	keywordRegex, err := regexp.Compile(*findCmdKeyword)
-	if err != nil {
-		return fmt.Errorf("关键字格式错误: %s", err)
+	// 转义关键字中的特殊字符
+	escapedKeyword := regexp.QuoteMeta(*findCmdKeyword)
+
+	// 根据用户选择是否区分大小写
+	var keywordRegex *regexp.Regexp
+	var regexpErr error
+	if *findCmdCase {
+		keywordRegex, regexpErr = regexp.Compile(escapedKeyword)
+		if regexpErr != nil {
+			return fmt.Errorf("关键字格式错误: %s", regexpErr)
+		}
+	} else {
+		keywordRegex, regexpErr = regexp.Compile("(?i)" + escapedKeyword)
+		if regexpErr != nil {
+			return fmt.Errorf("关键字格式错误: %s", regexpErr)
+		}
 	}
 
 	// 使用 filepath.WalkDir 遍历目录
@@ -77,8 +89,8 @@ func findCmdMain() error {
 			}
 			if *findCmdSymlink {
 				// 如果只查找软链接，检查文件类型
-				fileInfo, err := entry.Info() // 获取文件信息
-				if err != nil {
+				fileInfo, linkErr := entry.Info() // 获取文件信息
+				if linkErr != nil {
 					return nil
 				}
 				if fileInfo.Mode()&os.ModeSymlink == 0 { // 检查文件是否为软链接
@@ -87,8 +99,8 @@ func findCmdMain() error {
 			}
 			if *findCmdSize != "" {
 				// 检查文件大小是否符合要求
-				fileInfo, err := entry.Info()
-				if err != nil {
+				fileInfo, sizeErr := entry.Info()
+				if sizeErr != nil {
 					return nil
 				}
 				if !matchFileSize(fileInfo.Size(), *findCmdSize) {
@@ -97,8 +109,8 @@ func findCmdMain() error {
 			}
 			if *findCmdModTime != "" {
 				// 检查修改时间是否符合要求
-				fileInfo, err := entry.Info()
-				if err != nil {
+				fileInfo, mtimeErr := entry.Info()
+				if mtimeErr != nil {
 					return nil
 				}
 				// 检查文件时间是否符合要求
@@ -107,8 +119,18 @@ func findCmdMain() error {
 				}
 			}
 
-			// 输出匹配的路径
-			fmt.Println(path)
+			// 输出匹配的文件或目录路径
+			if *findCmdFullPath {
+				// 获取完整路径
+				fullPath, pathErr := filepath.Abs(path)
+				if pathErr != nil {
+					return fmt.Errorf("获取完整路径时出错: %s", pathErr)
+				}
+				fmt.Println(fullPath)
+			} else {
+				// 输出相对路径
+				fmt.Println(path)
+			}
 		}
 		return nil
 	})

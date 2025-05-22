@@ -96,10 +96,12 @@ func getPathSize(path string) (int64, error) {
 	var totalSize int64
 	// 遍历目录
 	err = filepath.Walk(path, func(filePath string, fileInfo fs.FileInfo, err error) error {
+		// 如果遍历目录遇到权限错误，则忽略该错误并给出更友好的提示信息
 		if err != nil {
 			// 如果遍历目录失败，返回错误
 			return fmt.Errorf("遍历目录失败: 路径 %s 错误: %v", filePath, err)
 		}
+
 		// 如果是文件或者不是根目录，则累加文件大小
 		if !fileInfo.IsDir() || (fileInfo.IsDir() && filePath != path) {
 			totalSize += fileInfo.Size()
