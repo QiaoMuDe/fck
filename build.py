@@ -629,6 +629,14 @@ def parse_arguments():
         help="将可执行文件安装到GOPATH/bin目录",
         default=None,
     )
+    parser.add_argument(
+        "-f",
+        "--force",
+        type=bool,
+        help="在安装模式下强制覆盖已存在的文件",
+        default=False,
+    )
+
     args = parser.parse_args()  # 解析命令行参数
 
     # 处理平台简写
@@ -676,8 +684,18 @@ def install_executable(executable_path):
 
     # 检查目标文件是否已存在
     if os.path.exists(target_path):
-        print_error(f"目标文件 {target_path} 已存在, 请先删除或重命名")
-        return False
+        if args.force:
+            try:
+                os.remove(target_path)
+                print_success(f"已删除已存在的文件 {target_path}")
+            except OSError as e:
+                print_error(f"删除文件 {target_path} 失败: {str(e)}")
+                return False
+        else:
+            print_error(
+                f"文件 {target_path} 已存在, 请先删除或重命名, 或者使用-f/--force参数强制覆盖"
+            )
+            return False
 
     # 移动文件
     try:
