@@ -119,6 +119,20 @@ func findCmdMain() error {
 				}
 			}
 
+			// 检查路径是否为隐藏文件或者隐藏目录
+			if !*findCmdHidden {
+				if isHidden(path) {
+					return nil
+				}
+			}
+
+			// 检查文件是否为只读文件
+			if *findCmdReadOnly {
+				if !isReadOnly(path) {
+					return nil
+				}
+			}
+
 			// 输出匹配的文件或目录路径
 			if *findCmdFullPath {
 				// 获取完整路径
