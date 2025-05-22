@@ -318,17 +318,34 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	// 遍历目录 A 中的文件
 	for fileName, pathA := range filesA {
 		if pathB, ok := filesB[fileName]; ok {
-			// 如果目录 B 中存在同名文件，比较校验值
-			hashValueA, err := checksum(pathA, hashType)
-			if err != nil {
-				cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *checkCmdType, pathA, err)
+			// 如果目录 B 中存在同名文件，使用errgroup并行计算校验值
+			var eg errgroup.Group
+			var hashValueA, hashValueB string
+			var errA, errB error
+
+			// 使用errgroup并行计算校验值
+			eg.Go(func() error {
+				hashValueA, errA = checksum(pathA, hashType)
+				return errA
+			})
+
+			eg.Go(func() error {
+				hashValueB, errB = checksum(pathB, hashType)
+				return errB
+			})
+
+			// 等待两个校验值计算完成
+			if err := eg.Wait(); err != nil {
+				if errA != nil {
+					cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *checkCmdType, pathA, errA)
+				}
+				if errB != nil {
+					cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *checkCmdType, pathB, errB)
+				}
 				continue
 			}
-			hashValueB, err := checksum(pathB, hashType)
-			if err != nil {
-				cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *checkCmdType, pathB, err)
-				continue
-			}
+
+			// 比较两个文件的校验值
 			if hashValueA != hashValueB {
 				diffCount++
 				sameNameCount++
