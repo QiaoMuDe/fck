@@ -632,7 +632,7 @@ def parse_arguments():
     parser.add_argument(
         "-f",
         "--force",
-        type=bool,
+        action="store_true",
         help="在安装模式下强制覆盖已存在的文件",
         default=False,
     )
@@ -656,8 +656,13 @@ def parse_arguments():
 
 
 # 主程序入口 #
-def install_executable(executable_path):
-    """将可执行文件安装到GOPATH/bin目录"""
+def install_executable(executable_path, args=None):
+    """将可执行文件安装到GOPATH/bin目录
+    
+    参数:
+        executable_path: 要安装的可执行文件路径
+        args: 命令行参数对象，包含force等标志
+    """
     # 检查GOPATH环境变量
     gopath = os.getenv("GOPATH")
     if not gopath:
@@ -684,7 +689,7 @@ def install_executable(executable_path):
 
     # 检查目标文件是否已存在
     if os.path.exists(target_path):
-        if args.force:
+        if args and args.force:
             try:
                 os.remove(target_path)
                 print_success(f"已删除已存在的文件 {target_path}")
@@ -716,7 +721,7 @@ def main():
 
     # 如果指定了安装参数
     if args.install:
-        if not install_executable(args.install):
+        if not install_executable(args.install, args):
             sys.exit(1)
         sys.exit(0)
 
