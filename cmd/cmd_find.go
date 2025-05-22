@@ -119,18 +119,20 @@ func findCmdMain() error {
 				}
 			}
 
-			// 检查路径是否为隐藏文件或者隐藏目录
-			if !*findCmdHidden {
-				if isHidden(path) {
-					return nil
+			// 检查路径是否为隐藏文件或目录(默认不显示隐藏文件)
+			if !*findCmdHidden && isHidden(path) {
+				// 如果是隐藏目录，跳过整个目录
+				if entry.IsDir() {
+					return filepath.SkipDir
 				}
+
+				// 如果是隐藏文件，跳过单个文件
+				return nil
 			}
 
 			// 检查文件是否为只读文件
-			if *findCmdReadOnly {
-				if !isReadOnly(path) {
-					return nil
-				}
+			if *findCmdReadOnly && !isReadOnly(path) {
+				return nil
 			}
 
 			// 输出匹配的文件或目录路径

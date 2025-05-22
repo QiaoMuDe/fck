@@ -27,16 +27,17 @@ func getLast8Chars(s string) string {
 
 // isHidden 判断文件或目录是否为隐藏
 func isHidden(path string) bool {
+	// 获取文件名
 	name := filepath.Base(path)
+
+	// 检查文件名是否以 "." 开头（适用于所有系统，包括.git目录）
+	if len(name) > 2 && name[0] == '.' {
+		return true
+	}
 
 	// 在 Linux 和 macOS 上，隐藏文件以 "." 开头
 	if runtime.GOOS != "windows" {
-		return name[0] == '.'
-	}
-
-	// 为了兼容 Windows，还需要检查文件名是否以 "." 开头
-	if name[0] == '.' {
-		return true
+		return false
 	}
 
 	// 在 Windows 上，需要通过文件属性判断
