@@ -156,13 +156,14 @@ func hashRunTasks(ctx context.Context, files []string, hashType func() hash.Hash
 		}
 	}
 
+fileLoop:
 	// 遍历文件列表并启动任务
 	for _, file := range files {
 		// 检查上下文是否已取消
 		select {
 		case <-ctx.Done():
 			errors <- ctx.Err()
-			break
+			break fileLoop // 跳出循环，不再处理其他文件
 		default:
 			// 向工作池发送一个信号，表示有一个任务开始
 			jobPool <- struct{}{}

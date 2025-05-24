@@ -164,15 +164,9 @@ func humanReadableSize(size int64) string {
 		return "0B"
 	}
 
-	// 去除小数部分末尾的 .00
-	if strings.HasSuffix(sizeF, ".00") {
-		sizeF = strings.TrimRight(sizeF, ".00")
-	}
-
-	// 去除小数部分末尾的 .0
-	if strings.HasSuffix(sizeF, ".0") {
-		sizeF = strings.TrimRight(sizeF, ".0")
-	}
+	// 去除小数部分末尾的 .00 或 .0
+	sizeF = strings.TrimSuffix(sizeF, ".00")
+	sizeF = strings.TrimSuffix(sizeF, ".0")
 
 	// 去除小数点部分末尾的0
 	if strings.Contains(sizeF, ".") {

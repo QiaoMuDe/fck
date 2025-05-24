@@ -25,11 +25,11 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		<-sigs
 		// 使用自定义错误作为取消原因
-		fmt.Println("用户中断操作")
+		cl.PrintWarn("用户中断操作")
 	}()
 
-	// -f 参数逻辑优先执行
-	if *checkCmdFile != "" {
+	// 执行根据单校验文件校验目录完整性的逻辑 -f 参数
+	if *checkCmdFile != "" && *checkCmdDirs == "" {
 		if err := fileCheck(*checkCmdFile, cl); err != nil {
 			return err
 		}
@@ -99,28 +99,20 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 	return nil
 }
 
-// fileCheck 检查校验文件是否正确
-func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
-	// 存储校验值文件的map
+// readHashFileToMap 读取校验文件并加载到 map 中
+func readHashFileToMap(checkFile string, cl *colorlib.ColorLib) (map[string]string, func() hash.Hash, error) {
+	// 存储校验值文件的 map
 	checkFileHashes := make(map[string]string)
 
-	// 存储目标目录文件的map
-	targetDirHashes := make(map[string]string)
-
-	// 检查校验文件是否为空
-	if *checkCmdFile == "" {
-		return fmt.Errorf("在校验文件时，必须指定一个校验文件 checksum.hash")
-	}
-
 	// 检查校验文件是否存在
-	if _, err := os.Stat(*checkCmdFile); err != nil {
-		return fmt.Errorf("校验文件不存在: %s", *checkCmdFile)
+	if _, err := os.Stat(checkFile); err != nil {
+		return nil, nil, fmt.Errorf("校验文件不存在: %s", checkFile)
 	}
 
 	// 读取校验文件
-	checkFileRead, openErr := os.OpenFile(*checkCmdFile, os.O_RDONLY, 0644)
+	checkFileRead, openErr := os.OpenFile(checkFile, os.O_RDONLY, 0644)
 	if openErr != nil {
-		return fmt.Errorf("无法打开校验文件: %v", openErr)
+		return nil, nil, fmt.Errorf("无法打开校验文件: %v", openErr)
 	}
 	defer checkFileRead.Close()
 
@@ -128,38 +120,35 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 	headerInfo := make([]byte, 1024)
 	n, readErr := checkFileRead.ReadAt(headerInfo, 0)
 	if readErr != nil && readErr != io.EOF {
-		return fmt.Errorf("读取校验文件时出错: %v", readErr)
+		return nil, nil, fmt.Errorf("读取校验文件时出错: %v", readErr)
 	}
 	headerInfo = headerInfo[:n] // 调整切片长度以匹配实际读取的字节数
 
 	// 检查是否是#开头的文件
-	// 原代码中 headerInfo 是 nil 切片，直接访问索引会报错，这里先检查切片长度
 	if len(headerInfo) == 0 || headerInfo[0] != '#' {
-		return fmt.Errorf("校验文件头格式错误, 必须以#开头")
+		return nil, nil, fmt.Errorf("校验文件头格式错误, 必须以#开头")
 	}
-	// 解析哈希算法，以井号为分隔符
+
 	// 解析哈希算法和时间戳，以井号为分隔符
 	parts := strings.Split(string(headerInfo), "#")
 	if len(parts) < 3 {
-		fmt.Println("校验文件头格式错误, 格式应为 #hashType#timestamp")
-		return fmt.Errorf("校验文件头格式错误, 格式应为 #hashType#timestamp")
+		return nil, nil, fmt.Errorf("校验文件头格式错误, 格式应为 #hashType#timestamp")
 	}
 	hashType := parts[1] // 哈希算法
 	if hashType == "" {
-		fmt.Println("校验文件头格式错误, 必须指定哈希算法")
-		return fmt.Errorf("校验文件头格式错误, 必须指定哈希算法")
+		return nil, nil, fmt.Errorf("校验文件头格式错误, 必须指定哈希算法")
 	}
 
 	// 检查哈希算法是否支持
 	hashFunc, ok := globals.SupportedAlgorithms[string(hashType)]
 	if !ok {
-		return fmt.Errorf("不支持的哈希算法: %s", string(hashType))
+		return nil, nil, fmt.Errorf("不支持的哈希算法: %s", string(hashType))
 	}
 
 	// 重置文件指针到开头
 	_, seekErr := checkFileRead.Seek(0, io.SeekStart)
 	if seekErr != nil {
-		return fmt.Errorf("重置文件指针时出错: %v", seekErr)
+		return nil, nil, fmt.Errorf("重置文件指针时出错: %v", seekErr)
 	}
 
 	// 解析校验文件内容
@@ -201,8 +190,27 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("读取校验文件时出错: %v", err)
+		return nil, nil, fmt.Errorf("读取校验文件时出错: %v", err)
 	}
+
+	return checkFileHashes, hashFunc, nil
+}
+
+// fileCheck 根据单校验文件校验目录完整性的逻辑 -f 参数
+func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
+	// 检查校验文件是否为空
+	if *checkCmdFile == "" {
+		return fmt.Errorf("在校验文件时，必须指定一个校验文件 checksum.hash")
+	}
+
+	// 读取校验文件并加载到 map 中
+	checkFileHashes, hashFunc, err := readHashFileToMap(checkFile, cl)
+	if err != nil {
+		return err
+	}
+
+	// 存储目标目录文件的 map
+	targetDirHashes := make(map[string]string)
 
 	// 计算目标目录文件哈希值
 	for file := range checkFileHashes {
@@ -240,7 +248,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 		}
 	}
 
-	// 检查checkCount是否为0
+	// 检查 checkCount 是否为 0
 	if checkCount == 0 {
 		cl.PrintOk("校验成功，无文件差异")
 	}
