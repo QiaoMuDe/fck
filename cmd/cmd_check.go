@@ -36,6 +36,14 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		return nil
 	}
 
+	// 新增逻辑：如果指定校验文件不为空，同时也通过*checkCmdDirs指定了目录
+	if *checkCmdFile != "" && *checkCmdDirs != "" {
+		if err := checkWithFileAndDir(*checkCmdFile, *checkCmdDirs, cl); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	// 检查三个参数是否都为空
 	if *checkCmdFile == "" && *checkCmdDirA == "" && *checkCmdDirB == "" {
 		return fmt.Errorf("必须指定一个校验文件或两个目录。或 -h 参数查看帮助信息。")
@@ -445,4 +453,166 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	} else {
 		cl.Green(fmt.Sprintf("\n=== 统计结果 ===\n相同文件: %d\n不同文件: %d\n仅A目录文件: %d\n仅B目录文件: %d", sameCount, diffCount, onlyACount, onlyBCount))
 	}
+}
+
+// compareDirWithCheckFile 对比校验文件与目录文件
+func compareDirWithCheckFile(checkFileHashes map[string]string, dirFiles map[string]string, hashFunc func() hash.Hash, cl *colorlib.ColorLib, fileWrite *os.File) {
+	// 初始化统计计数器
+	sameCount := 0
+	diffCount := 0
+	onlyCheckFileCount := 0
+	onlyDirFileCount := 0
+
+	// 比较相同文件名的文件
+	if *checkCmdWrite {
+		fileWrite.WriteString("=== 比较具有相同名称的文件 ===\n")
+	} else {
+		cl.Green("=== 比较具有相同名称的文件 ===")
+	}
+	var sameNameCount int
+	// 遍历校验文件中的文件
+	for fileName, checkHash := range checkFileHashes {
+		if dirPath, ok := dirFiles[fileName]; ok {
+			// 如果目录中存在同名文件，计算其哈希值并比较
+			hashValue, err := checksum(dirPath, hashFunc)
+			if err != nil {
+				cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *checkCmdType, dirPath, err)
+				continue
+			}
+
+			// 比较两个文件的校验值
+			if hashValue != checkHash {
+				diffCount++
+				sameNameCount++
+				if *checkCmdWrite {
+					fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s\n  目录文件: %s\n", sameNameCount, fileName, *checkCmdType, getLast8Chars(checkHash), getLast8Chars(hashValue)))
+				} else {
+					fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s\n  目录文件: %s\n", sameNameCount, fileName, *checkCmdType, getLast8Chars(checkHash), getLast8Chars(hashValue))
+				}
+			} else {
+				sameCount++
+			}
+
+			// 从 dirFiles 中移除已比较的文件
+			delete(dirFiles, fileName)
+		}
+	}
+
+	// 如果没有相同文件则输出提示
+	if sameCount == 0 {
+		if *checkCmdWrite {
+			fileWrite.WriteString("暂无相同文件\n")
+		} else {
+			fmt.Println("暂无相同文件")
+		}
+	}
+
+	// 如果没有不同文件则输出提示
+	if diffCount == 0 {
+		if *checkCmdWrite {
+			fileWrite.WriteString("暂无不同文件\n")
+		} else {
+			fmt.Println("暂无不同文件")
+		}
+	}
+
+	// 检查仅存在于校验文件中的文件
+	if *checkCmdWrite {
+		fileWrite.WriteString("\n=== 仅存在于校验文件中的文件 ===\n")
+	} else {
+		cl.Green("\n=== 仅存在于校验文件中的文件 ===")
+	}
+	onlyCheckFileCount = len(checkFileHashes)
+	var onlyCheckFileCountDisplay int
+	for fileName, checkHash := range checkFileHashes {
+		onlyCheckFileCountDisplay++
+		if *checkCmdWrite {
+			fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于校验文件: %s\n", onlyCheckFileCountDisplay, fileName, checkHash))
+		} else {
+			fmt.Printf("%d. 文件 %s 仅存在于校验文件: %s\n", onlyCheckFileCountDisplay, fileName, checkHash)
+		}
+	}
+	if onlyCheckFileCountDisplay == 0 {
+		if *checkCmdWrite {
+			fileWrite.WriteString("无匹配文件\n")
+		} else {
+			fmt.Println("无匹配文件")
+		}
+	}
+
+	// 检查仅存在于目录中的文件
+	if *checkCmdWrite {
+		fileWrite.WriteString("\n=== 仅存在于目录中的文件 ===\n")
+	} else {
+		cl.Green("\n=== 仅存在于目录中的文件 ===")
+	}
+	onlyDirFileCount = len(dirFiles)
+	var onlyDirFileCountDisplay int
+	for fileName, dirPath := range dirFiles {
+		onlyDirFileCountDisplay++
+		if *checkCmdWrite {
+			fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, fileName, dirPath))
+		} else {
+			fmt.Printf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, fileName, dirPath)
+		}
+	}
+	if onlyDirFileCountDisplay == 0 {
+		if *checkCmdWrite {
+			fileWrite.WriteString("无匹配文件\n")
+		} else {
+			fmt.Println("无匹配文件")
+		}
+	}
+
+	// 输出统计结果
+	if *checkCmdWrite {
+		fileWrite.WriteString(fmt.Sprintf("\n=== 统计结果 ===\n相同文件: %d\n不同文件: %d\n仅校验文件: %d\n仅目录文件: %d\n", sameCount, diffCount, onlyCheckFileCount, onlyDirFileCount))
+	} else {
+		cl.Green(fmt.Sprintf("\n=== 统计结果 ===\n相同文件: %d\n不同文件: %d\n仅校验文件: %d\n仅目录文件: %d", sameCount, diffCount, onlyCheckFileCount, onlyDirFileCount))
+	}
+}
+
+// checkWithFileAndDir 根据校验文件和目录进行校验的逻辑
+func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) error {
+	// 读取校验文件并加载到 map 中
+	checkFileHashes, hashFunc, err := readHashFileToMap(checkFile, cl)
+	if err != nil {
+		return err
+	}
+
+	// 获取指定目录下的文件列表
+	dirFiles, err := getFiles(checkDir)
+	if err != nil {
+		return fmt.Errorf("读取目录 %s 时出错: %v", checkDir, err)
+	}
+
+	// 检查是否需要写入文件
+	var fileWrite *os.File
+	if *checkCmdWrite {
+		var err error
+		// 打开文件以写入
+		fileWrite, err = os.OpenFile(globals.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return fmt.Errorf("打开文件 %s 失败: %v", globals.OutputCheckFileName, err)
+		}
+		defer fileWrite.Close()
+
+		// 获取时间
+		now := time.Now()
+
+		// 写入文件头
+		if _, err := fileWrite.WriteString(fmt.Sprintf("#%s#%s\n\n", *checkCmdType, now.Format("2006-01-02 15:04:05"))); err != nil {
+			return fmt.Errorf("写入文件头失败: %v", err)
+		}
+	}
+
+	// 对比校验文件与目录文件
+	compareDirWithCheckFile(checkFileHashes, dirFiles, hashFunc, cl, fileWrite)
+
+	// 如果是写入文件模式，则打印文件路径
+	if *checkCmdWrite {
+		cl.PrintOkf("比较结果已写入文件: %s", globals.OutputCheckFileName)
+	}
+
+	return nil
 }
