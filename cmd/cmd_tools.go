@@ -18,8 +18,17 @@ func getLast8Chars(s string) string {
 	return s[len(s)-8:]
 }
 
-// 用于根据路径按照类型匹配颜色然后输出
-func printPathColor(path string, cl *colorlib.ColorLib) error {
+// printPathColor 根据路径类型以不同颜色输出路径字符串
+// 参数:
+//
+//	path: 要检查的路径(用于获取文件类型信息)
+//	s: 要输出的字符串内容
+//	cl: colorlib.ColorLib实例，用于彩色输出
+//
+// 返回值:
+//
+//	error: 如果获取路径信息失败则返回错误，否则返回nil
+func printPathColor(path string, s string, cl *colorlib.ColorLib) error {
 	// 获取路径信息
 	pathInfo, statErr := os.Stat(path)
 	if statErr != nil {
@@ -28,18 +37,18 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 
 	// 根据路径类型设置颜色
 	switch mode := pathInfo.Mode(); {
-	// 目录
+	// 目录 - 使用蓝色输出
 	case mode.IsDir():
-		cl.Blue(path)
-	// 文件
+		cl.Blue(s)
+	// 普通文件 - 使用绿色输出
 	case mode.IsRegular():
-		cl.Green(path)
-	// 符号链接
+		cl.Green(s)
+	// 符号链接 - 使用黄色输出
 	case mode&os.ModeSymlink != 0:
-		cl.Yellow(path)
-	// 其他
+		cl.Yellow(s)
+	// 其他类型文件 - 使用红色输出
 	default:
-		cl.Red(path)
+		cl.Red(s)
 	}
 
 	return nil

@@ -146,7 +146,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				}
 				// 输出完整路径
 				if *findCmdColor {
-					if err := printPathColor(fullPath, cl); err != nil {
+					if err := printPathColor(fullPath, fullPath, cl); err != nil {
 						return fmt.Errorf("输出路径时出错: %s", err)
 					}
 				} else {
@@ -155,7 +155,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 			} else {
 				// 输出相对路径
 				if *findCmdColor {
-					if err := printPathColor(path, cl); err != nil {
+					if err := printPathColor(path, path, cl); err != nil {
 						return fmt.Errorf("输出路径时出错: %s", err)
 					}
 				} else {

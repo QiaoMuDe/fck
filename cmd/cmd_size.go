@@ -47,10 +47,16 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 				}
 
 				// 打印结果
-				fmt.Printf("%-15s\t%s\n", humanReadableSize(size), filePath)
+				if *sizeCmdColor {
+					if err := printPathColor(filePath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size), filePath), cl); err != nil {
+						cl.PrintErrf("输出路径时出错: %s", err)
+						continue
+					}
+				} else {
+					fmt.Printf("%-15s\t%s\n", humanReadableSize(size), filePath)
+				}
 				continue
 			}
-
 			return nil
 		}
 
@@ -59,8 +65,16 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			cl.PrintErrf("获取文件信息失败: 路径 %s 错误: %v", targetPath, err)
 			continue
 		} else if !info.IsDir() {
-			fmt.Printf("%-15s\t%s\n", humanReadableSize(info.Size()), targetPath)
-			continue
+			// 根据是否启用颜色打印结果
+			if *sizeCmdColor {
+				if err := printPathColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(info.Size()), targetPath), cl); err != nil {
+					cl.PrintErrf("输出路径时出错: %s", err)
+					continue
+				}
+			} else {
+				fmt.Printf("%-15s\t%s\n", humanReadableSize(info.Size()), targetPath)
+				continue
+			}
 		}
 
 		// 如果是目录，则递归计算大小
@@ -70,9 +84,16 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			continue
 		}
 
-		// 打印结果
-		fmt.Printf("%-15s\t%s\n", humanReadableSize(size), targetPath)
-		continue
+		// 根据是否启用颜色打印结果
+		if *sizeCmdColor {
+			if err := printPathColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size), targetPath), cl); err != nil {
+				cl.PrintErrf("输出路径时出错: %s", err)
+				continue
+			}
+		} else {
+			fmt.Printf("%-15s\t%s\n", humanReadableSize(size), targetPath)
+			continue
+		}
 	}
 
 	return nil

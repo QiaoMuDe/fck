@@ -17,8 +17,9 @@ var (
 	hashCmdWrite     = hashCmd.Bool("w", false, "将哈希值写入文件, 文件名为checksum.hash")
 
 	// fck size 子命令
-	sizeCmd     = flag.NewFlagSet("size", flag.ExitOnError)
-	sizeCmdHelp = sizeCmd.Bool("h", false, "打印帮助信息并退出")
+	sizeCmd      = flag.NewFlagSet("size", flag.ExitOnError)
+	sizeCmdHelp  = sizeCmd.Bool("h", false, "打印帮助信息并退出")
+	sizeCmdColor = sizeCmd.Bool("c", false, "启用颜色输出")
 
 	// fck check 子命令
 	checkCmd         = flag.NewFlagSet("check", flag.ExitOnError)
@@ -43,8 +44,8 @@ var (
 	findCmdReadOnly = findCmd.Bool("ro", false, "限制只查找只读文件")
 	findCmdSize     = findCmd.String("size", "", "按文件大小过滤, 格式如+5M(大于5M)或-5M(小于5M), 支持单位B/K/M/G")
 	findCmdModTime  = findCmd.String("mtime", "", "按修改时间查找, 格式如+5(大于5天)或-5(小于5天)")
-	findCmdCase     = findCmd.Bool("c", false, "开启大小写敏感匹配, 默认不区分大小写")
+	findCmdCase     = findCmd.Bool("C", false, "启用大小写敏感匹配, 默认不区分大小写")
 	findCmdFullPath = findCmd.Bool("full", false, "是否显示完整路径, 默认显示匹配到的路径")
 	findCmdHidden   = findCmd.Bool("hidden", false, "是否显示隐藏文件, 默认不显示隐藏文件")
-	findCmdColor    = findCmd.Bool("color", false, "启用颜色输出")
+	findCmdColor    = findCmd.Bool("c", false, "启用颜色输出")
 )
