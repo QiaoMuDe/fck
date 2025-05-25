@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// checkCmdMain 是 check 命令的主函数
 func checkCmdMain(cl *colorlib.ColorLib) error {
 	// 启动一个 goroutine，在用户按下 Ctrl+C 时取消操作
 	go func() {
@@ -28,7 +29,12 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		cl.PrintWarn("用户中断操作")
 	}()
 
-	// 执行根据单校验文件校验目录完整性的逻辑 -f 参数
+	// 检查三个参数是否都为空
+	if *checkCmdFile == "" && *checkCmdDirA == "" && *checkCmdDirB == "" {
+		return fmt.Errorf("必须指定一个校验文件或两个目录。或 -h 参数查看帮助信息。")
+	}
+
+	// (1) 执行根据单校验文件校验目录完整性的逻辑 -f 参数
 	if *checkCmdFile != "" && *checkCmdDirs == "" {
 		if err := fileCheck(*checkCmdFile, cl); err != nil {
 			return err
@@ -36,7 +42,7 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		return nil
 	}
 
-	// 新增逻辑：如果指定校验文件不为空，同时也通过*checkCmdDirs指定了目录
+	// (2) 如果指定校验文件不为空，同时也通过*checkCmdDirs指定了目录 -f 参数和 -d 参数
 	if *checkCmdFile != "" && *checkCmdDirs != "" {
 		if err := checkWithFileAndDir(*checkCmdFile, *checkCmdDirs, cl); err != nil {
 			return err
@@ -44,16 +50,22 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		return nil
 	}
 
-	// 检查三个参数是否都为空
-	if *checkCmdFile == "" && *checkCmdDirA == "" && *checkCmdDirB == "" {
-		return fmt.Errorf("必须指定一个校验文件或两个目录。或 -h 参数查看帮助信息。")
-	}
-
-	// 检查两个目录是否都为空
+	// (3) 执行对比目录A和目录B的逻辑 -a 参数和 -b 参数
 	if *checkCmdDirA == "" || *checkCmdDirB == "" {
-		return fmt.Errorf("必须指定两个目录。或 -h 参数查看帮助信息。")
+		return fmt.Errorf("对比目录时，必须同时指定 -a 和 -b 参数。或 -h 参数查看帮助信息。")
+	}
+	if *checkCmdDirA != "" && *checkCmdDirB != "" {
+		if err := checkWithDirAndDir(cl); err != nil {
+			return err
+		}
+		return nil
 	}
 
+	return nil
+}
+
+// 对比dirA和dirB两个目录的文件内容是否一致
+func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 	// 检查目录A 和 目录B 是否存在
 	if _, err := os.Stat(*checkCmdDirA); err != nil {
 		return fmt.Errorf("目录A不存在: %s", *checkCmdDirA)
@@ -183,22 +195,46 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib) (map[string]stri
 
 		// 解析校验文件中的哈希值和文件路径
 		parts := strings.Fields(line) // 按空格分割
-		if len(parts) != 2 {          // 如果分割后的长度不为 2，则跳过
-			cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s", checkFile, lineCount, line)
-			continue
-		}
-		expectedHash := parts[0]                 // 哈希值
-		filePath := strings.Join(parts[1:], " ") // 文件路径
+
+		// 获取哈希值
+		expectedHash := parts[0]
+
+		// 获取文件路径, 从第二个元素开始到结尾
+		filePath := strings.Join(parts[1:], " ")
 
 		// 去除路径中的引号
 		filePath = strings.Trim(filePath, `"`)
 
+		// 将路径中的双\\替换为单\
+		filePath = strings.ReplaceAll(filePath, `\\`, `\`)
+
+		// 手动解析路径，找到根目录部分
+		rootDir := strings.Split(filePath, string(filepath.Separator))[0]
+
+		// 获取相对路径
+		relPath, err := filepath.Rel(rootDir, filePath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("获取相对路径时出错: %v", err)
+		}
+
+		// 如果哈希值或文件路径为空，则跳过
+		if expectedHash == "" || relPath == "" {
+			cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s", checkFile, lineCount, line)
+			continue
+		}
+
 		// 存储到 map 中
-		checkFileHashes[filePath] = expectedHash
+		checkFileHashes[relPath] = expectedHash
 	}
 
+	// 检查是否有错误发生
 	if err := scanner.Err(); err != nil {
 		return nil, nil, fmt.Errorf("读取校验文件时出错: %v", err)
+	}
+
+	// 检查map是否为空
+	if len(checkFileHashes) == 0 {
+		return nil, nil, fmt.Errorf("没有找到有效的校验文件内容")
 	}
 
 	return checkFileHashes, hashFunc, nil
@@ -309,7 +345,15 @@ func getFiles(dir string) (map[string]string, error) {
 		}
 		// 如果是文件，则加入到 map 中
 		if !d.IsDir() {
-			files[d.Name()] = path
+			relPath, err := filepath.Rel(dir, path)
+			if err != nil {
+				return fmt.Errorf("获取相对路径失败: %v", err)
+			}
+			if relPath == "" {
+				return fmt.Errorf("相对路径为空")
+			}
+
+			files[relPath] = path // 使用相对路径作为键
 		}
 		return nil
 	})
@@ -324,7 +368,7 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	onlyACount := 0
 	onlyBCount := 0
 
-	// 比较相同文件名的文件
+	// 比较相同路径的文件
 	if *checkCmdWrite {
 		fileWrite.WriteString("=== 比较具有相同名称的文件 ===\n")
 	} else {
@@ -332,8 +376,8 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	}
 	var sameNameCount int
 	// 遍历目录 A 中的文件
-	for fileName, pathA := range filesA {
-		if pathB, ok := filesB[fileName]; ok {
+	for path, pathA := range filesA {
+		if pathB, ok := filesB[path]; ok {
 			// 如果目录 B 中存在同名文件，使用errgroup并行计算校验值
 			var eg errgroup.Group
 			var hashValueA, hashValueB string
@@ -365,19 +409,30 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 			if hashValueA != hashValueB {
 				diffCount++
 				sameNameCount++
+				// 根据 -w 参数决定是否将结果写入文件
 				if *checkCmdWrite {
-					fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, *checkCmdType, getLast8Chars(hashValueA), getLast8Chars(hashValueB)))
+					// 根据 -full 参数决定是否显示完整路径
+					if *checkCmdFullPath {
+						fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, path, *checkCmdType, getLast8Chars(hashValueA), getLast8Chars(hashValueB)))
+					} else {
+						fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, filepath.Base(path), *checkCmdType, getLast8Chars(hashValueA), getLast8Chars(hashValueB)))
+					}
 				} else {
-					fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, fileName, *checkCmdType, getLast8Chars(hashValueA), getLast8Chars(hashValueB))
+					// 根据 -full 参数决定是否显示完整路径
+					if *checkCmdFullPath {
+						fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, path, *checkCmdType, getLast8Chars(hashValueA), getLast8Chars(hashValueB))
+					} else {
+						fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s\n  目录 B: %s\n", sameNameCount, filepath.Base(path), *checkCmdType, getLast8Chars(hashValueA), getLast8Chars(hashValueB))
+					}
 				}
 			} else {
 				sameCount++
 			}
 
 			// 从 filesB 中移除已比较的文件
-			delete(filesB, fileName)
+			delete(filesB, path)
 			// 从 filesA 中移除已比较的文件
-			delete(filesA, fileName)
+			delete(filesA, path)
 		}
 	}
 
@@ -407,12 +462,23 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	}
 	onlyACount = len(filesA)
 	var onlyACountDisplay int
-	for fileName, pathA := range filesA {
+	for path, pathA := range filesA {
 		onlyACountDisplay++
+		// 根据 -w 参数决定是否将结果写入文件
 		if *checkCmdWrite {
-			fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录 A: %s\n", onlyACountDisplay, fileName, pathA))
+			// 根据 -full 参数决定是否显示完整路径
+			if *checkCmdFullPath {
+				fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录 A: %s\n", onlyACountDisplay, path, pathA))
+			} else {
+				fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录 A: %s\n", onlyACountDisplay, filepath.Base(path), pathA))
+			}
 		} else {
-			fmt.Printf("%d. 文件 %s 仅存在于目录 A: %s\n", onlyACountDisplay, fileName, pathA)
+			// 根据 -full 参数决定是否显示完整路径
+			if *checkCmdFullPath {
+				fmt.Printf("%d. 文件 %s 仅存在于目录 A: %s\n", onlyACountDisplay, path, pathA)
+			} else {
+				fmt.Printf("%d. 文件 %s 仅存在于目录 A: %s\n", onlyACountDisplay, filepath.Base(path), pathA)
+			}
 		}
 	}
 	if onlyACountDisplay == 0 {
@@ -431,12 +497,23 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	}
 	onlyBCount = len(filesB)
 	var onlyBCountDisplay int
-	for fileName, pathB := range filesB {
+	for path, pathB := range filesB {
 		onlyBCountDisplay++
+		// 根据 -w 参数决定是否将结果写入文件
 		if *checkCmdWrite {
-			fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录 B: %s\n", onlyBCountDisplay, fileName, pathB))
+			// 根据 -full 参数决定是否显示完整路径
+			if *checkCmdFullPath {
+				fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录 B: %s\n", onlyBCountDisplay, path, pathB))
+			} else {
+				fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录 B: %s\n", onlyBCountDisplay, filepath.Base(path), pathB))
+			}
 		} else {
-			fmt.Printf("%d. 文件 %s 仅存在于目录 B: %s\n", onlyBCountDisplay, fileName, pathB)
+			// 根据 -full 参数决定是否显示完整路径
+			if *checkCmdFullPath {
+				fmt.Printf("%d. 文件 %s 仅存在于目录 B: %s\n", onlyBCountDisplay, path, pathB)
+			} else {
+				fmt.Printf("%d. 文件 %s 仅存在于目录 B: %s\n", onlyBCountDisplay, filepath.Base(path), pathB)
+			}
 		}
 	}
 	if onlyBCountDisplay == 0 {
@@ -471,8 +548,8 @@ func compareDirWithCheckFile(checkFileHashes map[string]string, dirFiles map[str
 	}
 	var sameNameCount int
 	// 遍历校验文件中的文件
-	for fileName, checkHash := range checkFileHashes {
-		if dirPath, ok := dirFiles[fileName]; ok {
+	for path, checkHash := range checkFileHashes {
+		if dirPath, ok := dirFiles[path]; ok {
 			// 如果目录中存在同名文件，计算其哈希值并比较
 			hashValue, err := checksum(dirPath, hashFunc)
 			if err != nil {
@@ -484,17 +561,28 @@ func compareDirWithCheckFile(checkFileHashes map[string]string, dirFiles map[str
 			if hashValue != checkHash {
 				diffCount++
 				sameNameCount++
+				// 根据 -w 参数决定是否将结果写入文件
 				if *checkCmdWrite {
-					fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s\n  目录文件: %s\n", sameNameCount, fileName, *checkCmdType, getLast8Chars(checkHash), getLast8Chars(hashValue)))
+					// 根据 -full 参数决定是否显示完整路径
+					if *checkCmdFullPath {
+						fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s\n  目录文件: %s\n", sameNameCount, path, *checkCmdType, getLast8Chars(checkHash), getLast8Chars(hashValue)))
+					} else {
+						fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s\n  目录文件: %s\n", sameNameCount, filepath.Base(path), *checkCmdType, getLast8Chars(checkHash), getLast8Chars(hashValue)))
+					}
 				} else {
-					fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s\n  目录文件: %s\n", sameNameCount, fileName, *checkCmdType, getLast8Chars(checkHash), getLast8Chars(hashValue))
+					// 根据 -full 参数决定是否显示完整路径
+					if *checkCmdFullPath {
+						fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s\n  目录文件: %s\n", sameNameCount, path, *checkCmdType, getLast8Chars(checkHash), getLast8Chars(hashValue))
+					} else {
+						fmt.Printf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s\n  目录文件: %s\n", sameNameCount, filepath.Base(path), *checkCmdType, getLast8Chars(checkHash), getLast8Chars(hashValue))
+					}
 				}
 			} else {
 				sameCount++
 			}
 
-			// 从 dirFiles 中移除已比较的文件
-			delete(dirFiles, fileName)
+			delete(dirFiles, path)        // 从 dirFiles 中移除已比较的文件
+			delete(checkFileHashes, path) // 从 checkFileHashes 中移除已比较的文件
 		}
 	}
 
@@ -524,12 +612,23 @@ func compareDirWithCheckFile(checkFileHashes map[string]string, dirFiles map[str
 	}
 	onlyCheckFileCount = len(checkFileHashes)
 	var onlyCheckFileCountDisplay int
-	for fileName, checkHash := range checkFileHashes {
+	for path, checkHash := range checkFileHashes {
 		onlyCheckFileCountDisplay++
+		// 根据 -w 参数决定是否将结果写入文件
 		if *checkCmdWrite {
-			fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于校验文件: %s\n", onlyCheckFileCountDisplay, fileName, checkHash))
+			// 根据 -full 参数决定是否显示完整路径
+			if *checkCmdFullPath {
+				fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于校验文件: %s\n", onlyCheckFileCountDisplay, path, checkHash))
+			} else {
+				fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于校验文件: %s\n", onlyCheckFileCountDisplay, filepath.Base(path), checkHash))
+			}
 		} else {
-			fmt.Printf("%d. 文件 %s 仅存在于校验文件: %s\n", onlyCheckFileCountDisplay, fileName, checkHash)
+			// 根据 -full 参数决定是否显示完整路径
+			if *checkCmdFullPath {
+				fmt.Printf("%d. 文件 %s 仅存在于校验文件: %s\n", onlyCheckFileCountDisplay, path, checkHash)
+			} else {
+				fmt.Printf("%d. 文件 %s 仅存在于校验文件: %s\n", onlyCheckFileCountDisplay, filepath.Base(path), checkHash)
+			}
 		}
 	}
 	if onlyCheckFileCountDisplay == 0 {
@@ -548,12 +647,23 @@ func compareDirWithCheckFile(checkFileHashes map[string]string, dirFiles map[str
 	}
 	onlyDirFileCount = len(dirFiles)
 	var onlyDirFileCountDisplay int
-	for fileName, dirPath := range dirFiles {
+	for path, dirPath := range dirFiles {
 		onlyDirFileCountDisplay++
+		// 根据 -w 参数决定是否将结果写入文件
 		if *checkCmdWrite {
-			fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, fileName, dirPath))
+			// 根据 -full 参数决定是否显示完整路径
+			if *checkCmdFullPath {
+				fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, path, dirPath))
+			} else {
+				fileWrite.WriteString(fmt.Sprintf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, filepath.Base(path), dirPath))
+			}
 		} else {
-			fmt.Printf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, fileName, dirPath)
+			// 根据 -full 参数决定是否显示完整路径
+			if *checkCmdFullPath {
+				fmt.Printf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, path, dirPath)
+			} else {
+				fmt.Printf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, filepath.Base(path), dirPath)
+			}
 		}
 	}
 	if onlyDirFileCountDisplay == 0 {
