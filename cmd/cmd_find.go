@@ -8,10 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"gitee.com/MM-Q/colorlib"
 )
 
 // findCmdMain 是 find 子命令的主函数
-func findCmdMain() error {
+func findCmdMain(cl *colorlib.ColorLib) error {
 	// 检查要查找的路径是否为空
 	if *findCmdPath == "" {
 		return fmt.Errorf("查找路径不能为空")
@@ -142,10 +144,23 @@ func findCmdMain() error {
 				if pathErr != nil {
 					return fmt.Errorf("获取完整路径时出错: %s", pathErr)
 				}
-				fmt.Println(fullPath)
+				// 输出完整路径
+				if *findCmdColor {
+					if err := printPathColor(fullPath, cl); err != nil {
+						return fmt.Errorf("输出路径时出错: %s", err)
+					}
+				} else {
+					fmt.Println(fullPath)
+				}
 			} else {
 				// 输出相对路径
-				fmt.Println(path)
+				if *findCmdColor {
+					if err := printPathColor(path, cl); err != nil {
+						return fmt.Errorf("输出路径时出错: %s", err)
+					}
+				} else {
+					fmt.Println(path)
+				}
 			}
 		}
 		return nil

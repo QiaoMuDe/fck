@@ -114,7 +114,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return nil
 		}
 		// 执行 find 子命令
-		if err := findCmdMain(); err != nil {
+		if err := findCmdMain(cl); err != nil {
 			return fmt.Errorf("执行find子命令时发生了错误: %v", err)
 		}
 	case "f":
@@ -125,7 +125,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return nil
 		}
 		// 执行 find 子命令
-		if err := findCmdMain(); err != nil {
+		if err := findCmdMain(cl); err != nil {
 			return fmt.Errorf("执行find子命令时发生了错误: %v", err)
 		}
 	default:

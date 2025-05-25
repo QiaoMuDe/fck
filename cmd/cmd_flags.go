@@ -46,4 +46,5 @@ var (
 	findCmdCase     = findCmd.Bool("c", false, "开启大小写敏感匹配, 默认不区分大小写")
 	findCmdFullPath = findCmd.Bool("full", false, "是否显示完整路径, 默认显示匹配到的路径")
 	findCmdHidden   = findCmd.Bool("hidden", false, "是否显示隐藏文件, 默认不显示隐藏文件")
+	findCmdColor    = findCmd.Bool("color", false, "启用颜色输出")
 )
