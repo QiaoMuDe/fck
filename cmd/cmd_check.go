@@ -120,7 +120,7 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 }
 
 // readHashFileToMap 读取校验文件并加载到 map 中
-func readHashFileToMap(checkFile string, cl *colorlib.ColorLib) (map[string]string, func() hash.Hash, error) {
+func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) (map[string]string, func() hash.Hash, error) {
 	// 存储校验值文件的 map
 	checkFileHashes := make(map[string]string)
 
@@ -208,23 +208,35 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib) (map[string]stri
 		// 将路径中的双\\替换为单\
 		filePath = strings.ReplaceAll(filePath, `\\`, `\`)
 
-		// 手动解析路径，找到根目录部分
-		rootDir := strings.Split(filePath, string(filepath.Separator))[0]
+		// 根据参数判断是否使用相对路径
+		if isRelPath {
+			// 手动解析路径，找到根目录部分
+			rootDir := strings.Split(filePath, string(filepath.Separator))[0]
 
-		// 获取相对路径
-		relPath, err := filepath.Rel(rootDir, filePath)
-		if err != nil {
-			return nil, nil, fmt.Errorf("获取相对路径时出错: %v", err)
+			// 获取相对路径
+			relPath, err := filepath.Rel(rootDir, filePath)
+			if err != nil {
+				return nil, nil, fmt.Errorf("获取相对路径时出错: %v", err)
+			}
+
+			// 如果哈希值或文件路径为空，则跳过
+			if expectedHash == "" || relPath == "" {
+				cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s", checkFile, lineCount, line)
+				continue
+			}
+
+			// 存储到 map 中
+			checkFileHashes[relPath] = expectedHash
+		} else {
+			// 如果哈希值或文件路径为空，则跳过
+			if expectedHash == "" || filePath == "" {
+				cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s", checkFile, lineCount, line)
+				continue
+			}
+
+			// 存储到 map 中
+			checkFileHashes[filePath] = expectedHash
 		}
-
-		// 如果哈希值或文件路径为空，则跳过
-		if expectedHash == "" || relPath == "" {
-			cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s", checkFile, lineCount, line)
-			continue
-		}
-
-		// 存储到 map 中
-		checkFileHashes[relPath] = expectedHash
 	}
 
 	// 检查是否有错误发生
@@ -248,7 +260,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 	}
 
 	// 读取校验文件并加载到 map 中
-	checkFileHashes, hashFunc, err := readHashFileToMap(checkFile, cl)
+	checkFileHashes, hashFunc, err := readHashFileToMap(checkFile, cl, false)
 	if err != nil {
 		return err
 	}
@@ -685,7 +697,7 @@ func compareDirWithCheckFile(checkFileHashes map[string]string, dirFiles map[str
 // checkWithFileAndDir 根据校验文件和目录进行校验的逻辑
 func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) error {
 	// 读取校验文件并加载到 map 中
-	checkFileHashes, hashFunc, err := readHashFileToMap(checkFile, cl)
+	checkFileHashes, hashFunc, err := readHashFileToMap(checkFile, cl, true)
 	if err != nil {
 		return err
 	}
