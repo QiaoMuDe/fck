@@ -44,11 +44,6 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 
 	// (2) 如果指定校验文件不为空，同时也通过*checkCmdDirs指定了目录 -f 参数和 -d 参数
 	if *checkCmdFile != "" && *checkCmdDirs != "" {
-		// 检查指定的目录是否为.或者..
-		if *checkCmdDirs == "." || *checkCmdDirs == ".." || *checkCmdDirs == "./" || *checkCmdDirs == "../" {
-			return fmt.Errorf("不能指定目录为.或者.., 请指定校验目录的上级目录或 -h 参数查看帮助信息")
-		}
-
 		// 执行校验文件和目录的逻辑
 		if err := checkWithFileAndDir(*checkCmdFile, *checkCmdDirs, cl); err != nil {
 			return err
@@ -736,6 +731,29 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 
 // checkWithFileAndDir 根据校验文件和目录进行校验的逻辑
 func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) error {
+	// 清理路径
+	*checkCmdDirs = filepath.Clean(*checkCmdDirs)
+
+	// 检查指定的目录是否包含禁止输入的路径
+	if _, ok := globals.ForbiddenPaths[*checkCmdDirs]; ok {
+		return fmt.Errorf("指定的目录包含禁止输入的路径: %s", *checkCmdDirs)
+	}
+
+	// 检查checkDir是否包含超过1个点, 如果包含则报错
+	if strings.Contains(*checkCmdDirs, "..") {
+		return fmt.Errorf("指定的目录包含禁止输入的路径: %s", *checkCmdDirs)
+	}
+
+	// 检查checkDir是否以分隔符结尾, 如果是则去掉
+	if strings.HasSuffix(checkDir, string(filepath.Separator)) {
+		checkDir = strings.TrimSuffix(checkDir, string(filepath.Separator))
+	}
+
+	// 检查checkDir的目录层级是否超过1
+	if strings.Count(checkDir, string(filepath.Separator)) > 1 {
+		return fmt.Errorf("目录 %s 的层级不能超过1", checkDir)
+	}
+
 	// 读取校验文件并加载到 map 中
 	checkFileHashes, hashFunc, readErr := readHashFileToMap(checkFile, cl, true)
 	if readErr != nil {

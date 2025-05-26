@@ -43,6 +43,28 @@ var (
 		"sha256": sha256.New,
 		"sha512": sha512.New,
 	}
+
+	// 禁止输入的路径map
+	ForbiddenPaths = map[string]bool{
+		"./":              true,
+		".":               true,
+		"..":              true,
+		"...":             true,
+		"....":            true,
+		"./.":             true,
+		"./..":            true,
+		"./...":           true,
+		"./....":          true,
+		"./*":             true,
+		"./**":            true,
+		"./../":           true,
+		"./../../":        true,
+		"../":             true,
+		"../../":          true,
+		"../../../":       true,
+		"../../../../":    true,
+		"../../../../../": true,
+	}
 )
 
 // hash 子命令帮助信息
