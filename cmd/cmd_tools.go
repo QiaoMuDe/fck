@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"gitee.com/MM-Q/colorlib"
 )
@@ -51,5 +52,20 @@ func printPathColor(path string, s string, cl *colorlib.ColorLib) error {
 		cl.Red(s)
 	}
 
+	return nil
+}
+
+// writeFileHeader 写入文件头信息
+func writeFileHeader(file *os.File, hashType string, timestampFormat string) error {
+	// 获取当前时间
+	now := time.Now()
+
+	// 构造文件头内容
+	header := fmt.Sprintf("#%s#%s\n", hashType, now.Format(timestampFormat))
+
+	// 写入文件头
+	if _, err := file.WriteString(header); err != nil {
+		return fmt.Errorf("写入文件头失败: %v", err)
+	}
 	return nil
 }

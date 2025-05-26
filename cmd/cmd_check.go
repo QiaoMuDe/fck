@@ -4,13 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"hash"
-	"io"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
-	"time"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/globals"
@@ -81,6 +80,24 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 		return fmt.Errorf("目录B不存在: %s", *checkCmdDirB)
 	}
 
+	// 检查目录A是否为绝对路径，如果不是，则转换为绝对路径
+	if !filepath.IsAbs(*checkCmdDirA) {
+		absDirA, err := filepath.Abs(*checkCmdDirA)
+		if err != nil {
+			return fmt.Errorf("无法获取目录A的绝对路径: %v", err)
+		}
+		*checkCmdDirA = absDirA
+	}
+
+	// 检查目录B是否为绝对路径，如果不是，则转换为绝对路径
+	if !filepath.IsAbs(*checkCmdDirB) {
+		absDirB, err := filepath.Abs(*checkCmdDirB)
+		if err != nil {
+			return fmt.Errorf("无法获取目录B的绝对路径: %v", err)
+		}
+		*checkCmdDirB = absDirB
+	}
+
 	// 校验目录A 和 目录B //
 	// 检查指定的哈希算法是否有效
 	hashType, ok := globals.SupportedAlgorithms[*checkCmdType]
@@ -106,11 +123,8 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 		}
 		defer fileWrite.Close()
 
-		// 获取时间
-		now := time.Now()
-
 		// 写入文件头
-		if _, err := fileWrite.WriteString(fmt.Sprintf("#%s#%s\n\n", *checkCmdType, now.Format("2006-01-02 15:04:05"))); err != nil {
+		if err := writeFileHeader(fileWrite, *hashCmdType, globals.TimestampFormat); err != nil {
 			return fmt.Errorf("写入文件头失败: %v", err)
 		}
 	}
@@ -136,50 +150,21 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 		return nil, nil, fmt.Errorf("校验文件不存在: %s", checkFile)
 	}
 
-	// 读取校验文件
+	// 打开校验文件
 	checkFileRead, openErr := os.OpenFile(checkFile, os.O_RDONLY, 0644)
 	if openErr != nil {
 		return nil, nil, fmt.Errorf("无法打开校验文件: %v", openErr)
 	}
 	defer checkFileRead.Close()
 
-	// 获取哈希算法
-	headerInfo := make([]byte, 1024)
-	n, readErr := checkFileRead.ReadAt(headerInfo, 0)
-	if readErr != nil && readErr != io.EOF {
-		return nil, nil, fmt.Errorf("读取校验文件时出错: %v", readErr)
-	}
-	headerInfo = headerInfo[:n] // 调整切片长度以匹配实际读取的字节数
-
-	// 检查是否是#开头的文件
-	if len(headerInfo) == 0 || headerInfo[0] != '#' {
-		return nil, nil, fmt.Errorf("校验文件头格式错误, 必须以#开头")
-	}
-
-	// 解析哈希算法和时间戳，以井号为分隔符
-	parts := strings.Split(string(headerInfo), "#")
-	if len(parts) < 3 {
-		return nil, nil, fmt.Errorf("校验文件头格式错误, 格式应为 #hashType#timestamp")
-	}
-	hashType := parts[1] // 哈希算法
-	if hashType == "" {
-		return nil, nil, fmt.Errorf("校验文件头格式错误, 必须指定哈希算法")
-	}
-
-	// 检查哈希算法是否支持
-	hashFunc, ok := globals.SupportedAlgorithms[string(hashType)]
-	if !ok {
-		return nil, nil, fmt.Errorf("不支持的哈希算法: %s", string(hashType))
-	}
-
-	// 重置文件指针到开头
-	_, seekErr := checkFileRead.Seek(0, io.SeekStart)
-	if seekErr != nil {
-		return nil, nil, fmt.Errorf("重置文件指针时出错: %v", seekErr)
-	}
-
 	// 解析校验文件内容
 	scanner := bufio.NewScanner(checkFileRead)
+
+	// 解析文件头
+	hashFunc, err := parseHeader(scanner)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// 定义一个计数器
 	var lineCount int
@@ -190,13 +175,8 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 
 		lineCount++ // 计数器加 1
 
-		// 如果当前行是空行，则跳过
-		if line == "" {
-			continue
-		}
-
-		// 如果当前行以#开头，则跳过
-		if strings.HasPrefix(line, "#") {
+		// 如果当前行是空行或以#开头，则跳过
+		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 
@@ -257,6 +237,35 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 	}
 
 	return checkFileHashes, hashFunc, nil
+}
+
+// parseHeader 解析校验文件的文件头，提取哈希算法
+func parseHeader(scanner *bufio.Scanner) (func() hash.Hash, error) {
+	// 读取文件头
+	if !scanner.Scan() {
+		return nil, fmt.Errorf("校验文件为空")
+	}
+	headerLine := scanner.Text() // 获取第一行文件头
+
+	// 使用正则表达式解析文件头
+	headerRegex := regexp.MustCompile(`^#(\w+)#(.+)$`)
+	matches := headerRegex.FindStringSubmatch(headerLine)
+	if matches == nil {
+		return nil, fmt.Errorf("校验文件头格式错误, 格式应为 #hashType#timestamp")
+	}
+
+	hashType := matches[1] // 哈希算法
+	if hashType == "" {
+		return nil, fmt.Errorf("校验文件头格式错误, 必须指定哈希算法")
+	}
+
+	// 检查哈希算法是否支持
+	hashFunc, ok := globals.SupportedAlgorithms[hashType]
+	if !ok {
+		return nil, fmt.Errorf("不支持的哈希算法: %s", hashType)
+	}
+
+	return hashFunc, nil
 }
 
 // fileCheck 根据单校验文件校验目录完整性的逻辑 -f 参数
@@ -704,9 +713,23 @@ func compareDirWithCheckFile(checkFileHashes map[string]string, dirFiles map[str
 // checkWithFileAndDir 根据校验文件和目录进行校验的逻辑
 func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) error {
 	// 读取校验文件并加载到 map 中
-	checkFileHashes, hashFunc, err := readHashFileToMap(checkFile, cl, true)
-	if err != nil {
-		return err
+	checkFileHashes, hashFunc, readErr := readHashFileToMap(checkFile, cl, true)
+	if readErr != nil {
+		return readErr
+	}
+
+	// 检查目录是否存在
+	if _, statErr := os.Stat(checkDir); os.IsNotExist(statErr) {
+		return fmt.Errorf("目录 %s 不存在", checkDir)
+	}
+
+	// 检查目录是否为绝对路径，如果不是，则转换为绝对路径
+	if !filepath.IsAbs(checkDir) {
+		var absErr error
+		// 获取目录的绝对路径
+		if checkDir, absErr = filepath.Abs(checkDir); absErr != nil {
+			return fmt.Errorf("获取目录 %s 的绝对路径失败: %v", checkDir, absErr)
+		}
 	}
 
 	// 获取指定目录下的文件列表
@@ -726,11 +749,8 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 		}
 		defer fileWrite.Close()
 
-		// 获取时间
-		now := time.Now()
-
 		// 写入文件头
-		if _, err := fileWrite.WriteString(fmt.Sprintf("#%s#%s\n\n", *checkCmdType, now.Format("2006-01-02 15:04:05"))); err != nil {
+		if err := writeFileHeader(fileWrite, *hashCmdType, globals.TimestampFormat); err != nil {
 			return fmt.Errorf("写入文件头失败: %v", err)
 		}
 	}

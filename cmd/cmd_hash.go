@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/globals"
@@ -147,11 +146,8 @@ func hashRunTasks(ctx context.Context, files []string, hashType func() hash.Hash
 		}
 		defer fileWrite.Close()
 
-		// 获取时间
-		now := time.Now()
-
 		// 写入文件头
-		if _, err := fileWrite.WriteString(fmt.Sprintf("#%s#%s\n", *hashCmdType, now.Format("2006-01-02 15:04:05"))); err != nil {
+		if err := writeFileHeader(fileWrite, *hashCmdType, globals.TimestampFormat); err != nil {
 			errors <- fmt.Errorf("写入文件头 %s 失败: %v", globals.OutputFileName, err)
 			return []error{fmt.Errorf("写入文件头 %s 失败: %v", globals.OutputFileName, err)}
 		}
@@ -228,23 +224,23 @@ fileLoop:
 }
 
 // hashTask 处理单个文件的哈希计算，支持上下文取消
-func hashTask(ctx context.Context, filepath string, hashType func() hash.Hash, fileWrite *os.File) error {
+func hashTask(ctx context.Context, filePath string, hashType func() hash.Hash, fileWrite *os.File) error {
 	// 检查上下文是否已取消
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
 	// 检查文件如果是软链接，则跳过
-	if fileInfo, err := os.Lstat(filepath); err == nil {
+	if fileInfo, err := os.Lstat(filePath); err == nil {
 		if fileInfo.Mode()&fs.ModeSymlink != 0 {
 			return nil
 		}
 	}
 
 	// 计算文件哈希值
-	hashValue, checkErr := checksum(filepath, hashType)
+	hashValue, checkErr := checksum(filePath, hashType)
 	if checkErr != nil {
-		return fmt.Errorf("计算文件 %s 哈希值失败: %v", filepath, checkErr)
+		return fmt.Errorf("计算文件 %s 哈希值失败: %v", filePath, checkErr)
 	}
 
 	// 检查上下文是否已取消（计算哈希值可能需要一些时间）
@@ -256,13 +252,13 @@ func hashTask(ctx context.Context, filepath string, hashType func() hash.Hash, f
 	if *hashCmdWrite {
 		// 写入到 globals.OutputFileName 文件
 		if fileWrite != nil {
-			_, err := fileWrite.WriteString(fmt.Sprintf("%s\t%q\n", hashValue, filepath))
+			_, err := fileWrite.WriteString(fmt.Sprintf("%s\t%q\n", hashValue, filePath))
 			if err != nil {
 				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, err)
 			}
 		}
 	} else {
-		fmt.Printf("%s\t%s\n", hashValue, filepath)
+		fmt.Printf("%s\t%s\n", hashValue, filePath)
 	}
 
 	return nil

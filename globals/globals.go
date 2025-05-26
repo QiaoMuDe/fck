@@ -23,6 +23,9 @@ var (
 
 	// 输出对比结果的文件名
 	OutputCheckFileName = "check_dir.check"
+
+	// 时间戳格式
+	TimestampFormat = "2006-01-02 15:04:05"
 )
 
 // hash 子命令帮助信息
