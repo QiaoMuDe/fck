@@ -27,6 +27,7 @@ func checkCmdMain(cl *colorlib.ColorLib) error {
 		<-sigs
 		// 使用自定义错误作为取消原因
 		cl.PrintWarn("用户中断操作")
+		os.Exit(1) // 退出程序
 	}()
 
 	// 检查三个参数是否都为空

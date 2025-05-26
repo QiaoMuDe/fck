@@ -61,6 +61,7 @@ func hashCmdMain(cmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		// 使用自定义错误作为取消原因
 		cancel(fmt.Errorf("用户中断操作"))
 		cl.PrintWarn("已取消所有任务")
+		os.Exit(1) // 退出程序
 	}()
 
 	// 遍历路径
