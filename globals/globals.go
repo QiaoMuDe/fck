@@ -9,15 +9,7 @@ import (
 	"hash"
 )
 
-var (
-	// 支持的哈希算法列表
-	SupportedAlgorithms = map[string]func() hash.Hash{
-		"md5":    md5.New,
-		"sha1":   sha1.New,
-		"sha256": sha256.New,
-		"sha512": sha512.New,
-	}
-
+const (
 	// 输出哈希值的文件名
 	OutputFileName = "checksum.hash"
 
@@ -26,6 +18,31 @@ var (
 
 	// 时间戳格式
 	TimestampFormat = "2006-01-02 15:04:05"
+
+	// 虚拟基准目录 /ROOTDIR
+	VirtualRootDir = "/ROOTDIR"
+)
+
+// 虚拟哈希表条目
+type VirtualHashEntry struct {
+	// 真实路径
+	RealPath string
+
+	// 哈希值
+	Hash string
+}
+
+// 虚拟哈希表
+type VirtualHashMap map[string]VirtualHashEntry
+
+var (
+	// 支持的哈希算法列表
+	SupportedAlgorithms = map[string]func() hash.Hash{
+		"md5":    md5.New,
+		"sha1":   sha1.New,
+		"sha256": sha256.New,
+		"sha512": sha512.New,
+	}
 )
 
 // hash 子命令帮助信息
