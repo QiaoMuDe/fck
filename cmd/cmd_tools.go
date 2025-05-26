@@ -30,7 +30,7 @@ func getLast8Chars(s string) string {
 //	error: 如果获取路径信息失败则返回错误，否则返回nil
 func printPathColor(path string, s string, cl *colorlib.ColorLib) error {
 	// 获取路径信息
-	pathInfo, statErr := os.Stat(path)
+	pathInfo, statErr := os.Lstat(path)
 	if statErr != nil {
 		return fmt.Errorf("获取路径信息失败: %v", statErr)
 	}
