@@ -518,7 +518,7 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	for relPath, pathA := range filesA {
 		onlyACountDisplay++
 		// 根据 -w 参数决定是否将结果写入文件
-		result := fmt.Sprintf("%d. 文件 %s 仅存在于目录 A: %s\n", onlyACountDisplay, filepath.Base(relPath), pathA)
+		result := fmt.Sprintf("%d. 文件 %s 仅存在于目录 A: %s", onlyACountDisplay, filepath.Base(relPath), pathA)
 		if *checkCmdWrite {
 			if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
 				return fmt.Errorf("写入文件时出错: %v", writeErr)
@@ -551,7 +551,7 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	for relPath, pathB := range filesB {
 		onlyBCountDisplay++
 		// 根据 -w 参数决定是否将结果写入文件
-		result := fmt.Sprintf("%d. 文件 %s 仅存在于目录 B: %s\n", onlyBCountDisplay, filepath.Base(relPath), pathB)
+		result := fmt.Sprintf("%d. 文件 %s 仅存在于目录 B: %s", onlyBCountDisplay, filepath.Base(relPath), pathB)
 		if *checkCmdWrite {
 			if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
 				return fmt.Errorf("写入文件时出错: %v", writeErr)
@@ -702,7 +702,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	for virtualPath, targetPath := range targetFiles {
 		onlyDirFileCountDisplay++
 		// 根据 -w 参数决定是否将结果写入文件
-		result := fmt.Sprintf("%d. 文件 %s 仅存在于目录: %s\n", onlyDirFileCountDisplay, virtualPath, targetPath)
+		result := fmt.Sprintf("%d. 文件 %s 仅存在于目录: %s", onlyDirFileCountDisplay, virtualPath, targetPath)
 		if *checkCmdWrite {
 			if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
 				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
