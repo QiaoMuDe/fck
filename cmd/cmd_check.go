@@ -36,6 +36,8 @@ func diffCmdMain(cl *colorlib.ColorLib) error {
 
 	// (1) 执行根据单校验文件校验目录完整性的逻辑 -f 参数
 	if *diffCmdFile != "" && *diffCmdDirs == "" {
+		cl.PrintOk("正在校验目录完整性...")
+		// 执行校验文件
 		if err := fileCheck(*diffCmdFile, cl); err != nil {
 			return err
 		}
@@ -422,43 +424,31 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	} else {
 		cl.Green(matchFileNameFiles)
 	}
+
+	// 初始化同名文件计数器
 	var sameNameCount int
+
 	// 遍历目录 A 中的文件
 	for relPath, pathA := range filesA {
 		if pathB, ok := filesB[relPath]; ok {
-			// 如果目录 B 中存在同名文件，使用errgroup并行计算校验值
-			var eg errgroup.Group
-			var hashValueA, hashValueB string
-			var errA, errB error
-
-			// 使用errgroup并行计算校验值
-			eg.Go(func() error {
-				hashValueA, errA = checksum(pathA, hashType)
-				return errA
-			})
-
-			eg.Go(func() error {
-				hashValueB, errB = checksum(pathB, hashType)
-				return errB
-			})
-
-			// 等待两个校验值计算完成
-			if err := eg.Wait(); err != nil {
-				if errA != nil {
-					cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *diffCmdType, pathA, errA)
-				}
-				if errB != nil {
-					cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *diffCmdType, pathB, errB)
-				}
+			// 获取文件大小
+			fileInfoA, err := os.Stat(pathA)
+			if err != nil {
+				cl.PrintErrf("获取文件 %s 的大小时出错: %v\n", pathA, err)
+				continue
+			}
+			fileInfoB, err := os.Stat(pathB)
+			if err != nil {
+				cl.PrintErrf("获取文件 %s 的大小时出错: %v\n", pathB, err)
 				continue
 			}
 
-			// 比较两个文件的校验值
-			if hashValueA != hashValueB {
-				diffCount++
-				sameNameCount++
+			// 比较文件大小
+			if fileInfoA.Size() != fileInfoB.Size() {
+				diffCount++     // 增加不同文件计数
+				sameNameCount++ // 增加同名文件计数
 				// 根据 -w 参数决定是否将结果写入文件
-				result := fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s  路径: %s\n  目录 B: %s  路径: %s", sameNameCount, relPath, *diffCmdType, getLast8Chars(hashValueA), pathA, getLast8Chars(hashValueB), pathB)
+				result := fmt.Sprintf("%d. 文件 %s 的大小不同:\n  目录 A: %d 字节  路径: %s\n  目录 B: %d 字节  路径: %s", sameNameCount, relPath, fileInfoA.Size(), pathA, fileInfoB.Size(), pathB)
 				if *diffCmdWrite {
 					if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
 						return fmt.Errorf("写入文件时出错: %v", writeErr)
@@ -467,7 +457,50 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 					fmt.Println(result)
 				}
 			} else {
-				sameCount++
+				// 如果文件大小一致，使用 errgroup 并行计算校验值
+				// 如果目录 B 中存在同名文件，使用errgroup并行计算校验值
+				var eg errgroup.Group
+				var hashValueA, hashValueB string
+				var errA, errB error
+
+				// 使用errgroup并行计算校验值
+				eg.Go(func() error {
+					hashValueA, errA = checksum(pathA, hashType)
+					return errA
+				})
+
+				eg.Go(func() error {
+					hashValueB, errB = checksum(pathB, hashType)
+					return errB
+				})
+
+				// 等待两个校验值计算完成
+				if err := eg.Wait(); err != nil {
+					if errA != nil {
+						cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *diffCmdType, pathA, errA)
+					}
+					if errB != nil {
+						cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", *diffCmdType, pathB, errB)
+					}
+					continue
+				}
+
+				// 比较两个文件的校验值
+				if hashValueA != hashValueB {
+					diffCount++     // 增加不同文件计数
+					sameNameCount++ // 增加同名文件计数
+					// 根据 -w 参数决定是否将结果写入文件
+					result := fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s  路径: %s\n  目录 B: %s  路径: %s", sameNameCount, relPath, *diffCmdType, getLast8Chars(hashValueA), pathA, getLast8Chars(hashValueB), pathB)
+					if *diffCmdWrite {
+						if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
+							return fmt.Errorf("写入文件时出错: %v", writeErr)
+						}
+					} else {
+						fmt.Println(result)
+					}
+				} else {
+					sameCount++ // 增加相同文件计数
+				}
 			}
 
 			// 从 filesB 中移除已比较的文件

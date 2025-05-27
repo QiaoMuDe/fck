@@ -63,6 +63,11 @@ func hashCmdMain(cmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		os.Exit(1) // 退出程序
 	}()
 
+	// 检查是否需要写入文件
+	if *hashCmdWrite {
+		cl.PrintOk("正在将哈希值写入文件，请稍候...")
+	}
+
 	// 遍历路径
 	for _, targetPath := range targetPaths {
 		// 清理路径
@@ -108,7 +113,7 @@ func hashCmdMain(cmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		} else {
 			// 打印成功信息
 			if *hashCmdWrite {
-				cl.PrintOk(fmt.Sprintf("校验哈希值完成，共处理 %d 个文件, 并将哈希值写入文件 %s", len(files), globals.OutputFileName))
+				cl.PrintOk(fmt.Sprintf("已将哈希值写入文件 %s, 共处理 %d 个文件, ", globals.OutputFileName, len(files)))
 			}
 		}
 	}
