@@ -754,24 +754,20 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 		return fmt.Errorf("目录 %s 的层级不能超过1", checkDir)
 	}
 
-	// 读取校验文件并加载到 map 中
-	checkFileHashes, hashFunc, readErr := readHashFileToMap(checkFile, cl, true)
-	if readErr != nil {
-		return readErr
-	}
-
 	// 检查目录是否存在
 	if _, statErr := os.Stat(checkDir); os.IsNotExist(statErr) {
 		return fmt.Errorf("目录 %s 不存在", checkDir)
 	}
 
-	// 检查目录是否为绝对路径，如果不是，则转换为绝对路径
-	if !filepath.IsAbs(checkDir) {
-		var absErr error
-		// 获取目录的绝对路径
-		if checkDir, absErr = filepath.Abs(checkDir); absErr != nil {
-			return fmt.Errorf("获取目录 %s 的绝对路径失败: %v", checkDir, absErr)
-		}
+	// 检查目录是否为绝对路径，如果是则退出
+	if filepath.IsAbs(checkDir) {
+		return fmt.Errorf("目录 %s 不能为绝对路径", checkDir)
+	}
+
+	// 读取校验文件并加载到 map 中
+	checkFileHashes, hashFunc, readErr := readHashFileToMap(checkFile, cl, true)
+	if readErr != nil {
+		return readErr
 	}
 
 	// 获取指定目录下的文件列表

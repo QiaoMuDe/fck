@@ -6,7 +6,7 @@ fck - 多功能文件处理工具集
   hash     计算文件哈希值（支持MD5/SHA1/SHA256/SHA512算法）
   size     计算文件或目录大小（支持递归计算和人类可读格式）
   find     查找文件（支持关键字、正则表达式和多种过滤条件）
-  check    对比校验（支持源目录和目标目录比对）
+  diff     目录差异比较（支持文件哈希值校验）
 
 全局参数：
   -v       显示版本信息
@@ -32,8 +32,8 @@ fck - 多功能文件处理工具集
      fck find -p /path -size +10M
 
   4. 文件校验：
-     fck check -f checksum.txt 
-     fck check -a /path/to/dir_a -b /path/to/dir_b
+     fck diff -f checksum.txt 
+     fck diff -a /path/to/dir_a -b /path/to/dir_b
 
 注意事项：
   1. 所有路径参数支持Windows和Unix风格
