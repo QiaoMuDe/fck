@@ -1,5 +1,7 @@
 # FCK 工具
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/QiaoMuDe/fck)
+
 一个多功能命令行工具，提供文件哈希计算、大小统计、校验和查找等功能。
 
 ## 功能特性
