@@ -1,8 +1,8 @@
-fck check - 文件校验工具
+fck diff - 文件校验工具
 
-功能：根据校验值文件对源目录和目标目录进行校验，支持多种哈希算法
+功能：根据校验值文件对源目录和目标目录进行校验对比，支持多种哈希算法
 
-用法：fck check [选项] 
+用法：fck diff [选项] 
 
 参数说明：
   -f <file>       指定校验值文件，用于检查文件的变化（必须包含#hashType#timestamp头信息）
@@ -33,10 +33,10 @@ fck check - 文件校验工具
 示例：
 1. 校验目录：
    fck hash /path/to/dir_a
-   fck check -f checksum.txt
+   fck diff -f checksum.txt
 
 2. 同时校验目录A和目录B：
-   fck check -f checksum.txt -a /path/to/dir_a -b /path/to/dir_b
+   fck diff -f checksum.txt -a /path/to/dir_a -b /path/to/dir_b
 
 输出格式：
 - 校验成功：显示"校验成功，无文件差异"

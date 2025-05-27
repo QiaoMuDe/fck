@@ -21,15 +21,15 @@ var (
 	sizeCmdHelp  = sizeCmd.Bool("h", false, "打印帮助信息并退出")
 	sizeCmdColor = sizeCmd.Bool("c", false, "启用颜色输出")
 
-	// fck check 子命令
-	checkCmd      = flag.NewFlagSet("check", flag.ExitOnError)
-	checkCmdHelp  = checkCmd.Bool("h", false, "打印帮助信息并退出")
-	checkCmdFile  = checkCmd.String("f", "", "指定用于校验的哈希值文件，程序将依据该文件中的哈希值进行校验操作")
-	checkCmdDirs  = checkCmd.String("d", "", "指定需要根据哈希值文件进行校验的目标目录")
-	checkCmdDirA  = checkCmd.String("a", "", "指定要校验的目录A")
-	checkCmdDirB  = checkCmd.String("b", "", "指定要校验的目录B")
-	checkCmdType  = checkCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
-	checkCmdWrite = checkCmd.Bool("w", false, "将校验结果写入文件, 文件名为check_dir.check")
+	// fck diff 子命令
+	diffCmd      = flag.NewFlagSet("diff", flag.ExitOnError)
+	diffCmdHelp  = diffCmd.Bool("h", false, "打印帮助信息并退出")
+	diffCmdFile  = diffCmd.String("f", "", "指定用于校验的哈希值文件，程序将依据该文件中的哈希值进行校验操作")
+	diffCmdDirs  = diffCmd.String("d", "", "指定需要根据哈希值文件进行校验的目标目录")
+	diffCmdDirA  = diffCmd.String("a", "", "指定要校验的目录A")
+	diffCmdDirB  = diffCmd.String("b", "", "指定要校验的目录B")
+	diffCmdType  = diffCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
+	diffCmdWrite = diffCmd.Bool("w", false, "将校验结果写入文件, 文件名为check_dir.check")
 
 	// fck find 子命令
 	findCmd           = flag.NewFlagSet("find", flag.ExitOnError)

@@ -102,37 +102,37 @@ func Run(cl *colorlib.ColorLib) error {
 		if err := sizeCmdMain(sizeCmd, cl); err != nil {
 			return fmt.Errorf("执行size子命令时发生了错误: %v", err)
 		}
-	case "check":
-		// 解析 check 子命令的参数
-		if err := checkCmd.Parse(flag.Args()[1:]); err != nil {
-			return fmt.Errorf("解析check子命令的参数时发生了错误: %v", err)
+	case "diff":
+		// 解析 diff 子命令的参数
+		if err := diffCmd.Parse(flag.Args()[1:]); err != nil {
+			return fmt.Errorf("解析diff子命令的参数时发生了错误: %v", err)
 		}
 
 		// 如果是 -h 或 help，则打印帮助信息并退出
-		if *checkCmdHelp {
-			fmt.Println(globals.CheckHelp)
+		if *diffCmdHelp {
+			fmt.Println(globals.DiffHelp)
 			return nil
 		}
 
-		// 执行 check 子命令
-		if err := checkCmdMain(cl); err != nil {
-			return fmt.Errorf("执行check子命令时发生了错误: %v", err)
+		// 执行 diff 子命令
+		if err := diffCmdMain(cl); err != nil {
+			return fmt.Errorf("执行diff子命令时发生了错误: %v", err)
 		}
-	case "c":
-		// 解析 check 子命令的参数
-		if err := checkCmd.Parse(flag.Args()[1:]); err != nil {
-			return fmt.Errorf("解析check子命令的参数时发生了错误: %v", err)
+	case "d":
+		// 解析 diff 子命令的参数
+		if err := diffCmd.Parse(flag.Args()[1:]); err != nil {
+			return fmt.Errorf("解析diff子命令的参数时发生了错误: %v", err)
 		}
 
 		// 如果是 -h 或 help，则打印帮助信息并退出
-		if *checkCmdHelp {
-			fmt.Println(globals.CheckHelp)
+		if *diffCmdHelp {
+			fmt.Println(globals.DiffHelp)
 			return nil
 		}
 
-		// 执行 check 子命令
-		if err := checkCmdMain(cl); err != nil {
-			return fmt.Errorf("执行check子命令时发生了错误: %v", err)
+		// 执行 diff 子命令
+		if err := diffCmdMain(cl); err != nil {
+			return fmt.Errorf("执行diff子命令时发生了错误: %v", err)
 		}
 	case "find":
 		// 解析 find 子命令的参数

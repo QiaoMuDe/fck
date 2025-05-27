@@ -79,8 +79,8 @@ var SizeHelp string
 
 // check 子命令帮助信息
 //
-//go:embed help/help_check.txt
-var CheckHelp string
+//go:embed help/help_diff.txt
+var DiffHelp string
 
 // find 子命令帮助信息
 //
