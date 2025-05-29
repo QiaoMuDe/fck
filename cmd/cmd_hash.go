@@ -24,8 +24,6 @@ const (
 	Byte = 1 << (10 * iota) // 1 字节
 	KB                      // 千字节 (1024 B)
 	MB                      // 兆字节 (1024 KB)
-	GB                      // 吉字节 (1024 MB)
-	TB                      // 太字节 (1024 GB)
 )
 
 // hashCmdMain 是 hash 子命令的主函数
@@ -301,25 +299,27 @@ func checksum(filePath string, hashFunc func() hash.Hash) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-// 根据文件大小计算最佳缓冲区大小
+// calculateBufferSize 根据文件大小计算最佳缓冲区大小
+// 参数 fileSize 是文件大小(字节)
+// 返回值为计算出的缓冲区大小(字节)
 func calculateBufferSize(fileSize int64) int {
 	switch {
 	case fileSize < 32*KB: // 小于 32KB 的文件使用 32KB 缓冲区
 		return int(32 * KB)
 	case fileSize < 128*KB: // 32KB-128KB 使用 64KB 缓冲区
-		return int(32 * KB)
-	case fileSize < 512*KB: // 128KB-512KB 使用 128KB 缓冲区
 		return int(64 * KB)
-	case fileSize < 1*MB: // 512KB-1MB 使用 256KB 缓冲区
+	case fileSize < 512*KB: // 128KB-512KB 使用 128KB 缓冲区
 		return int(128 * KB)
-	case fileSize < 4*MB: // 1MB-4MB 使用 512KB 缓冲区
+	case fileSize < 1*MB: // 512KB-1MB 使用 256KB 缓冲区
 		return int(256 * KB)
-	case fileSize < 16*MB: // 4MB-16MB 使用 1MB 缓冲区
+	case fileSize < 4*MB: // 1MB-4MB 使用 512KB 缓冲区
 		return int(512 * KB)
-	case fileSize < 64*MB: // 16MB-64MB 使用 2MB 缓冲区
+	case fileSize < 16*MB: // 4MB-16MB 使用 1MB 缓冲区
 		return int(1 * MB)
-	default: // 大于 64MB 的文件使用 4MB 缓冲区
+	case fileSize < 64*MB: // 16MB-64MB 使用 2MB 缓冲区
 		return int(2 * MB)
+	default: // 大于 64MB 的文件使用 4MB 缓冲区
+		return int(4 * MB)
 	}
 }
 
@@ -333,31 +333,7 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 	var files []string
 
 	// 判断是否开启递归模式
-	if recursive {
-		// 递归模式：遍历目录及其子目录中的所有文件
-		// 使用 filepath.WalkDir 函数递归遍历目录
-		err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
-			// 检查遍历过程中是否出现错误
-			if err != nil {
-				// 如果出现错误，直接返回该错误
-				return err
-			}
-			// 判断当前条目是否为非目录文件
-			if !d.IsDir() {
-				// 如果是文件且不是隐藏文件（或允许隐藏文件），则添加到文件列表
-				if !*hashCmdHidden || !isHidden(path) {
-					files = append(files, path)
-				}
-			}
-			// 继续遍历下一个条目
-			return nil
-		})
-		// 检查 filepath.WalkDir 函数是否返回错误
-		if err != nil {
-			// 如果出现错误，返回 nil 和包装后的错误信息
-			return nil, fmt.Errorf("遍历目录失败: %w", err)
-		}
-	} else {
+	if !recursive {
 		// 非递归模式：只获取目录下的直接文件
 		// 读取指定目录下的所有条目
 		dir, err := os.ReadDir(dirPath)
@@ -366,21 +342,63 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 			// 如果失败，返回 nil 和包装后的错误信息
 			return nil, fmt.Errorf("读取目录失败: %w", err)
 		}
+
 		// 遍历目录中的所有条目
 		for _, entry := range dir {
+			// 如果是隐藏项并且不允许隐藏项，则跳过该条目
+			if !*hashCmdHidden && isHidden(entry.Name()) {
+				continue
+			}
+
 			// 判断当前条目是否为目录
 			if entry.IsDir() {
-				// 如果是目录且不是隐藏目录（或允许隐藏目录），则处理
-				if !*hashCmdHidden || !isHidden(entry.Name()) {
-					// 如果是目录，打印警告信息并跳过该目录
-					cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", entry.Name())
-				}
+				// 如果是目录，打印警告信息并跳过该目录
+				cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", entry.Name())
 				// 继续遍历下一个条目
 				continue
 			}
+
 			// 如果是文件，将其完整路径添加到文件列表中
 			files = append(files, filepath.Join(dirPath, entry.Name()))
 		}
+
+		// 返回收集到的文件列表和 nil 错误
+		return files, nil
+	}
+
+	// 递归模式：遍历目录及其子目录中的所有文件
+	// 使用 filepath.WalkDir 函数递归遍历目录
+	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+		// 检查遍历过程中是否出现错误
+		if err != nil {
+			// 如果出现错误，直接返回该错误
+			return err
+		}
+
+		// 如果是隐藏项并且不允许隐藏项，则跳过该条目
+		if !*hashCmdHidden && isHidden(path) {
+			// 如果是隐藏目录，跳过整个目录
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+
+			// 如果是隐藏文件，跳过该文件
+			return nil
+		}
+
+		// 如果不是目录，则将其完整路径添加到文件列表中
+		if !d.IsDir() {
+			files = append(files, path)
+		}
+
+		// 继续遍历下一个条目
+		return nil
+	})
+
+	// 检查 filepath.WalkDir 函数是否返回错误
+	if err != nil {
+		// 如果出现错误，返回 nil 和包装后的错误信息
+		return nil, fmt.Errorf("遍历目录失败: %w", err)
 	}
 
 	// 返回收集到的文件列表和 nil 错误
@@ -419,58 +437,77 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 				// 如果无法获取文件或目录的信息，返回错误信息
 				return nil, fmt.Errorf("无法获取文件信息: %w", err)
 			}
+
+			// 如果是隐藏项且不允许隐藏项, 则跳过该目录
+			if !*hashCmdHidden && isHidden(file) {
+				continue
+			}
+
 			// 判断是否为目录
 			if info.IsDir() {
-				if !*hashCmdHidden || !isHidden(file) {
-					if recursive {
-						// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
-						filesInDir, err := walkDir(file, recursive, cl)
-						if err != nil {
-							// 如果遍历目录时出现错误，返回该错误
-							return nil, err
-						}
-						// 将目录中的文件添加到文件列表中
-						files = append(files, filesInDir...)
-					} else {
-						// 如果不是递归模式，打印警告信息并跳过该目录
-						cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", file)
-					}
+				// 如果是目录且不允许递归目录
+				if !recursive {
+					cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", file)
+					continue
 				}
-			} else {
-				// 如果是文件且不是隐藏文件（或允许隐藏文件），则添加到文件列表
-				if !*hashCmdHidden || !isHidden(file) {
-					files = append(files, file)
-				}
-			}
-		}
-	} else {
-		// 处理普通路径（可能是文件或目录），获取路径的信息
-		info, err := os.Stat(targetPath)
-		if err != nil {
-			// 如果无法获取路径的信息，返回错误信息
-			return nil, fmt.Errorf("无法获取路径信息: %w", err)
-		}
 
-		// 判断是否为目录
-		if info.IsDir() {
-			// 如果是目录且不是隐藏目录（或允许隐藏目录），则处理
-			if !*hashCmdHidden || !isHidden(targetPath) {
 				// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
-				filesInDir, err := walkDir(targetPath, recursive, cl)
+				filesInDir, err := walkDir(file, recursive, cl)
 				if err != nil {
 					// 如果遍历目录时出现错误，返回该错误
 					return nil, err
 				}
+
 				// 将目录中的文件添加到文件列表中
 				files = append(files, filesInDir...)
+
+				// 继续遍历下一个条目
+				continue
 			}
-		} else {
-			// 如果是文件且不是隐藏文件（或允许隐藏文件），则添加到文件列表
-			if !*hashCmdHidden || !isHidden(targetPath) {
-				files = []string{targetPath}
-			}
+
+			// 普通文件，添加到文件列表中
+			files = append(files, file)
 		}
+
+		// 返回收集到的文件列表和 nil 错误
+		return files, nil
 	}
+
+	// 获取路径的信息
+	info, err := os.Stat(targetPath)
+	if err != nil {
+		// 如果无法获取路径的信息，返回错误信息
+		return nil, fmt.Errorf("无法获取路径信息: %w", err)
+	}
+
+	// 如果是隐藏项且不允许隐藏项, 则跳过该路径
+	if !*hashCmdHidden && isHidden(targetPath) {
+		return nil, fmt.Errorf("跳过隐藏项: %s", targetPath)
+	}
+
+	// 判断是否为目录
+	if info.IsDir() {
+		// 如果是目录且不允许递归目录
+		if !recursive {
+			return nil, fmt.Errorf("跳过目录：%s, 请使用 -r 选项以递归方式处理", targetPath)
+		}
+
+		// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
+		filesInDir, err := walkDir(targetPath, recursive, cl)
+		if err != nil {
+			// 如果遍历目录时出现错误，返回该错误
+			return nil, err
+		}
+
+		// 将目录中的文件添加到文件列表中
+		files = append(files, filesInDir...)
+
+		// 返回收集到的文件列表和 nil 错误
+		return files, nil
+	}
+
+	// 如果是普通文件，将其路径添加到文件列表中
+	files = []string{targetPath}
 
 	// 返回收集到的文件列表和 nil 错误
 	return files, nil

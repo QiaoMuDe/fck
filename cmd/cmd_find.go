@@ -20,28 +20,39 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 根据标志决定是否启用正则表达式匹配
-	var escapedKeyword string
+	var escapedKeyword, exCludedKeyword string
 	if *findCmdRegex {
 		// 不转义关键字中的特殊字符, 即启用正则表达式匹配
 		escapedKeyword = *findCmdKeyword
+
+		// 不转义要排除的关键字中的特殊字符, 即启用正则表达式匹配
+		exCludedKeyword = *findCmdExclude
 	} else {
 		// 转义关键字中的特殊字符, 即不启用正则表达式匹配
 		escapedKeyword = regexp.QuoteMeta(*findCmdKeyword)
+
+		// 转义要排除的关键字中的特殊字符, 即不启用正则表达式匹配
+		exCludedKeyword = regexp.QuoteMeta(*findCmdExclude)
 	}
 
 	// 根据用户选择是否区分大小写
-	var keywordRegex *regexp.Regexp
-	var regexpErr error
+	var keywordRegex, exCludedRegex *regexp.Regexp
+	var regexpErr, exCludedRegexErr error
 	// 默认不区分大小写
 	if *findCmdCase {
 		// 区分大小写的正则表达式
 		keywordRegex, regexpErr = regexp.Compile(escapedKeyword)
 
+		// 编译排除的关键字的正则表达式
+		exCludedRegex, exCludedRegexErr = regexp.Compile(exCludedKeyword)
 	} else {
 		// 不区分大小写的正则表达式
 		keywordRegex, regexpErr = regexp.Compile("(?i)" + escapedKeyword)
+
+		// 编译排除的关键字的正则表达式
+		exCludedRegex, exCludedRegexErr = regexp.Compile("(?i)" + exCludedKeyword)
 	}
-	if regexpErr != nil {
+	if regexpErr != nil || exCludedRegexErr != nil {
 		return fmt.Errorf("关键字格式错误: %s", regexpErr)
 	}
 
@@ -57,21 +68,20 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 			return filepath.SkipDir
 		}
 
-		// 检查文件名是否匹配关键字
+		// 检查文件名是否匹配关键字并根据标志决定是否输出
 		if keywordRegex.MatchString(entry.Name()) {
-			// 根据用户选择过滤文件或目录
+			// 如果只查找文件，跳过目录
 			if *findCmdFile && entry.IsDir() {
-				// 如果只查找文件，跳过目录
 				return nil
 			}
 
+			// 如果只查找目录，跳过文件
 			if *findCmdDir && !entry.IsDir() {
-				// 如果只查找目录，跳过文件
 				return nil
 			}
 
+			// 如果只查找软链接，检查文件类型
 			if *findCmdSymlink {
-				// 如果只查找软链接，检查文件类型
 				fileInfo, linkErr := entry.Info() // 获取文件信息
 				if linkErr != nil {
 					return nil
@@ -81,18 +91,18 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				}
 			}
 
+			// 如果只显示隐藏文件或目录
 			if *findCmdHidden && !isHidden(path) && *findCmdHiddenOnly {
-				// 如果只显示隐藏文件或目录
 				return nil
 			}
 
+			// 如果只显示只读文件或目录
 			if *findCmdReadOnly && !isReadOnly(path) {
-				// 如果只显示只读文件或目录
 				return nil
 			}
 
+			// 如果指定了文件大小, 检查文件大小是否符合要求
 			if *findCmdSize != "" {
-				// 如果指定了文件大小, 检查文件大小是否符合要求
 				fileInfo, sizeErr := entry.Info()
 				if sizeErr != nil {
 					return nil
@@ -102,8 +112,8 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				}
 			}
 
+			// 如果指定了修改时间, 检查文件时间是否符合要求
 			if *findCmdModTime != "" {
-				// 如果指定了修改时间, 检查文件时间是否符合要求
 				fileInfo, mtimeErr := entry.Info()
 				if mtimeErr != nil {
 					return nil
@@ -122,6 +132,11 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				}
 
 				// 如果是隐藏文件，跳过单个文件
+				return nil
+			}
+
+			// 检查文件名是否包含排除的关键字
+			if *findCmdExclude != "" && exCludedRegex.MatchString(entry.Name()) {
 				return nil
 			}
 
@@ -238,7 +253,7 @@ func checkFindCmdArgs() error {
 
 	// 如果只显示隐藏文件或目录, 则必须指定 -hidden 标志
 	if *findCmdHiddenOnly && !*findCmdHidden {
-		return fmt.Errorf("必须指定 -hidden 标志才能使用 -ho 标志")
+		return fmt.Errorf("必须指定 -H 标志才能使用 -ho 标志")
 	}
 
 	return nil

@@ -29,13 +29,8 @@ func diffCmdMain(cl *colorlib.ColorLib) error {
 		os.Exit(1) // 退出程序
 	}()
 
-	// 检查三个参数是否都为空
-	if *diffCmdFile == "" && *diffCmdDirA == "" && *diffCmdDirB == "" {
-		return fmt.Errorf("必须指定一个校验文件或两个目录。或 -h 参数查看帮助信息。")
-	}
-
 	// (1) 执行根据单校验文件校验目录完整性的逻辑 -f 参数
-	if *diffCmdFile != "" && *diffCmdDirs == "" {
+	if *diffCmdFile != "" && *diffCmdDirs == "" && *diffCmdDirA == "" && *diffCmdDirB == "" {
 		cl.PrintOk("正在校验目录完整性...")
 		// 执行校验文件
 		if err := fileCheck(*diffCmdFile, cl); err != nil {
@@ -45,7 +40,7 @@ func diffCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// (2) 如果指定校验文件不为空，同时也通过*diffCmdDirs指定了目录 -f 参数和 -d 参数
-	if *diffCmdFile != "" && *diffCmdDirs != "" {
+	if *diffCmdFile != "" && *diffCmdDirs != "" && *diffCmdDirA == "" && *diffCmdDirB == "" {
 		// 执行校验文件和目录的逻辑
 		if err := checkWithFileAndDir(*diffCmdFile, *diffCmdDirs, cl); err != nil {
 			return err
