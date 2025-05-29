@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -140,6 +142,25 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				return nil
 			}
 
+			// 如果启用了删除标志，删除匹配的文件或目录
+			if *findCmdDelete {
+				if err := deleteMatchedItem(path, entry.IsDir()); err != nil {
+					return err
+				}
+				return nil
+			}
+
+			// 如果指定了-exec命令, 则执行命令
+			if *findCmdExec != "" {
+				cmdStr := strings.Replace(*findCmdExec, "{}", path, -1)
+				if err := runCommand(cmdStr, cl); err != nil {
+					return fmt.Errorf("执行-exec命令时发生了错误: %v", err)
+				}
+
+				// 执行完命令, 跳过输出路径
+				return nil
+			}
+
 			// 输出匹配的文件或目录路径
 			if *findCmdFullPath {
 				// 获取完整路径
@@ -251,9 +272,24 @@ func checkFindCmdArgs() error {
 		}
 	}
 
-	// 如果只显示隐藏文件或目录, 则必须指定 -hidden 标志
+	// 如果只显示隐藏文件或目录, 则必须指定 -H 标志
 	if *findCmdHiddenOnly && !*findCmdHidden {
 		return fmt.Errorf("必须指定 -H 标志才能使用 -ho 标志")
+	}
+
+	// 检查-exec标志是否包含{}
+	if *findCmdExec != "" && !strings.Contains(*findCmdExec, "{}") {
+		return fmt.Errorf("使用-exec标志时必须包含{}作为路径占位符")
+	}
+
+	// 检查-print-cmd标志是否与-exec一起使用
+	if *findCmdPrintCmd && *findCmdExec == "" {
+		return fmt.Errorf("使用-print-cmd标志时必须同时指定-exec标志")
+	}
+
+	// 检查-delete标志是否与-exec一起使用
+	if *findCmdDelete && *findCmdExec != "" {
+		return fmt.Errorf("使用-delete标志时不能同时指定-exec标志")
 	}
 
 	return nil
@@ -342,4 +378,65 @@ func matchFileTime(fileTime time.Time, timeCondition string) bool {
 	default:
 		return false
 	}
+}
+
+// runCommand 执行单个命令， 支持跨平台并检查shell是否存在
+// 参数cmdStr是要执行的命令字符串
+// 参数cl是颜色库实例
+// 返回执行过程中的错误
+func runCommand(cmdStr string, cl *colorlib.ColorLib) error {
+	var shell string
+	var args []string
+
+	// 根据系统选择默认shell
+	if runtime.GOOS == "windows" {
+		shell = "cmd"
+		args = []string{"/C", cmdStr}
+	} else {
+		shell = "bash"
+		args = []string{"-c", cmdStr}
+	}
+
+	// 检查shell是否存在
+	if _, err := exec.LookPath(shell); err != nil {
+		return fmt.Errorf("找不到 %s 解释器: %v", shell, err)
+	}
+
+	// 如果启用了print-cmd输出, 打印执行的命令
+	if *findCmdPrintCmd {
+		cl.Red(shell, strings.Join(args, " "))
+	}
+
+	// 构建命令并设置输出
+	cmd := exec.Command(shell, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// 执行命令并捕获错误
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("命令执行失败: %v", err)
+	}
+	return nil
+}
+
+// deleteMatchedItem 删除匹配的文件或目录
+// 参数path是要删除的路径
+// 参数isDir指示是否是目录
+// 参数cl是颜色库实例
+// 返回删除过程中的错误
+func deleteMatchedItem(path string, isDir bool) error {
+	var err error
+
+	// 根据类型选择删除方法
+	if isDir {
+		err = os.RemoveAll(path)
+	} else {
+		err = os.Remove(path)
+	}
+
+	if err != nil {
+		return fmt.Errorf("删除失败: %s: %v", path, err)
+	}
+
+	return nil
 }
