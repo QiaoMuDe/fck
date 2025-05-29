@@ -424,7 +424,7 @@ func runCommand(cmdStr string, cl *colorlib.ColorLib) error {
 
 	// 如果启用了print-cmd输出, 打印执行的命令
 	if *findCmdPrintCmd {
-		cl.Red(shell, strings.Join(args, " "))
+		cl.Redf("%s %s", shell, strings.Join(args, " "))
 	}
 
 	// 构建命令并设置输出
