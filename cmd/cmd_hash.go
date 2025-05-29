@@ -344,8 +344,10 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 			}
 			// 判断当前条目是否为非目录文件
 			if !d.IsDir() {
-				// 如果是文件，将其路径添加到文件列表中
-				files = append(files, path)
+				// 如果是文件且不是隐藏文件（或允许隐藏文件），则添加到文件列表
+				if !*hashCmdHidden || !isHidden(path) {
+					files = append(files, path)
+				}
 			}
 			// 继续遍历下一个条目
 			return nil
@@ -368,8 +370,11 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 		for _, entry := range dir {
 			// 判断当前条目是否为目录
 			if entry.IsDir() {
-				// 如果是目录，打印警告信息并跳过该目录
-				cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", entry.Name())
+				// 如果是目录且不是隐藏目录（或允许隐藏目录），则处理
+				if !*hashCmdHidden || !isHidden(entry.Name()) {
+					// 如果是目录，打印警告信息并跳过该目录
+					cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", entry.Name())
+				}
 				// 继续遍历下一个条目
 				continue
 			}
@@ -416,22 +421,26 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 			}
 			// 判断是否为目录
 			if info.IsDir() {
-				if recursive {
-					// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
-					filesInDir, err := walkDir(file, recursive, cl)
-					if err != nil {
-						// 如果遍历目录时出现错误，返回该错误
-						return nil, err
+				if !*hashCmdHidden || !isHidden(file) {
+					if recursive {
+						// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
+						filesInDir, err := walkDir(file, recursive, cl)
+						if err != nil {
+							// 如果遍历目录时出现错误，返回该错误
+							return nil, err
+						}
+						// 将目录中的文件添加到文件列表中
+						files = append(files, filesInDir...)
+					} else {
+						// 如果不是递归模式，打印警告信息并跳过该目录
+						cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", file)
 					}
-					// 将目录中的文件添加到文件列表中
-					files = append(files, filesInDir...)
-				} else {
-					// 如果不是递归模式，打印警告信息并跳过该目录
-					cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", file)
 				}
 			} else {
-				// 如果是文件，直接添加到文件列表中
-				files = append(files, file)
+				// 如果是文件且不是隐藏文件（或允许隐藏文件），则添加到文件列表
+				if !*hashCmdHidden || !isHidden(file) {
+					files = append(files, file)
+				}
 			}
 		}
 	} else {
@@ -444,17 +453,22 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 
 		// 判断是否为目录
 		if info.IsDir() {
-			// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
-			filesInDir, err := walkDir(targetPath, recursive, cl)
-			if err != nil {
-				// 如果遍历目录时出现错误，返回该错误
-				return nil, err
+			// 如果是目录且不是隐藏目录（或允许隐藏目录），则处理
+			if !*hashCmdHidden || !isHidden(targetPath) {
+				// 如果是目录，调用 walkDir 函数遍历该目录并收集文件
+				filesInDir, err := walkDir(targetPath, recursive, cl)
+				if err != nil {
+					// 如果遍历目录时出现错误，返回该错误
+					return nil, err
+				}
+				// 将目录中的文件添加到文件列表中
+				files = append(files, filesInDir...)
 			}
-			// 将目录中的文件添加到文件列表中
-			files = append(files, filesInDir...)
 		} else {
-			// 如果是文件，直接将该文件路径添加到文件列表中
-			files = []string{targetPath}
+			// 如果是文件且不是隐藏文件（或允许隐藏文件），则添加到文件列表
+			if !*hashCmdHidden || !isHidden(targetPath) {
+				files = []string{targetPath}
+			}
 		}
 	}
 

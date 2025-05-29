@@ -15,6 +15,7 @@ var (
 	hashCmdRecursion = hashCmd.Bool("r", false, "递归处理目录")
 	hashCmdJob       = hashCmd.Int("j", 1, "指定并发数量")
 	hashCmdWrite     = hashCmd.Bool("w", false, "将哈希值写入文件, 文件名为checksum.hash")
+	hashCmdHidden    = hashCmd.Bool("hidden", false, "计算隐藏文件或目录的哈希值(默认不计算隐藏文件或目录)")
 
 	// fck size 子命令
 	sizeCmd      = flag.NewFlagSet("size", flag.ExitOnError)
