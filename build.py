@@ -483,10 +483,13 @@ def get_git_info():
 
 def generate_output_file_name(base_name, system, git_version=None):
     """根据操作系统生成默认输出文件名, 可选的git版本号"""
+    # 创建输出目录, 如果不存在则创建
     os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
+
     name = base_name
     if git_version is not None:
         name = f"{name}_{git_version}"
+
     if system == "windows":
         return os.path.join(DEFAULT_OUTPUT_DIR, f"{name}.exe")
     return os.path.join(DEFAULT_OUTPUT_DIR, name)
@@ -658,7 +661,7 @@ def parse_arguments():
 # 主程序入口 #
 def install_executable(executable_path, args=None):
     """将可执行文件安装到GOPATH/bin目录
-    
+
     参数:
         executable_path: 要安装的可执行文件路径
         args: 命令行参数对象，包含force等标志
@@ -826,9 +829,7 @@ def main():
     if args.simple_name:
         base_name = f"{BASE_OUTPUT_NAME}"
         # 生成默认的输出文件名
-        output_file = generate_output_file_name(
-            base_name, system, git_version if inject_git else None
-        )
+        output_file = generate_output_file_name(base_name, system, None)
     else:
         # 生成带有系统和架构信息的默认输出文件名
         base_name = f"{BASE_OUTPUT_NAME}_{system}_{architecture}"

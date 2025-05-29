@@ -60,6 +60,13 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 
 	// 使用 filepath.WalkDir 遍历目录
 	walkDirErr := filepath.WalkDir(*findCmdPath, func(path string, entry os.DirEntry, err error) error {
+		// 检查路径是否存在
+		if _, statErr := os.Stat(path); os.IsNotExist(statErr) {
+			// 忽略不存在的路径
+			return nil
+		}
+
+		// 检查遍历过程中是否遇到错误
 		if err != nil {
 			return fmt.Errorf("访问文件时出错：%s", err)
 		}
@@ -147,6 +154,13 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				if err := deleteMatchedItem(path, entry.IsDir()); err != nil {
 					return err
 				}
+
+				// 如果是目录, 跳过整个目录
+				if entry.IsDir() {
+					return filepath.SkipDir
+				}
+
+				// 如果是文件, 跳过单个文件
 				return nil
 			}
 
@@ -157,7 +171,6 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 					return fmt.Errorf("执行-exec命令时发生了错误: %v", err)
 				}
 
-				// 执行完命令, 跳过输出路径
 				return nil
 			}
 
@@ -390,8 +403,15 @@ func runCommand(cmdStr string, cl *colorlib.ColorLib) error {
 
 	// 根据系统选择默认shell
 	if runtime.GOOS == "windows" {
-		shell = "cmd"
-		args = []string{"/C", cmdStr}
+		// 先尝试使用 PowerShell
+		if _, err := exec.LookPath("powershell"); err == nil {
+			shell = "powershell"
+			args = []string{"-Command", cmdStr}
+		} else {
+			// 如果 PowerShell 不存在，使用 cmd
+			shell = "cmd"
+			args = []string{"/C", cmdStr}
+		}
 	} else {
 		shell = "bash"
 		args = []string{"-c", cmdStr}
@@ -425,6 +445,19 @@ func runCommand(cmdStr string, cl *colorlib.ColorLib) error {
 // 参数cl是颜色库实例
 // 返回删除过程中的错误
 func deleteMatchedItem(path string, isDir bool) error {
+	// 检查是否为空路径
+	if path == "" {
+		return fmt.Errorf("没有可删除的路径")
+	}
+
+	// 先检查文件/目录是否存在
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("文件/目录不存在: %s", path)
+		}
+		return fmt.Errorf("检查文件/目录时出错: %s: %v", path, err)
+	}
+
 	var err error
 
 	// 根据类型选择删除方法
