@@ -85,32 +85,17 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 			return nil
 		}
 
+		// 检查当前路径的深度是否超过最大深度
+		depth := strings.Count(filepath.ToSlash(path[len(findPath):]), "/")
+		if *findCmdMaxDepth >= 0 && depth > *findCmdMaxDepth {
+			return filepath.SkipDir
+		}
+
 		// 检查是否为符号链接循环, 然后做相应处理
 		if entry.Type()&os.ModeSymlink != 0 {
 			if isSymlinkLoop(path) {
 				return filepath.SkipDir
 			}
-
-			// 非循环符号链接处理
-			if *findCmdFollowLinks {
-				// 获取链接目标信息
-				_, err := filepath.EvalSymlinks(path)
-				if err != nil {
-					return fmt.Errorf("解析符号链接失败: %v", err)
-				}
-
-				// 符号链接目标存在, 继续处理
-				return nil
-			}
-
-			// 默认跳过符号链接
-			return nil
-		}
-
-		// 检查当前路径的深度是否超过最大深度
-		depth := strings.Count(filepath.ToSlash(path[len(findPath):]), "/")
-		if *findCmdMaxDepth >= 0 && depth > *findCmdMaxDepth {
-			return filepath.SkipDir
 		}
 
 		// 检查文件名是否匹配关键字并根据标志决定是否输出
@@ -127,12 +112,27 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 
 			// 如果只查找软链接，检查文件类型
 			if *findCmdSymlink {
-				fileInfo, linkErr := entry.Info() // 获取文件信息
+				fileInfo, linkErr := os.Lstat(path)
 				if linkErr != nil {
 					return nil
 				}
-				if fileInfo.Mode()&os.ModeSymlink == 0 { // 检查文件是否为软链接
-					return nil
+
+				// Windows系统特殊处理
+				if runtime.GOOS == "windows" {
+					// 检查.lnk后缀
+					if strings.HasSuffix(entry.Name(), ".lnk") {
+						// 是快捷方式，继续后续处理
+					} else if fileInfo.Mode()&os.ModeSymlink != 0 {
+						// 是mklink创建的符号链接
+					} else {
+						// 既不是.lnk也不是符号链接, 跳过
+						return nil
+					}
+				} else {
+					// 非Windows系统只检查ModeSymlink标志
+					if fileInfo.Mode()&os.ModeSymlink == 0 {
+						return nil // 不是符号链接, 跳过
+					}
 				}
 			}
 
