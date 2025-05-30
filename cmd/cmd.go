@@ -1,3 +1,4 @@
+// Package cmd 包含了命令行工具相关的功能和函数
 package cmd
 
 import (
