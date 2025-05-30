@@ -14,9 +14,6 @@ import (
 	"gitee.com/MM-Q/colorlib"
 )
 
-// excludedPathsMap 存储需要排除的路径
-var excludedPathsMap = map[string]bool{}
-
 // findCmdMain 是 find 子命令的主函数
 func findCmdMain(cl *colorlib.ColorLib) error {
 	// 检查参数
@@ -72,6 +69,11 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 		// 检查遍历过程中是否遇到错误
 		if err != nil {
 			return fmt.Errorf("访问文件时出错：%s", err)
+		}
+
+		// 跳过*findCmdPath目录本身
+		if path == *findCmdPath {
+			return nil
 		}
 
 		// 检查是否为符号链接循环, 然后做相应处理
@@ -170,7 +172,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 			}
 
 			// 检查路径中是否包含排除的关键字或目录
-			if (*findCmdExclude != "" && exCludedRegex.MatchString(path)) || isExcludedPath(path) {
+			if *findCmdExclude != "" && exCludedRegex.MatchString(path) {
 				return nil
 			}
 
@@ -376,11 +378,6 @@ func checkFindCmdArgs() error {
 				return fmt.Errorf("-mv标志指定的路径必须为目录")
 			}
 		}
-	}
-
-	// 将指定的路径添加到排除路径映射中
-	if *findCmdPath != "" {
-		AddExcludedPath(*findCmdPath)
 	}
 
 	return nil
@@ -648,22 +645,6 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 	}
 
 	return nil
-}
-
-// isExcludedPath 检查路径是否在排除列表中
-func isExcludedPath(path string) bool {
-	// 检查路径是否匹配任何排除项
-	for excluded := range excludedPathsMap {
-		if strings.Contains(path, excluded) {
-			return true
-		}
-	}
-	return false
-}
-
-// AddExcludedPath 添加新的排除路径
-func AddExcludedPath(path string) {
-	excludedPathsMap[path] = true
 }
 
 // isSymlinkLoop 检查路径是否是符号链接循环
