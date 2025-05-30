@@ -144,8 +144,8 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				return nil
 			}
 
-			// 检查文件名是否包含排除的关键字
-			if *findCmdExclude != "" && exCludedRegex.MatchString(entry.Name()) {
+			// 检查路径中是否包含排除的关键字
+			if *findCmdExclude != "" && exCludedRegex.MatchString(path) {
 				return nil
 			}
 
@@ -164,9 +164,32 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				return nil
 			}
 
+			// 如果启用了-mv标志，移动匹配的文件或目录
+			if *findCmdMove != "" {
+				if err := moveMatchedItem(path, *findCmdMove, cl); err != nil {
+					return err
+				}
+
+				// 如果是目录, 跳过整个目录
+				if entry.IsDir() {
+					return filepath.SkipDir
+				}
+
+				// 如果是文件, 跳过单个文件
+				return nil
+			}
+
 			// 如果指定了-exec命令, 则执行命令
 			if *findCmdExec != "" {
-				cmdStr := strings.Replace(*findCmdExec, "{}", path, -1)
+				// 替换{}为实际的文件路径，并根据系统类型选择引用方式
+				var cmdStr string
+				if runtime.GOOS == "windows" {
+					cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("\"%s\"", path), -1) // Windows使用双引号
+				} else {
+					cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("'%s'", path), -1) // Linux使用单引号
+				}
+
+				// 执行命令
 				if err := runCommand(cmdStr, cl); err != nil {
 					return fmt.Errorf("执行-exec命令时发生了错误: %v", err)
 				}
@@ -303,6 +326,43 @@ func checkFindCmdArgs() error {
 	// 检查-delete标志是否与-exec一起使用
 	if *findCmdDelete && *findCmdExec != "" {
 		return fmt.Errorf("使用-delete标志时不能同时指定-exec标志")
+	}
+
+	// 检查-mv标志是否与-exec一起使用
+	if *findCmdMove != "" && *findCmdExec != "" {
+		return fmt.Errorf("使用-mv标志时不能同时指定-exec标志")
+	}
+
+	// 检查-mv标志是否与-delete一起使用
+	if *findCmdMove != "" && *findCmdDelete {
+		return fmt.Errorf("使用-mv标志时不能同时指定-delete标志")
+	}
+
+	// 检查-mv标志指定的路径是否为文件
+	if *findCmdMove != "" {
+		if info, err := os.Stat(*findCmdMove); err == nil {
+			// 如果指定的路径是文件, 则返回错误
+			if !info.IsDir() {
+				return fmt.Errorf("-mv标志指定的路径必须为目录")
+			}
+		}
+	}
+
+	// 检查-mv和-e是否同时使用
+	if *findCmdMove != "" && *findCmdExclude != "" {
+		return fmt.Errorf("不能同时指定-mv和-e标志")
+	}
+
+	// 检查-mv要是不为空则设置-e
+	if *findCmdMove != "" {
+		// 获取移动目标路径的绝对路径
+		absMovePath, err := filepath.Abs(*findCmdMove)
+		if err != nil {
+			return fmt.Errorf("获取移动路径绝对路径失败: %v", err)
+		}
+
+		// 将移动目标路径添加到排除列表中
+		*findCmdExclude = "^" + regexp.QuoteMeta(absMovePath) + "($|/)"
 	}
 
 	return nil
@@ -470,6 +530,87 @@ func deleteMatchedItem(path string, isDir bool) error {
 	if err != nil {
 		return fmt.Errorf("删除失败: %s: %v", path, err)
 	}
+
+	return nil
+}
+
+// moveMatchedItem 移动匹配的文件或目录到指定位置
+// 参数path是要移动的源路径
+// 参数destPath是目标路径
+// 返回移动过程中的错误
+func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) error {
+	// 检查源路径是否为空
+	if path == "" {
+		return fmt.Errorf("源路径为空")
+	}
+
+	// 检查目标路径是否为空
+	if targetPath == "" {
+		return fmt.Errorf("没有指定目标路径")
+	}
+
+	// 检查源路径是否存在
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("源文件/目录不存在: %s", path)
+		}
+		return fmt.Errorf("检查源文件/目录时出错: %s: %v", path, err)
+	}
+
+	// 获取目标路径的绝对路径
+	absTargetPath, err := filepath.Abs(targetPath)
+	if err != nil {
+		return fmt.Errorf("获取目标路径绝对路径失败: %v", err)
+	}
+
+	// 获取源路径的绝对路径
+	absSearchPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("获取源路径绝对路径失败: %v", err)
+	}
+
+	// 检查目标路径是否是源路径的子目录(防止循环移动)
+	if strings.HasPrefix(absTargetPath, absSearchPath) {
+		cl.Red(absSearchPath, " -> ", absTargetPath)
+		return fmt.Errorf("不能将目录移动到自身或其子目录中")
+	}
+
+	// 确保目标目录存在
+	if err := os.MkdirAll(filepath.Dir(absTargetPath), 0755); err != nil {
+		return fmt.Errorf("创建目标目录失败: %v", err)
+	}
+
+	// 组装完整的目标路径: 目标路径 + 源路径的文件名
+	if filepath.Base(absSearchPath) != "" {
+		absTargetPath = filepath.Join(absTargetPath, filepath.Base(absSearchPath))
+	}
+
+	// 尝试移动前先检查权限
+	if err := os.WriteFile(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp"), []byte{}, 0644); err != nil {
+		return fmt.Errorf("目标目录无写入权限: %v", err)
+	}
+	os.Remove(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp"))
+
+	// 检查目标文件是否已存在
+	if _, err := os.Stat(absTargetPath); err == nil {
+		// 如果是移动操作，直接跳过而不是报错
+		if *findCmdMove != "" {
+			return nil
+		}
+		return fmt.Errorf("目标文件已存在: %s", absTargetPath)
+	}
+
+	// 打印移动信息
+	if *findCmdPrintMove {
+		cl.Redf("%s -> %s", absSearchPath, absTargetPath)
+	}
+
+	// 执行移动操作
+	if err := os.Rename(absSearchPath, absTargetPath); err != nil {
+		return fmt.Errorf("移动失败: %s -> %s: %v", absSearchPath, absTargetPath, err)
+	}
+
+	//return filepath.SkipDir
 
 	return nil
 }

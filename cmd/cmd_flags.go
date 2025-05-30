@@ -31,8 +31,8 @@ var (
 	diffCmdHelp  = diffCmd.Bool("h", false, "打印帮助信息并退出")
 	diffCmdFile  = diffCmd.String("f", globals.OutputFileName, "指定用于校验的哈希值文件，程序将依据该文件中的哈希值进行校验操作")
 	diffCmdDirs  = diffCmd.String("d", "", "指定需要根据哈希值文件进行校验的目标目录")
-	diffCmdDirA  = diffCmd.String("a", "", "指定要校验的目录A")
-	diffCmdDirB  = diffCmd.String("b", "", "指定要校验的目录B")
+	diffCmdDirA  = diffCmd.String("a", "", "指定要对比的目录A")
+	diffCmdDirB  = diffCmd.String("b", "", "指定要对比的目录B")
 	diffCmdType  = diffCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
 	diffCmdWrite = diffCmd.Bool("w", false, "将校验结果写入文件, 文件名为check_dir.check")
 
@@ -58,4 +58,6 @@ var (
 	findCmdExec       = findCmd.String("exec", "", "对匹配的每个路径执行指定命令，使用{}作为占位符")
 	findCmdPrintCmd   = findCmd.Bool("print-cmd", false, "在执行-exec命令前打印将要执行的命令")
 	findCmdDelete     = findCmd.Bool("delete", false, "删除匹配的文件或目录")
+	findCmdMove       = findCmd.String("mv", "", "将匹配项移动到指定的路径")
+	findCmdPrintMove  = findCmd.Bool("print-mv", false, "在移动前打印 old -> new 的映射")
 )
