@@ -66,10 +66,36 @@ func diffCmdMain(cl *colorlib.ColorLib) error {
 func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 	// 检查目录A 和 目录B 是否存在
 	if _, err := os.Stat(*diffCmdDirA); err != nil {
-		return fmt.Errorf("目录A不存在: %s", *diffCmdDirA)
+		// 检查是否是权限错误
+		if os.IsPermission(err) {
+			// 如果是权限错误，返回错误信息
+			return fmt.Errorf("权限不足: %s", *diffCmdDirA)
+		}
+
+		// 检查是否为文件不存在错误
+		if os.IsNotExist(err) {
+			// 如果是文件不存在错误，返回错误信息
+			return fmt.Errorf("目录不存在: %s", *diffCmdDirA)
+		}
+
+		// 如果是其他错误，返回错误信息
+		return fmt.Errorf("无法访问目录: %s", *diffCmdDirA)
 	}
 	if _, err := os.Stat(*diffCmdDirB); err != nil {
-		return fmt.Errorf("目录B不存在: %s", *diffCmdDirB)
+		// 检查是否是权限错误
+		if os.IsPermission(err) {
+			// 如果是权限错误，返回错误信息
+			return fmt.Errorf("权限不足: %s", *diffCmdDirB)
+		}
+
+		// 检查是否为文件不存在错误
+		if os.IsNotExist(err) {
+			// 如果是文件不存在错误，返回错误信息
+			return fmt.Errorf("目录不存在: %s", *diffCmdDirB)
+		}
+
+		// 如果是其他错误，返回错误信息
+		return fmt.Errorf("无法访问目录: %s", *diffCmdDirB)
 	}
 
 	// 检查目录A是否为绝对路径，如果不是，则转换为绝对路径
@@ -381,7 +407,7 @@ func getFilesFromDirs(dirA, dirB string) (map[string]string, map[string]string, 
 //   - map[string]string: 返回一个映射, key 为相对于 dir 的文件路径, value 为文件的完整路径
 func getFiles(dir string) (map[string]string, error) {
 	files := make(map[string]string)
-	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+	walkDirErr := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -399,7 +425,23 @@ func getFiles(dir string) (map[string]string, error) {
 		}
 		return nil
 	})
-	return files, err
+
+	if walkDirErr != nil {
+		// 如果是权限错误，则返回错误信息
+		if os.IsPermission(walkDirErr) {
+			return nil, fmt.Errorf("权限不足: %s", dir)
+		}
+
+		// 如果是文件不存在错误，则返回错误信息
+		if os.IsNotExist(walkDirErr) {
+			return nil, fmt.Errorf("目录不存在: %s", dir)
+		}
+
+		// 其他错误，返回错误信息
+		return nil, fmt.Errorf("遍历目录时出错: %v", walkDirErr)
+	}
+
+	return files, nil
 }
 
 // compareFiles 比较两个目录的文件

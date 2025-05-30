@@ -102,10 +102,21 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 // getPathSize 获取路径大小
 func getPathSize(path string) (int64, error) {
 	// 获取文件信息
-	info, err := os.Stat(path)
-	if err != nil {
+	info, statErr := os.Stat(path)
+	if statErr != nil {
+		// 检查是否为权限错误
+		if os.IsPermission(statErr) {
+			// 如果是权限错误，则忽略该错误并给出更友好的提示信息
+			return 0, fmt.Errorf("权限不足: 路径 %s", path)
+		}
+		// 检查是否为文件不存在错误
+		if os.IsNotExist(statErr) {
+			// 如果是文件不存在错误，则忽略该错误并给出更友好的提示信息
+			return 0, fmt.Errorf("文件不存在: 路径 %s", path)
+		}
+
 		// 如果获取文件信息失败，返回错误
-		return 0, fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", path, err)
+		return 0, fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", path, statErr)
 	}
 
 	// 如果不是目录，则直接返回文件大小
@@ -116,7 +127,7 @@ func getPathSize(path string) (int64, error) {
 	// 定义总大小
 	var totalSize int64
 	// 遍历目录
-	err = filepath.Walk(path, func(filePath string, fileInfo fs.FileInfo, err error) error {
+	walkErr := filepath.Walk(path, func(filePath string, fileInfo fs.FileInfo, err error) error {
 		// 如果遍历目录遇到权限错误，则忽略该错误并给出更友好的提示信息
 		if err != nil {
 			// 如果遍历目录失败，返回错误
@@ -130,9 +141,21 @@ func getPathSize(path string) (int64, error) {
 		return nil
 	})
 
-	if err != nil {
+	if walkErr != nil {
+		// 如果遍历目录遇到权限错误，则忽略该错误并给出更友好的提示信息
+		if os.IsPermission(walkErr) {
+			// 如果遍历目录失败，返回错误
+			return 0, fmt.Errorf("权限不足: 路径 %s", path)
+		}
+
+		// 检查是否为文件不存在错误
+		if os.IsNotExist(walkErr) {
+			// 如果是文件不存在错误，则忽略该错误并给出更友好的提示信息
+			return 0, fmt.Errorf("文件不存在: 路径 %s", path)
+		}
+
 		// 如果遍历目录失败，返回错误
-		return 0, fmt.Errorf("遍历目录失败: %v", err)
+		return 0, fmt.Errorf("遍历目录失败: %v", walkErr)
 	}
 	// 返回总大小
 	return totalSize, nil

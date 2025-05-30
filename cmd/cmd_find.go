@@ -71,6 +71,28 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("访问文件时出错：%s", err)
 		}
 
+		// 检查是否为符号链接循环, 然后做相应处理
+		if entry.Type()&os.ModeSymlink != 0 {
+			if isSymlinkLoop(path) {
+				return filepath.SkipDir
+			}
+
+			// 非循环符号链接处理
+			if *findCmdFollowLinks {
+				// 获取链接目标信息
+				_, err := filepath.EvalSymlinks(path)
+				if err != nil {
+					return fmt.Errorf("解析符号链接失败: %v", err)
+				}
+
+				// 符号链接目标存在, 继续处理
+				return nil
+			}
+
+			// 默认跳过符号链接
+			return nil
+		}
+
 		// 检查当前路径的深度是否超过最大深度
 		depth := strings.Count(filepath.ToSlash(path[len(*findCmdPath):]), "/")
 		if *findCmdMaxDepth >= 0 && depth > *findCmdMaxDepth {
@@ -227,7 +249,12 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 	})
 
 	if walkDirErr != nil {
-		return fmt.Errorf("遍历目录时出错: %s", walkDirErr)
+		if os.IsPermission(walkDirErr) {
+			return fmt.Errorf("权限不足，无法访问某些目录: %v", walkDirErr)
+		} else if os.IsNotExist(walkDirErr) {
+			return fmt.Errorf("路径不存在: %v", walkDirErr)
+		}
+		return fmt.Errorf("遍历目录时出错: %v", walkDirErr)
 	}
 
 	return nil
@@ -589,10 +616,43 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 
 	// 执行移动操作
 	if err := os.Rename(absSearchPath, absTargetPath); err != nil {
+		if os.IsExist(err) {
+			return fmt.Errorf("目标文件已存在: %s -> %s", absSearchPath, absTargetPath)
+		}
+		if os.IsPermission(err) {
+			return fmt.Errorf("权限不足，无法移动文件: %v", err)
+		}
+
 		return fmt.Errorf("移动失败: %s -> %s: %v", absSearchPath, absTargetPath, err)
 	}
 
 	//return filepath.SkipDir
 
 	return nil
+}
+
+// isSymlinkLoop 检查路径是否是符号链接循环
+func isSymlinkLoop(path string) bool {
+	visited := make(map[string]bool)
+	for {
+		if visited[path] {
+			return true // 检测到循环
+		}
+		visited[path] = true
+
+		info, err := os.Lstat(path)
+		if err != nil || info.Mode()&os.ModeSymlink == 0 {
+			return false // 不是符号链接或出错
+		}
+
+		newPath, err := os.Readlink(path)
+		if err != nil {
+			return false
+		}
+
+		if !filepath.IsAbs(newPath) {
+			newPath = filepath.Join(filepath.Dir(path), newPath)
+		}
+		path = newPath
+	}
 }

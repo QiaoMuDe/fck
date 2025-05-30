@@ -368,7 +368,7 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 
 	// 递归模式：遍历目录及其子目录中的所有文件
 	// 使用 filepath.WalkDir 函数递归遍历目录
-	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+	walkDirErr := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
 		// 检查遍历过程中是否出现错误
 		if err != nil {
 			// 如果出现错误，直接返回该错误
@@ -396,9 +396,20 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 	})
 
 	// 检查 filepath.WalkDir 函数是否返回错误
-	if err != nil {
+	if walkDirErr != nil {
+		// 如果是权限错误
+		if os.IsPermission(walkDirErr) {
+			// 返回错误信息，表示权限不足
+			return nil, fmt.Errorf("权限不足: %s", dirPath)
+		}
+		// 如果是文件不存在错误
+		if os.IsNotExist(walkDirErr) {
+			// 返回错误信息，表示文件不存在
+			return nil, fmt.Errorf("文件不存在: %s", dirPath)
+		}
+
 		// 如果出现错误，返回 nil 和包装后的错误信息
-		return nil, fmt.Errorf("遍历目录失败: %w", err)
+		return nil, fmt.Errorf("遍历目录失败: %w", walkDirErr)
 	}
 
 	// 返回收集到的文件列表和 nil 错误
@@ -432,10 +443,22 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 		// 遍历所有匹配的文件或目录
 		for _, file := range matchedFiles {
 			// 获取文件或目录的信息
-			info, err := os.Stat(file)
-			if err != nil {
+			info, statErr := os.Stat(file)
+			if statErr != nil {
+				// 检查是否是权限错误
+				if os.IsPermission(statErr) {
+					// 如果是权限错误，返回错误信息
+					return nil, fmt.Errorf("权限不足: %s", file)
+				}
+
+				// 检查是否为文件不存在错误
+				if os.IsNotExist(statErr) {
+					// 如果是文件不存在错误，返回错误信息
+					return nil, fmt.Errorf("文件不存在: %s", file)
+				}
+
 				// 如果无法获取文件或目录的信息，返回错误信息
-				return nil, fmt.Errorf("无法获取文件信息: %w", err)
+				return nil, fmt.Errorf("无法获取文件信息: %w", statErr)
 			}
 
 			// 如果是隐藏项且不允许隐藏项, 则跳过该目录
