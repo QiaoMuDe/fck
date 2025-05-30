@@ -348,23 +348,6 @@ func checkFindCmdArgs() error {
 		}
 	}
 
-	// 检查-mv和-e是否同时使用
-	if *findCmdMove != "" && *findCmdExclude != "" {
-		return fmt.Errorf("不能同时指定-mv和-e标志")
-	}
-
-	// 检查-mv要是不为空则设置-e
-	if *findCmdMove != "" {
-		// 获取移动目标路径的绝对路径
-		absMovePath, err := filepath.Abs(*findCmdMove)
-		if err != nil {
-			return fmt.Errorf("获取移动路径绝对路径失败: %v", err)
-		}
-
-		// 将移动目标路径添加到排除列表中
-		*findCmdExclude = "^" + regexp.QuoteMeta(absMovePath) + "($|/)"
-	}
-
 	return nil
 }
 
@@ -571,7 +554,6 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 
 	// 检查目标路径是否是源路径的子目录(防止循环移动)
 	if strings.HasPrefix(absTargetPath, absSearchPath) {
-		cl.Red(absSearchPath, " -> ", absTargetPath)
 		return fmt.Errorf("不能将目录移动到自身或其子目录中")
 	}
 
