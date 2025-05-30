@@ -9,9 +9,9 @@ import (
 	"gitee.com/MM-Q/colorlib"
 )
 
+// ColorMap 定义了不同颜色对应的文件后缀名映射
 var ColorMap = map[string]map[string]bool{
-	"lred": {
-		".log":     true,
+	"red": {
 		".bak":     true,
 		".tmp":     true,
 		".swp":     true,
@@ -24,8 +24,32 @@ var ColorMap = map[string]map[string]bool{
 		".sqlite3": true,
 		".mdb":     true,
 		".pdb":     true,
+		".zip":     true,
+		".tar":     true,
+		".gz":      true,
+		".rar":     true,
+		".7z":      true,
+		".bz2":     true,
+		".xz":      true,
+		".jar":     true,
+		".war":     true,
+		".tgz":     true,
+		".tar.gz":  true,
+		".deb":     true,
+		".rpm":     true,
+		".md5":     true,
+		".sha1":    true,
+		".sha256":  true,
+		".sha512":  true,
+		".hash":    true,
+		".mod":     true,
+		".sum":     true,
+		".pem":     true,
+		".key":     true,
+		".crt":     true,
+		".cer":     true,
 	},
-	"lgreen": {
+	"green": {
 		".exe":   true,
 		".dll":   true,
 		".so":    true,
@@ -33,8 +57,27 @@ var ColorMap = map[string]map[string]bool{
 		".dylib": true,
 		".apk":   true,
 		".ipa":   true,
+		".go":    true,
+		".py":    true,
+		".js":    true,
+		".ts":    true,
+		".html":  true,
+		".css":   true,
+		".java":  true,
+		".c":     true,
+		".cpp":   true,
+		".h":     true,
+		".hpp":   true,
+		".sh":    true,
+		".bash":  true,
+		".zsh":   true,
+		".bat":   true,
+		".ps1":   true,
+		".rb":    true,
+		".rs":    true,
+		".php":   true,
 	},
-	"lyellow": {
+	"yellow": {
 		".txt":  true,
 		".md":   true,
 		".json": true,
@@ -53,57 +96,10 @@ var ColorMap = map[string]map[string]bool{
 		".xlsx": true,
 		".ppt":  true,
 		".pptx": true,
+		".rtf":  true,
+		".log":  true,
 	},
-	"lblue": {
-		".go":   true,
-		".py":   true,
-		".js":   true,
-		".ts":   true,
-		".html": true,
-		".css":  true,
-		".java": true,
-		".c":    true,
-		".cpp":  true,
-		".h":    true,
-		".hpp":  true,
-		".sh":   true,
-		".bash": true,
-		".zsh":  true,
-		".bat":  true,
-		".ps1":  true,
-		".rb":   true,
-		".rs":   true,
-		".php":  true,
-	},
-	"lpurple": {
-		".md5":    true,
-		".sha1":   true,
-		".sha256": true,
-		".sha512": true,
-		".hash":   true,
-		".mod":    true,
-		".sum":    true,
-		".pem":    true,
-		".key":    true,
-		".crt":    true,
-		".cer":    true,
-	},
-	"lcyan": {
-		".zip":    true,
-		".tar":    true,
-		".gz":     true,
-		".rar":    true,
-		".7z":     true,
-		".bz2":    true,
-		".xz":     true,
-		".jar":    true,
-		".war":    true,
-		".tgz":    true,
-		".tar.gz": true,
-		".deb":    true,
-		".rpm":    true,
-	},
-	"lwhite": {
+	"white": {
 		".jpg":  true,
 		".jpeg": true,
 		".png":  true,
@@ -136,27 +132,60 @@ func printColoredFile(fs string, cl *colorlib.ColorLib) {
 	for color, extensions := range ColorMap {
 		if extensions[fileExt] {
 			switch color {
-			case "lblue":
-				cl.Lblue(fs)
-			case "lyellow":
-				cl.Lyellow(fs)
-			case "lgreen":
-				cl.Lgreen(fs)
-			case "lred":
-				cl.Lred(fs)
-			case "lpurple":
-				cl.Lpurple(fs)
-			case "lcyan":
-				cl.Lcyan(fs)
-			case "lwhite":
-				cl.Lwhite(fs)
+			case "yellow":
+				// 检查是否包含目录分割符
+				if strings.Contains(fs, string(os.PathSeparator)) {
+					// 把路径分割成目录和文件名
+					dir, file := filepath.Split(fs)
+
+					fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
+				} else {
+					cl.Yellow(fs) // 如果没有目录分割符，则直接输出文件名
+				}
+			case "green":
+				// 检查是否包含目录分割符
+				if strings.Contains(fs, string(os.PathSeparator)) {
+					// 把路径分割成目录和文件名
+					dir, file := filepath.Split(fs)
+
+					fmt.Println(cl.Scyan(dir) + cl.Sgreen(file))
+				} else {
+					cl.Green(fs) // 如果没有目录分割符，则直接输出文件名
+				}
+			case "red":
+				// 检查是否包含目录分割符
+				if strings.Contains(fs, string(os.PathSeparator)) {
+					// 把路径分割成目录和文件名
+					dir, file := filepath.Split(fs)
+
+					fmt.Println(cl.Scyan(dir) + cl.Sred(file))
+				} else {
+					cl.Red(fs) // 如果没有目录分割符，则直接输出文件名
+				}
+			case "white":
+				// 检查是否包含目录分割符
+				if strings.Contains(fs, string(os.PathSeparator)) {
+					// 把路径分割成目录和文件名
+					dir, file := filepath.Split(fs)
+
+					fmt.Println(cl.Scyan(dir) + cl.Swhite(file))
+				} else {
+					cl.White(fs) // 如果没有目录分割符，则直接输出文件名
+				}
 			}
 			return
 		}
 	}
 
-	// 如果没有匹配的颜色，使用灰色输出
-	cl.Gray(fs)
+	// 检查是否包含目录分割符
+	if strings.Contains(fs, string(os.PathSeparator)) {
+		// 把路径分割成目录和文件名
+		dir, file := filepath.Split(fs)
+
+		fmt.Println(cl.Scyan(dir) + cl.Sgray(file))
+	} else {
+		cl.Gray(fs) // 如果没有目录分割符，则直接输出文件名
+	}
 }
 
 // printStringColor 根据路径类型以不同颜色输出字符串
@@ -178,17 +207,20 @@ func printStringColor(path string, s string, cl *colorlib.ColorLib) error {
 
 	// 根据路径类型设置颜色
 	switch mode := pathInfo.Mode(); {
-	// 目录 - 使用蓝色输出
 	case mode.IsDir():
+		// 目录 - 使用蓝色输出
 		cl.Blue(s)
-	// 普通文件 - 使用绿色输出
+
 	case mode.IsRegular():
+		// 普通文件 - 使用绿色输出
 		cl.Green(s)
-	// 符号链接 - 使用黄色输出
+
 	case mode&os.ModeSymlink != 0:
+		// 符号链接 - 使用黄色输出
 		cl.Yellow(s)
-	// 其他类型文件 - 使用灰色输出
+
 	default:
+		// 其他类型文件 - 使用灰色输出
 		cl.Gray(s)
 	}
 
@@ -214,21 +246,83 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 	// 根据路径类型设置颜色
 	switch mode := pathInfo.Mode(); {
 	case mode.IsDir():
-		cl.Blue(path) // 目录 - 使用蓝色输出
+		// 目录 - 使用蓝色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+
+			fmt.Println(cl.Scyan(dir) + cl.Sblue(file))
+		} else {
+			cl.Blue(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	case mode&os.ModeSymlink != 0:
-		cl.Yellow(path) // 符号链接 - 使用黄色输出
+		// 符号链接 - 使用黄色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+
+			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
+		} else {
+			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	case mode&os.ModeDevice != 0:
-		cl.Red(path) // 设备文件 - 使用红色输出
+		// 设备文件 - 使用红色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+
+			fmt.Println(cl.Scyan(dir) + cl.Sred(file))
+		} else {
+			cl.Red(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	case mode&os.ModeNamedPipe != 0:
-		cl.Red(path) // 命名管道 - 使用红色输出
+		// 命名管道 - 使用红色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+
+			fmt.Println(cl.Scyan(dir) + cl.Sred(file))
+		} else {
+			cl.Red(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	case mode&os.ModeSocket != 0:
-		cl.Red(path) // 套接字文件 - 使用红色输出
+		// 套接字文件 - 使用红色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+
+			fmt.Println(cl.Scyan(dir) + cl.Sred(file))
+		} else {
+			cl.Red(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	case mode&os.ModeType == 0 && mode&0111 != 0:
-		cl.Green(path) // 可执行文件 - 使用绿色输出
+		// 可执行文件 - 使用绿色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+			fmt.Println(cl.Scyan(dir) + cl.Sgreen(file))
+		} else {
+			cl.Green(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	case mode.IsRegular():
 		printColoredFile(path, cl) // 普通文件 - 用于根据文件名的后缀输出
 	default:
-		cl.Gray(path) // 其他类型文件 - 使用灰色输出
+		// 其他类型文件 - 使用灰色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+
+			fmt.Println(cl.Scyan(dir) + cl.Sgray(file))
+		} else {
+			cl.Gray(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	}
 
 	return nil
