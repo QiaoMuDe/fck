@@ -528,17 +528,30 @@ func deleteMatchedItem(path string, isDir bool) error {
 		return fmt.Errorf("检查文件/目录时出错: %s: %v", path, err)
 	}
 
-	var err error
+	var rmErr error
 
 	// 根据类型选择删除方法
 	if isDir {
-		err = os.RemoveAll(path)
+		// 检查目录是否为空
+		dirEntries, readDirErr := os.ReadDir(path)
+		if readDirErr != nil {
+			return fmt.Errorf("读取目录失败: %s: %v", path, readDirErr)
+		}
+
+		// 检查目录是否为空
+		if len(dirEntries) > 0 {
+			// 目录不为空, 递归删除
+			rmErr = os.RemoveAll(path)
+		} else {
+			// 删除空目录
+			rmErr = os.Remove(path)
+		}
 	} else {
-		err = os.Remove(path)
+		rmErr = os.Remove(path)
 	}
 
-	if err != nil {
-		return fmt.Errorf("删除失败: %s: %v", path, err)
+	if rmErr != nil {
+		return fmt.Errorf("删除失败: %s: %v", path, rmErr)
 	}
 
 	return nil
