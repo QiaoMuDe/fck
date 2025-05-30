@@ -4,7 +4,7 @@ fck diff - 文件校验工具
 
 用法：fck diff [选项] 
 
-参数说明：
+选项：
   -f <file>       指定校验值文件，用于检查文件的变化（必须包含#hashType#timestamp头信息）
                   （默认查找当前目录下的checksum.hash文件）
 

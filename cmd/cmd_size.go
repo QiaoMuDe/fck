@@ -48,7 +48,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 
 				// 打印结果
 				if *sizeCmdColor {
-					if err := printPathColor(filePath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size), filePath), cl); err != nil {
+					if err := printStringColor(filePath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size), filePath), cl); err != nil {
 						cl.PrintErrf("输出路径时出错: %s", err)
 						continue
 					}
@@ -67,7 +67,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		} else if !info.IsDir() {
 			// 根据是否启用颜色打印结果
 			if *sizeCmdColor {
-				if err := printPathColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(info.Size()), targetPath), cl); err != nil {
+				if err := printStringColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(info.Size()), targetPath), cl); err != nil {
 					cl.PrintErrf("输出路径时出错: %s", err)
 					continue
 				}
@@ -86,7 +86,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 
 		// 根据是否启用颜色打印结果
 		if *sizeCmdColor {
-			if err := printPathColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size), targetPath), cl); err != nil {
+			if err := printStringColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size), targetPath), cl); err != nil {
 				cl.PrintErrf("输出路径时出错: %s", err)
 				continue
 			}

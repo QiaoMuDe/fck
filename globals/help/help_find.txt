@@ -1,11 +1,10 @@
 fck find - 文件和目录查找工具
 
-功能：在指定路径下查找匹配关键字或正则表达式的文件或目录
+功能：在指定目录及其子目录中按照多种条件查找文件和目录，帮助用户快速定位目标文件，提高工作效率。
 
 用法: fck find [选项] <路径>
 
 选项:
-  -p     <path>       指定要查找的路径（默认：当前目录）
   -k     <keyword>    指定要查找的关键字或正则表达式
   -e                  指定要排除的关键字或正则表达式
   -C                  启用大小写敏感匹配，默认不区分大小写
@@ -20,29 +19,30 @@ fck find - 文件和目录查找工具
   -H                  显示隐藏文件和目录，默认过滤隐藏项
   -F                  是否显示完整路径, 默认显示匹配到的路径
   -L                  是否跟随符号链接
-  -mv    <path>       将匹配项移动到指定的路径
   -size  [+-]SIZE     按文件大小查找（如+5M表示大于5MB，-5M表示小于5MB）(单位：B/K/M/G/b/k/m/g)
   -mtime [+-]DAYS     按修改时间查找（如+7表示7天前修改，-7表示7天内修改）
   -exec  "cmd {}"     对匹配的每个路径执行指定命令，使用{}作为占位符
   -print-cmd          在执行-exec命令前打印将要执行的命令
   -delete             删除匹配的文件或目录
+  -mv    <path>       将匹配项移动到指定的路径
+  -print-mv           在移动前打印 old -> new 的映射
   -h, --help          显示帮助信息
 
 示例:
   1. 在当前目录下查找所有包含"hello"的文件名
-  fck find -p  . -k hello
+  fck find -k hello
 
-  2. 在当前目录下查找所有以".txt"结尾的文件
-  fck find -p  . -k "*.txt"
+  2. 在当前目录下查找所有以".txt"结尾的文件, 然后移动到/tmp/目录下
+  fck find -k "*.txt" -mv /tmp/
 
   3. 在当前目录下查找所有修改时间在7天前的文件
-  fck find -p  . -mtime -7
+  fck find -mtime -7
 
-  4. 在当前目录下查找所有大于5MB的文件
-  fck find -p  . -size +5M
+  4. 在/home/user/下查找所有大于5MB的文件
+  fck find -size +5M /home/user/
 
   5. 查找文件结尾为log的文件并删除
-  fck find -p  . -k "*.log" -delete
+  fck find -k "*.log" -delete
 
   6. 在当前路径下查找.db的文件并打包
   fck find -k ".*.db" -R -f -exec "tar czf {}.tgz {}"

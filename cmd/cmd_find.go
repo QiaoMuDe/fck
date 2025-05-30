@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,9 +16,17 @@ import (
 )
 
 // findCmdMain 是 find 子命令的主函数
-func findCmdMain(cl *colorlib.ColorLib) error {
+func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
+	// 获取第一个参数作为查找路径
+	findPath := cmd.Arg(0)
+
+	// 如果没有指定查找路径, 则使用当前工作目录
+	if findPath == "" {
+		findPath = "."
+	}
+
 	// 检查参数
-	if err := checkFindCmdArgs(); err != nil {
+	if err := checkFindCmdArgs(findPath); err != nil {
 		return err
 	}
 
@@ -59,7 +68,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 使用 filepath.WalkDir 遍历目录
-	walkDirErr := filepath.WalkDir(*findCmdPath, func(path string, entry os.DirEntry, err error) error {
+	walkDirErr := filepath.WalkDir(findPath, func(path string, entry os.DirEntry, err error) error {
 		// 检查路径是否存在
 		if _, statErr := os.Stat(path); os.IsNotExist(statErr) {
 			// 忽略不存在的路径
@@ -72,7 +81,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 		}
 
 		// 跳过*findCmdPath目录本身
-		if path == *findCmdPath {
+		if path == findPath {
 			return nil
 		}
 
@@ -99,7 +108,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 		}
 
 		// 检查当前路径的深度是否超过最大深度
-		depth := strings.Count(filepath.ToSlash(path[len(*findCmdPath):]), "/")
+		depth := strings.Count(filepath.ToSlash(path[len(findPath):]), "/")
 		if *findCmdMaxDepth >= 0 && depth > *findCmdMaxDepth {
 			return filepath.SkipDir
 		}
@@ -233,7 +242,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 				}
 				// 输出完整路径
 				if *findCmdColor {
-					if err := printPathColor(fullPath, fullPath, cl); err != nil {
+					if err := printPathColor(fullPath, cl); err != nil {
 						return fmt.Errorf("输出路径时出错: %s", err)
 					}
 				} else {
@@ -242,7 +251,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 			} else {
 				// 输出相对路径
 				if *findCmdColor {
-					if err := printPathColor(path, path, cl); err != nil {
+					if err := printPathColor(path, cl); err != nil {
 						return fmt.Errorf("输出路径时出错: %s", err)
 					}
 				} else {
@@ -266,15 +275,21 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 }
 
 // 用于检查find命令的相关参数是否正确
-func checkFindCmdArgs() error {
-	// 检查要查找的路径是否为空
-	if *findCmdPath == "" {
-		return fmt.Errorf("查找路径不能为空")
-	}
-
+func checkFindCmdArgs(findPath string) error {
 	// 检查要查找的路径是否存在
-	if _, err := os.Stat(*findCmdPath); err != nil {
-		return fmt.Errorf("查找路径不存在: %s", *findCmdPath)
+	if _, err := os.Stat(findPath); err != nil {
+		// 检查是否是权限不足的错误
+		if os.IsPermission(err) {
+			return fmt.Errorf("权限不足，无法访问某些目录: %s", findPath)
+		}
+
+		// 如果是不存在错误, 则返回路径不存在
+		if os.IsNotExist(err) {
+			return fmt.Errorf("路径不存在: %s", findPath)
+		}
+
+		// 其他错误, 返回错误信息
+		return fmt.Errorf("检查路径时出错: %s: %v", findPath, err)
 	}
 
 	// 检查要查找的最大深度是否小于 -1

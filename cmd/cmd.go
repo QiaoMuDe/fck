@@ -23,7 +23,7 @@ func Run(cl *colorlib.ColorLib) error {
 	// 解析命令行参数
 	flag.Parse()
 
-	// 如果是 -v 或 version，则打印版本信息并退出
+	// 如果是 -v 或 version, 则打印版本信息并退出
 	if *versionF || flag.Arg(0) == "version" {
 		// 打印版本信息并退出
 		version := verman.Get()
@@ -31,7 +31,7 @@ func Run(cl *colorlib.ColorLib) error {
 		return nil
 	}
 
-	// 如果是 -h 或 没有参数或者第一个参数是 help，则打印帮助信息并退出
+	// 如果是 -h 或 没有参数或者第一个参数是 help, 则打印帮助信息并退出
 	if *helpF || flag.NArg() == 0 || flag.Arg(0) == "help" {
 		fmt.Println(globals.FckHelp)
 		return nil
@@ -45,7 +45,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("解析hash子命令的参数时发生了错误: %v", err)
 		}
 
-		// 如果是 -h 或 help，则打印帮助信息并退出
+		// 如果是 -h 或 help, 则打印帮助信息并退出
 		if *hashCmdHelp {
 			fmt.Println(globals.HashHelp)
 			return nil
@@ -61,7 +61,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("解析hash子命令的参数时发生了错误: %v", err)
 		}
 
-		// 如果是 -h 或 help，则打印帮助信息并退出
+		// 如果是 -h 或 help, 则打印帮助信息并退出
 		if *hashCmdHelp {
 			fmt.Println(globals.HashHelp)
 			return nil
@@ -77,7 +77,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("解析size子命令的参数时发生了错误: %v", err)
 		}
 
-		// 如果是 -h 或 help，则打印帮助信息并退出
+		// 如果是 -h 或 help, 则打印帮助信息并退出
 		if *sizeCmdHelp {
 			fmt.Println(globals.SizeHelp)
 			return nil
@@ -93,7 +93,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("解析size子命令的参数时发生了错误: %v", err)
 		}
 
-		// 如果是 -h 或 help，则打印帮助信息并退出
+		// 如果是 -h 或 help, 则打印帮助信息并退出
 		if *sizeCmdHelp {
 			fmt.Println(globals.SizeHelp)
 			return nil
@@ -109,7 +109,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("解析diff子命令的参数时发生了错误: %v", err)
 		}
 
-		// 如果是 -h 或 help，则打印帮助信息并退出
+		// 如果是 -h 或 help, 则打印帮助信息并退出
 		if *diffCmdHelp {
 			fmt.Println(globals.DiffHelp)
 			return nil
@@ -125,7 +125,7 @@ func Run(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("解析diff子命令的参数时发生了错误: %v", err)
 		}
 
-		// 如果是 -h 或 help，则打印帮助信息并退出
+		// 如果是 -h 或 help, 则打印帮助信息并退出
 		if *diffCmdHelp {
 			fmt.Println(globals.DiffHelp)
 			return nil
@@ -141,14 +141,14 @@ func Run(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("解析find子命令的参数时发生了错误: %v", err)
 		}
 
-		// 如果是 -h 或 help，则打印帮助信息并退出
+		// 如果是 -h 或 help, 则打印帮助信息并退出
 		if *findCmdHelp {
 			fmt.Println(globals.FindHelp)
 			return nil
 		}
 
 		// 执行 find 子命令
-		if err := findCmdMain(cl); err != nil {
+		if err := findCmdMain(cl, findCmd); err != nil {
 			return fmt.Errorf("执行find子命令时发生了错误: %v", err)
 		}
 	case "f":
@@ -157,18 +157,18 @@ func Run(cl *colorlib.ColorLib) error {
 			return fmt.Errorf("解析find子命令的参数时发生了错误: %v", err)
 		}
 
-		// 如果是 -h 或 help，则打印帮助信息并退出
+		// 如果是 -h 或 help, 则打印帮助信息并退出
 		if *findCmdHelp {
 			fmt.Println(globals.FindHelp)
 			return nil
 		}
 
 		// 执行 find 子命令
-		if err := findCmdMain(cl); err != nil {
+		if err := findCmdMain(cl, findCmd); err != nil {
 			return fmt.Errorf("执行find子命令时发生了错误: %v", err)
 		}
 	default:
-		// 如果是未知的子命令，则打印帮助信息并退出
+		// 如果是未知的子命令, 则打印帮助信息并退出
 		//
 		return nil
 	}

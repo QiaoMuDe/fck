@@ -39,7 +39,6 @@ var (
 	// fck find 子命令
 	findCmd            = flag.NewFlagSet("find", flag.ExitOnError)
 	findCmdHelp        = findCmd.Bool("h", false, "打印帮助信息并退出")
-	findCmdPath        = findCmd.String("p", ".", "指定要查找的路径")
 	findCmdKeyword     = findCmd.String("k", "", "指定要查找的关键字或正则表达式")
 	findCmdMaxDepth    = findCmd.Int("m", -1, "指定查找的最大深度, -1 表示不限制")
 	findCmdFile        = findCmd.Bool("f", false, "限制只查找文件")
