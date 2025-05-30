@@ -98,6 +98,7 @@ var ColorMap = map[string]map[string]bool{
 		".pptx": true,
 		".rtf":  true,
 		".log":  true,
+		".lnk":  true,
 	},
 	"white": {
 		".jpg":  true,
