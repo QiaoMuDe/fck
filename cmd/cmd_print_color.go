@@ -12,117 +12,185 @@ import (
 // ColorMap 定义了不同颜色对应的文件后缀名映射
 var ColorMap = map[string]map[string]bool{
 	"red": {
-		".bak":     true,
-		".tmp":     true,
-		".swp":     true,
-		".swo":     true,
-		".old":     true,
-		".db":      true,
-		".sql":     true,
-		".sqlite":  true,
-		".db3":     true,
-		".sqlite3": true,
-		".mdb":     true,
-		".pdb":     true,
-		".zip":     true,
-		".tar":     true,
-		".gz":      true,
-		".rar":     true,
-		".7z":      true,
-		".bz2":     true,
-		".xz":      true,
-		".jar":     true,
-		".war":     true,
-		".tgz":     true,
-		".tar.gz":  true,
-		".deb":     true,
-		".rpm":     true,
-		".md5":     true,
-		".sha1":    true,
-		".sha256":  true,
-		".sha512":  true,
-		".hash":    true,
-		".mod":     true,
-		".sum":     true,
-		".pem":     true,
-		".key":     true,
-		".crt":     true,
-		".cer":     true,
+		".bak":      true, // 备份文件
+		".bakup":    true, // 备份文件
+		".tmp":      true, // 临时文件
+		".swp":      true, // Vim交换文件
+		".swo":      true, // Vim交换文件
+		".old":      true, // 旧文件
+		".db":       true, // 数据库文件
+		".sql":      true, // SQL数据库文件
+		".sqlite":   true, // SQLite数据库文件
+		".db3":      true, // SQLite数据库文件
+		".sqlite3":  true, // SQLite数据库文件
+		".mdb":      true, // Microsoft Access数据库文件
+		".pdb":      true, // 程序数据库文件
+		".zip":      true, // ZIP压缩文件
+		".tar":      true, // tar归档文件
+		".gz":       true, // Gzip压缩文件
+		".rar":      true, // RAR压缩文件
+		".7z":       true, // 7-Zip压缩文件
+		".bz2":      true, // bzip2压缩文件
+		".xz":       true, // XZ压缩文件
+		".jar":      true, // Java归档文件
+		".war":      true, // Java Web应用归档文件
+		".tgz":      true, // tar.gz压缩文件
+		".tar.gz":   true, // tar.gz压缩文件
+		".deb":      true, // Debian包文件
+		".rpm":      true, // RPM包文件
+		".md5":      true, // MD5哈希文件
+		".sha1":     true, // SHA-1哈希文件
+		".sha256":   true, // SHA-256哈希文件
+		".sha512":   true, // SHA-512哈希文件
+		".hash":     true, // 哈希文件
+		".mod":      true, // Go模块文件
+		".sum":      true, // Go模块文件
+		".pem":      true, // PEM格式文件
+		".key":      true, // 密钥文件
+		".crt":      true, // 证书文件
+		".cer":      true, // 证书文件
+		".orc":      true, // OpenRC配置文件
+		".h5":       true, // HDF5文件
+		".pid":      true, // 进程ID文件
+		".sock":     true, // 套接字文件
+		".dat":      true, // 数据文件
+		".cache":    true, // 缓存文件
+		".dump":     true, // 转储文件
+		".part":     true, // 部分下载的文件
+		".download": true, // 下载中的文件
 	},
 	"green": {
-		".exe":   true,
-		".dll":   true,
-		".so":    true,
-		".run":   true,
-		".dylib": true,
-		".apk":   true,
-		".ipa":   true,
-		".go":    true,
-		".py":    true,
-		".js":    true,
-		".ts":    true,
-		".html":  true,
-		".css":   true,
-		".java":  true,
-		".c":     true,
-		".cpp":   true,
-		".h":     true,
-		".hpp":   true,
-		".sh":    true,
-		".bash":  true,
-		".zsh":   true,
-		".bat":   true,
-		".ps1":   true,
-		".rb":    true,
-		".rs":    true,
-		".php":   true,
+		".exe":    true, // Windows可执行文件
+		".bin":    true, // 二进制可执行文件
+		".app":    true, // macOS应用程序
+		".class":  true, // Java字节码文件
+		".o":      true, // 编译后的目标文件
+		".a":      true, // 静态库文件
+		".msi":    true, // Windows安装程序
+		".dll":    true, // Windows动态链接库
+		".so":     true, // Linux共享库
+		".run":    true, // Linux可执行文件
+		".dylib":  true, // macOS动态库
+		".apk":    true, // Android应用包
+		".ipa":    true, // iOS应用包
+		".go":     true, // Go源文件
+		".py":     true, // Python脚本
+		".pyd":    true, // Python字节码文件
+		".pyc":    true, // Python编译文件
+		".pyo":    true, // Python编译文件
+		".pyw":    true, // Python脚本
+		".js":     true, // JavaScript文件
+		".ts":     true, // TypeScript文件
+		".html":   true, // HTML文件
+		".css":    true, // CSS样式表
+		".java":   true, // Java源文件
+		".c":      true, // C源文件
+		".cpp":    true, // C++源文件
+		".h":      true, // C头文件
+		".hpp":    true, // C++头文件
+		".sh":     true, // Shell脚本
+		".bash":   true, // Bash脚本
+		".zsh":    true, // Zsh脚本
+		".bat":    true, // Windows批处理脚本
+		".ps1":    true, // PowerShell脚本
+		".rb":     true, // Ruby脚本
+		".rs":     true, // Rust脚本
+		".php":    true, // PHP脚本
+		".swift":  true, // Swift脚本
+		".kotlin": true, // Kotlin脚本
+		".scala":  true, // Scala脚本
+		".elm":    true, // Elm脚本
+		".lua":    true, // Lua脚本
+		".pl":     true, // Perl脚本
+		".perl":   true, // Perl脚本
+		".r":      true, // R语言脚本
+		".vbs":    true, // VBScript文件
+		".psm1":   true, // PowerShell模块文件
 	},
 	"yellow": {
-		".txt":  true,
-		".md":   true,
-		".json": true,
-		".xml":  true,
-		".yaml": true,
-		".yml":  true,
-		".toml": true,
-		".ini":  true,
-		".conf": true,
-		".cfg":  true,
-		".doc":  true,
-		".docx": true,
-		".pdf":  true,
-		".csv":  true,
-		".xls":  true,
-		".xlsx": true,
-		".ppt":  true,
-		".pptx": true,
-		".rtf":  true,
-		".log":  true,
-		".lnk":  true,
+		".txt":           true, // 文本文件
+		".md":            true, // Markdown文件
+		".json":          true, // JSON文件
+		".jsonl":         true, // JSON Lines文件
+		".xml":           true, // XML文件
+		".yaml":          true, // YAML文件
+		".yml":           true, // YAML配置文件
+		".toml":          true, // TOML配置文件
+		".ini":           true, // INI配置文件
+		".conf":          true, // 配置文件
+		".cfg":           true, // 配置文件
+		".doc":           true, // Word文档
+		".docx":          true, // Word文档
+		".pdf":           true, // PDF文档
+		".csv":           true, // 逗号分隔值文件
+		".tsv":           true, // 制表符分隔值文件
+		".xls":           true, // Excel文件
+		".xlsx":          true, // Excel文件
+		".ppt":           true, // 演示文稿文件
+		".pptx":          true, // 演示文稿文件
+		".rtf":           true, // 富文本格式
+		".log":           true, // 日志文件
+		".lnk":           true, // Windows快捷方式文件
+		".properties":    true, // Java属性文件
+		".env":           true, // 环境变量文件
+		".gitignore":     true, // Git忽略文件
+		".gitattributes": true, // Git属性配置文件
+		".gitmodules":    true, // Git子模块配置文件
+		".gitkeep":       true, // Git保留文件
+		".gitconfig":     true, // Git配置文件
+		".git":           true, // Git版本控制系统文件
+		".svn":           true, // Subversion版本控制系统文件
+		".hg":            true, // Mercurial版本控制系统文件
+		".bzr":           true, // Bazaar版本控制系统文件
+		".lock":          true, // 锁文件
+		".lockfile":      true, // 锁文件
+		".out":           true, // 输出文件
+		".err":           true, // 错误输出文件
+		".trace":         true, // 跟踪文件
+		".odt":           true, // OpenDocument文本格式
+		".ods":           true, // OpenDocument表格格式
+		".odp":           true, // OpenDocument文本、表格和演示文稿格式
+		".epub":          true, // EPUB电子书格式
+		".mobi":          true, // MOBI电子书格式
+		".azw":           true, // Kindle电子书格式
+		".chm":           true, // Microsoft Compiled HTML Help文件
+		".cab":           true, // CAB文件
 	},
 	"white": {
-		".jpg":  true,
-		".jpeg": true,
-		".png":  true,
-		".gif":  true,
-		".bmp":  true,
-		".tiff": true,
-		".webp": true,
-		".svg":  true,
-		".ico":  true,
-		".avif": true,
-		".mp4":  true,
-		".mkv":  true,
-		".avi":  true,
-		".mov":  true,
-		".wmv":  true,
-		".flv":  true,
-		".mp3":  true,
-		".wav":  true,
-		".ogg":  true,
-		".flac": true,
-		".aac":  true,
-		".m4a":  true,
+		".jpg":  true, // JPG图片
+		".jpeg": true, // JPEG图片
+		".png":  true, // PNG图片
+		".gif":  true, // GIF图片
+		".bmp":  true, // BMP图片
+		".tiff": true, // TIFF图片
+		".webp": true, // WebP图片
+		".svg":  true, // SVG矢量图
+		".ico":  true, // ICO图标
+		".avif": true, // AVIF图片
+		".mp4":  true, // MP4视频
+		".mkv":  true, // MKV视频
+		".avi":  true, // AVI视频
+		".mov":  true, // MOV视频
+		".wmv":  true, // WMV视频
+		".flv":  true, // FLV视频
+		".mp3":  true, // MP3音频
+		".wav":  true, // WAV音频
+		".ogg":  true, // OGG音频
+		".flac": true, // FLAC音频
+		".aac":  true, // AAC音频
+		".m4a":  true, // M4A音频
+		".helc": true, // HEVC视频
+		".webm": true, // WebM视频
+		".wma":  true, // Windows Media Audio
+		".heic": true, // HEIC图片
+		".heif": true, // HEIF图片
+		".psd":  true, // Photoshop文件
+		".ai":   true, // Adobe Illustrator文件
+		".indd": true, // Adobe InDesign文件
+		".raw":  true, // RAW图片
+		".3gp":  true, // 3GP视频
+		".m4v":  true, // M4V视频
+		".mid":  true, // MIDI音频
 	},
 }
 
