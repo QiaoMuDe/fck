@@ -28,8 +28,8 @@ fck - 多功能文件处理工具集
      fck size /path/to/*.txt
 
   3. 查找文件：
-     fck find -p /path -k "*.go" -m 2
-     fck find -p /path -size +10M
+     fck find -k "*.go" -m 2
+     fck find -size +10M
 
   4. 文件校验：
      fck diff -f checksum.txt 

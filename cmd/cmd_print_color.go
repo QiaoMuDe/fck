@@ -43,6 +43,9 @@ var ColorMap = map[string]map[string]bool{
 		".sha256":   true, // SHA-256哈希文件
 		".sha512":   true, // SHA-512哈希文件
 		".hash":     true, // 哈希文件
+		".sig":      true, // 签名文件
+		".asc":      true, // ASCII签名文件
+		".check":    true, // 检查文件
 		".mod":      true, // Go模块文件
 		".sum":      true, // Go模块文件
 		".pem":      true, // PEM格式文件
