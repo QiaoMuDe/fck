@@ -158,6 +158,15 @@ var ColorMap = map[string]map[string]bool{
 		".azw":           true, // Kindle电子书格式
 		".chm":           true, // Microsoft Compiled HTML Help文件
 		".cab":           true, // CAB文件
+		".xmind":         true, // XMind思维导图文件
+		".mind":          true, // MindManager思维导图文件
+		".vsdx":          true, // Microsoft Visio文件
+		".vsd":           true, // Microsoft Visio文件
+		".xps":           true, // XML Paper Specification文件
+		".odg":           true, // OpenDocument图形格式
+		".odf":           true, // OpenDocument公式格式
+		".odc":           true, // OpenDocument图表格式
+		".odm":           true, // OpenDocument文本模板格式
 	},
 	"white": {
 		".jpg":  true, // JPG图片
