@@ -18,6 +18,7 @@ var ColorMap = map[string]map[string]bool{
 		".swp":      true, // Vim交换文件
 		".swo":      true, // Vim交换文件
 		".old":      true, // 旧文件
+		".new":      true, // 新文件
 		".db":       true, // 数据库文件
 		".sql":      true, // SQL数据库文件
 		".sqlite":   true, // SQLite数据库文件
@@ -208,6 +209,7 @@ var ColorMap = map[string]map[string]bool{
 
 // printColoredFile 根据文件后缀名以不同颜色输出文件路径
 func printColoredFile(fs string, cl *colorlib.ColorLib) {
+	// 获取文件后缀名
 	fileExt := strings.ToLower(filepath.Ext(fs))
 
 	for color, extensions := range ColorMap {
@@ -407,4 +409,70 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 	}
 
 	return nil
+}
+
+// getColoredPath 根据路径类型和文件后缀名返回带颜色的字符串
+// 参数:
+//
+//	path: 要检查的路径
+//	cl: colorlib.ColorLib实例，用于彩色输出
+//
+// 返回值:
+//
+//	coloredPath: 带颜色的路径字符串
+func getColoredPath(path string, cl *colorlib.ColorLib) (coloredPath string) {
+	// 获取路径信息
+	pathInfo, statErr := os.Lstat(path)
+	if statErr != nil {
+		return cl.Sgray(path) // 如果获取路径信息失败，返回灰色路径
+	}
+
+	// 获取文件扩展名
+	fileExt := strings.ToLower(filepath.Ext(pathInfo.Name()))
+
+	// 根据路径类型设置颜色
+	switch mode := pathInfo.Mode(); {
+	case mode.IsDir():
+		// 目录 - 使用蓝色输出
+		coloredPath = cl.Sblue(path)
+	case mode&os.ModeSymlink != 0:
+		// 符号链接 - 使用黄色输出
+		coloredPath = cl.Syellow(path)
+	case mode&os.ModeDevice != 0:
+		// 设备文件 - 使用红色输出
+		coloredPath = cl.Sred(path)
+	case mode&os.ModeNamedPipe != 0:
+		// 命名管道 - 使用红色输出
+		coloredPath = cl.Sred(path)
+	case mode&os.ModeSocket != 0:
+		// 套接字文件 - 使用红色输出
+		coloredPath = cl.Sred(path)
+	case mode&os.ModeType == 0 && mode&0111 != 0:
+		// 可执行文件 - 使用绿色输出
+		coloredPath = cl.Sgreen(path)
+	case mode.IsRegular():
+		// 普通文件 - 根据文件后缀名设置颜色
+		for color, extensions := range ColorMap {
+			if extensions[fileExt] {
+				switch color {
+				case "yellow":
+					coloredPath = cl.Syellow(path)
+				case "green":
+					coloredPath = cl.Sgreen(path)
+				case "red":
+					coloredPath = cl.Sred(path)
+				case "white":
+					coloredPath = cl.Swhite(path)
+				}
+				return coloredPath
+			}
+		}
+
+		coloredPath = cl.Sgray(path) // 如果没有匹配的后缀名，使用灰色输出
+	default:
+		// 其他类型文件 - 使用灰色输出
+		coloredPath = cl.Sgray(path)
+	}
+
+	return coloredPath
 }

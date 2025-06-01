@@ -91,3 +91,8 @@ var FindHelp string
 //
 //go:embed help/help.txt
 var FckHelp string
+
+// list 子命令帮助信息
+//
+//go:embed help/help_list.txt
+var ListHelp string

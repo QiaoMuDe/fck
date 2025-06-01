@@ -167,6 +167,34 @@ func Run(cl *colorlib.ColorLib) error {
 		if err := findCmdMain(cl, findCmd); err != nil {
 			return fmt.Errorf("执行find子命令时发生了错误: %v", err)
 		}
+	case "list":
+		// 解析 list 子命令的参数
+		if err := listCmd.Parse(flag.Args()[1:]); err != nil {
+			return fmt.Errorf("解析list子命令的参数时发生了错误: %v", err)
+		}
+		// 如果是 -h 或 help, 则打印帮助信息并退出
+		if *listCmdHelp {
+			fmt.Println(globals.ListHelp)
+			return nil
+		}
+		// 执行 list 子命令
+		if err := listCmdMain(cl, listCmd); err != nil {
+			return fmt.Errorf("执行list子命令时发生了错误: %v", err)
+		}
+	case "ls":
+		// 解析 list 子命令的参数
+		if err := listCmd.Parse(flag.Args()[1:]); err != nil {
+			return fmt.Errorf("解析list子命令的参数时发生了错误: %v", err)
+		}
+		// 如果是 -h 或 help, 则打印帮助信息并退出
+		if *listCmdHelp {
+			fmt.Println(globals.ListHelp)
+			return nil
+		}
+		// 执行 list 子命令
+		if err := listCmdMain(cl, listCmd); err != nil {
+			return fmt.Errorf("执行list子命令时发生了错误: %v", err)
+		}
 	default:
 		// 如果是未知的子命令, 则打印帮助信息并退出
 		//
