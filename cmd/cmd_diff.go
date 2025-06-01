@@ -154,7 +154,7 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 
 	// 如果是写入文件模式，则打印文件路径
 	if *diffCmdWrite {
-		cl.PrintOkf("比较结果已写入文件: %s", globals.OutputCheckFileName)
+		cl.PrintOkf("比较结果已写入文件: %s\n", globals.OutputCheckFileName)
 	}
 
 	return nil
@@ -228,7 +228,7 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 
 			// 如果哈希值或文件路径为空，则跳过
 			if expectedHash == "" || relPath == "" {
-				cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s", checkFile, lineCount, line)
+				cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s\n", checkFile, lineCount, line)
 				continue
 			}
 
@@ -243,7 +243,7 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 		} else {
 			// 如果哈希值或文件路径为空，则跳过
 			if expectedHash == "" || filePath == "" {
-				cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s", checkFile, lineCount, line)
+				cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s\n", checkFile, lineCount, line)
 				continue
 			}
 
@@ -317,7 +317,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 	for _, entry := range checkFileHashes {
 		// 检查文件是否存在，若不存在则输出更详细的提示信息并跳过当前文件处理
 		if _, err := os.Stat(entry.RealPath); err != nil {
-			cl.PrintWarnf("在进行校验时，发现文件 %s 不存在，将跳过该文件的校验", entry.RealPath)
+			cl.PrintWarnf("在进行校验时，发现文件 %s 不存在，将跳过该文件的校验\n", entry.RealPath)
 			continue
 		}
 
@@ -330,7 +330,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 		// 计算哈希值
 		hash, checksumErr = checksum(entry.RealPath, hashFunc)
 		if checksumErr != nil {
-			cl.PrintErrf("计算文件哈希失败: %v", checksumErr)
+			cl.PrintErrf("计算文件哈希失败: %v\n", checksumErr)
 		}
 
 		// 将哈希值存储在目标目录哈希值映射中
@@ -349,7 +349,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 
 		// 比较哈希值
 		if targetHash != checkEntry.Hash {
-			cl.PrintErrf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s", filePath, getLast8Chars(checkEntry.Hash), getLast8Chars(targetHash))
+			cl.PrintErrf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s\n", filePath, getLast8Chars(checkEntry.Hash), getLast8Chars(targetHash))
 			checkCount++
 		}
 	}
@@ -873,7 +873,7 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 
 	// 如果是写入文件模式，则打印文件路径
 	if *diffCmdWrite {
-		cl.PrintOkf("比较结果已写入文件: %s", globals.OutputCheckFileName)
+		cl.PrintOkf("比较结果已写入文件: %s\n", globals.OutputCheckFileName)
 	}
 
 	return nil

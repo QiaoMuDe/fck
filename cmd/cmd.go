@@ -27,7 +27,7 @@ func Run(cl *colorlib.ColorLib) error {
 	if *versionF || flag.Arg(0) == "version" {
 		// 打印版本信息并退出
 		version := verman.Get()
-		cl.Greenf("%s %s", version.AppName, version.GitVersion)
+		cl.Greenf("%s %s\n", version.AppName, version.GitVersion)
 		return nil
 	}
 

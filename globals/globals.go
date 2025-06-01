@@ -7,6 +7,8 @@ import (
 	"crypto/sha512"
 	_ "embed"
 	"hash"
+	"sort"
+	"time"
 )
 
 const (
@@ -96,3 +98,87 @@ var FckHelp string
 //
 //go:embed help/help_list.txt
 var ListHelp string
+
+// list子命令用于存储文件信息的结构体
+type ListInfo struct {
+	// 文件名 - BaseName
+	Name string
+
+	// 文件路径 - 绝对路径
+	Path string
+
+	// 类型 - 文件/目录/软链接
+	EntryType string
+
+	// 大小 - 字节数
+	Size int64
+
+	// 修改时间 - time.Time
+	ModTime time.Time
+
+	// 权限 - 类型-所有者-组-其他用户
+	Perm string
+
+	// 所属用户 - windows环境为?
+	Owner string
+
+	// 所属组 - windows环境为?
+	Group string
+
+	// 扩展名 - 扩展名
+	FileExt string
+}
+
+// list子命令用于存储文件信息的结构体切片
+type ListInfos []ListInfo
+
+// SortByFileNameAsc 按照文件名升序排序
+func (lis ListInfos) SortByFileNameAsc() {
+	sort.Slice(lis, func(i, j int) bool {
+		return lis[i].Name < lis[j].Name
+	})
+}
+
+// SortByFileSizeAsc 按照文件大小升序排序
+func (lis ListInfos) SortByFileSizeAsc() {
+	sort.Slice(lis, func(i, j int) bool {
+		return lis[i].Size < lis[j].Size
+	})
+}
+
+// SortByModTimeAsc 按照修改时间升序排序
+func (lis ListInfos) SortByModTimeAsc() {
+	sort.Slice(lis, func(i, j int) bool {
+		return lis[i].ModTime.Before(lis[j].ModTime)
+	})
+}
+
+// SortByFileNameDesc 按照文件名降序排序
+func (lis ListInfos) SortByFileNameDesc() {
+	sort.Slice(lis, func(i, j int) bool {
+		return lis[i].Name > lis[j].Name
+	})
+}
+
+// SortByFileSizeDesc 按照文件大小降序排序
+func (lis ListInfos) SortByFileSizeDesc() {
+	sort.Slice(lis, func(i, j int) bool {
+		return lis[i].Size > lis[j].Size
+	})
+}
+
+// SortByModTimeDesc 按照修改时间降序排序
+func (lis ListInfos) SortByModTimeDesc() {
+	sort.Slice(lis, func(i, j int) bool {
+		return lis[i].ModTime.After(lis[j].ModTime)
+	})
+}
+
+// GetFileNames 获取文件名列表
+func (lis ListInfos) GetFileNames() []string {
+	names := make([]string, len(lis))
+	for i, file := range lis {
+		names[i] = file.Name
+	}
+	return names
+}

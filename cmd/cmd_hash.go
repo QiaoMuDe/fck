@@ -78,13 +78,13 @@ func hashCmdMain(cmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		files, err := collectFiles(targetPath, *hashCmdRecursion, cl)
 		if err != nil {
 			// 如果收集文件失败，则打印错误信息并退出
-			cl.PrintErrf("在校验哈希值时，收集文件失败: %v", err)
+			cl.PrintErrf("在校验哈希值时，收集文件失败: %v\n", err)
 			continue
 		}
 
 		// 检查文件列表是否为空
 		if len(files) == 0 {
-			cl.PrintWarnf("在校验哈希值时，路径 %s 没有找到任何文件", targetPath)
+			cl.PrintWarnf("在校验哈希值时，路径 %s 没有找到任何文件\n", targetPath)
 			continue
 		}
 
@@ -111,7 +111,7 @@ func hashCmdMain(cmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		} else {
 			// 打印成功信息
 			if *hashCmdWrite {
-				cl.PrintOk(fmt.Sprintf("已将哈希值写入文件 %s, 共处理 %d 个文件, ", globals.OutputFileName, len(files)))
+				cl.PrintOkf("已将哈希值写入文件 %s, 共处理 %d 个文件\n", globals.OutputFileName, len(files))
 			}
 		}
 	}
@@ -353,7 +353,7 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 			// 判断当前条目是否为目录
 			if entry.IsDir() {
 				// 如果是目录，打印警告信息并跳过该目录
-				cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", entry.Name())
+				cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理\n", entry.Name())
 				// 继续遍历下一个条目
 				continue
 			}
@@ -470,7 +470,7 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 			if info.IsDir() {
 				// 如果是目录且不允许递归目录
 				if !recursive {
-					cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理", file)
+					cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理\n", file)
 					continue
 				}
 

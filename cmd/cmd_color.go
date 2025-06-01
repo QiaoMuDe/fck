@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/fck/globals"
 )
 
 // ColorMap 定义了不同颜色对应的文件后缀名映射
@@ -70,6 +71,8 @@ var ColorMap = map[string]map[string]bool{
 		".class":  true, // Java字节码文件
 		".o":      true, // 编译后的目标文件
 		".a":      true, // 静态库文件
+		".lib":    true, // 静态库文件
+		".s":      true, // 汇编语言源文件
 		".msi":    true, // Windows安装程序
 		".dll":    true, // Windows动态链接库
 		".so":     true, // Linux共享库
@@ -411,68 +414,52 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 	return nil
 }
 
-// getColoredPath 根据路径类型和文件后缀名返回带颜色的字符串
+// getColorString 函数的作用是根据传入的文件信息、路径字符串以及颜色库实例，返回带有相应颜色的路径字符串。
 // 参数:
-//
-//	path: 要检查的路径
-//	cl: colorlib.ColorLib实例，用于彩色输出
-//
+// info: 包含文件类型和文件后缀名等信息的 globals.ListInfo 结构体实例。
+// pF: 要处理的路径字符串。
+// cl: 用于彩色输出的 colorlib.ColorLib 实例。
 // 返回值:
-//
-//	coloredPath: 带颜色的路径字符串
-func getColoredPath(path string, cl *colorlib.ColorLib) (coloredPath string) {
-	// 获取路径信息
-	pathInfo, statErr := os.Lstat(path)
-	if statErr != nil {
-		return cl.Sgray(path) // 如果获取路径信息失败，返回灰色路径
-	}
-
-	// 获取文件扩展名
-	fileExt := strings.ToLower(filepath.Ext(pathInfo.Name()))
-
-	// 根据路径类型设置颜色
-	switch mode := pathInfo.Mode(); {
-	case mode.IsDir():
-		// 目录 - 使用蓝色输出
-		coloredPath = cl.Sblue(path)
-	case mode&os.ModeSymlink != 0:
-		// 符号链接 - 使用黄色输出
-		coloredPath = cl.Syellow(path)
-	case mode&os.ModeDevice != 0:
-		// 设备文件 - 使用红色输出
-		coloredPath = cl.Sred(path)
-	case mode&os.ModeNamedPipe != 0:
-		// 命名管道 - 使用红色输出
-		coloredPath = cl.Sred(path)
-	case mode&os.ModeSocket != 0:
-		// 套接字文件 - 使用红色输出
-		coloredPath = cl.Sred(path)
-	case mode&os.ModeType == 0 && mode&0111 != 0:
-		// 可执行文件 - 使用绿色输出
-		coloredPath = cl.Sgreen(path)
-	case mode.IsRegular():
-		// 普通文件 - 根据文件后缀名设置颜色
+// colorString: 经过颜色处理后的路径字符串。
+func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (colorString string) {
+	// 依据文件的类型来确定输出的颜色
+	switch info.EntryType {
+	case "d":
+		// 若文件类型为目录，则使用蓝色来渲染字符串
+		colorString = cl.Sblue(pF)
+	case "l":
+		// 若文件类型为符号链接，则使用黄色来渲染字符串
+		colorString = cl.Syellow(pF)
+	case "x":
+		// 若文件类型为可执行文件，则使用绿色来渲染字符串
+		colorString = cl.Sgreen(pF)
+	case "f":
+		// 若文件类型为普通文件，则根据文件后缀名来确定颜色
 		for color, extensions := range ColorMap {
-			if extensions[fileExt] {
+			if extensions[info.FileExt] {
 				switch color {
 				case "yellow":
-					coloredPath = cl.Syellow(path)
+					colorString = cl.Syellow(pF)
 				case "green":
-					coloredPath = cl.Sgreen(path)
+					colorString = cl.Sgreen(pF)
 				case "red":
-					coloredPath = cl.Sred(path)
+					colorString = cl.Sred(pF)
 				case "white":
-					coloredPath = cl.Swhite(path)
+					colorString = cl.Swhite(pF)
 				}
-				return coloredPath
+				return colorString
 			}
 		}
 
-		coloredPath = cl.Sgray(path) // 如果没有匹配的后缀名，使用灰色输出
+		// 若没有找到匹配的文件后缀名，则使用灰色来渲染字符串
+		colorString = cl.Sgray(pF)
+	case "s", "p", "b", "c", "e":
+		// 若文件类型为套接字、管道、块设备、字符设备或未知类型，则使用红色来渲染字符串
+		colorString = cl.Spurple(pF)
 	default:
-		// 其他类型文件 - 使用灰色输出
-		coloredPath = cl.Sgray(path)
+		// 对于未匹配的类型，使用灰色来渲染字符串
+		colorString = cl.Sgray(pF)
 	}
 
-	return coloredPath
+	return colorString
 }

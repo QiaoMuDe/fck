@@ -41,3 +41,11 @@ func isReadOnly(path string) bool {
 	}
 	return (attrs & syscall.FILE_ATTRIBUTE_READONLY) != 0
 }
+
+// getFileOwner 用于Windows环境下的占位函数
+// 参数: filePath - 文件路径
+// 返回: 用户和组的信息, Windows环境下返回"?"占位符
+func getFileOwner(filePath string) (string, string) {
+	// 在Windows环境下, 返回"?"占位符
+	return "?", "?"
+}
