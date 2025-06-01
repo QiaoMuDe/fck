@@ -132,6 +132,12 @@ type ListInfo struct {
 // list子命令用于存储文件信息的结构体切片
 type ListInfos []ListInfo
 
+// 用于存储listInfos的结构体
+type ListInfosMap struct {
+	ListInfos ListInfos `json:"listInfos"` // 存储文件信息的结构体切片
+	FileNames []string  `json:"fileNames"` // 存储文件名的字符串切片
+}
+
 // SortByFileNameAsc 按照文件名升序排序
 func (lis ListInfos) SortByFileNameAsc() {
 	sort.Slice(lis, func(i, j int) bool {

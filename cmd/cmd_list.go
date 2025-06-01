@@ -25,14 +25,49 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		listPath = "."
 	}
 
+	// 检查list命令的参数是否合法
+	if err := checkListCmdArgs(listPath); err != nil {
+		return err
+	}
+
 	// 获取文件信息切片
 	listInfos, getErr := getFileInfos(listPath)
 	if getErr != nil {
 		return fmt.Errorf("获取文件信息时发生了错误: %v", getErr)
 	}
 
+	// 根据命令行参数排序文件信息切片
+	if *listCmdSortByTime && !*listCmdReverseSort {
+		// -t 为 true, -r 为 false, 则按文件修改时间升序排序
+		listInfos.SortByFileNameAsc()
+	} else if *listCmdSortByTime && *listCmdReverseSort {
+		// -t 为 true, -r 为 true, 则按文件修改时间降序排序
+		listInfos.SortByFileNameDesc()
+	} else if *listCmdSortBySize && !*listCmdReverseSort {
+		// -s 为 true, -r 为 false, 则按文件大小升序排序
+		listInfos.SortByFileSizeAsc()
+	} else if *listCmdSortBySize && *listCmdReverseSort {
+		// -s 为 true, -r 为 true, 则按文件大小降序排序
+		listInfos.SortByFileSizeDesc()
+	} else if *listCmdSortByName && *listCmdReverseSort {
+		// -n 为 true, -r 为 false, 则按文件名降序排序
+		listInfos.SortByFileNameDesc()
+	} else {
+		// -n 为 true, -r 为 true, 则按文件名升序排序
+		listInfos.SortByFileNameAsc()
+	}
+
+	// 如果启用了长格式输出, 则调用 listCmdLong 函数
 	if *listCmdLongFormat {
 		if err := listCmdLong(cl, listInfos); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// -q 双引号输出模式
+	if *listCmdQuoteNames {
+		if err := listCmdQuoteNamesMode(cl, listInfos); err != nil {
 			return err
 		}
 		return nil
@@ -46,6 +81,69 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	return nil
 }
 
+// 双引号输出模式
+func listCmdQuoteNamesMode(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
+	// 每行输出3个文件
+	for i := 0; i < len(lfs); i += 3 {
+		// 检查是否超出了文件列表的范围
+		if i >= len(lfs) {
+			break
+		}
+
+		// 输出文件名
+		fmt.Printf("\"%s\"", lfs[i].Name)
+
+		// 检查是否还有下一个文件
+		if i+1 < len(lfs) {
+			fmt.Printf(" \"%s\"", lfs[i+1].Name)
+		}
+
+		if i+2 < len(lfs) {
+			fmt.Printf(" \"%s\"", lfs[i+2].Name)
+		}
+
+		fmt.Println() // 换行
+	}
+
+	return nil
+}
+
+// checkListCmdArgs 检查list命令的参数是否合法
+func checkListCmdArgs(listPath string) error {
+	// 检查路径是否存在
+	if _, err := os.Stat(listPath); err != nil {
+		// 权限错误
+		if os.IsPermission(err) {
+			return fmt.Errorf("权限不足: 路径 %s", listPath)
+		}
+
+		// 路径不存在
+		if os.IsNotExist(err) {
+			return fmt.Errorf("路径不存在: %s", listPath)
+		}
+
+		// 其他错误
+		return fmt.Errorf("检查路径时发生了错误: %v", err)
+	}
+
+	// 检查是否同时指定了 -s 和 -t 选项
+	if *listCmdSortBySize && *listCmdSortByTime {
+		return errors.New("不能同时指定 -s 和 -t 选项")
+	}
+
+	// 检查是否同时指定了 -s 和 -n 选项
+	if *listCmdSortBySize && *listCmdSortByName {
+		return errors.New("不能同时指定 -s 和 -n 选项")
+	}
+
+	// 检查是否同时指定了 -t 和 -n 选项
+	if *listCmdSortByTime && *listCmdSortByName {
+		return errors.New("不能同时指定 -t 和 -n 选项")
+	}
+
+	return nil
+}
+
 // list命令的默认运行函数
 func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	// 获取终端宽度
@@ -53,9 +151,6 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	if err != nil {
 		return fmt.Errorf("获取终端宽度时发生了错误: %v", err)
 	}
-
-	// 按文件名升序排序
-	lfs.SortByFileNameAsc()
 
 	// 提取文件名切片
 	fileNames := lfs.GetFileNames()
@@ -221,6 +316,13 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 
 	// 遍历目录下的每个文件和目录
 	for _, file := range files {
+		// 跳过隐藏文件
+		if !*listCmdAll {
+			if isHidden(file.Name()) {
+				continue
+			}
+		}
+
 		// 获取文件的绝对路径
 		absPath, absErr := filepath.Abs(file.Name())
 		if absErr != nil {
