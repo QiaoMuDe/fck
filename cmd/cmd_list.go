@@ -489,6 +489,18 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 				continue
 			}
 
+			// 如果设置了-R标志且当前是目录, 则递归处理子目录
+			if *listCmdRecursion && file.IsDir() {
+				// 先保留子目录本身
+				subDirPath := filepath.Join(path, file.Name())
+				subInfos, err := getFileInfos(subDirPath)
+				if err != nil {
+					return nil, fmt.Errorf("递归处理目录 %s 时出错: %v", subDirPath, err)
+				}
+				// 先添加子目录，再添加其内容
+				infos = append(infos, subInfos...)
+			}
+
 			// 获取文件的绝对路径
 			absPath, absErr := filepath.Abs(file.Name())
 			if absErr != nil {
