@@ -308,57 +308,21 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 	// 获取指定路径的文件信息
 	pathInfo, statErr := os.Stat(path)
 	if statErr != nil {
-		// 判断是否是权限错误
-		if errors.Is(statErr, os.ErrPermission) {
-			return nil, fmt.Errorf("检查路径 %s 时发生了权限错误: %v", path, statErr)
-		}
-
-		// 判断是否是不存在的目录错误
-		if errors.Is(statErr, os.ErrNotExist) {
-			return nil, fmt.Errorf("目录 %s 不存在", path)
-		}
-
-		// 判断是否是其他类型的错误
-		if !errors.Is(statErr, os.ErrNotExist) && !errors.Is(statErr, os.ErrPermission) {
-			return nil, fmt.Errorf("检查路径 %s 时发生了未知错误: %v", path, statErr)
-		}
-
-		// 如果不是已知的错误类型, 则返回原始错误
-		return nil, fmt.Errorf("检查路径 %s 时发生了错误: %v", path, statErr)
+		return nil, handleError(path, statErr)
 	}
 
-	// 检查是否是目录
+	// 检查初始路径是否应该被跳过
+	if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo) {
+		infos = make(globals.ListInfos, 0)
+		return infos, nil
+	}
+
+	// 根据是否为目录进行处理
 	if pathInfo.IsDir() {
 		// 如果设置了 -D 标志，只列出目录本身
 		if *listCmdDirEctory {
-			// 默认情况下, 跳过隐藏文件，除非设置了 -a 标志
-			if !*listCmdAll {
-				if isHidden(pathInfo.Name()) {
-					infos = make(globals.ListInfos, 0)
-					return infos, nil
-				}
-			} else if *listCmdAll && *listCmdHiddenOnly {
-				// 如果设置了 -a 标志且 -ho 标志, 则跳过非隐藏文件
-				if !isHidden(pathInfo.Name()) {
-					infos = make(globals.ListInfos, 0)
-					return infos, nil
-				}
-			}
-
-			// 如果设置 -f 标志, 则跳过
-			if *listCmdFileOnly {
-				infos = make(globals.ListInfos, 0)
-				return infos, nil
-			}
-
-			// 如果设置了-L标志且当前不是软链接, 则跳过
-			if *listCmdSymlink && (pathInfo.Mode()&os.ModeSymlink == 0) {
-				infos = make(globals.ListInfos, 0)
-				return infos, nil
-			}
-
-			// 如果设置了-ro标志且当前文件不是只读, 则跳过
-			if *listCmdReadOnly && !isReadOnly(pathInfo.Name()) {
+			// 检查文件是否应该被跳过
+			if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo) {
 				infos = make(globals.ListInfos, 0)
 				return infos, nil
 			}
@@ -369,123 +333,31 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 				return nil, fmt.Errorf("获取目录 %s 的绝对路径时发生了错误: %v", path, absErr)
 			}
 
-			// 从绝对路径中提取目录名
-			baseName := filepath.Base(absPath)
+			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
+			info := buildFileInfo(pathInfo, absPath)
 
-			// 获取文件所属的用户和组
-			u, g := getFileOwner(absPath)
-
-			// 根据文件的模式判断条目类型
-			entryType := getEntryType(pathInfo)
-
-			// 获取文件的大小
-			dirSize := pathInfo.Size()
-
-			// 获取文件的最后修改时间
-			dirModTime := pathInfo.ModTime()
-
-			// 获取文件的权限信息
-			filePerm := pathInfo.Mode().Perm()
-			// 将权限信息转换为字符串形式
-			dirPermStr := filePerm.String()
-
-			// 构建目录信息结构体
-			info := globals.ListInfo{
-				EntryType: entryType,  // 条目类型
-				Name:      baseName,   // 目录名
-				Size:      dirSize,    // 目录大小
-				ModTime:   dirModTime, // 目录修改时间
-				Perm:      dirPermStr, // 目录权限
-				Owner:     u,          // 目录所属用户
-				Group:     g,          // 目录所属组
-				FileExt:   "",         // 目录没有扩展名
-			}
-
-			// 将目录信息添加到切片中
+			// 将构建好的目录信息添加到切片中
 			infos = append(infos, info)
 
-			return infos, nil
-		}
-
-		// 默认情况下, 跳过隐藏文件，除非设置了 -a 标志
-		if !*listCmdAll {
-			if isHidden(pathInfo.Name()) {
-				infos = make(globals.ListInfos, 0)
-				return infos, nil
-			}
-		} else if *listCmdAll && *listCmdHiddenOnly {
-			// 如果设置了 -a 标志且 -ho 标志, 则跳过非隐藏文件
-			if !isHidden(pathInfo.Name()) {
-				infos = make(globals.ListInfos, 0)
-				return infos, nil
-			}
-		}
-
-		// 如果设置了-L标志且当前不是软链接, 则跳过
-		if *listCmdSymlink && (pathInfo.Mode()&os.ModeSymlink == 0) {
-			infos = make(globals.ListInfos, 0)
 			return infos, nil
 		}
 
 		// 读取目录下的文件
 		files, readDirErr := os.ReadDir(path)
 		if readDirErr != nil {
-			// 判断是否是权限错误
-			if errors.Is(readDirErr, os.ErrPermission) {
-				return nil, fmt.Errorf("读取目录 %s 时发生了权限错误: %v", path, readDirErr)
-			}
-
-			// 判断是否是不存在的目录错误
-			if errors.Is(readDirErr, os.ErrNotExist) {
-				return nil, fmt.Errorf("目录 %s 不存在", path)
-			}
-
-			// 判断是否是其他类型的错误
-			if !errors.Is(readDirErr, os.ErrNotExist) && !errors.Is(readDirErr, os.ErrPermission) {
-				return nil, fmt.Errorf("读取目录 %s 时发生了未知错误: %v", path, readDirErr)
-			}
-
-			// 如果不是已知的错误类型, 则返回原始错误
-			return nil, fmt.Errorf("读取目录 %s 时发生了错误: %v", path, readDirErr)
+			return nil, handleError(path, readDirErr)
 		}
 
 		// 遍历目录下的每个文件和目录
 		for _, file := range files {
-			// 默认情况下, 跳过隐藏文件，除非设置了 -a 标志
-			if !*listCmdAll {
-				if isHidden(file.Name()) {
-					continue
-				}
-			} else if *listCmdAll && *listCmdHiddenOnly {
-				// 如果设置了 -a 标志且 -ho 标志, 则跳过非隐藏文件
-				if !isHidden(file.Name()) {
-					continue
-				}
-			}
-
-			// 如果设置了-f标志且当前是目录, 则跳过
-			if *listCmdFileOnly && file.IsDir() {
-				continue
-			}
-
-			// 如果设置了-d标志且当前不是目录, 则跳过
-			if *listCmdDirOnly && !file.IsDir() {
-				continue
-			}
-
 			// 获取文件的详细信息，如大小、修改时间等
 			fileInfo, statErr := file.Info()
 			if statErr != nil {
 				return nil, fmt.Errorf("获取文件 %s 的信息时发生了错误: %v", file.Name(), statErr)
 			}
 
-			// 如果设置了-L标志且当前不是软链接, 则跳过
-			if *listCmdSymlink && (fileInfo.Mode()&os.ModeSymlink == 0) {
-				continue
-			}
-
-			// 如果设置了-ro标志且当前文件不是只读, 则跳过
-			if *listCmdReadOnly && !isReadOnly(fileInfo.Name()) {
+			// 检查文件是否应该被跳过
+			if shouldSkipFile(file.Name(), file.IsDir(), fileInfo) {
 				continue
 			}
 
@@ -507,127 +379,29 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 				return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", file.Name(), absErr)
 			}
 
-			// 从绝对路径中提取文件名
-			baseName := filepath.Base(absPath)
+			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
+			info := buildFileInfo(fileInfo, absPath)
 
-			// 根据文件的模式判断条目类型
-			entryType := getEntryType(fileInfo)
-
-			// 获取文件的大小
-			fileSize := fileInfo.Size()
-
-			// 获取文件的最后修改时间
-			fileModTime := fileInfo.ModTime()
-
-			// 获取文件的权限信息
-			filePerm := fileInfo.Mode().Perm()
-			// 将权限信息转换为字符串形式
-			filePermStr := filePerm.String()
-
-			// 获取文件所属的用户和组
-			u, g := getFileOwner(absPath)
-
-			// 检查文件名是否包含.点, 如果包含尝试获取文件扩展名
-			var fileExt string
-			if strings.Contains(baseName, ".") {
-				// 获取文件扩展名
-				fileExt = filepath.Ext(baseName)
-			}
-
-			// 构建一个 globals.ListInfo 结构体，存储文件的详细信息
-			info := globals.ListInfo{
-				EntryType: entryType,   // 条目类型
-				Name:      baseName,    // 文件名
-				Size:      fileSize,    // 文件大小
-				ModTime:   fileModTime, // 文件修改时间
-				Perm:      filePermStr, // 文件权限
-				Owner:     u,           // 文件所属用户
-				Group:     g,           // 文件所属组
-				FileExt:   fileExt,     // 文件扩展名
-			}
-
-			// 将构建好的文件信息添加到切片中
+			// 将构建好的目录信息添加到切片中
 			infos = append(infos, info)
 		}
 	} else {
-		// 默认情况下, 跳过隐藏文件，除非设置了 -a 标志
-		if !*listCmdAll {
-			if isHidden(pathInfo.Name()) {
-				infos = make(globals.ListInfos, 0)
-				return infos, nil
-			}
-		} else if *listCmdAll && *listCmdHiddenOnly {
-			// 如果设置了 -a 标志且 -ho 标志, 则跳过非隐藏文件
-			if !isHidden(pathInfo.Name()) {
-				infos = make(globals.ListInfos, 0)
-				return infos, nil
-			}
-		}
-
-		// 如果设置了-d标志且当前不是目录, 则跳过
-		if *listCmdDirOnly && !pathInfo.IsDir() {
+		// 检查文件是否应该被跳过
+		if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo) {
 			infos = make(globals.ListInfos, 0)
 			return infos, nil
 		}
 
-		// 如果设置了-L标志且当前不是软链接, 则跳过
-		if *listCmdSymlink && (pathInfo.Mode()&os.ModeSymlink == 0) {
-			infos = make(globals.ListInfos, 0)
-			return infos, nil
-		}
-
-		// 如果设置了-ro标志且当前文件不是只读, 则跳过
-		if *listCmdReadOnly && !isReadOnly(pathInfo.Name()) {
-			infos = make(globals.ListInfos, 0)
-			return infos, nil
-		}
-
-		// 如果 path 是一个普通文件
+		// 如果 path 是一个普通文件, 获取其绝对路径
 		absPath, absErr := filepath.Abs(path)
 		if absErr != nil {
 			return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", path, absErr)
 		}
 
-		// 从绝对路径中提取文件名
-		baseName := filepath.Base(absPath)
+		// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
+		info := buildFileInfo(pathInfo, absPath)
 
-		// 根据文件的模式判断条目类型
-		entryType := getEntryType(pathInfo)
-
-		// 获取文件的大小
-		fileSize := pathInfo.Size()
-
-		// 获取文件的最后修改时间
-		fileModTime := pathInfo.ModTime()
-
-		// 获取文件的权限信息
-		filePerm := pathInfo.Mode().Perm()
-		// 将权限信息转换为字符串形式
-		filePermStr := filePerm.String()
-
-		// 获取文件所属的用户和组
-		u, g := getFileOwner(absPath)
-
-		// 检查文件名是否包含.点, 如果包含尝试获取文件扩展名
-		var fileExt string
-		if strings.Contains(baseName, ".") {
-			// 获取文件扩展名
-			fileExt = filepath.Ext(baseName)
-		}
-
-		// 构建一个 globals.ListInfo 结构体，存储文件的详细信息
-		info := globals.ListInfo{
-			EntryType: entryType,   // 条目类型
-			Name:      baseName,    // 文件名
-			Size:      fileSize,    // 文件大小
-			ModTime:   fileModTime, // 文件修改时间
-			Perm:      filePermStr, // 文件权限
-			Owner:     u,           // 文件所属用户
-			Group:     g,           // 文件所属组
-			FileExt:   fileExt,     // 文件扩展名
-		}
-
-		// 将构建好的文件信息添加到切片中
+		// 将构建好的目录信息添加到切片中
 		infos = append(infos, info)
 	}
 
@@ -674,12 +448,12 @@ func getEntryType(fileInfo os.FileInfo) string {
 }
 
 // GetUserAndGroup 获取指定 UID 和 GID 的用户名和组名
-// 参数：
+// 参数:
 //
 //	uid - 用户ID
 //	gid - 组ID
 //
-// 返回：
+// 返回:
 //
 //	用户名和组名， 如果在非Linux系统或解析失败时返回 "?"
 func GetUserAndGroup(uid, gid string) (string, string) {
@@ -702,3 +476,142 @@ func GetUserAndGroup(uid, gid string) (string, string) {
 
 	return userName, groupName
 }
+
+// shouldSkipFile 函数用于依据命令行参数和文件属性，判断是否需要跳过指定的文件或目录。
+// 该函数会综合考虑多个命令行选项，如显示所有文件（-a）、仅显示隐藏文件（-ho）、
+// 仅显示文件（-f）和仅显示目录（-d）等，结合文件或目录的名称及类型，做出跳过与否的决策。
+// 参数:
+// - name: 表示文件或目录的名称，用于判断是否为隐藏文件。
+// - isDir: 布尔值，用于标识当前条目是否为目录。
+// 返回值:
+// - 布尔类型，若满足跳过条件则返回 true，否则返回 false。
+func shouldSkipFile(name string, isDir bool, fileInfo os.FileInfo) bool {
+	// 场景 1: 未启用 -a 选项，且当前文件或目录为隐藏文件时，应跳过该条目
+	// -a 选项用于显示所有文件，若未启用该选项，隐藏文件默认不显示
+	if !*listCmdAll && isHidden(name) {
+		return true
+	}
+	// 场景 2: 同时启用 -a 和 -ho 选项，但当前文件或目录并非隐藏文件时，应跳过该条目
+	// -a 选项用于显示所有文件，-ho 选项用于仅显示隐藏文件，两者同时启用时，非隐藏文件需跳过
+	if *listCmdAll && *listCmdHiddenOnly && !isHidden(name) {
+		return true
+	}
+	// 场景 3: 启用 -f 选项，且当前条目为目录时，应跳过该条目
+	// -f 选项用于仅显示文件，若当前条目为目录，则不符合要求，需跳过
+	if *listCmdFileOnly && isDir {
+		return true
+	}
+	// 场景 4: 启用 -d 选项，且当前条目不是目录时，应跳过该条目
+	// -d 选项用于仅显示目录，若当前条目不是目录，则不符合要求，需跳过
+	if *listCmdDirOnly && !isDir {
+		return true
+	}
+
+	// 场景 5: 启用 -L 选项，且当前条目不是软链接时，应跳过该条目
+	// 如果设置了-L标志且当前不是软链接, 则跳过
+	if *listCmdSymlink && (fileInfo.Mode()&os.ModeSymlink == 0) {
+		return true
+	}
+
+	// 场景 6: 启用 -ro 选项，且当前文件不是只读时，应跳过该条目
+	// 如果设置了-ro标志且当前文件不是只读, 则跳过
+	if *listCmdReadOnly && !isReadOnly(fileInfo.Name()) {
+		return true
+	}
+
+	// 若不满足上述任何跳过条件，则不跳过该条目
+	return false
+}
+
+// handleError 函数的作用是针对检查指定路径时出现的错误进行处理，会根据不同的错误类型生成对应的错误提示信息。
+// 参数 path 代表当前正在检查的路径，该路径可以是文件路径或者目录路径。
+// 参数 err 是在检查路径过程中产生的错误对象，函数会依据这个错误对象的类型来决定返回何种错误信息。
+// 返回值为一个新的错误对象，其中包含了更具描述性的错误信息，方便调用者定位和处理问题。
+func handleError(path string, err error) error {
+	// 检查错误是否为权限错误(os.ErrPermission)，若是，则返回包含路径信息和原错误信息的权限错误提示。
+	if errors.Is(err, os.ErrPermission) {
+		return fmt.Errorf("检查路径 %s 时发生了权限错误: %v", path, err)
+	}
+	// 检查错误是否为路径不存在错误(os.ErrNotExist)，若是，则返回表明该目录不存在的错误提示。
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("目录 %s 不存在", path)
+	}
+	// 若错误既不是权限错误也不是路径不存在错误，返回一个通用的错误提示，包含路径信息和原错误信息。
+	return fmt.Errorf("检查路径 %s 时发生了错误: %v", path, err)
+}
+
+// buildFileInfo 函数的作用是根据传入的文件信息和文件的绝对路径，构建一个 globals.ListInfo 结构体对象。
+// 该结构体对象包含了文件的各类详细信息，方便后续对文件信息进行统一管理和使用。
+// 参数说明：
+// - fileInfo: os.FileInfo 类型，包含了文件的基本属性，如文件大小、修改时间、权限模式等。
+// - absPath: 文件的绝对路径字符串, 用于提取文件名以及获取文件所属的用户和组信息。
+// 返回值：
+// - 返回一个 globals.ListInfo 结构体实例，该实例封装了文件的完整信息。
+func buildFileInfo(fileInfo os.FileInfo, absPath string) globals.ListInfo {
+	// 从文件的绝对路径中提取出文件名，作为文件的显示名称
+	baseName := filepath.Base(absPath)
+
+	// 调用 getEntryType 函数，根据文件的模式判断文件的条目类型，如目录、普通文件、符号链接等
+	entryType := getEntryType(fileInfo)
+
+	// 从 fileInfo 中获取文件的大小，单位为字节
+	fileSize := fileInfo.Size()
+
+	// 从 fileInfo 中获取文件的最后一次修改时间
+	fileModTime := fileInfo.ModTime()
+
+	// 从 fileInfo 的模式中提取文件的权限信息，并将其转换为字符串形式
+	filePermStr := fileInfo.Mode().Perm().String()
+
+	// 调用 getFileOwner 函数，根据文件的绝对路径获取文件所属的用户和组信息
+	u, g := getFileOwner(absPath)
+
+	// 初始化文件的扩展名变量，默认为空字符串
+	var fileExt string
+
+	// 检查文件名中是否包含点号（.），如果包含则尝试提取文件的扩展名
+	if strings.Contains(baseName, ".") {
+		// 调用 filepath.Ext 函数从文件名中提取文件的扩展名
+		fileExt = filepath.Ext(baseName)
+	}
+
+	// 构建并返回一个 globals.ListInfo 结构体实例，将前面获取到的文件信息填充到结构体中
+	return globals.ListInfo{
+		// 文件的条目类型，如 'd' 表示目录，'f' 表示普通文件等
+		EntryType: entryType,
+		// 文件的显示名称
+		Name: baseName,
+		// 文件的大小，单位为字节
+		Size: fileSize,
+		// 文件的最后一次修改时间
+		ModTime: fileModTime,
+		// 文件的权限信息字符串
+		Perm: filePermStr,
+		// 文件所属的用户名称
+		Owner: u,
+		// 文件所属的组名称
+		Group: g,
+		// 文件的扩展名，如果没有则为空字符串
+		FileExt: fileExt,
+	}
+}
+
+// func getRecursiveFileInfos(path string) (globals.ListInfos, error) {
+// 	infos, err := getFileInfos(path)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if *listCmdRecursion {
+// 		for _, info := range infos {
+// 			if info.EntryType == "d" {
+// 				subPath := filepath.Join(path, info.Name)
+// 				subInfos, err := getRecursiveFileInfos(subPath)
+// 				if err != nil {
+// 					return nil, err
+// 				}
+// 				infos = append(infos, subInfos...)
+// 			}
+// 		}
+// 	}
+// 	return infos, nil
+// }
