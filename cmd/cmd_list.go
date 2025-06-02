@@ -10,6 +10,7 @@ import (
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/globals"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"golang.org/x/term"
 )
@@ -114,18 +115,26 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 		return fmt.Errorf("获取终端宽度时发生了错误: %v", err)
 	}
 
-	// 提取文件名切片
-	fileNames := lfs.GetFileNames()
-
-	// 使用 go-pretty 库进行格式化输出
-	// 计算最长文件名的长度
-	maxWidth := text.LongestLineLen(strings.Join(fileNames, "\n"))
+	// 创建表格
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
 
 	// 动态计算每行可以容纳的列数
-	columns := width / (maxWidth + 4) // 每列增加4个字符的间距 +4 是为了增加文件名之间的间距 和下面的pad函数里的maxWidth+4保持一致
+	fileNames := make([]string, len(lfs))
+	for i, info := range lfs {
+		fileNames[i] = info.Name
+	}
+	maxWidth := text.LongestLineLen(strings.Join(fileNames, "\n"))
+	columns := width / (maxWidth + 2) // 每列增加4个字符的间距
 	if columns == 0 {
 		columns = 1 // 至少显示一列
 	}
+
+	// 设置表格样式
+	t.SetStyle(table.StyleColoredDark)
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Name: "Name", Align: text.AlignLeft},
+	})
 
 	// 构建多列输出
 	for i := 0; i < len(lfs); i += columns {
@@ -135,32 +144,47 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 			end = len(lfs)
 		}
 
-		// 打印当前行的所有文件
+		// 创建一个临时表格行
+		row := make([]interface{}, end-i)
 		for j := i; j < end; j++ {
-			// 使用 go-pretty 的 Pad 函数对齐文件名
 			var paddedFilename string
 			if *listCmdQuoteNames {
-				paddedFilename = text.Pad(fmt.Sprintf("%q", lfs[j].Name), maxWidth+4, ' ')
+				paddedFilename = fmt.Sprintf("%q", lfs[j].Name)
 			} else {
-				paddedFilename = text.Pad(lfs[j].Name, maxWidth+4, ' ')
+				paddedFilename = lfs[j].Name
 			}
 
 			// 检查是否启用颜色输出
 			if *listCmdColor {
-				fmt.Print(getColorString(lfs[j], paddedFilename, cl))
-			} else {
-				fmt.Print(paddedFilename)
+				paddedFilename = getColorString(lfs[j], paddedFilename, cl)
 			}
 
+			row[j-i] = paddedFilename
 		}
-		fmt.Println() // 换行
+
+		// 添加行到表格
+		t.AppendRow(row)
 	}
+
+	// 输出表格
+	t.Render()
 
 	return nil
 }
 
 // listCmdLong 函数用于以长格式输出文件信息。
 func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
+	// 创建表格
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+
+	// 设置表头
+	if *listCmdShowUserGroup {
+		t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
+	} else {
+		t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
+	}
+
 	for _, info := range ifs {
 		// 获取文件权限字符串
 		infoPerm := getPermString(cl, info)
@@ -191,68 +215,44 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 				infoName = getColorString(info, info.Name, cl)
 			}
 
-			// 根据是否显示用户组信息输出不同格式
+			// 添加行到表格
 			if *listCmdShowUserGroup {
-				// 长格式输出, 格式: 类型-所有者-组-其他用户 所属用户  所属组 文件大小 修改时间 文件名
-				fmt.Printf("%s%s  %-3s %-3s %15s %-13s  %-12s  %-10s\n", infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName)
+				t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName})
 			} else {
-				// 长格式输出, 格式: 类型-所有者-组-其他用户 文件大小 修改时间 文件名
-				fmt.Printf("%s%s %15s %-13s %-12s  %-10s\n", infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName)
-			}
-
-			continue
-		}
-
-		// 不启用颜色输出 (默认) 根据是否显示用户组信息输出不同格式
-		infoSize, infoSizeUnit := humanSize(info.Size)
-		if *listCmdShowUserGroup {
-			// 判断是否启用引号
-			if *listCmdQuoteNames {
-				fmt.Printf("%s%s %3s %3s %4s %-2s %-8s %-8q\n",
-					info.EntryType,
-					infoPerm,
-					info.Owner,
-					info.Group,
-					infoSize,
-					infoSizeUnit,
-					info.ModTime.Format("2006-01-02 15:04:05"),
-					info.Name,
-				)
-			} else {
-				fmt.Printf("%s%s %3s %3s %4s %-2s %-8s %-8s\n",
-					info.EntryType,
-					infoPerm,
-					info.Owner,
-					info.Group,
-					infoSize,
-					infoSizeUnit,
-					info.ModTime.Format("2006-01-02 15:04:05"),
-					info.Name,
-				)
+				t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName})
 			}
 		} else {
-			// 判断是否启用引号
-			if *listCmdQuoteNames {
-				fmt.Printf("%s%s %4s %-2s %-8s %-8q\n",
-					info.EntryType,
-					infoPerm,
-					infoSize,
-					infoSizeUnit,
-					info.ModTime.Format("2006-01-02 15:04:05"),
-					info.Name,
-				)
+			// 不启用颜色输出 (默认)
+			infoSize, infoSizeUnit := humanSize(info.Size)
+			if *listCmdShowUserGroup {
+				// 判断是否启用引号
+				if *listCmdQuoteNames {
+					t.AppendRow(table.Row{info.EntryType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), fmt.Sprintf("%q", info.Name)})
+				} else {
+					t.AppendRow(table.Row{info.EntryType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), info.Name})
+				}
 			} else {
-				fmt.Printf("%s%s %4s %-2s %-8s %-8s\n",
-					info.EntryType,
-					infoPerm,
-					infoSize,
-					infoSizeUnit,
-					info.ModTime.Format("2006-01-02 15:04:05"),
-					info.Name,
-				)
+				// 判断是否启用引号
+				if *listCmdQuoteNames {
+					t.AppendRow(table.Row{info.EntryType, infoPerm, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), fmt.Sprintf("%q", info.Name)})
+				} else {
+					t.AppendRow(table.Row{info.EntryType, infoPerm, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), info.Name})
+				}
 			}
 		}
 	}
+
+	// 设置列的对齐方式
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Name: "Size", Align: text.AlignRight},
+	})
+
+	// 设置表格样式
+	t.SetStyle(table.StyleColoredDark)
+
+	// 输出表格
+	t.Render()
+
 	return nil
 }
 
@@ -648,10 +648,15 @@ func humanSize(size int64) (string, string) {
 	}
 
 	// 先将转换后的大小和单位拼接成一个字符串
-	sizeF := fmt.Sprintf("%.1f", sizeFloat)
+	sizeF := fmt.Sprintf("%.0f", sizeFloat)
 
 	// 如果转换后的大小为 0, 则返回 "0B"
 	if sizeF == "0.00" {
+		return "0", "B"
+	}
+
+	// 如果转换后的大小为 0, 则返回 "0"
+	if sizeF == "0" {
 		return "0", "B"
 	}
 
