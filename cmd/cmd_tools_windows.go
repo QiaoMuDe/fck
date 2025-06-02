@@ -46,6 +46,7 @@ func isReadOnly(path string) bool {
 // 参数: filePath - 文件路径
 // 返回: 用户和组的信息, Windows环境下返回"?"占位符
 func getFileOwner(filePath string) (string, string) {
+	_ = filePath
 	// 在Windows环境下, 返回"?"占位符
 	return "?", "?"
 }

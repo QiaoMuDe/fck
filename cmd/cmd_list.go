@@ -5,9 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
@@ -44,10 +42,10 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	// 根据命令行参数排序文件信息切片
 	if *listCmdSortByTime && !*listCmdReverseSort {
 		// -t 为 true, -r 为 true, 则按文件修改时间降序排序
-		listInfos.SortByFileNameDesc()
+		listInfos.SortByModTimeDesc()
 	} else if *listCmdSortByTime && *listCmdReverseSort {
 		// -t 为 true, -r 为 false, 则按文件修改时间升序排序
-		listInfos.SortByFileNameAsc()
+		listInfos.SortByModTimeAsc()
 	} else if *listCmdSortBySize && !*listCmdReverseSort {
 		// -s 为 true, -r 为 true, 则按文件大小降序排序
 		listInfos.SortByFileSizeDesc()
@@ -104,21 +102,6 @@ func checkListCmdArgs() error {
 	if *listCmdHiddenOnly && !*listCmdAll {
 		return errors.New("必须指定 -a 选项才能使用 -ho 选项")
 	}
-
-	// // 检查是否同时指定了 -f 和 -L 选项
-	// if *listCmdFileOnly && *listCmdSymlink {
-	// 	return errors.New("不能同时指定 -f 和 -L 选项")
-	// }
-
-	// // 检查是否同时指定了 -f 和 -ro 选项
-	// if *listCmdFileOnly && *listCmdReadOnly {
-	// 	return errors.New("不能同时指定 -f 和 -ro 选项")
-	// }
-
-	// // 检查是否同时指定了 -f 和 -ho 选项
-	// if *listCmdFileOnly && *listCmdHiddenOnly {
-	// 	return errors.New("不能同时指定 -f 和 -ho 选项")
-	// }
 
 	return nil
 }
@@ -363,13 +346,15 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 
 			// 如果设置了-R标志且当前是目录, 则递归处理子目录
 			if *listCmdRecursion && file.IsDir() {
-				// 先保留子目录本身
 				subDirPath := filepath.Join(path, file.Name())
 				subInfos, err := getFileInfos(subDirPath)
 				if err != nil {
 					return nil, fmt.Errorf("递归处理目录 %s 时出错: %v", subDirPath, err)
 				}
-				// 先添加子目录，再添加其内容
+				// 添加子目录内容前先检查是否应该跳过子目录本身
+				if !shouldSkipFile(file.Name(), true, fileInfo, false) {
+					infos = append(infos, buildFileInfo(fileInfo, subDirPath))
+				}
 				infos = append(infos, subInfos...)
 			}
 
@@ -409,7 +394,24 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 	return infos, nil
 }
 
-// 根据文件的模式判断条目类型
+// getEntryType 根据文件模式返回对应的类型标识符
+// 参数:
+//
+//	fileInfo - 文件信息对象
+//
+// 返回值:
+//
+//	string - 文件类型标识符:
+//	  "d" - 目录
+//	  "f" - 普通文件
+//	  "l" - 符号链接
+//	  "s" - 套接字
+//	  "p" - 命名管道
+//	  "b" - 块设备
+//	  "c" - 字符设备
+//	  "x" - 可执行文件
+//	  "e" - 空文件
+//	  "?" - 未知类型
 func getEntryType(fileInfo os.FileInfo) string {
 	mode := fileInfo.Mode()
 	switch {
@@ -445,36 +447,6 @@ func getEntryType(fileInfo os.FileInfo) string {
 		// 其他类型，条目类型标记为 '?'
 		return "?"
 	}
-}
-
-// GetUserAndGroup 获取指定 UID 和 GID 的用户名和组名
-// 参数:
-//
-//	uid - 用户ID
-//	gid - 组ID
-//
-// 返回:
-//
-//	用户名和组名， 如果在非Linux系统或解析失败时返回 "?"
-func GetUserAndGroup(uid, gid string) (string, string) {
-	// 检查操作系统
-	if runtime.GOOS != "linux" {
-		return "?", "?"
-	}
-
-	// 获取用户名
-	userName := "?"
-	if u, err := user.LookupId(uid); err == nil {
-		userName = u.Username
-	}
-
-	// 获取组名
-	groupName := "?"
-	if g, err := user.LookupGroupId(gid); err == nil {
-		groupName = g.Name
-	}
-
-	return userName, groupName
 }
 
 // shouldSkipFile 函数用于依据命令行参数和文件属性，判断是否需要跳过指定的文件或目录。
@@ -538,6 +510,11 @@ func shouldSkipFile(name string, isDir bool, fileInfo os.FileInfo, main bool) bo
 // 参数 err 是在检查路径过程中产生的错误对象，函数会依据这个错误对象的类型来决定返回何种错误信息。
 // 返回值为一个新的错误对象，其中包含了更具描述性的错误信息，方便调用者定位和处理问题。
 func handleError(path string, err error) error {
+	// 可以增加对os.ErrInvalid的错误处理
+	if errors.Is(err, os.ErrInvalid) {
+		return fmt.Errorf("路径 %s 包含无效字符: %v", path, err)
+	}
+
 	// 检查错误是否为权限错误(os.ErrPermission)，若是，则返回包含路径信息和原错误信息的权限错误提示。
 	if errors.Is(err, os.ErrPermission) {
 		return fmt.Errorf("检查路径 %s 时发生了权限错误: %v", path, err)

@@ -7,6 +7,7 @@ fck - 多功能文件处理工具集
   size     计算文件或目录大小（支持递归计算和人类可读格式）
   find     查找文件（支持关键字、正则表达式和多种过滤条件）
   diff     目录差异比较（支持文件哈希值校验）
+  list     列出目录内容（支持递归列出）
 
 全局参数：
   -v       显示版本信息
@@ -34,6 +35,10 @@ fck - 多功能文件处理工具集
   4. 文件校验：
      fck diff -f checksum.txt 
      fck diff -a /path/to/dir_a -b /path/to/dir_b
+    
+  5. 列出目录内容：
+     fck list /path/to/directory
+     fck list -l -c /path/to/directory
 
 注意事项：
   1. 所有路径参数支持Windows和Unix风格
