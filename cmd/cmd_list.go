@@ -205,10 +205,10 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 			// 根据是否显示用户组信息输出不同格式
 			if *listCmdShowUserGroup {
 				// 长格式输出, 格式: 类型-所有者-组-其他用户 所属用户  所属组 文件大小 修改时间 文件名
-				fmt.Printf("%s%s  %-4s %-4s  %18s  %-12s  %-10s\n", infoType, infoPerm, info.Owner, info.Group, infoSize, infoModTime, infoName)
+				fmt.Printf("%s%s  %-4s %-4s %20s   %-12s  %-10s\n", infoType, infoPerm, info.Owner, info.Group, infoSize, infoModTime, infoName)
 			} else {
 				// 长格式输出, 格式: 类型-所有者-组-其他用户 文件大小 修改时间 文件名
-				fmt.Printf("%s%s  %18s  %-12s  %-10s\n", infoType, infoPerm, infoSize, infoModTime, infoName)
+				fmt.Printf("%s%s %20s   %-12s  %-10s\n", infoType, infoPerm, infoSize, infoModTime, infoName)
 			}
 
 			continue
@@ -218,7 +218,7 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 		if *listCmdShowUserGroup {
 			// 判断是否启用引号
 			if *listCmdQuoteNames {
-				fmt.Printf("%s%s  %-4s %4s  %8s  %-12s  %-10q\n",
+				fmt.Printf("%s%s  %-4s %4s %8s   %-12s  %-10q\n",
 					info.EntryType,
 					infoPerm,
 					info.Owner,
@@ -228,7 +228,7 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 					info.Name,
 				)
 			} else {
-				fmt.Printf("%s%s  %-4s %4s  %8s  %-12s  %-10s\n",
+				fmt.Printf("%s%s  %-4s %4s %8s   %-12s  %-10s\n",
 					info.EntryType,
 					infoPerm,
 					info.Owner,
@@ -241,7 +241,7 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 		} else {
 			// 判断是否启用引号
 			if *listCmdQuoteNames {
-				fmt.Printf("%s%s  %7s  %-12s  %-10q\n",
+				fmt.Printf("%s%s %10s   %-8s  %-10q\n",
 					info.EntryType,
 					infoPerm,
 					humanReadableSize(info.Size, 1),
@@ -249,7 +249,7 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 					info.Name,
 				)
 			} else {
-				fmt.Printf("%s%s  %7s  %-12s  %-10s\n",
+				fmt.Printf("%s%s %10s   %-8s  %-10s\n",
 					info.EntryType,
 					infoPerm,
 					humanReadableSize(info.Size, 1),

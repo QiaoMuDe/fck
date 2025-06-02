@@ -59,6 +59,7 @@ var (
 	findCmdExec        = findCmd.String("exec", "", "对匹配的每个路径执行指定命令，使用{}作为占位符")
 	findCmdPrintCmd    = findCmd.Bool("print-cmd", false, "在执行-exec命令前打印将要执行的命令")
 	findCmdDelete      = findCmd.Bool("delete", false, "删除匹配的文件或目录")
+	findCmdPrintDelete = findCmd.Bool("print-del", false, "在删除前打印将要删除的文件或目录")
 	findCmdMove        = findCmd.String("mv", "", "将匹配项移动到指定的路径")
 	findCmdPrintMove   = findCmd.Bool("print-mv", false, "在移动前打印 old -> new 的映射")
 	findCmdAnd         = findCmd.Bool("and", true, "用于在-n和-p参数中组合条件, 默认为true, 表示所有条件必须满足")

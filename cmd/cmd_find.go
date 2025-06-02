@@ -279,7 +279,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 
 	// 如果启用了delete标志, 删除匹配的文件或目录
 	if *findCmdDelete {
-		if err := deleteMatchedItem(path, entry.IsDir()); err != nil {
+		if err := deleteMatchedItem(path, entry.IsDir(), cl); err != nil {
 			return err
 		}
 
@@ -622,7 +622,7 @@ func runCommand(cmdStr string, cl *colorlib.ColorLib) error {
 // 参数isDir指示是否是目录
 // 参数cl是颜色库实例
 // 返回删除过程中的错误
-func deleteMatchedItem(path string, isDir bool) error {
+func deleteMatchedItem(path string, isDir bool, cl *colorlib.ColorLib) error {
 	// 检查是否为空路径
 	if path == "" {
 		return fmt.Errorf("没有可删除的路径")
@@ -638,12 +638,17 @@ func deleteMatchedItem(path string, isDir bool) error {
 
 	var rmErr error
 
+	// 打印删除信息
+	if *findCmdPrintDelete {
+		cl.Redf("del: %s\n", path)
+	}
+
 	// 根据类型选择删除方法
 	if isDir {
 		// 检查目录是否为空
 		dirEntries, readDirErr := os.ReadDir(path)
 		if readDirErr != nil {
-			return fmt.Errorf("读取目录失败: %s: %v", path, readDirErr)
+			return handleError(path, readDirErr)
 		}
 
 		// 检查目录是否为空
@@ -655,6 +660,7 @@ func deleteMatchedItem(path string, isDir bool) error {
 			rmErr = os.Remove(path)
 		}
 	} else {
+		// 删除文件
 		rmErr = os.Remove(path)
 	}
 
