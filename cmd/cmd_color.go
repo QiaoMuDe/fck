@@ -13,13 +13,6 @@ import (
 // ColorMap 定义了不同颜色对应的文件后缀名映射
 var ColorMap = map[string]map[string]bool{
 	"red": {
-		".bak":      true, // 备份文件
-		".bakup":    true, // 备份文件
-		".tmp":      true, // 临时文件
-		".swp":      true, // Vim交换文件
-		".swo":      true, // Vim交换文件
-		".old":      true, // 旧文件
-		".new":      true, // 新文件
 		".db":       true, // 数据库文件
 		".sql":      true, // SQL数据库文件
 		".sqlite":   true, // SQLite数据库文件
@@ -64,42 +57,23 @@ var ColorMap = map[string]map[string]bool{
 		".part":     true, // 部分下载的文件
 		".download": true, // 下载中的文件
 	},
-	"green": {
-		".exe":    true, // Windows可执行文件
-		".bin":    true, // 二进制可执行文件
-		".app":    true, // macOS应用程序
-		".class":  true, // Java字节码文件
-		".o":      true, // 编译后的目标文件
-		".a":      true, // 静态库文件
-		".lib":    true, // 静态库文件
-		".s":      true, // 汇编语言源文件
-		".msi":    true, // Windows安装程序
-		".dll":    true, // Windows动态链接库
-		".so":     true, // Linux共享库
-		".run":    true, // Linux可执行文件
-		".dylib":  true, // macOS动态库
-		".apk":    true, // Android应用包
-		".ipa":    true, // iOS应用包
+	"purple": {
+		".c":      true, // C源文件
+		".cpp":    true, // C++源文件
+		".h":      true, // C头文件
+		".hpp":    true, // C++头文件
 		".go":     true, // Go源文件
 		".py":     true, // Python脚本
-		".pyd":    true, // Python字节码文件
-		".pyc":    true, // Python编译文件
-		".pyo":    true, // Python编译文件
-		".pyw":    true, // Python脚本
+		".class":  true, // Java字节码文件
 		".js":     true, // JavaScript文件
 		".ts":     true, // TypeScript文件
 		".html":   true, // HTML文件
 		".css":    true, // CSS样式表
 		".java":   true, // Java源文件
-		".c":      true, // C源文件
-		".cpp":    true, // C++源文件
-		".h":      true, // C头文件
-		".hpp":    true, // C++头文件
-		".sh":     true, // Shell脚本
-		".bash":   true, // Bash脚本
-		".zsh":    true, // Zsh脚本
-		".bat":    true, // Windows批处理脚本
-		".ps1":    true, // PowerShell脚本
+		".pyd":    true, // Python字节码文件
+		".pyc":    true, // Python编译文件
+		".pyo":    true, // Python编译文件
+		".pyw":    true, // Python脚本
 		".rb":     true, // Ruby脚本
 		".rs":     true, // Rust脚本
 		".php":    true, // PHP脚本
@@ -113,6 +87,27 @@ var ColorMap = map[string]map[string]bool{
 		".r":      true, // R语言脚本
 		".vbs":    true, // VBScript文件
 		".psm1":   true, // PowerShell模块文件
+		".s":      true, // 汇编语言源文件
+		".o":      true, // 编译后的目标文件
+		".a":      true, // 静态库文件
+		".lib":    true, // 静态库文件
+	},
+	"green": {
+		".exe":   true, // Windows可执行文件
+		".bin":   true, // 二进制可执行文件
+		".app":   true, // macOS应用程序
+		".msi":   true, // Windows安装程序
+		".dll":   true, // Windows动态链接库
+		".so":    true, // Linux共享库
+		".run":   true, // Linux可执行文件
+		".dylib": true, // macOS动态库
+		".apk":   true, // Android应用包
+		".ipa":   true, // iOS应用包
+		".sh":    true, // Shell脚本
+		".bash":  true, // Bash脚本
+		".zsh":   true, // Zsh脚本
+		".bat":   true, // Windows批处理脚本
+		".ps1":   true, // PowerShell脚本
 	},
 	"yellow": {
 		".txt":           true, // 文本文件
@@ -171,42 +166,13 @@ var ColorMap = map[string]map[string]bool{
 		".odf":           true, // OpenDocument公式格式
 		".odc":           true, // OpenDocument图表格式
 		".odm":           true, // OpenDocument文本模板格式
-	},
-	"white": {
-		".jpg":  true, // JPG图片
-		".jpeg": true, // JPEG图片
-		".png":  true, // PNG图片
-		".gif":  true, // GIF图片
-		".bmp":  true, // BMP图片
-		".tiff": true, // TIFF图片
-		".webp": true, // WebP图片
-		".svg":  true, // SVG矢量图
-		".ico":  true, // ICO图标
-		".avif": true, // AVIF图片
-		".mp4":  true, // MP4视频
-		".mkv":  true, // MKV视频
-		".avi":  true, // AVI视频
-		".mov":  true, // MOV视频
-		".wmv":  true, // WMV视频
-		".flv":  true, // FLV视频
-		".mp3":  true, // MP3音频
-		".wav":  true, // WAV音频
-		".ogg":  true, // OGG音频
-		".flac": true, // FLAC音频
-		".aac":  true, // AAC音频
-		".m4a":  true, // M4A音频
-		".helc": true, // HEVC视频
-		".webm": true, // WebM视频
-		".wma":  true, // Windows Media Audio
-		".heic": true, // HEIC图片
-		".heif": true, // HEIF图片
-		".psd":  true, // Photoshop文件
-		".ai":   true, // Adobe Illustrator文件
-		".indd": true, // Adobe InDesign文件
-		".raw":  true, // RAW图片
-		".3gp":  true, // 3GP视频
-		".m4v":  true, // M4V视频
-		".mid":  true, // MIDI音频
+		".bak":           true, // 备份文件
+		".bakup":         true, // 备份文件
+		".tmp":           true, // 临时文件
+		".swp":           true, // Vim交换文件
+		".swo":           true, // Vim交换文件
+		".old":           true, // 旧文件
+		".new":           true, // 新文件
 	},
 }
 
@@ -248,15 +214,15 @@ func printColoredFile(fs string, cl *colorlib.ColorLib) {
 				} else {
 					cl.Red(fs) // 如果没有目录分割符，则直接输出文件名
 				}
-			case "white":
+			case "purple":
 				// 检查是否包含目录分割符
 				if strings.Contains(fs, string(os.PathSeparator)) {
 					// 把路径分割成目录和文件名
 					dir, file := filepath.Split(fs)
 
-					fmt.Println(cl.Scyan(dir) + cl.Swhite(file))
+					fmt.Println(cl.Scyan(dir) + cl.Spurple(file))
 				} else {
-					cl.White(fs) // 如果没有目录分割符，则直接输出文件名
+					cl.Purple(fs) // 如果没有目录分割符，则直接输出文件名
 				}
 			}
 			return
@@ -279,11 +245,11 @@ func printColoredFile(fs string, cl *colorlib.ColorLib) {
 //
 //	path: 要检查的路径(用于获取文件类型信息)
 //	s: 要输出的字符串内容
-//	cl: colorlib.ColorLib实例，用于彩色输出
+//	cl: colorlib.ColorLib实例, 用于彩色输出
 //
 // 返回值:
 //
-//	error: 如果获取路径信息失败则返回错误，否则返回nil
+//	error: 如果获取路径信息失败则返回错误, 否则返回nil
 func printStringColor(path string, s string, cl *colorlib.ColorLib) error {
 	// 获取路径信息
 	pathInfo, statErr := os.Lstat(path)
@@ -302,8 +268,8 @@ func printStringColor(path string, s string, cl *colorlib.ColorLib) error {
 		cl.Green(s)
 
 	case mode&os.ModeSymlink != 0:
-		// 符号链接 - 使用黄色输出
-		cl.Yellow(s)
+		// 符号链接 - 使用青色输出
+		cl.Scyan(s)
 
 	default:
 		// 其他类型文件 - 使用灰色输出
@@ -343,15 +309,15 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 			cl.Blue(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	case mode&os.ModeSymlink != 0:
-		// 符号链接 - 使用黄色输出
+		// 符号链接 - 使用青色输出
 		// 检查是否包含目录分割符
 		if strings.Contains(path, string(os.PathSeparator)) {
 			// 把路径分割成目录和文件名
 			dir, file := filepath.Split(path)
 
-			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
+			fmt.Println(cl.Scyan(dir) + cl.Slcyan(file))
 		} else {
-			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
+			cl.Cyan(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	case mode&os.ModeDevice != 0:
 		// 设备文件 - 使用红色输出
@@ -428,8 +394,8 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 		// 若文件类型为目录，则使用蓝色来渲染字符串
 		colorString = cl.Sblue(pF)
 	case "l":
-		// 若文件类型为符号链接，则使用黄色来渲染字符串
-		colorString = cl.Syellow(pF)
+		// 若文件类型为符号链接，则使用青色来渲染字符串
+		colorString = cl.Scyan(pF)
 	case "x":
 		// 若文件类型为可执行文件，则使用绿色来渲染字符串
 		colorString = cl.Sgreen(pF)
@@ -444,18 +410,27 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 					colorString = cl.Sgreen(pF)
 				case "red":
 					colorString = cl.Sred(pF)
-				case "white":
-					colorString = cl.Swhite(pF)
+				case "purple":
+					colorString = cl.Spurple(pF)
 				}
 				return colorString
 			}
 		}
 
-		// 若没有找到匹配的文件后缀名，则使用灰色来渲染字符串
+		// 若没有找到匹配的文件后缀名, 则使用灰色来渲染字符串
 		colorString = cl.Sgray(pF)
-	case "s", "p", "b", "c", "e":
-		// 若文件类型为套接字、管道、块设备、字符设备或未知类型，则使用红色来渲染字符串
-		colorString = cl.Spurple(pF)
+	case "s", "p", "b", "c":
+		// 若文件类型为套接字、管道、块设备、字符设备，则使用红色来渲染字符串
+		colorString = cl.Sred(pF)
+	case "e":
+		// 若文件类型为空文件或者空目录, 则使用青色来渲染字符串
+		// 如果是空目录，则使用蓝色 来渲染字符串
+		if info.EntryType == "e" && info.Size == 0 {
+			colorString = cl.Sblue(pF)
+		} else {
+			// 如果是空文件，则使用白色来渲染字符串
+			colorString = cl.Swhite(pF)
+		}
 	default:
 		// 对于未匹配的类型，使用灰色来渲染字符串
 		colorString = cl.Sgray(pF)
