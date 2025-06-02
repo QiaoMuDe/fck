@@ -26,7 +26,7 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	}
 
 	// 检查list命令的参数是否合法
-	if err := checkListCmdArgs(listPath); err != nil {
+	if err := checkListCmdArgs(); err != nil {
 		return err
 	}
 
@@ -36,38 +36,35 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		return fmt.Errorf("获取文件信息时发生了错误: %v", getErr)
 	}
 
+	// 检查切片是否为空
+	if len(listInfos) == 0 {
+		return nil
+	}
+
 	// 根据命令行参数排序文件信息切片
 	if *listCmdSortByTime && !*listCmdReverseSort {
-		// -t 为 true, -r 为 false, 则按文件修改时间升序排序
-		listInfos.SortByFileNameAsc()
-	} else if *listCmdSortByTime && *listCmdReverseSort {
 		// -t 为 true, -r 为 true, 则按文件修改时间降序排序
 		listInfos.SortByFileNameDesc()
+	} else if *listCmdSortByTime && *listCmdReverseSort {
+		// -t 为 true, -r 为 false, 则按文件修改时间升序排序
+		listInfos.SortByFileNameAsc()
 	} else if *listCmdSortBySize && !*listCmdReverseSort {
-		// -s 为 true, -r 为 false, 则按文件大小升序排序
-		listInfos.SortByFileSizeAsc()
-	} else if *listCmdSortBySize && *listCmdReverseSort {
 		// -s 为 true, -r 为 true, 则按文件大小降序排序
 		listInfos.SortByFileSizeDesc()
+	} else if *listCmdSortBySize && *listCmdReverseSort {
+		// -s 为 true, -r 为 false, 则按文件大小升序排序
+		listInfos.SortByFileSizeAsc()
 	} else if *listCmdSortByName && *listCmdReverseSort {
-		// -n 为 true, -r 为 false, 则按文件名降序排序
-		listInfos.SortByFileNameDesc()
-	} else {
 		// -n 为 true, -r 为 true, 则按文件名升序排序
 		listInfos.SortByFileNameAsc()
+	} else {
+		// 默认按文件名降序排序
+		listInfos.SortByFileNameDesc()
 	}
 
 	// 如果启用了长格式输出, 则调用 listCmdLong 函数
 	if *listCmdLongFormat {
 		if err := listCmdLong(cl, listInfos); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// -q 双引号输出模式
-	if *listCmdQuoteNames {
-		if err := listCmdQuoteNamesMode(cl, listInfos); err != nil {
 			return err
 		}
 		return nil
@@ -81,51 +78,8 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	return nil
 }
 
-// 双引号输出模式
-func listCmdQuoteNamesMode(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
-	// 每行输出3个文件
-	for i := 0; i < len(lfs); i += 3 {
-		// 检查是否超出了文件列表的范围
-		if i >= len(lfs) {
-			break
-		}
-
-		// 输出文件名
-		fmt.Printf("\"%s\"", lfs[i].Name)
-
-		// 检查是否还有下一个文件
-		if i+1 < len(lfs) {
-			fmt.Printf(" \"%s\"", lfs[i+1].Name)
-		}
-
-		if i+2 < len(lfs) {
-			fmt.Printf(" \"%s\"", lfs[i+2].Name)
-		}
-
-		fmt.Println() // 换行
-	}
-
-	return nil
-}
-
 // checkListCmdArgs 检查list命令的参数是否合法
-func checkListCmdArgs(listPath string) error {
-	// 检查路径是否存在
-	if _, err := os.Stat(listPath); err != nil {
-		// 权限错误
-		if os.IsPermission(err) {
-			return fmt.Errorf("权限不足: 路径 %s", listPath)
-		}
-
-		// 路径不存在
-		if os.IsNotExist(err) {
-			return fmt.Errorf("路径不存在: %s", listPath)
-		}
-
-		// 其他错误
-		return fmt.Errorf("检查路径时发生了错误: %v", err)
-	}
-
+func checkListCmdArgs() error {
 	// 检查是否同时指定了 -s 和 -t 选项
 	if *listCmdSortBySize && *listCmdSortByTime {
 		return errors.New("不能同时指定 -s 和 -t 选项")
@@ -140,6 +94,26 @@ func checkListCmdArgs(listPath string) error {
 	if *listCmdSortByTime && *listCmdSortByName {
 		return errors.New("不能同时指定 -t 和 -n 选项")
 	}
+
+	// // 检查是否同时指定了 -f 和 -d 选项
+	// if *listCmdFileOnly && *listCmdDirOnly {
+	// 	return errors.New("不能同时指定 -f 和 -d 选项")
+	// }
+
+	// // 检查是否同时指定了 -f 和 -L 选项
+	// if *listCmdFileOnly && *listCmdSymlink {
+	// 	return errors.New("不能同时指定 -f 和 -L 选项")
+	// }
+
+	// // 检查是否同时指定了 -f 和 -ro 选项
+	// if *listCmdFileOnly && *listCmdReadOnly {
+	// 	return errors.New("不能同时指定 -f 和 -ro 选项")
+	// }
+
+	// // 检查是否同时指定了 -f 和 -ho 选项
+	// if *listCmdFileOnly && *listCmdHiddenOnly {
+	// 	return errors.New("不能同时指定 -f 和 -ho 选项")
+	// }
 
 	return nil
 }
@@ -160,7 +134,7 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	maxWidth := text.LongestLineLen(strings.Join(fileNames, "\n"))
 
 	// 动态计算每行可以容纳的列数
-	columns := width / (maxWidth + 1) // 每列增加2个字符的间距
+	columns := width / (maxWidth + 4) // 每列增加4个字符的间距 +4 是为了增加文件名之间的间距 和下面的pad函数里的maxWidth+4保持一致
 	if columns == 0 {
 		columns = 1 // 至少显示一列
 	}
@@ -176,7 +150,12 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 		// 打印当前行的所有文件
 		for j := i; j < end; j++ {
 			// 使用 go-pretty 的 Pad 函数对齐文件名
-			paddedFilename := text.Pad(lfs[j].Name, maxWidth+1, ' ')
+			var paddedFilename string
+			if *listCmdQuoteNames {
+				paddedFilename = text.Pad(fmt.Sprintf("%q", lfs[j].Name), maxWidth+4, ' ')
+			} else {
+				paddedFilename = text.Pad(lfs[j].Name, maxWidth+4, ' ')
+			}
 
 			// 检查是否启用颜色输出
 			if *listCmdColor {
@@ -210,7 +189,13 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 			infoModTime := cl.Sgreen(info.ModTime.Format("2006-01-02 15:04:05"))
 
 			// 文件名
-			infoName := getColorString(info, info.Name, cl)
+			var infoName string
+			// 检查是否启用引号
+			if *listCmdQuoteNames {
+				infoName = getColorString(info, fmt.Sprintf("%q", info.Name), cl)
+			} else {
+				infoName = getColorString(info, info.Name, cl)
+			}
 
 			// 根据是否显示用户组信息输出不同格式
 			if *listCmdShowUserGroup {
@@ -226,25 +211,48 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 
 		// 不启用颜色输出 (默认) 根据是否显示用户组信息输出不同格式
 		if *listCmdShowUserGroup {
-			fmt.Printf("%s%s  %-4s %4s  %8s  %-12s  %-10s\n",
-				info.EntryType,
-				infoPerm,
-				info.Owner,
-				info.Group,
-				humanReadableSize(info.Size, 1),
-				info.ModTime.Format("2006-01-02 15:04:05"),
-				info.Name,
-			)
+			// 判断是否启用引号
+			if *listCmdQuoteNames {
+				fmt.Printf("%s%s  %-4s %4s  %8s  %-12s  %-10q\n",
+					info.EntryType,
+					infoPerm,
+					info.Owner,
+					info.Group,
+					humanReadableSize(info.Size, 1),
+					info.ModTime.Format("2006-01-02 15:04:05"),
+					info.Name,
+				)
+			} else {
+				fmt.Printf("%s%s  %-4s %4s  %8s  %-12s  %-10s\n",
+					info.EntryType,
+					infoPerm,
+					info.Owner,
+					info.Group,
+					humanReadableSize(info.Size, 1),
+					info.ModTime.Format("2006-01-02 15:04:05"),
+					info.Name,
+				)
+			}
 		} else {
-			fmt.Printf("%s%s  %7s  %-12s  %-10s\n",
-				info.EntryType,
-				infoPerm,
-				humanReadableSize(info.Size, 1),
-				info.ModTime.Format("2006-01-02 15:04:05"),
-				info.Name,
-			)
+			// 判断是否启用引号
+			if *listCmdQuoteNames {
+				fmt.Printf("%s%s  %7s  %-12s  %-10q\n",
+					info.EntryType,
+					infoPerm,
+					humanReadableSize(info.Size, 1),
+					info.ModTime.Format("2006-01-02 15:04:05"),
+					info.Name,
+				)
+			} else {
+				fmt.Printf("%s%s  %7s  %-12s  %-10s\n",
+					info.EntryType,
+					infoPerm,
+					humanReadableSize(info.Size, 1),
+					info.ModTime.Format("2006-01-02 15:04:05"),
+					info.Name,
+				)
+			}
 		}
-
 	}
 	return nil
 }
@@ -292,63 +300,182 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 	// 初始化一个用于存储文件信息的切片
 	var infos globals.ListInfos
 
-	// 读取目录下的文件
-	files, readDirErr := os.ReadDir(path)
-	if readDirErr != nil {
+	// 获取指定路径的文件信息
+	pathInfo, statErr := os.Stat(path)
+	if statErr != nil {
 		// 判断是否是权限错误
-		if errors.Is(readDirErr, os.ErrPermission) {
-			return nil, fmt.Errorf("读取目录 %s 时发生了权限错误: %v", path, readDirErr)
+		if errors.Is(statErr, os.ErrPermission) {
+			return nil, fmt.Errorf("检查路径 %s 时发生了权限错误: %v", path, statErr)
 		}
 
 		// 判断是否是不存在的目录错误
-		if errors.Is(readDirErr, os.ErrNotExist) {
+		if errors.Is(statErr, os.ErrNotExist) {
 			return nil, fmt.Errorf("目录 %s 不存在", path)
 		}
 
 		// 判断是否是其他类型的错误
-		if !errors.Is(readDirErr, os.ErrNotExist) && !errors.Is(readDirErr, os.ErrPermission) {
-			return nil, fmt.Errorf("读取目录 %s 时发生了未知错误: %v", path, readDirErr)
+		if !errors.Is(statErr, os.ErrNotExist) && !errors.Is(statErr, os.ErrPermission) {
+			return nil, fmt.Errorf("检查路径 %s 时发生了未知错误: %v", path, statErr)
 		}
 
 		// 如果不是已知的错误类型, 则返回原始错误
-		return nil, fmt.Errorf("读取目录 %s 时发生了错误: %v", path, readDirErr)
+		return nil, fmt.Errorf("检查路径 %s 时发生了错误: %v", path, statErr)
 	}
 
-	// 遍历目录下的每个文件和目录
-	for _, file := range files {
-		// 跳过隐藏文件
-		if !*listCmdAll {
-			if isHidden(file.Name()) {
-				continue
+	// 检查是否是目录
+	if pathInfo.IsDir() {
+		// 如果设置了 -D 标志，只列出目录本身
+		if *listCmdDirEctory {
+			// 获取目录的绝对路径
+			absPath, absErr := filepath.Abs(path)
+			if absErr != nil {
+				return nil, fmt.Errorf("获取目录 %s 的绝对路径时发生了错误: %v", path, absErr)
 			}
+
+			// 从绝对路径中提取目录名
+			baseName := filepath.Base(absPath)
+
+			// 获取文件所属的用户和组
+			u, g := getFileOwner(absPath)
+
+			// 根据文件的模式判断条目类型
+			entryType := getEntryType(pathInfo)
+
+			// 获取文件的大小
+			dirSize := pathInfo.Size()
+
+			// 获取文件的最后修改时间
+			dirModTime := pathInfo.ModTime()
+
+			// 获取文件的权限信息
+			filePerm := pathInfo.Mode().Perm()
+			// 将权限信息转换为字符串形式
+			dirPermStr := filePerm.String()
+
+			// 构建目录信息结构体
+			info := globals.ListInfo{
+				EntryType: entryType,  // 条目类型
+				Name:      baseName,   // 目录名
+				Size:      dirSize,    // 目录大小
+				ModTime:   dirModTime, // 目录修改时间
+				Perm:      dirPermStr, // 目录权限
+				Owner:     u,          // 目录所属用户
+				Group:     g,          // 目录所属组
+				FileExt:   "",         // 目录没有扩展名
+			}
+
+			// 将目录信息添加到切片中
+			infos = append(infos, info)
+
+			return infos, nil
 		}
 
-		// 获取文件的绝对路径
-		absPath, absErr := filepath.Abs(file.Name())
+		// 读取目录下的文件
+		files, readDirErr := os.ReadDir(path)
+		if readDirErr != nil {
+			// 判断是否是权限错误
+			if errors.Is(readDirErr, os.ErrPermission) {
+				return nil, fmt.Errorf("读取目录 %s 时发生了权限错误: %v", path, readDirErr)
+			}
+
+			// 判断是否是不存在的目录错误
+			if errors.Is(readDirErr, os.ErrNotExist) {
+				return nil, fmt.Errorf("目录 %s 不存在", path)
+			}
+
+			// 判断是否是其他类型的错误
+			if !errors.Is(readDirErr, os.ErrNotExist) && !errors.Is(readDirErr, os.ErrPermission) {
+				return nil, fmt.Errorf("读取目录 %s 时发生了未知错误: %v", path, readDirErr)
+			}
+
+			// 如果不是已知的错误类型, 则返回原始错误
+			return nil, fmt.Errorf("读取目录 %s 时发生了错误: %v", path, readDirErr)
+		}
+
+		// 遍历目录下的每个文件和目录
+		for _, file := range files {
+			// 跳过隐藏文件
+			if !*listCmdAll {
+				if isHidden(file.Name()) {
+					continue
+				}
+			}
+
+			// 获取文件的绝对路径
+			absPath, absErr := filepath.Abs(file.Name())
+			if absErr != nil {
+				return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", file.Name(), absErr)
+			}
+
+			// 从绝对路径中提取文件名
+			baseName := filepath.Base(absPath)
+
+			// 获取文件的详细信息，如大小、修改时间等
+			fileInfo, statErr := file.Info()
+			if statErr != nil {
+				return nil, fmt.Errorf("获取文件 %s 的信息时发生了错误: %v", file.Name(), statErr)
+			}
+
+			// 根据文件的模式判断条目类型
+			entryType := getEntryType(fileInfo)
+
+			// 获取文件的大小
+			fileSize := fileInfo.Size()
+
+			// 获取文件的最后修改时间
+			fileModTime := fileInfo.ModTime()
+
+			// 获取文件的权限信息
+			filePerm := fileInfo.Mode().Perm()
+			// 将权限信息转换为字符串形式
+			filePermStr := filePerm.String()
+
+			// 获取文件所属的用户和组
+			u, g := getFileOwner(absPath)
+
+			// 检查文件名是否包含.点, 如果包含尝试获取文件扩展名
+			var fileExt string
+			if strings.Contains(baseName, ".") {
+				// 获取文件扩展名
+				fileExt = filepath.Ext(baseName)
+			}
+
+			// 构建一个 globals.ListInfo 结构体，存储文件的详细信息
+			info := globals.ListInfo{
+				EntryType: entryType,   // 条目类型
+				Name:      baseName,    // 文件名
+				Size:      fileSize,    // 文件大小
+				ModTime:   fileModTime, // 文件修改时间
+				Perm:      filePermStr, // 文件权限
+				Owner:     u,           // 文件所属用户
+				Group:     g,           // 文件所属组
+				FileExt:   fileExt,     // 文件扩展名
+			}
+
+			// 将构建好的文件信息添加到切片中
+			infos = append(infos, info)
+		}
+	} else {
+		// 如果 path 是一个普通文件
+		absPath, absErr := filepath.Abs(path)
 		if absErr != nil {
-			return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", file.Name(), absErr)
+			return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", path, absErr)
 		}
 
 		// 从绝对路径中提取文件名
 		baseName := filepath.Base(absPath)
 
-		// 获取文件的详细信息，如大小、修改时间等
-		fileInfo, statErr := file.Info()
-		if statErr != nil {
-			return nil, fmt.Errorf("获取文件 %s 的信息时发生了错误: %v", file.Name(), statErr)
-		}
-
 		// 根据文件的模式判断条目类型
-		entryType := getEntryType(fileInfo)
+		entryType := getEntryType(pathInfo)
 
 		// 获取文件的大小
-		fileSize := fileInfo.Size()
+		fileSize := pathInfo.Size()
 
 		// 获取文件的最后修改时间
-		fileModTime := fileInfo.ModTime()
+		fileModTime := pathInfo.ModTime()
 
 		// 获取文件的权限信息
-		filePerm := fileInfo.Mode().Perm()
+		filePerm := pathInfo.Mode().Perm()
 		// 将权限信息转换为字符串形式
 		filePermStr := filePerm.String()
 
