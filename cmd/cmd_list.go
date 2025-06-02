@@ -170,8 +170,14 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 			// 类型
 			infoType := getColorString(info, info.EntryType, cl)
 
-			// 文件大小
-			infoSize := cl.Syellow(humanReadableSize(info.Size, 1))
+			// 文件大小 和 单位
+			infoSize, infoSizeUnit := humanSize(info.Size)
+
+			// 渲染文件大小
+			infoSize = cl.Syellow(infoSize)
+
+			// 渲染文件大小单位
+			infoSizeUnit = cl.Syellow(infoSizeUnit)
 
 			// 修改时间
 			infoModTime := cl.Sgreen(info.ModTime.Format("2006-01-02 15:04:05"))
@@ -188,35 +194,38 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 			// 根据是否显示用户组信息输出不同格式
 			if *listCmdShowUserGroup {
 				// 长格式输出, 格式: 类型-所有者-组-其他用户 所属用户  所属组 文件大小 修改时间 文件名
-				fmt.Printf("%s%s  %-4s %-4s %20s   %-12s  %-10s\n", infoType, infoPerm, info.Owner, info.Group, infoSize, infoModTime, infoName)
+				fmt.Printf("%s%s  %-3s %-3s %15s %-13s  %-12s  %-10s\n", infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName)
 			} else {
 				// 长格式输出, 格式: 类型-所有者-组-其他用户 文件大小 修改时间 文件名
-				fmt.Printf("%s%s %20s   %-12s  %-10s\n", infoType, infoPerm, infoSize, infoModTime, infoName)
+				fmt.Printf("%s%s %15s %-13s %-12s  %-10s\n", infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName)
 			}
 
 			continue
 		}
 
 		// 不启用颜色输出 (默认) 根据是否显示用户组信息输出不同格式
+		infoSize, infoSizeUnit := humanSize(info.Size)
 		if *listCmdShowUserGroup {
 			// 判断是否启用引号
 			if *listCmdQuoteNames {
-				fmt.Printf("%s%s  %-4s %4s %8s   %-12s  %-10q\n",
+				fmt.Printf("%s%s %3s %3s %4s %-2s %-8s %-8q\n",
 					info.EntryType,
 					infoPerm,
 					info.Owner,
 					info.Group,
-					humanReadableSize(info.Size, 1),
+					infoSize,
+					infoSizeUnit,
 					info.ModTime.Format("2006-01-02 15:04:05"),
 					info.Name,
 				)
 			} else {
-				fmt.Printf("%s%s  %-4s %4s %8s   %-12s  %-10s\n",
+				fmt.Printf("%s%s %3s %3s %4s %-2s %-8s %-8s\n",
 					info.EntryType,
 					infoPerm,
 					info.Owner,
 					info.Group,
-					humanReadableSize(info.Size, 1),
+					infoSize,
+					infoSizeUnit,
 					info.ModTime.Format("2006-01-02 15:04:05"),
 					info.Name,
 				)
@@ -224,18 +233,20 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 		} else {
 			// 判断是否启用引号
 			if *listCmdQuoteNames {
-				fmt.Printf("%s%s %10s   %-8s  %-10q\n",
+				fmt.Printf("%s%s %4s %-2s %-8s %-8q\n",
 					info.EntryType,
 					infoPerm,
-					humanReadableSize(info.Size, 1),
+					infoSize,
+					infoSizeUnit,
 					info.ModTime.Format("2006-01-02 15:04:05"),
 					info.Name,
 				)
 			} else {
-				fmt.Printf("%s%s %10s   %-8s  %-10s\n",
+				fmt.Printf("%s%s %4s %-2s %-8s %-8s\n",
 					info.EntryType,
 					infoPerm,
-					humanReadableSize(info.Size, 1),
+					infoSize,
+					infoSizeUnit,
 					info.ModTime.Format("2006-01-02 15:04:05"),
 					info.Name,
 				)
@@ -347,15 +358,29 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 			// 如果设置了-R标志且当前是目录, 则递归处理子目录
 			if *listCmdRecursion && file.IsDir() {
 				subDirPath := filepath.Join(path, file.Name())
-				subInfos, err := getFileInfos(subDirPath)
-				if err != nil {
-					return nil, fmt.Errorf("递归处理目录 %s 时出错: %v", subDirPath, err)
+
+				// 使用goroutine并行处理子目录
+				type result struct {
+					infos globals.ListInfos
+					err   error
 				}
+				resultChan := make(chan result)
+
+				go func() {
+					subInfos, err := getFileInfos(subDirPath)
+					resultChan <- result{subInfos, err}
+				}()
+
+				res := <-resultChan
+				if res.err != nil {
+					return nil, fmt.Errorf("递归处理目录 %s 时出错: %v", subDirPath, res.err)
+				}
+
 				// 添加子目录内容前先检查是否应该跳过子目录本身
 				if !shouldSkipFile(file.Name(), true, fileInfo, false) {
 					infos = append(infos, buildFileInfo(fileInfo, subDirPath))
 				}
-				infos = append(infos, subInfos...)
+				infos = append(infos, res.infos...)
 			}
 
 			// 获取文件的绝对路径
@@ -583,22 +608,61 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string) globals.ListInfo {
 	}
 }
 
-// func getRecursiveFileInfos(path string) (globals.ListInfos, error) {
-// 	infos, err := getFileInfos(path)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if *listCmdRecursion {
-// 		for _, info := range infos {
-// 			if info.EntryType == "d" {
-// 				subPath := filepath.Join(path, info.Name)
-// 				subInfos, err := getRecursiveFileInfos(subPath)
-// 				if err != nil {
-// 					return nil, err
-// 				}
-// 				infos = append(infos, subInfos...)
-// 			}
-// 		}
-// 	}
-// 	return infos, nil
-// }
+// humanSize 函数用于将字节大小转换为可读的字符串格式
+// 该函数接收一个 int64 类型的字节大小参数, 返回两个字符串: 第一个字符串表示转换后的大小, 第二个字符串表示单位
+func humanSize(size int64) (string, string) {
+	// 定义存储字节单位的切片, 按照从小到大的顺序排列
+	units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
+	// 定义字节单位之间的换算基数, 这里使用 1024 作为二进制换算标准
+	base := float64(1024)
+
+	// 用于存储最终选择的合适单位
+	var unit string
+	// 将传入的 int64 类型的字节大小转换为 float64 类型, 方便后续计算
+	sizeFloat := float64(size)
+
+	// 根据字节大小选择最合适的单位
+	// 如果字节大小小于 1024B, 则直接使用 B 作为单位
+	if sizeFloat < base {
+		unit = units[0]
+		// 如果字节大小小于 1024KB, 则使用 KB 作为单位, 并将字节大小除以 1024 转换为 KB
+	} else if sizeFloat < base*base {
+		unit = units[1]
+		sizeFloat /= base
+		// 如果字节大小小于 1024MB, 则使用 MB 作为单位, 并将字节大小除以 1024*1024 转换为 MB
+	} else if sizeFloat < base*base*base {
+		unit = units[2]
+		sizeFloat /= base * base
+		// 如果字节大小小于 1024GB, 则使用 GB 作为单位, 并将字节大小除以 1024*1024*1024 转换为 GB
+	} else if sizeFloat < base*base*base*base {
+		unit = units[3]
+		sizeFloat /= base * base * base
+		// 如果字节大小小于 1024TB, 则使用 TB 作为单位, 并将字节大小除以 1024*1024*1024*1024 转换为 TB
+	} else if sizeFloat < base*base*base*base*base {
+		unit = units[4]
+		sizeFloat /= base * base * base * base
+		// 否则使用 PB 作为单位, 并将字节大小除以 1024*1024*1024*1024*1024 转换为 PB
+	} else {
+		unit = units[5]
+		sizeFloat /= base * base * base * base * base
+	}
+
+	// 先将转换后的大小和单位拼接成一个字符串
+	sizeF := fmt.Sprintf("%.1f", sizeFloat)
+
+	// 如果转换后的大小为 0, 则返回 "0B"
+	if sizeF == "0.00" {
+		return "0", "B"
+	}
+
+	// 去除小数部分末尾的 .00 或 .0
+	sizeF = strings.TrimSuffix(sizeF, ".00")
+	sizeF = strings.TrimSuffix(sizeF, ".0")
+
+	// 去除小数点部分末尾的0
+	if strings.Contains(sizeF, ".") {
+		sizeF = strings.TrimRight(sizeF, "0")
+	}
+
+	return sizeF, unit
+}

@@ -57,41 +57,6 @@ var ColorMap = map[string]map[string]bool{
 		".part":     true, // 部分下载的文件
 		".download": true, // 下载中的文件
 	},
-	"purple": {
-		".c":      true, // C源文件
-		".cpp":    true, // C++源文件
-		".h":      true, // C头文件
-		".hpp":    true, // C++头文件
-		".go":     true, // Go源文件
-		".py":     true, // Python脚本
-		".class":  true, // Java字节码文件
-		".js":     true, // JavaScript文件
-		".ts":     true, // TypeScript文件
-		".html":   true, // HTML文件
-		".css":    true, // CSS样式表
-		".java":   true, // Java源文件
-		".pyd":    true, // Python字节码文件
-		".pyc":    true, // Python编译文件
-		".pyo":    true, // Python编译文件
-		".pyw":    true, // Python脚本
-		".rb":     true, // Ruby脚本
-		".rs":     true, // Rust脚本
-		".php":    true, // PHP脚本
-		".swift":  true, // Swift脚本
-		".kotlin": true, // Kotlin脚本
-		".scala":  true, // Scala脚本
-		".elm":    true, // Elm脚本
-		".lua":    true, // Lua脚本
-		".pl":     true, // Perl脚本
-		".perl":   true, // Perl脚本
-		".r":      true, // R语言脚本
-		".vbs":    true, // VBScript文件
-		".psm1":   true, // PowerShell模块文件
-		".s":      true, // 汇编语言源文件
-		".o":      true, // 编译后的目标文件
-		".a":      true, // 静态库文件
-		".lib":    true, // 静态库文件
-	},
 	"green": {
 		".exe":   true, // Windows可执行文件
 		".bin":   true, // 二进制可执行文件
@@ -174,6 +139,39 @@ var ColorMap = map[string]map[string]bool{
 		".swo":           true, // Vim交换文件
 		".old":           true, // 旧文件
 		".new":           true, // 新文件
+		".c":             true, // C源文件
+		".cpp":           true, // C++源文件
+		".h":             true, // C头文件
+		".hpp":           true, // C++头文件
+		".go":            true, // Go源文件
+		".py":            true, // Python脚本
+		".class":         true, // Java字节码文件
+		".js":            true, // JavaScript文件
+		".ts":            true, // TypeScript文件
+		".html":          true, // HTML文件
+		".css":           true, // CSS样式表
+		".java":          true, // Java源文件
+		".pyd":           true, // Python字节码文件
+		".pyc":           true, // Python编译文件
+		".pyo":           true, // Python编译文件
+		".pyw":           true, // Python脚本
+		".rb":            true, // Ruby脚本
+		".rs":            true, // Rust脚本
+		".php":           true, // PHP脚本
+		".swift":         true, // Swift脚本
+		".kotlin":        true, // Kotlin脚本
+		".scala":         true, // Scala脚本
+		".elm":           true, // Elm脚本
+		".lua":           true, // Lua脚本
+		".pl":            true, // Perl脚本
+		".perl":          true, // Perl脚本
+		".r":             true, // R语言脚本
+		".vbs":           true, // VBScript文件
+		".psm1":          true, // PowerShell模块文件
+		".s":             true, // 汇编语言源文件
+		".o":             true, // 编译后的目标文件
+		".a":             true, // 静态库文件
+		".lib":           true, // 静态库文件
 	},
 }
 
@@ -215,29 +213,20 @@ func printColoredFile(fs string, cl *colorlib.ColorLib) {
 				} else {
 					cl.Red(fs) // 如果没有目录分割符，则直接输出文件名
 				}
-			case "purple":
-				// 检查是否包含目录分割符
-				if strings.Contains(fs, string(os.PathSeparator)) {
-					// 把路径分割成目录和文件名
-					dir, file := filepath.Split(fs)
-
-					fmt.Println(cl.Scyan(dir) + cl.Spurple(file))
-				} else {
-					cl.Purple(fs) // 如果没有目录分割符，则直接输出文件名
-				}
 			}
 			return
 		}
 	}
 
+	// 如果没有匹配的文件后缀名, 则使用白色来渲染字符串
 	// 检查是否包含目录分割符
 	if strings.Contains(fs, string(os.PathSeparator)) {
 		// 把路径分割成目录和文件名
 		dir, file := filepath.Split(fs)
 
-		fmt.Println(cl.Scyan(dir) + cl.Sgray(file))
+		fmt.Println(cl.Scyan(dir) + cl.Swhite(file))
 	} else {
-		cl.Gray(fs) // 如果没有目录分割符，则直接输出文件名
+		cl.White(fs) // 如果没有目录分割符，则直接输出文件名
 	}
 }
 
@@ -273,8 +262,8 @@ func printStringColor(path string, s string, cl *colorlib.ColorLib) error {
 		cl.Scyan(s)
 
 	default:
-		// 其他类型文件 - 使用灰色输出
-		cl.Gray(s)
+		// 其他类型文件 - 使用白色输出
+		cl.White(s)
 	}
 
 	return nil
@@ -366,15 +355,15 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 	case mode.IsRegular():
 		printColoredFile(path, cl) // 普通文件 - 用于根据文件名的后缀输出
 	default:
-		// 其他类型文件 - 使用灰色输出
+		// 其他类型文件 - 使用白色输出
 		// 检查是否包含目录分割符
 		if strings.Contains(path, string(os.PathSeparator)) {
 			// 把路径分割成目录和文件名
 			dir, file := filepath.Split(path)
 
-			fmt.Println(cl.Scyan(dir) + cl.Sgray(file))
+			fmt.Println(cl.Scyan(dir) + cl.Swhite(file))
 		} else {
-			cl.Gray(path) // 如果没有目录分割符，则直接输出文件名
+			cl.White(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	}
 
@@ -411,20 +400,18 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 					colorString = cl.Sgreen(pF)
 				case "red":
 					colorString = cl.Sred(pF)
-				case "purple":
-					colorString = cl.Spurple(pF)
 				}
 				return colorString
 			}
 		}
 
-		// 若没有找到匹配的文件后缀名, 则使用灰色来渲染字符串
-		colorString = cl.Sgray(pF)
+		// 若没有找到匹配的文件后缀名, 则使用白色来渲染字符串
+		colorString = cl.Swhite(pF)
 	case "s", "p", "b", "c":
 		// 若文件类型为套接字、管道、块设备、字符设备，则使用红色来渲染字符串
 		colorString = cl.Sred(pF)
 	case "e":
-		// 若文件类型为空文件或者空目录, 则使用青色来渲染字符串
+		// 若文件类型为空文件或者空目录, 则使用蓝色或白色来渲染字符串
 		// 如果是空目录，则使用蓝色 来渲染字符串
 		if info.EntryType == "e" && info.Size == 0 {
 			colorString = cl.Sblue(pF)
@@ -434,7 +421,7 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 		}
 	default:
 		// 对于未匹配的类型，使用灰色来渲染字符串
-		colorString = cl.Sgray(pF)
+		colorString = cl.Swhite(pF)
 	}
 
 	return colorString
