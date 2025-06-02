@@ -312,7 +312,7 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 	}
 
 	// 检查初始路径是否应该被跳过
-	if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo) {
+	if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo, true) {
 		infos = make(globals.ListInfos, 0)
 		return infos, nil
 	}
@@ -322,7 +322,7 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 		// 如果设置了 -D 标志，只列出目录本身
 		if *listCmdDirEctory {
 			// 检查文件是否应该被跳过
-			if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo) {
+			if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo, false) {
 				infos = make(globals.ListInfos, 0)
 				return infos, nil
 			}
@@ -357,7 +357,7 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 			}
 
 			// 检查文件是否应该被跳过
-			if shouldSkipFile(file.Name(), file.IsDir(), fileInfo) {
+			if shouldSkipFile(file.Name(), file.IsDir(), fileInfo, false) {
 				continue
 			}
 
@@ -387,7 +387,7 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 		}
 	} else {
 		// 检查文件是否应该被跳过
-		if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo) {
+		if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo, false) {
 			infos = make(globals.ListInfos, 0)
 			return infos, nil
 		}
@@ -485,7 +485,7 @@ func GetUserAndGroup(uid, gid string) (string, string) {
 // - isDir: 布尔值，用于标识当前条目是否为目录。
 // 返回值:
 // - 布尔类型，若满足跳过条件则返回 true，否则返回 false。
-func shouldSkipFile(name string, isDir bool, fileInfo os.FileInfo) bool {
+func shouldSkipFile(name string, isDir bool, fileInfo os.FileInfo, main bool) bool {
 	// 场景 1: 未启用 -a 选项，且当前文件或目录为隐藏文件时，应跳过该条目
 	// -a 选项用于显示所有文件，若未启用该选项，隐藏文件默认不显示
 	if !*listCmdAll && isHidden(name) {
@@ -496,27 +496,37 @@ func shouldSkipFile(name string, isDir bool, fileInfo os.FileInfo) bool {
 	if *listCmdAll && *listCmdHiddenOnly && !isHidden(name) {
 		return true
 	}
+
 	// 场景 3: 启用 -f 选项，且当前条目为目录时，应跳过该条目
 	// -f 选项用于仅显示文件，若当前条目为目录，则不符合要求，需跳过
-	if *listCmdFileOnly && isDir {
-		return true
+	if !main {
+		if *listCmdFileOnly && isDir {
+			return true
+		}
 	}
+
 	// 场景 4: 启用 -d 选项，且当前条目不是目录时，应跳过该条目
 	// -d 选项用于仅显示目录，若当前条目不是目录，则不符合要求，需跳过
-	if *listCmdDirOnly && !isDir {
-		return true
+	if !main {
+		if *listCmdDirOnly && !isDir {
+			return true
+		}
 	}
 
 	// 场景 5: 启用 -L 选项，且当前条目不是软链接时，应跳过该条目
 	// 如果设置了-L标志且当前不是软链接, 则跳过
-	if *listCmdSymlink && (fileInfo.Mode()&os.ModeSymlink == 0) {
-		return true
+	if !main {
+		if *listCmdSymlink && (fileInfo.Mode()&os.ModeSymlink == 0) {
+			return true
+		}
 	}
 
 	// 场景 6: 启用 -ro 选项，且当前文件不是只读时，应跳过该条目
 	// 如果设置了-ro标志且当前文件不是只读, 则跳过
-	if *listCmdReadOnly && !isReadOnly(fileInfo.Name()) {
-		return true
+	if !main {
+		if *listCmdReadOnly && !isReadOnly(fileInfo.Name()) {
+			return true
+		}
 	}
 
 	// 若不满足上述任何跳过条件，则不跳过该条目
