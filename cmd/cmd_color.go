@@ -108,6 +108,7 @@ var ColorMap = map[string]map[string]bool{
 		".zsh":   true, // Zsh脚本
 		".bat":   true, // Windows批处理脚本
 		".ps1":   true, // PowerShell脚本
+		".wasm":  true, // WebAssembly文件
 	},
 	"yellow": {
 		".txt":           true, // 文本文件
