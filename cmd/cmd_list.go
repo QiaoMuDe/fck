@@ -351,6 +351,18 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 				return infos, nil
 			}
 
+			// 如果设置了-L标志且当前不是软链接, 则跳过
+			if *listCmdSymlink && (pathInfo.Mode()&os.ModeSymlink == 0) {
+				infos = make(globals.ListInfos, 0)
+				return infos, nil
+			}
+
+			// 如果设置了-ro标志且当前文件不是只读, 则跳过
+			if *listCmdReadOnly && !isReadOnly(pathInfo.Name()) {
+				infos = make(globals.ListInfos, 0)
+				return infos, nil
+			}
+
 			// 获取目录的绝对路径
 			absPath, absErr := filepath.Abs(path)
 			if absErr != nil {
@@ -409,6 +421,12 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 			}
 		}
 
+		// 如果设置了-L标志且当前不是软链接, 则跳过
+		if *listCmdSymlink && (pathInfo.Mode()&os.ModeSymlink == 0) {
+			infos = make(globals.ListInfos, 0)
+			return infos, nil
+		}
+
 		// 读取目录下的文件
 		files, readDirErr := os.ReadDir(path)
 		if readDirErr != nil {
@@ -455,6 +473,22 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 				continue
 			}
 
+			// 获取文件的详细信息，如大小、修改时间等
+			fileInfo, statErr := file.Info()
+			if statErr != nil {
+				return nil, fmt.Errorf("获取文件 %s 的信息时发生了错误: %v", file.Name(), statErr)
+			}
+
+			// 如果设置了-L标志且当前不是软链接, 则跳过
+			if *listCmdSymlink && (fileInfo.Mode()&os.ModeSymlink == 0) {
+				continue
+			}
+
+			// 如果设置了-ro标志且当前文件不是只读, 则跳过
+			if *listCmdReadOnly && !isReadOnly(fileInfo.Name()) {
+				continue
+			}
+
 			// 获取文件的绝对路径
 			absPath, absErr := filepath.Abs(file.Name())
 			if absErr != nil {
@@ -463,12 +497,6 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 
 			// 从绝对路径中提取文件名
 			baseName := filepath.Base(absPath)
-
-			// 获取文件的详细信息，如大小、修改时间等
-			fileInfo, statErr := file.Info()
-			if statErr != nil {
-				return nil, fmt.Errorf("获取文件 %s 的信息时发生了错误: %v", file.Name(), statErr)
-			}
 
 			// 根据文件的模式判断条目类型
 			entryType := getEntryType(fileInfo)
@@ -526,6 +554,18 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 
 		// 如果设置了-d标志且当前不是目录, 则跳过
 		if *listCmdDirOnly && !pathInfo.IsDir() {
+			infos = make(globals.ListInfos, 0)
+			return infos, nil
+		}
+
+		// 如果设置了-L标志且当前不是软链接, 则跳过
+		if *listCmdSymlink && (pathInfo.Mode()&os.ModeSymlink == 0) {
+			infos = make(globals.ListInfos, 0)
+			return infos, nil
+		}
+
+		// 如果设置了-ro标志且当前文件不是只读, 则跳过
+		if *listCmdReadOnly && !isReadOnly(pathInfo.Name()) {
 			infos = make(globals.ListInfos, 0)
 			return infos, nil
 		}
