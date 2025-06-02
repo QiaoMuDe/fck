@@ -95,10 +95,15 @@ func checkListCmdArgs() error {
 		return errors.New("不能同时指定 -t 和 -n 选项")
 	}
 
-	// // 检查是否同时指定了 -f 和 -d 选项
-	// if *listCmdFileOnly && *listCmdDirOnly {
-	// 	return errors.New("不能同时指定 -f 和 -d 选项")
-	// }
+	// 检查是否同时指定了 -f 和 -d 选项
+	if *listCmdFileOnly && *listCmdDirOnly {
+		return errors.New("不能同时指定 -f 和 -d 选项")
+	}
+
+	// 如果指定了-ho检查是否指定-a
+	if *listCmdHiddenOnly && !*listCmdAll {
+		return errors.New("必须指定 -a 选项才能使用 -ho 选项")
+	}
 
 	// // 检查是否同时指定了 -f 和 -L 选项
 	// if *listCmdFileOnly && *listCmdSymlink {
@@ -326,6 +331,26 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 	if pathInfo.IsDir() {
 		// 如果设置了 -D 标志，只列出目录本身
 		if *listCmdDirEctory {
+			// 默认情况下, 跳过隐藏文件，除非设置了 -a 标志
+			if !*listCmdAll {
+				if isHidden(pathInfo.Name()) {
+					infos = make(globals.ListInfos, 0)
+					return infos, nil
+				}
+			} else if *listCmdAll && *listCmdHiddenOnly {
+				// 如果设置了 -a 标志且 -ho 标志, 则跳过非隐藏文件
+				if !isHidden(pathInfo.Name()) {
+					infos = make(globals.ListInfos, 0)
+					return infos, nil
+				}
+			}
+
+			// 如果设置 -f 标志, 则跳过
+			if *listCmdFileOnly {
+				infos = make(globals.ListInfos, 0)
+				return infos, nil
+			}
+
 			// 获取目录的绝对路径
 			absPath, absErr := filepath.Abs(path)
 			if absErr != nil {
@@ -370,6 +395,20 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 			return infos, nil
 		}
 
+		// 默认情况下, 跳过隐藏文件，除非设置了 -a 标志
+		if !*listCmdAll {
+			if isHidden(pathInfo.Name()) {
+				infos = make(globals.ListInfos, 0)
+				return infos, nil
+			}
+		} else if *listCmdAll && *listCmdHiddenOnly {
+			// 如果设置了 -a 标志且 -ho 标志, 则跳过非隐藏文件
+			if !isHidden(pathInfo.Name()) {
+				infos = make(globals.ListInfos, 0)
+				return infos, nil
+			}
+		}
+
 		// 读取目录下的文件
 		files, readDirErr := os.ReadDir(path)
 		if readDirErr != nil {
@@ -394,11 +433,26 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 
 		// 遍历目录下的每个文件和目录
 		for _, file := range files {
-			// 跳过隐藏文件
+			// 默认情况下, 跳过隐藏文件，除非设置了 -a 标志
 			if !*listCmdAll {
 				if isHidden(file.Name()) {
 					continue
 				}
+			} else if *listCmdAll && *listCmdHiddenOnly {
+				// 如果设置了 -a 标志且 -ho 标志, 则跳过非隐藏文件
+				if !isHidden(file.Name()) {
+					continue
+				}
+			}
+
+			// 如果设置了-f标志且当前是目录, 则跳过
+			if *listCmdFileOnly && file.IsDir() {
+				continue
+			}
+
+			// 如果设置了-d标志且当前不是目录, 则跳过
+			if *listCmdDirOnly && !file.IsDir() {
+				continue
 			}
 
 			// 获取文件的绝对路径
@@ -456,6 +510,26 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 			infos = append(infos, info)
 		}
 	} else {
+		// 默认情况下, 跳过隐藏文件，除非设置了 -a 标志
+		if !*listCmdAll {
+			if isHidden(pathInfo.Name()) {
+				infos = make(globals.ListInfos, 0)
+				return infos, nil
+			}
+		} else if *listCmdAll && *listCmdHiddenOnly {
+			// 如果设置了 -a 标志且 -ho 标志, 则跳过非隐藏文件
+			if !isHidden(pathInfo.Name()) {
+				infos = make(globals.ListInfos, 0)
+				return infos, nil
+			}
+		}
+
+		// 如果设置了-d标志且当前不是目录, 则跳过
+		if *listCmdDirOnly && !pathInfo.IsDir() {
+			infos = make(globals.ListInfos, 0)
+			return infos, nil
+		}
+
 		// 如果 path 是一个普通文件
 		absPath, absErr := filepath.Abs(path)
 		if absErr != nil {
