@@ -467,8 +467,19 @@ func getEntryType(fileInfo os.FileInfo) string {
 		// 如果是目录，条目类型标记为 'd' 或 'dir' 或 'directory'
 		return "d"
 	case mode.IsRegular():
-		// 如果是普通文件，条目类型标记为 'f' 或 'file'
-		return "f"
+		// 如果是普通文件，检查条目类型标记可能为 'f' 或 'file', 'x' 或 'executable'
+		if mode&0111 != 0 {
+			return "x" // 可执行文件
+		}
+
+		// 检查文件扩展名
+		ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
+		switch ext {
+		case ".exe":
+			return "x" // 可执行文件
+		default:
+			return "f" // 普通文件
+		}
 	case mode&os.ModeSymlink != 0:
 		// 如果是符号链接，条目类型标记为 'l' 或 'symlink'
 		return "l"
@@ -484,10 +495,6 @@ func getEntryType(fileInfo os.FileInfo) string {
 	case mode&os.ModeCharDevice != 0:
 		// 如果是字符设备，条目类型标记为 'c' 或 'char-device'
 		return "c"
-	case mode&0111 != 0:
-		// 如果是可执行文件，条目类型标记为 'x' 或 'executable'
-		// 使用 mode&0111 来判断文件是否可执行
-		return "x"
 	case fileInfo.Size() == 0:
 		// 如果是空文件或目录，条目类型标记为 'e' 或 'empty'
 		return "e"
