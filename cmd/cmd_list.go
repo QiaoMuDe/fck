@@ -402,10 +402,7 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 					return nil, fmt.Errorf("递归处理目录 %s 时出错: %v", subDirPath, res.err)
 				}
 
-				// 添加子目录内容前先检查是否应该跳过子目录本身
-				if !shouldSkipFile(file.Name(), true, fileInfo, false) {
-					infos = append(infos, buildFileInfo(fileInfo, subDirPath))
-				}
+				// 将子目录中的文件信息添加到切片中
 				infos = append(infos, res.infos...)
 			}
 
