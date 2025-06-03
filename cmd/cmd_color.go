@@ -39,7 +39,6 @@ var ColorMap = map[string]map[string]bool{
 		".ini":           true, // INI配置文件
 		".conf":          true, // 配置文件
 		".cfg":           true, // 配置文件
-		".lnk":           true, // Windows快捷方式文件
 		".properties":    true, // Java属性文件
 		".env":           true, // 环境变量文件
 		".gitignore":     true, // Git忽略文件
@@ -124,6 +123,9 @@ var ColorMap = map[string]map[string]bool{
 		".apk":     true, // Android应用包
 		".ipa":     true, // iOS应用包
 	},
+	"cyan": {
+		".lnk": true, // Windows快捷方式文件
+	},
 }
 
 // printColoredFile 根据文件后缀名以不同颜色输出文件路径
@@ -173,6 +175,16 @@ func printColoredFile(fs string, cl *colorlib.ColorLib) {
 					fmt.Println(cl.Scyan(dir) + cl.Spurple(file))
 				} else {
 					cl.Purple(fs) // 如果没有目录分割符，则直接输出文件名
+				}
+			case "cyan":
+				// 检查是否包含目录分割符
+				if strings.Contains(fs, string(os.PathSeparator)) {
+					// 把路径分割成目录和文件名
+					dir, file := filepath.Split(fs)
+
+					fmt.Println(cl.Scyan(dir) + cl.Scyan(file))
+				} else {
+					cl.Cyan(fs) // 如果没有目录分割符，则直接输出文件名
 				}
 			}
 			return
@@ -363,6 +375,8 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 					colorString = cl.Sred(pF)
 				case "purple":
 					colorString = cl.Spurple(pF)
+				case "cyan":
+					colorString = cl.Scyan(pF)
 				}
 				return colorString
 			}
