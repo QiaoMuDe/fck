@@ -13,51 +13,6 @@ import (
 // ColorMap 定义了不同颜色对应的文件后缀名映射
 var ColorMap = map[string]map[string]bool{
 	"red": {
-		".db":       true, // 数据库文件
-		".sql":      true, // SQL数据库文件
-		".sqlite":   true, // SQLite数据库文件
-		".db3":      true, // SQLite数据库文件
-		".sqlite3":  true, // SQLite数据库文件
-		".mdb":      true, // Microsoft Access数据库文件
-		".pdb":      true, // 程序数据库文件
-		".zip":      true, // ZIP压缩文件
-		".tar":      true, // tar归档文件
-		".gz":       true, // Gzip压缩文件
-		".rar":      true, // RAR压缩文件
-		".7z":       true, // 7-Zip压缩文件
-		".bz2":      true, // bzip2压缩文件
-		".xz":       true, // XZ压缩文件
-		".jar":      true, // Java归档文件
-		".war":      true, // Java Web应用归档文件
-		".tgz":      true, // tar.gz压缩文件
-		".tar.gz":   true, // tar.gz压缩文件
-		".deb":      true, // Debian包文件
-		".rpm":      true, // RPM包文件
-		".md5":      true, // MD5哈希文件
-		".sha1":     true, // SHA-1哈希文件
-		".sha256":   true, // SHA-256哈希文件
-		".sha512":   true, // SHA-512哈希文件
-		".hash":     true, // 哈希文件
-		".sig":      true, // 签名文件
-		".asc":      true, // ASCII签名文件
-		".check":    true, // 检查文件
-		".mod":      true, // Go模块文件
-		".sum":      true, // Go模块文件
-		".pem":      true, // PEM格式文件
-		".key":      true, // 密钥文件
-		".crt":      true, // 证书文件
-		".cer":      true, // 证书文件
-		".orc":      true, // OpenRC配置文件
-		".h5":       true, // HDF5文件
-		".pid":      true, // 进程ID文件
-		".sock":     true, // 套接字文件
-		".dat":      true, // 数据文件
-		".cache":    true, // 缓存文件
-		".dump":     true, // 转储文件
-		".part":     true, // 部分下载的文件
-		".download": true, // 下载中的文件
-	},
-	"green": {
 		".exe":   true, // Windows可执行文件
 		".bin":   true, // 二进制可执行文件
 		".app":   true, // macOS应用程序
@@ -76,7 +31,6 @@ var ColorMap = map[string]map[string]bool{
 		".wasm":  true, // WebAssembly文件
 	},
 	"yellow": {
-		".txt":           true, // 文本文件
 		".md":            true, // Markdown文件
 		".json":          true, // JSON文件
 		".jsonl":         true, // JSON Lines文件
@@ -87,17 +41,6 @@ var ColorMap = map[string]map[string]bool{
 		".ini":           true, // INI配置文件
 		".conf":          true, // 配置文件
 		".cfg":           true, // 配置文件
-		".doc":           true, // Word文档
-		".docx":          true, // Word文档
-		".pdf":           true, // PDF文档
-		".csv":           true, // 逗号分隔值文件
-		".tsv":           true, // 制表符分隔值文件
-		".xls":           true, // Excel文件
-		".xlsx":          true, // Excel文件
-		".ppt":           true, // 演示文稿文件
-		".pptx":          true, // 演示文稿文件
-		".rtf":           true, // 富文本格式
-		".log":           true, // 日志文件
 		".lnk":           true, // Windows快捷方式文件
 		".properties":    true, // Java属性文件
 		".env":           true, // 环境变量文件
@@ -112,66 +55,50 @@ var ColorMap = map[string]map[string]bool{
 		".bzr":           true, // Bazaar版本控制系统文件
 		".lock":          true, // 锁文件
 		".lockfile":      true, // 锁文件
-		".out":           true, // 输出文件
-		".err":           true, // 错误输出文件
-		".trace":         true, // 跟踪文件
-		".odt":           true, // OpenDocument文本格式
-		".ods":           true, // OpenDocument表格格式
-		".odp":           true, // OpenDocument文本、表格和演示文稿格式
-		".epub":          true, // EPUB电子书格式
-		".mobi":          true, // MOBI电子书格式
-		".azw":           true, // Kindle电子书格式
-		".chm":           true, // Microsoft Compiled HTML Help文件
-		".cab":           true, // CAB文件
-		".xmind":         true, // XMind思维导图文件
-		".mind":          true, // MindManager思维导图文件
-		".vsdx":          true, // Microsoft Visio文件
-		".vsd":           true, // Microsoft Visio文件
-		".xps":           true, // XML Paper Specification文件
-		".odg":           true, // OpenDocument图形格式
-		".odf":           true, // OpenDocument公式格式
-		".odc":           true, // OpenDocument图表格式
-		".odm":           true, // OpenDocument文本模板格式
 		".bak":           true, // 备份文件
 		".bakup":         true, // 备份文件
 		".tmp":           true, // 临时文件
 		".swp":           true, // Vim交换文件
 		".swo":           true, // Vim交换文件
-		".old":           true, // 旧文件
-		".new":           true, // 新文件
-		".c":             true, // C源文件
-		".cpp":           true, // C++源文件
-		".h":             true, // C头文件
-		".hpp":           true, // C++头文件
-		".go":            true, // Go源文件
-		".py":            true, // Python脚本
-		".class":         true, // Java字节码文件
-		".js":            true, // JavaScript文件
-		".ts":            true, // TypeScript文件
-		".html":          true, // HTML文件
-		".css":           true, // CSS样式表
-		".java":          true, // Java源文件
-		".pyd":           true, // Python字节码文件
-		".pyc":           true, // Python编译文件
-		".pyo":           true, // Python编译文件
-		".pyw":           true, // Python脚本
-		".rb":            true, // Ruby脚本
-		".rs":            true, // Rust脚本
-		".php":           true, // PHP脚本
-		".swift":         true, // Swift脚本
-		".kotlin":        true, // Kotlin脚本
-		".scala":         true, // Scala脚本
-		".elm":           true, // Elm脚本
-		".lua":           true, // Lua脚本
-		".pl":            true, // Perl脚本
-		".perl":          true, // Perl脚本
-		".r":             true, // R语言脚本
-		".vbs":           true, // VBScript文件
-		".psm1":          true, // PowerShell模块文件
-		".s":             true, // 汇编语言源文件
-		".o":             true, // 编译后的目标文件
-		".a":             true, // 静态库文件
-		".lib":           true, // 静态库文件
+	},
+	"green": {
+		".c":      true, // C源文件
+		".cpp":    true, // C++源文件
+		".h":      true, // C头文件
+		".hpp":    true, // C++头文件
+		".go":     true, // Go源文件
+		".py":     true, // Python脚本
+		".class":  true, // Java字节码文件
+		".js":     true, // JavaScript文件
+		".ts":     true, // TypeScript文件
+		".html":   true, // HTML文件
+		".css":    true, // CSS样式表
+		".java":   true, // Java源文件
+		".pyd":    true, // Python字节码文件
+		".pyc":    true, // Python编译文件
+		".pyo":    true, // Python编译文件
+		".pyw":    true, // Python脚本
+		".rb":     true, // Ruby脚本
+		".rs":     true, // Rust脚本
+		".php":    true, // PHP脚本
+		".swift":  true, // Swift脚本
+		".kotlin": true, // Kotlin脚本
+		".scala":  true, // Scala脚本
+		".elm":    true, // Elm脚本
+		".lua":    true, // Lua脚本
+		".pl":     true, // Perl脚本
+		".perl":   true, // Perl脚本
+		".r":      true, // R语言脚本
+		".vbs":    true, // VBScript文件
+		".psm1":   true, // PowerShell模块文件
+		".s":      true, // 汇编语言源文件
+		".o":      true, // 编译后的目标文件
+		".a":      true, // 静态库文件
+		".lib":    true, // 静态库文件
+	},
+	"purple": {
+		".zip": true, // ZIP压缩文件
+		".tar": true, // TAR压缩文件
 	},
 }
 
@@ -212,6 +139,16 @@ func printColoredFile(fs string, cl *colorlib.ColorLib) {
 					fmt.Println(cl.Scyan(dir) + cl.Sred(file))
 				} else {
 					cl.Red(fs) // 如果没有目录分割符，则直接输出文件名
+				}
+			case "purple":
+				// 检查是否包含目录分割符
+				if strings.Contains(fs, string(os.PathSeparator)) {
+					// 把路径分割成目录和文件名
+					dir, file := filepath.Split(fs)
+
+					fmt.Println(cl.Scyan(dir) + cl.Spurple(file))
+				} else {
+					cl.Purple(fs) // 如果没有目录分割符，则直接输出文件名
 				}
 			}
 			return
@@ -305,52 +242,52 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 			// 把路径分割成目录和文件名
 			dir, file := filepath.Split(path)
 
-			fmt.Println(cl.Scyan(dir) + cl.Slcyan(file))
+			fmt.Println(cl.Scyan(dir) + cl.Scyan(file))
 		} else {
 			cl.Cyan(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	case mode&os.ModeDevice != 0:
-		// 设备文件 - 使用红色输出
+		// 设备文件 - 使用黄色输出
 		// 检查是否包含目录分割符
 		if strings.Contains(path, string(os.PathSeparator)) {
 			// 把路径分割成目录和文件名
 			dir, file := filepath.Split(path)
 
-			fmt.Println(cl.Scyan(dir) + cl.Sred(file))
+			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
 		} else {
-			cl.Red(path) // 如果没有目录分割符，则直接输出文件名
+			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	case mode&os.ModeNamedPipe != 0:
-		// 命名管道 - 使用红色输出
+		// 命名管道 - 使用黄色输出
 		// 检查是否包含目录分割符
 		if strings.Contains(path, string(os.PathSeparator)) {
 			// 把路径分割成目录和文件名
 			dir, file := filepath.Split(path)
 
-			fmt.Println(cl.Scyan(dir) + cl.Sred(file))
+			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
 		} else {
-			cl.Red(path) // 如果没有目录分割符，则直接输出文件名
+			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	case mode&os.ModeSocket != 0:
-		// 套接字文件 - 使用红色输出
+		// 套接字文件 - 使用黄色输出
 		// 检查是否包含目录分割符
 		if strings.Contains(path, string(os.PathSeparator)) {
 			// 把路径分割成目录和文件名
 			dir, file := filepath.Split(path)
 
-			fmt.Println(cl.Scyan(dir) + cl.Sred(file))
+			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
 		} else {
-			cl.Red(path) // 如果没有目录分割符，则直接输出文件名
+			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	case mode&os.ModeType == 0 && mode&0111 != 0:
-		// 可执行文件 - 使用绿色输出
+		// 可执行文件 - 使用红色输出
 		// 检查是否包含目录分割符
 		if strings.Contains(path, string(os.PathSeparator)) {
 			// 把路径分割成目录和文件名
 			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Sgreen(file))
+			fmt.Println(cl.Scyan(dir) + cl.Sred(file))
 		} else {
-			cl.Green(path) // 如果没有目录分割符，则直接输出文件名
+			cl.Red(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	case mode.IsRegular():
 		printColoredFile(path, cl) // 普通文件 - 用于根据文件名的后缀输出
@@ -387,8 +324,8 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 		// 若文件类型为符号链接，则使用青色来渲染字符串
 		colorString = cl.Scyan(pF)
 	case "x":
-		// 若文件类型为可执行文件，则使用绿色来渲染字符串
-		colorString = cl.Sgreen(pF)
+		// 若文件类型为可执行文件，则使用红色来渲染字符串
+		colorString = cl.Sred(pF)
 	case "f":
 		// 若文件类型为普通文件，则根据文件后缀名来确定颜色
 		for color, extensions := range ColorMap {
@@ -400,6 +337,8 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 					colorString = cl.Sgreen(pF)
 				case "red":
 					colorString = cl.Sred(pF)
+				case "purple":
+					colorString = cl.Spurple(pF)
 				}
 				return colorString
 			}
@@ -408,8 +347,8 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 		// 若没有找到匹配的文件后缀名, 则使用白色来渲染字符串
 		colorString = cl.Swhite(pF)
 	case "s", "p", "b", "c":
-		// 若文件类型为套接字、管道、块设备、字符设备，则使用红色来渲染字符串
-		colorString = cl.Sred(pF)
+		// 若文件类型为套接字、管道、块设备、字符设备，则使用黄色来渲染字符串
+		colorString = cl.Syellow(pF)
 	case "e":
 		// 若文件类型为空文件或者空目录, 则使用蓝色或白色来渲染字符串
 		// 如果是空目录，则使用蓝色 来渲染字符串
@@ -421,7 +360,7 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 		}
 	default:
 		// 对于未匹配的类型，使用灰色来渲染字符串
-		colorString = cl.Swhite(pF)
+		colorString = cl.Sgray(pF)
 	}
 
 	return colorString

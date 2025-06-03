@@ -22,6 +22,7 @@ fck list - 文件和目录列表工具
   -q          在输出时用双引号包裹条目
   -R          递归列出目录及其子目录的内容
   -u          显示文件的用户和组信息
+  -tc         指定输出主题, 可选项有: dark、light
 
 示例：
   1. 列出当前目录的所有文件和目录，包括隐藏项
@@ -34,6 +35,10 @@ fck list - 文件和目录列表工具
      fck list -R -l /path/to/directory
   5. 列出当前目录的只读文件
      fck list -ro
+  6. 用白色主题显示文件列表
+     fck list -l -tc light
+  7. 用黑色主题显示文件列表
+     fck list -l -tc dark
 
 注意：
 1. 如果不指定路径，默认为当前目录。

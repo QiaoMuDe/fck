@@ -131,7 +131,21 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	}
 
 	// 设置表格样式
-	t.SetStyle(table.StyleColoredDark)
+	if *listCmdTheme != "" {
+		// 根据主题设置表格样式
+		switch *listCmdTheme {
+		case "dark":
+			t.SetStyle(table.StyleColoredDark)
+		case "light":
+			t.SetStyle(table.StyleColoredBright)
+		case "d":
+			t.SetStyle(table.StyleColoredDark)
+		case "l":
+			t.SetStyle(table.StyleColoredBright)
+		}
+	}
+
+	// 设置表格Name列的对齐方式为左对齐
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{Name: "Name", Align: text.AlignLeft},
 	})
@@ -248,7 +262,19 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 	})
 
 	// 设置表格样式
-	t.SetStyle(table.StyleColoredDark)
+	if *listCmdTheme != "" {
+		// 根据主题设置表格样式
+		switch *listCmdTheme {
+		case "dark":
+			t.SetStyle(table.StyleColoredDark)
+		case "light":
+			t.SetStyle(table.StyleColoredBright)
+		case "d":
+			t.SetStyle(table.StyleColoredDark)
+		case "l":
+			t.SetStyle(table.StyleColoredBright)
+		}
+	}
 
 	// 输出表格
 	t.Render()

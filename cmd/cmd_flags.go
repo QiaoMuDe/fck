@@ -84,4 +84,5 @@ var (
 	listCmdQuoteNames    = listCmd.Bool("q", false, "在输出时用双引号包裹条目")
 	listCmdRecursion     = listCmd.Bool("R", false, "递归列出目录及其子目录的内容")
 	listCmdShowUserGroup = listCmd.Bool("u", false, "显示文件的用户和组信息")
+	listCmdTheme         = listCmd.String("tc", "dark", "指定输出主题, 可选项有: dark、light")
 )
