@@ -21,8 +21,6 @@ var ColorMap = map[string]map[string]bool{
 		".so":    true, // Linux共享库
 		".run":   true, // Linux可执行文件
 		".dylib": true, // macOS动态库
-		".apk":   true, // Android应用包
-		".ipa":   true, // iOS应用包
 		".sh":    true, // Shell脚本
 		".bash":  true, // Bash脚本
 		".zsh":   true, // Zsh脚本
@@ -62,43 +60,69 @@ var ColorMap = map[string]map[string]bool{
 		".swo":           true, // Vim交换文件
 	},
 	"green": {
-		".c":      true, // C源文件
-		".cpp":    true, // C++源文件
-		".h":      true, // C头文件
-		".hpp":    true, // C++头文件
-		".go":     true, // Go源文件
-		".py":     true, // Python脚本
-		".class":  true, // Java字节码文件
-		".js":     true, // JavaScript文件
-		".ts":     true, // TypeScript文件
-		".html":   true, // HTML文件
-		".css":    true, // CSS样式表
-		".java":   true, // Java源文件
-		".pyd":    true, // Python字节码文件
-		".pyc":    true, // Python编译文件
-		".pyo":    true, // Python编译文件
-		".pyw":    true, // Python脚本
-		".rb":     true, // Ruby脚本
-		".rs":     true, // Rust脚本
-		".php":    true, // PHP脚本
-		".swift":  true, // Swift脚本
-		".kotlin": true, // Kotlin脚本
-		".scala":  true, // Scala脚本
-		".elm":    true, // Elm脚本
-		".lua":    true, // Lua脚本
-		".pl":     true, // Perl脚本
-		".perl":   true, // Perl脚本
-		".r":      true, // R语言脚本
-		".vbs":    true, // VBScript文件
-		".psm1":   true, // PowerShell模块文件
-		".s":      true, // 汇编语言源文件
-		".o":      true, // 编译后的目标文件
-		".a":      true, // 静态库文件
-		".lib":    true, // 静态库文件
+		".c":       true, // C源文件
+		".cpp":     true, // C++源文件
+		".h":       true, // C头文件
+		".hpp":     true, // C++头文件
+		".go":      true, // Go源文件
+		".py":      true, // Python脚本
+		".class":   true, // Java字节码文件
+		".js":      true, // JavaScript文件
+		".ts":      true, // TypeScript文件
+		".html":    true, // HTML文件
+		".css":     true, // CSS样式表
+		".java":    true, // Java源文件
+		".pyd":     true, // Python字节码文件
+		".pyc":     true, // Python编译文件
+		".pyo":     true, // Python编译文件
+		".pyw":     true, // Python脚本
+		".rb":      true, // Ruby脚本
+		".rs":      true, // Rust脚本
+		".php":     true, // PHP脚本
+		".swift":   true, // Swift脚本
+		".kotlin":  true, // Kotlin脚本
+		".scala":   true, // Scala脚本
+		".elm":     true, // Elm脚本
+		".lua":     true, // Lua脚本
+		".pl":      true, // Perl脚本
+		".perl":    true, // Perl脚本
+		".r":       true, // R语言脚本
+		".vbs":     true, // VBScript文件
+		".psm1":    true, // PowerShell模块文件
+		".s":       true, // 汇编语言源文件
+		".o":       true, // 编译后的目标文件
+		".a":       true, // 静态库文件
+		".lib":     true, // 静态库文件
+		".sql":     true, // SQL脚本文件
+		".db":      true, // 数据库文件
+		".db3":     true, // SQLite数据库文件
+		".sqlite3": true, // SQLite数据库文件
+		".sqlite":  true, // SQLite数据库文件
+		".dbf":     true, // DBF文件
+		".mdb":     true, // Access数据库文件
+		".accdb":   true, // Access数据库文件
+		".dbx":     true, // DBX文件
+		".pdb":     true, // 调试信息文件
 	},
 	"purple": {
-		".zip": true, // ZIP压缩文件
-		".tar": true, // TAR压缩文件
+		".zip":     true, // ZIP压缩文件
+		".tar":     true, // TAR压缩文件
+		".gz":      true, // GZIP压缩文件
+		".bz2":     true, // BZIP2压缩文件
+		".xz":      true, // XZ压缩文件
+		".7z":      true, // 7Z压缩文件
+		".rar":     true, // RAR压缩文件
+		".tar.gz":  true, // TAR.GZ压缩文件
+		".tar.bz2": true, // TAR.BZ2压缩文件
+		".tar.xz":  true, // TAR.XZ压缩文件
+		".tgz":     true, // TAR.GZ压缩文件
+		".tbz2":    true, // TAR.BZ2压缩文件
+		".txz":     true, // TAR.XZ压缩文件
+		".jar":     true, // Java Archive文件
+		".war":     true, // Web Archive文件
+		".ear":     true, // Enterprise Archive文件
+		".apk":     true, // Android应用包
+		".ipa":     true, // iOS应用包
 	},
 }
 
