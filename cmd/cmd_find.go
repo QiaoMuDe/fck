@@ -112,7 +112,7 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 			return nil
 		}
 
-		// 检查当前路径的深度是否超过最大深度
+		// 检查当前路径的深度是否超过最大深度(先将路径统一转为/分隔符)
 		depth := strings.Count(filepath.ToSlash(path[len(findPath):]), "/")
 		if *findCmdMaxDepth >= 0 && depth > *findCmdMaxDepth {
 			return filepath.SkipDir
@@ -125,51 +125,8 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 			}
 		}
 
-		// 如果指定了-n和-p参数, 并且指定了-or参数, 则只检查文件名或路径是否匹配(默认为或操作)
-		if *findCmdOr && *findCmdName != "" && *findCmdPath != "" {
-			// 执行或操作
-			if nameRegex.MatchString(entry.Name()) || pathRegex.MatchString(path) {
-				if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-
-		// 如果指定了-n和-p参数, 则同时检查文件名和路径是否匹配(默认为-and操作)
-		if *findCmdAnd && *findCmdName != "" && *findCmdPath != "" {
-			if nameRegex.MatchString(entry.Name()) && pathRegex.MatchString(path) {
-				// 如果同时匹配, 则执行筛选条件
-				if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		}
-
-		// 如果指定了-n参数, 则检查文件名是否匹配
-		if *findCmdName != "" {
-			if nameRegex.MatchString(entry.Name()) {
-				if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-
-		// 如果指定了-p参数, 则检查路径是否匹配
-		if *findCmdPath != "" {
-			if pathRegex.MatchString(path) {
-				if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-
-		// 默认情况下
-		if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+		// 处理文件或目录
+		if err := processFindCmd(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, entry, path); err != nil {
 			return err
 		}
 
@@ -183,6 +140,59 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 			return fmt.Errorf("路径不存在: %v", walkDirErr)
 		}
 		return fmt.Errorf("遍历目录时出错: %v", walkDirErr)
+	}
+
+	return nil
+}
+
+// processFindCmd 用于处理 find 命令的逻辑
+func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, entry os.DirEntry, path string) error {
+	// 如果指定了-n和-p参数, 并且指定了-or参数, 则只检查文件名或路径是否匹配(默认为或操作)
+	if *findCmdOr && *findCmdName != "" && *findCmdPath != "" {
+		// 执行或操作
+		if nameRegex.MatchString(entry.Name()) || pathRegex.MatchString(path) {
+			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// 如果指定了-n和-p参数, 则同时检查文件名和路径是否匹配(默认为-and操作)
+	if *findCmdAnd && *findCmdName != "" && *findCmdPath != "" {
+		if nameRegex.MatchString(entry.Name()) && pathRegex.MatchString(path) {
+			// 如果同时匹配, 则执行筛选条件
+			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	// 如果指定了-n参数, 则检查文件名是否匹配
+	if *findCmdName != "" {
+		if nameRegex.MatchString(entry.Name()) {
+			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// 如果指定了-p参数, 则检查路径是否匹配
+	if *findCmdPath != "" {
+		if pathRegex.MatchString(path) {
+			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// 默认情况下
+	if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+		return err
 	}
 
 	return nil
