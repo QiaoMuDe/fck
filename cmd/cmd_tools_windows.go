@@ -10,7 +10,7 @@ import (
 
 // isHidden 判断Windows文件或目录是否为隐藏
 func isHidden(path string) bool {
-	// 检查是否是盘符根目录（如 D: 或 D:\）
+	// 检查是否是盘符根目录(如 D: 或 D:\)
 	if isDriveRoot(path) {
 		return false
 	}

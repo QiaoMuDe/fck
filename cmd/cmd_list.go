@@ -309,18 +309,32 @@ func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (forma
 // getFileInfos 函数用于获取指定路径下所有文件和目录的详细信息。
 // 参数 path 表示要获取信息的目录路径。
 // 返回值为一个 globals.ListInfo 类型的切片，包含了每个文件和目录的详细信息，以及可能出现的错误。
-func getFileInfos(path string) (globals.ListInfos, error) {
+func getFileInfos(p string) (globals.ListInfos, error) {
 	// 初始化一个用于存储文件信息的切片
 	var infos globals.ListInfos
 
+	// 清理路径
+	p = filepath.Clean(p)
+
+	// 获取绝对路径
+	absPath, absErr := filepath.Abs(p)
+	if absErr != nil {
+		return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", p, absErr)
+	}
+
+	// 检查是否为系统文件或目录
+	if isSystemFileOrDir(filepath.Base(absPath)) {
+		return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
+	}
+
 	// 获取指定路径的文件信息
-	pathInfo, statErr := os.Stat(path)
+	pathInfo, statErr := os.Stat(absPath)
 	if statErr != nil {
-		return nil, handleError(path, statErr)
+		return nil, handleError(absPath, statErr)
 	}
 
 	// 检查初始路径是否应该被跳过
-	if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo, true) {
+	if shouldSkipFile(absPath, pathInfo.IsDir(), pathInfo, true) {
 		infos = make(globals.ListInfos, 0)
 		return infos, nil
 	}
@@ -329,16 +343,14 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 	if pathInfo.IsDir() {
 		// 如果设置了 -D 标志，只列出目录本身
 		if *listCmdDirEctory {
-			// 检查文件是否应该被跳过
-			if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo, false) {
-				infos = make(globals.ListInfos, 0)
-				return infos, nil
+			if isSystemFileOrDir(filepath.Base(absPath)) {
+				return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
 			}
 
-			// 获取目录的绝对路径
-			absPath, absErr := filepath.Abs(path)
-			if absErr != nil {
-				return nil, fmt.Errorf("获取目录 %s 的绝对路径时发生了错误: %v", path, absErr)
+			// 检查文件是否应该被跳过
+			if shouldSkipFile(absPath, pathInfo.IsDir(), pathInfo, false) {
+				infos = make(globals.ListInfos, 0)
+				return infos, nil
 			}
 
 			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
@@ -351,28 +363,36 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 		}
 
 		// 读取目录下的文件
-		files, readDirErr := os.ReadDir(path)
+		files, readDirErr := os.ReadDir(absPath)
 		if readDirErr != nil {
-			return nil, handleError(path, readDirErr)
+			return nil, handleError(absPath, readDirErr)
 		}
 
 		// 遍历目录下的每个文件和目录
 		for _, file := range files {
+			absFilePath, absErr := filepath.Abs(filepath.Join(absPath, file.Name()))
+			if absErr != nil {
+				return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", file.Name(), absErr)
+			}
+
+			// 检查是否为系统文件或目录
+			if isSystemFileOrDir(filepath.Base(absFilePath)) {
+				continue
+			}
+
 			// 获取文件的详细信息，如大小、修改时间等
 			fileInfo, statErr := file.Info()
 			if statErr != nil {
-				return nil, fmt.Errorf("获取文件 %s 的信息时发生了错误: %v", file.Name(), statErr)
+				return nil, handleError(absFilePath, statErr)
 			}
 
 			// 检查文件是否应该被跳过
-			if shouldSkipFile(file.Name(), file.IsDir(), fileInfo, false) {
+			if shouldSkipFile(absFilePath, file.IsDir(), fileInfo, false) {
 				continue
 			}
 
 			// 如果设置了-R标志且当前是目录, 则递归处理子目录
 			if *listCmdRecursion && file.IsDir() {
-				subDirPath := filepath.Join(path, file.Name())
-
 				// 使用goroutine并行处理子目录
 				type result struct {
 					infos globals.ListInfos
@@ -381,42 +401,35 @@ func getFileInfos(path string) (globals.ListInfos, error) {
 				resultChan := make(chan result)
 
 				go func() {
-					subInfos, err := getFileInfos(subDirPath)
+					subInfos, err := getFileInfos(absFilePath)
 					resultChan <- result{subInfos, err}
 				}()
 
 				res := <-resultChan
 				if res.err != nil {
-					return nil, fmt.Errorf("递归处理目录 %s 时出错: %v", subDirPath, res.err)
+					return nil, fmt.Errorf("递归处理目录 %s 时出错: %v", absFilePath, res.err)
 				}
 
 				// 将子目录中的文件信息添加到切片中
 				infos = append(infos, res.infos...)
 			}
 
-			// 获取文件的绝对路径
-			absPath, absErr := filepath.Abs(file.Name())
-			if absErr != nil {
-				return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", file.Name(), absErr)
-			}
-
 			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
-			info := buildFileInfo(fileInfo, absPath)
+			info := buildFileInfo(fileInfo, absFilePath)
 
 			// 将构建好的目录信息添加到切片中
 			infos = append(infos, info)
 		}
 	} else {
-		// 检查文件是否应该被跳过
-		if shouldSkipFile(pathInfo.Name(), pathInfo.IsDir(), pathInfo, false) {
-			infos = make(globals.ListInfos, 0)
-			return infos, nil
+		// 检查是否为系统文件或目录
+		if isSystemFileOrDir(filepath.Base(absPath)) {
+			return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
 		}
 
-		// 如果 path 是一个普通文件, 获取其绝对路径
-		absPath, absErr := filepath.Abs(path)
-		if absErr != nil {
-			return nil, fmt.Errorf("获取文件 %s 的绝对路径时发生了错误: %v", path, absErr)
+		// 检查文件是否应该被跳过
+		if shouldSkipFile(absPath, pathInfo.IsDir(), pathInfo, false) {
+			infos = make(globals.ListInfos, 0)
+			return infos, nil
 		}
 
 		// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
@@ -496,20 +509,20 @@ func getEntryType(fileInfo os.FileInfo) string {
 // 该函数会综合考虑多个命令行选项，如显示所有文件（-a）、仅显示隐藏文件（-ho）、
 // 仅显示文件（-f）和仅显示目录（-d）等，结合文件或目录的名称及类型，做出跳过与否的决策。
 // 参数:
-// - name: 表示文件或目录的名称，用于判断是否为隐藏文件。
+// - p: 表示文件或目录的名称，用于判断是否为隐藏文件。
 // - isDir: 布尔值，用于标识当前条目是否为目录。
 // 返回值:
 // - 布尔类型，若满足跳过条件则返回 true，否则返回 false。
-func shouldSkipFile(name string, isDir bool, fileInfo os.FileInfo, main bool) bool {
+func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool {
 	// 场景 1: 未启用 -a 选项，且当前文件或目录为隐藏文件时，应跳过该条目
 	// -a 选项用于显示所有文件，若未启用该选项，隐藏文件默认不显示
-	if !*listCmdAll && isHidden(name) {
+	if !*listCmdAll && isHidden(p) {
 		return true
 	}
 
 	// 场景 2: 同时启用 -a 和 -ho 选项，但当前文件或目录并非隐藏文件时，应跳过该条目
 	// -a 选项用于显示所有文件，-ho 选项用于仅显示隐藏文件，两者同时启用时，非隐藏文件需跳过
-	if *listCmdAll && *listCmdHiddenOnly && !isHidden(name) {
+	if *listCmdAll && *listCmdHiddenOnly && !isHidden(p) {
 		return true
 	}
 
@@ -540,7 +553,7 @@ func shouldSkipFile(name string, isDir bool, fileInfo os.FileInfo, main bool) bo
 	// 场景 6: 启用 -ro 选项，且当前文件不是只读时，应跳过该条目
 	// 如果设置了-ro标志且当前文件不是只读, 则跳过
 	if !main {
-		if *listCmdReadOnly && !isReadOnly(fileInfo.Name()) {
+		if *listCmdReadOnly && !isReadOnly(p) {
 			return true
 		}
 	}
