@@ -506,6 +506,7 @@ func shouldSkipFile(name string, isDir bool, fileInfo os.FileInfo, main bool) bo
 	if !*listCmdAll && isHidden(name) {
 		return true
 	}
+
 	// 场景 2: 同时启用 -a 和 -ho 选项，但当前文件或目录并非隐藏文件时，应跳过该条目
 	// -a 选项用于显示所有文件，-ho 选项用于仅显示隐藏文件，两者同时启用时，非隐藏文件需跳过
 	if *listCmdAll && *listCmdHiddenOnly && !isHidden(name) {
