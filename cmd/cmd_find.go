@@ -25,6 +25,9 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		findPath = "."
 	}
 
+	// 清理路径
+	findPath = filepath.Clean(findPath)
+
 	// 检查参数
 	if err := checkFindCmdArgs(findPath); err != nil {
 		return err

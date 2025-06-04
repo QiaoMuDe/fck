@@ -366,16 +366,22 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (colorString string) {
 	// 依据文件的类型来确定输出的颜色
 	switch info.EntryType {
-	case "d":
+	case globals.DirType:
 		// 若文件类型为目录，则使用蓝色来渲染字符串
 		colorString = cl.Sblue(pF)
-	case "l":
+	case globals.SymlinkType:
 		// 若文件类型为符号链接，则使用青色来渲染字符串
 		colorString = cl.Scyan(pF)
-	case "x":
+	case globals.ExecutableType:
 		// 若文件类型为可执行文件，则使用红色来渲染字符串
 		colorString = cl.Sred(pF)
-	case "f":
+	case globals.SocketType, globals.PipeType, globals.BlockDeviceType, globals.CharDeviceType:
+		// 若文件类型为套接字、管道、块设备、字符设备，则使用黄色来渲染字符串
+		colorString = cl.Syellow(pF)
+	case globals.EmptyType:
+		// 若文件类型为空文件, 则使用黑色来渲染字符串
+		colorString = cl.Sblack(pF)
+	case globals.FileType:
 		// 若文件类型为普通文件，则根据文件后缀名来确定颜色
 		for color, extensions := range ColorMap {
 			if extensions[info.FileExt] {
@@ -397,18 +403,6 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 
 		// 若没有找到匹配的文件后缀名, 则使用白色来渲染字符串
 		colorString = cl.Swhite(pF)
-	case "s", "p", "b", "c":
-		// 若文件类型为套接字、管道、块设备、字符设备，则使用黄色来渲染字符串
-		colorString = cl.Syellow(pF)
-	case "e":
-		// 若文件类型为空文件或者空目录, 则使用蓝色或白色来渲染字符串
-		// 如果是空目录，则使用蓝色 来渲染字符串
-		if info.EntryType == "e" && info.Size == 0 {
-			colorString = cl.Sblue(pF)
-		} else {
-			// 如果是空文件，则使用白色来渲染字符串
-			colorString = cl.Swhite(pF)
-		}
 	default:
 		// 对于未匹配的类型，使用灰色来渲染字符串
 		colorString = cl.Sgray(pF)

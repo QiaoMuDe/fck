@@ -453,7 +453,7 @@ func getFileInfos(p string) (globals.ListInfos, error) {
 //	string - 文件类型标识符:
 //	  "d" - 目录
 //	  "f" - 普通文件
-//	  "l" - 符号链接
+//	  "l" - 符号链接(软链接/快捷方式)
 //	  "s" - 套接字
 //	  "p" - 命名管道
 //	  "b" - 块设备
@@ -463,46 +463,63 @@ func getFileInfos(p string) (globals.ListInfos, error) {
 //	  "?" - 未知类型
 func getEntryType(fileInfo os.FileInfo) string {
 	mode := fileInfo.Mode()
-	switch {
-	case mode.IsDir():
-		// 如果是目录，条目类型标记为 'd' 或 'dir' 或 'directory'
-		return "d"
-	case mode.IsRegular():
-		// 如果是普通文件，检查条目类型标记可能为 'f' 或 'file', 'x' 或 'executable'
+
+	// 检查是否是目录
+	if mode.IsDir() {
+		return globals.DirType
+	}
+
+	// 检查是否是符号链接
+	if mode&os.ModeSymlink != 0 {
+		return globals.SymlinkType
+	}
+
+	// 检查是否是套接字
+	if mode&os.ModeSocket != 0 {
+		return globals.SocketType
+	}
+
+	// 检查是否是命名管道
+	if mode&os.ModeNamedPipe != 0 {
+		return globals.PipeType
+	}
+
+	// 检查是否是块设备
+	if mode&os.ModeDevice != 0 {
+		return globals.BlockDeviceType
+	}
+
+	// 检查是否是字符设备
+	if mode&os.ModeCharDevice != 0 {
+		return globals.CharDeviceType
+	}
+
+	// 检查是否是普通文件
+	if mode.IsRegular() {
+		// 检查是否是空文件
+		if fileInfo.Size() == 0 {
+			return globals.EmptyType
+		}
+
+		// 检查是否是可执行文件
 		if mode&0111 != 0 {
-			return "x" // 可执行文件
+			return globals.ExecutableType
 		}
 
 		// 检查文件扩展名
 		ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
 		switch ext {
 		case ".exe":
-			return "x" // 可执行文件
+			return globals.ExecutableType
+		case ".lnk":
+			return globals.SymlinkType
 		default:
-			return "f" // 普通文件
+			return globals.FileType
 		}
-	case mode&os.ModeSymlink != 0:
-		// 如果是符号链接，条目类型标记为 'l' 或 'symlink'
-		return "l"
-	case mode&os.ModeSocket != 0:
-		// 如果是套接字，条目类型标记为 's' 或 'socket'
-		return "s"
-	case mode&os.ModeNamedPipe != 0:
-		// 如果是命名管道 (FIFO)，条目类型标记为 'p' 或 'pipe'
-		return "p"
-	case mode&os.ModeDevice != 0:
-		// 如果是块设备，条目类型标记为 'b' 或 'block-device'
-		return "b"
-	case mode&os.ModeCharDevice != 0:
-		// 如果是字符设备，条目类型标记为 'c' 或 'char-device'
-		return "c"
-	case fileInfo.Size() == 0:
-		// 如果是空文件或目录，条目类型标记为 'e' 或 'empty'
-		return "e"
-	default:
-		// 其他类型，条目类型标记为 '?'
-		return "?"
 	}
+
+	// 其他类型
+	return globals.UnknownType
 }
 
 // shouldSkipFile 函数用于依据命令行参数和文件属性，判断是否需要跳过指定的文件或目录。
