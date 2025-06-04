@@ -128,6 +128,19 @@ var ColorMap = map[string]map[string]bool{
 	},
 }
 
+// 定义全局常量的颜色映射
+var PermissionColorMap = map[int]string{
+	1: "green",  // 所有者-读-绿色
+	2: "yellow", // 所有者-写-黄色
+	3: "red",    // 所有者-执行-红色
+	4: "green",  // 组-读-绿色
+	5: "yellow", // 组-写-黄色
+	6: "red",    // 组-执行-红色
+	7: "green",  // 其他-读-绿色
+	8: "yellow", // 其他-写-黄色
+	9: "red",    // 其他-执行-红色
+}
+
 // printColoredFile 根据文件后缀名以不同颜色输出文件路径
 func printColoredFile(fs string, cl *colorlib.ColorLib) {
 	// 获取文件后缀名

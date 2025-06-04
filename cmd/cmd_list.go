@@ -201,7 +201,7 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 
 	for _, info := range ifs {
 		// 获取文件权限字符串
-		infoPerm := getPermString(cl, info)
+		infoPerm := FormatPermissionString(cl, info)
 
 		// 启用颜色输出
 		if *listCmdColor {
@@ -282,40 +282,28 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 	return nil
 }
 
-// getPermString 函数用于获取文件或目录的权限字符串表示。
-func getPermString(cl *colorlib.ColorLib, info globals.ListInfo) (infoPerm string) {
-	// 根据标志输出颜色化的权限字符串
+// FormatPermissionString 根据颜色模式格式化权限字符串
+func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (formattedPerm string) {
 	if *listCmdColor {
-		for i := 0; i < len(info.Perm); i++ {
-			switch i {
-			case 0:
-				continue
-			case 1:
-				infoPerm += cl.Syellow(string(info.Perm[i]))
-			case 2:
-				infoPerm += cl.Sred(string(info.Perm[i]))
-			case 3:
-				infoPerm += cl.Sgreen(string(info.Perm[i]))
-			case 4:
-				infoPerm += cl.Syellow(string(info.Perm[i]))
-			case 5:
-				infoPerm += cl.Sred(string(info.Perm[i]))
-			case 6:
-				infoPerm += cl.Sgreen(string(info.Perm[i]))
-			case 7:
-				infoPerm += cl.Syellow(string(info.Perm[i]))
-			case 8:
-				infoPerm += cl.Sred(string(info.Perm[i]))
-			case 9:
-				infoPerm += cl.Sgreen(string(info.Perm[i]))
+		for i := 1; i < len(info.Perm); i++ { // 跳过第一个字符（通常是文件类型标志）
+			colorName := PermissionColorMap[i] // 获取当前字符的颜色名称
+			switch colorName {
+			case "green":
+				formattedPerm += cl.Sgreen(string(info.Perm[i]))
+			case "yellow":
+				formattedPerm += cl.Syellow(string(info.Perm[i]))
+			case "red":
+				formattedPerm += cl.Sred(string(info.Perm[i]))
+			default:
+				formattedPerm += string(info.Perm[i]) // 如果颜色未定义，直接添加
 			}
 		}
 	} else {
-		// 只保留后面的9位
-		infoPerm = info.Perm[1:]
+		// 如果不启用颜色输出，直接返回权限字符串（后9位）
+		formattedPerm = info.Perm[1:]
 	}
 
-	return infoPerm
+	return formattedPerm
 }
 
 // getFileInfos 函数用于获取指定路径下所有文件和目录的详细信息。
