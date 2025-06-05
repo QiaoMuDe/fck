@@ -64,6 +64,7 @@ var (
 	findCmdPrintMove   = findCmd.Bool("print-mv", false, "在移动前打印 old -> new 的映射")
 	findCmdAnd         = findCmd.Bool("and", true, "用于在-n和-p参数中组合条件, 默认为true, 表示所有条件必须满足")
 	findCmdOr          = findCmd.Bool("or", false, "用于在-n和-p参数中组合条件, 默认为false, 表示只要满足任一条件即可")
+	// findCmdJob         = findCmd.Int("j", 0, "启用并发模式并指定并发数, 默认0表示不启用并发处理模式, 大于0表示启用并发处理模式并指定并发数")
 
 	// fck list 子命令
 	listCmd              = flag.NewFlagSet("list", flag.ExitOnError)

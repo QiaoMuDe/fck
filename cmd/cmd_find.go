@@ -94,6 +94,25 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		return fmt.Errorf("表达式编译错误: %v, %v, %v, %v", nameRegexErr, exNameRegexErr, pathRegexErr, exPathRegexErr)
 	}
 
+	// 默认运行processWalkDir单线程遍历模式
+	if walkDirErr := processWalkDir(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath); walkDirErr != nil {
+		return walkDirErr
+	}
+
+	return nil
+}
+
+// processWalkDir 用于处理 filepath.WalkDir 的逻辑
+// 参数:
+// - cl: 颜色库
+// - nameRegex: 文件名正则表达式
+// - exNameRegex: 排除的文件名正则表达式
+// - pathRegex: 路径正则表达式
+// - exPathRegex: 排除的路径正则表达式
+// - findPath: 要查找的路径
+// 返回值:
+// - error: 错误信息
+func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string) error {
 	// 使用 filepath.WalkDir 遍历目录
 	walkDirErr := filepath.WalkDir(findPath, func(path string, entry os.DirEntry, err error) error {
 		// 检查路径是否存在
@@ -133,6 +152,7 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		return nil
 	})
 
+	// 检查遍历过程中是否遇到错误
 	if walkDirErr != nil {
 		if os.IsPermission(walkDirErr) {
 			return fmt.Errorf("权限不足，无法访问某些目录: %v", walkDirErr)
@@ -770,27 +790,38 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 }
 
 // isSymlinkLoop 检查路径是否是符号链接循环
+// 判断路径是否是符号链接循环
 func isSymlinkLoop(path string) bool {
+	// 创建一个map，用于存储已经访问过的路径
 	visited := make(map[string]bool)
+	// 无限循环
 	for {
+		// 如果当前路径已经访问过，则说明存在循环
 		if visited[path] {
 			return true // 检测到循环
 		}
+		// 将当前路径标记为已访问
 		visited[path] = true
 
+		// 获取当前路径的信息
 		info, err := os.Lstat(path)
+		// 如果出错或者当前路径不是符号链接，则返回false
 		if err != nil || info.Mode()&os.ModeSymlink == 0 {
 			return false // 不是符号链接或出错
 		}
 
+		// 读取符号链接指向的路径
 		newPath, err := os.Readlink(path)
+		// 如果出错，则返回false
 		if err != nil {
 			return false
 		}
 
+		// 如果符号链接指向的路径不是绝对路径，则将其转换为绝对路径
 		if !filepath.IsAbs(newPath) {
 			newPath = filepath.Join(filepath.Dir(path), newPath)
 		}
+		// 将当前路径更新为符号链接指向的路径
 		path = newPath
 	}
 }

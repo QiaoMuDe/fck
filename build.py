@@ -629,8 +629,15 @@ def parse_arguments():
     parser.add_argument(
         "-i",
         "--install",
-        help="将可执行文件安装到GOPATH/bin目录",
+        help="安装指定路径的可执行文件到GOPATH/bin目录",
         default=None,
+    )
+    parser.add_argument(
+        "-ai",
+        "--auto-install",
+        action="store_true",
+        help="构建完成后自动安装可执行文件到GOPATH/bin目录",
+        default=False,
     )
     parser.add_argument(
         "-f",
@@ -722,7 +729,7 @@ def main():
     # 解析命令行参数
     args = parse_arguments()
 
-    # 如果指定了安装参数
+    # 如果指定了单独安装参数
     if args.install:
         if not install_executable(args.install, args):
             sys.exit(1)
@@ -741,8 +748,12 @@ def main():
 
     # 如果是批量构建模式
     if args.batch:
-        batch_build(args)
-        return
+        try:
+            batch_build(args)
+        except Exception as e:
+            print_error(f"批量构建失败: {str(e)}")
+            sys.exit(1)
+        sys.exit(0)
 
     entry_file = args.entry  # 指定入口文件路径
     ldflags = args.ldflags  # 指定构建时的链接器标志
@@ -863,6 +874,12 @@ def main():
     # 计算构建耗时
     elapsed_time = end_time - start_time
     print_success(f"本次构建耗时: {elapsed_time:.2f} 秒")
+
+    # 单独构建模式下自动安装
+    if args.auto_install and not args.batch:
+        if not install_executable(output_file, args):
+            sys.exit(1)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
