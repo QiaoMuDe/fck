@@ -95,8 +95,15 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	}
 
 	// 默认运行processWalkDir单线程遍历模式
-	if walkDirErr := processWalkDir(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath); walkDirErr != nil {
+	var matchCount int
+	if walkDirErr := processWalkDir(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); walkDirErr != nil {
 		return walkDirErr
+	}
+
+	// 如果启用了count标志, 只输出匹配数量
+	if *findCmdCount {
+		fmt.Println(matchCount)
+		return nil
 	}
 
 	return nil
@@ -112,7 +119,7 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 // - findPath: 要查找的路径
 // 返回值:
 // - error: 错误信息
-func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string) error {
+func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string, matchCount *int) error {
 	// 使用 filepath.WalkDir 遍历目录
 	walkDirErr := filepath.WalkDir(findPath, func(path string, entry os.DirEntry, err error) error {
 		// 检查遍历过程中是否遇到错误
@@ -150,7 +157,7 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 		}
 
 		// 处理文件或目录
-		if processErr := processFindCmd(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, entry, path); processErr != nil {
+		if processErr := processFindCmd(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, entry, path, matchCount); processErr != nil {
 			return processErr
 		}
 
@@ -171,12 +178,12 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 }
 
 // processFindCmd 用于处理 find 命令的逻辑
-func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, entry os.DirEntry, path string) error {
+func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, entry os.DirEntry, path string, matchCount *int) error {
 	// 如果指定了-n和-p参数, 并且指定了-or参数, 则只检查文件名或路径是否匹配(默认为或操作)
 	if *findCmdOr && *findCmdName != "" && *findCmdPath != "" {
 		// 执行或操作
 		if nameRegex.MatchString(entry.Name()) || pathRegex.MatchString(path) {
-			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
 				return err
 			}
 		}
@@ -187,7 +194,7 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	if *findCmdAnd && *findCmdName != "" && *findCmdPath != "" {
 		if nameRegex.MatchString(entry.Name()) && pathRegex.MatchString(path) {
 			// 如果同时匹配, 则执行筛选条件
-			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
 				return err
 			}
 		}
@@ -198,7 +205,7 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	// 如果指定了-n参数, 则检查文件名是否匹配
 	if *findCmdName != "" {
 		if nameRegex.MatchString(entry.Name()) {
-			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
 				return err
 			}
 		}
@@ -208,7 +215,7 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	// 如果指定了-p参数, 则检查路径是否匹配
 	if *findCmdPath != "" {
 		if pathRegex.MatchString(path) {
-			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
 				return err
 			}
 		}
@@ -216,7 +223,7 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	}
 
 	// 默认情况下
-	if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex); err != nil {
+	if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
 		return err
 	}
 
@@ -224,7 +231,7 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 }
 
 // 用于在循环中筛选条件的函数
-func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exNameRegex, exPathRegex *regexp.Regexp) error {
+func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exNameRegex, exPathRegex *regexp.Regexp, matchCount *int) error {
 	// 如果只查找文件，跳过目录
 	if *findCmdFile && entry.IsDir() {
 		return nil
@@ -315,80 +322,94 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		return nil
 	}
 
-	// 如果启用了delete标志, 删除匹配的文件或目录
-	if *findCmdDelete {
-		if err := deleteMatchedItem(path, entry.IsDir(), cl); err != nil {
-			return err
+	// 如果启用了count标志, 则不执行任何操作
+	if !*findCmdCount {
+		// 如果启用了delete标志, 删除匹配的文件或目录
+		if *findCmdDelete {
+			if err := deleteMatchedItem(path, entry.IsDir(), cl); err != nil {
+				return err
+			}
+
+			// 如果是目录, 跳过整个目录
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+
+			// 如果是文件, 跳过单个文件
+			return nil
 		}
 
-		// 如果是目录, 跳过整个目录
-		if entry.IsDir() {
-			return filepath.SkipDir
+		// 如果启用了-mv标志, 将匹配的文件或目录移动到指定位置
+		if *findCmdMove != "" {
+			if err := moveMatchedItem(path, *findCmdMove, cl); err != nil {
+				return err
+			}
+
+			// 如果是目录, 跳过整个目录
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+
+			// 如果是文件, 跳过单个文件
+			return nil
 		}
 
-		// 如果是文件, 跳过单个文件
-		return nil
-	}
+		// 如果启用了-exec标志, 执行指定的命令
+		if *findCmdExec != "" {
+			// 替换{}为实际的文件路径，并根据系统类型选择引用方式
+			var cmdStr string
+			if runtime.GOOS == "windows" {
+				cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("\"%s\"", path), -1) // Windows使用双引号
+			} else {
+				cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("'%s'", path), -1) // Linux使用单引号
+			}
 
-	// 如果启用了-mv标志, 将匹配的文件或目录移动到指定位置
-	if *findCmdMove != "" {
-		if err := moveMatchedItem(path, *findCmdMove, cl); err != nil {
-			return err
+			// 执行命令
+			if err := runCommand(cmdStr, cl); err != nil {
+				return fmt.Errorf("执行-exec命令时发生了错误: %v", err)
+			}
+
+			return nil
 		}
-
-		// 如果是目录, 跳过整个目录
-		if entry.IsDir() {
-			return filepath.SkipDir
-		}
-
-		// 如果是文件, 跳过单个文件
-		return nil
-	}
-
-	// 如果启用了-exec标志, 执行指定的命令
-	if *findCmdExec != "" {
-		// 替换{}为实际的文件路径，并根据系统类型选择引用方式
-		var cmdStr string
-		if runtime.GOOS == "windows" {
-			cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("\"%s\"", path), -1) // Windows使用双引号
-		} else {
-			cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("'%s'", path), -1) // Linux使用单引号
-		}
-
-		// 执行命令
-		if err := runCommand(cmdStr, cl); err != nil {
-			return fmt.Errorf("执行-exec命令时发生了错误: %v", err)
-		}
-
-		return nil
 	}
 
 	// 根据标志, 输出输出完整路径还是匹配到的路径
 	if *findCmdFullPath {
-		// 获取完整路径
-		fullPath, pathErr := filepath.Abs(path)
-		if pathErr != nil {
-			return fmt.Errorf("获取完整路径时出错: %s", pathErr)
-		}
+		// 增加匹配计数
+		*matchCount++
 
-		// 输出完整路径
-		if *findCmdColor {
-			if err := printPathColor(fullPath, cl); err != nil {
-				return fmt.Errorf("输出路径时出错: %s", err)
+		// 如果启用了count标志, 则不输出路径
+		if !*findCmdCount {
+			// 获取完整路径
+			fullPath, pathErr := filepath.Abs(path)
+			if pathErr != nil {
+				return fmt.Errorf("获取完整路径时出错: %s", pathErr)
 			}
-		} else {
-			// 如果没有启用颜色输出, 直接打印路径
-			fmt.Println(fullPath)
+
+			// 输出完整路径
+			if *findCmdColor {
+				if err := printPathColor(fullPath, cl); err != nil {
+					return fmt.Errorf("输出路径时出错: %s", err)
+				}
+			} else {
+				// 如果没有启用颜色输出, 直接打印路径
+				fmt.Println(fullPath)
+			}
 		}
 	} else {
-		// 输出匹配到的路径
-		if *findCmdColor {
-			if err := printPathColor(path, cl); err != nil {
-				return fmt.Errorf("输出路径时出错: %s", err)
+		// 增加匹配计数
+		*matchCount++
+
+		// 如果没有启用count标志, 才输出路径
+		if !*findCmdCount {
+			if *findCmdColor {
+				if err := printPathColor(path, cl); err != nil {
+					return fmt.Errorf("输出路径时出错: %s", err)
+				}
+			} else {
+				// 如果没有启用颜色输出, 直接打印路径
+				fmt.Println(path)
 			}
-		} else {
-			// 如果没有启用颜色输出, 直接打印路径
-			fmt.Println(path)
 		}
 	}
 
@@ -397,22 +418,6 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 
 // 用于检查find命令的相关参数是否正确
 func checkFindCmdArgs(findPath string) error {
-	// 检查要查找的路径是否存在
-	if _, err := os.Stat(findPath); err != nil {
-		// 检查是否是权限不足的错误
-		if os.IsPermission(err) {
-			return fmt.Errorf("权限不足，无法访问某些目录: %s", findPath)
-		}
-
-		// 如果是不存在错误, 则返回路径不存在
-		if os.IsNotExist(err) {
-			return fmt.Errorf("路径不存在: %s", findPath)
-		}
-
-		// 其他错误, 返回错误信息
-		return fmt.Errorf("检查路径时出错: %s: %v", findPath, err)
-	}
-
 	// 检查要查找的最大深度是否小于 -1
 	if *findCmdMaxDepth < -1 {
 		return fmt.Errorf("查找最大深度不能小于 -1")
@@ -496,34 +501,65 @@ func checkFindCmdArgs(findPath string) error {
 		return fmt.Errorf("使用-print-cmd标志时必须同时指定-exec标志")
 	}
 
-	// 检查-delete标志是否与-exec一起使用
-	if *findCmdDelete && *findCmdExec != "" {
-		return fmt.Errorf("使用-delete标志时不能同时指定-exec标志")
+	// 检查-exec标志是否与-delete或-mv一起使用
+	if *findCmdExec != "" && (*findCmdDelete || *findCmdMove != "") {
+		return fmt.Errorf("使用-exec标志时不能同时指定-delete或-mv标志")
 	}
 
-	// 检查-mv标志是否与-exec一起使用
-	if *findCmdMove != "" && *findCmdExec != "" {
-		return fmt.Errorf("使用-mv标志时不能同时指定-exec标志")
+	// 检查-delete标志是否与-exec或-mv一起使用
+	if *findCmdDelete && (*findCmdExec != "" || *findCmdMove != "") {
+		return fmt.Errorf("使用-delete标志时不能同时指定-exec或-mv标志")
 	}
 
-	// 检查-mv标志是否与-delete一起使用
-	if *findCmdMove != "" && *findCmdDelete {
-		return fmt.Errorf("使用-mv标志时不能同时指定-delete标志")
+	// 检查-mv标志是否与-exec或-delete一起使用
+	if *findCmdMove != "" && (*findCmdExec != "" || *findCmdDelete) {
+		return fmt.Errorf("使用-mv标志时不能同时指定-exec或-delete标志")
 	}
 
 	// 检查-mv标志指定的路径是否为文件
 	if *findCmdMove != "" {
-		if info, err := os.Stat(*findCmdMove); err == nil {
-			// 如果指定的路径是文件, 则返回错误
-			if !info.IsDir() {
-				return fmt.Errorf("-mv标志指定的路径必须为目录")
+		if info, err := os.Stat(*findCmdMove); err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("-mv 标志指定的路径不存在: %s", *findCmdMove)
 			}
+
+			return fmt.Errorf("获取文件信息失败: %v", err)
+
+		} else if !info.IsDir() {
+			// 如果指定的路径是文件, 则返回错误
+			return fmt.Errorf("-mv标志指定的路径必须为目录")
 		}
 	}
 
 	// 检查软连接最大解析深度是否小于 1
 	if *findCmdMaxDepthLimit < 1 {
 		return fmt.Errorf("软连接最大解析深度不能小于 1")
+	}
+
+	// 检查如果指定了-count则不能同时指定 -exec、-mv、-delete
+	if *findCmdCount && (*findCmdExec != "" || *findCmdMove != "" || *findCmdDelete) {
+		return fmt.Errorf("使用-count标志时不能同时指定-exec、-mv、-delete标志")
+	}
+
+	// 检查如果指定了-count则不能使用 -exec或-mv或-delete
+	if *findCmdCount && (*findCmdExec != "" || *findCmdMove != "" || *findCmdDelete) {
+		return fmt.Errorf("使用-count标志时不能同时指定-exec、-mv、-delete标志")
+	}
+
+	// 检查要查找的路径是否存在
+	if _, err := os.Lstat(findPath); err != nil {
+		// 检查是否是权限不足的错误
+		if os.IsPermission(err) {
+			return fmt.Errorf("权限不足，无法访问某些目录: %s", findPath)
+		}
+
+		// 如果是不存在错误, 则返回路径不存在
+		if os.IsNotExist(err) {
+			return fmt.Errorf("路径不存在: %s", findPath)
+		}
+
+		// 其他错误, 返回错误信息
+		return fmt.Errorf("检查路径时出错: %s: %v", findPath, err)
 	}
 
 	return nil

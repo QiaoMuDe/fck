@@ -86,6 +86,7 @@ var (
 	findCmdAnd           = findCmd.Bool("and", true, "用于在-n和-p参数中组合条件, 默认为true, 表示所有条件必须满足")
 	findCmdOr            = findCmd.Bool("or", false, "用于在-n和-p参数中组合条件, 默认为false, 表示只要满足任一条件即可")
 	findCmdMaxDepthLimit = findCmd.Int("max-depth", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")
+	findCmdCount         = findCmd.Bool("count", false, "仅统计匹配项的数量而不显示具体路径")
 
 	// fck list 子命令
 	listCmd              = flag.NewFlagSet("list", flag.ExitOnError)
