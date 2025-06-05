@@ -180,6 +180,8 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 		t.AppendRow(row)
 	}
 
+	t.SetStyle(table.StyleLight)
+
 	// 输出表格
 	t.Render()
 
@@ -259,22 +261,24 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 	// 设置列的对齐方式
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{Name: "Size", Align: text.AlignRight},
+		{Name: "Type", Align: text.AlignCenter},
 	})
 
-	// 设置表格样式
-	if *listCmdTheme != "" {
-		// 根据主题设置表格样式
-		switch *listCmdTheme {
-		case "dark":
-			t.SetStyle(table.StyleColoredDark)
-		case "light":
-			t.SetStyle(table.StyleColoredBright)
-		case "d":
-			t.SetStyle(table.StyleColoredDark)
-		case "l":
-			t.SetStyle(table.StyleColoredBright)
-		}
-	}
+	// // 设置表格样式
+	// if *listCmdTheme != "" {
+	// 	// 根据主题设置表格样式
+	// 	switch *listCmdTheme {
+	// 	case "dark":
+	// 		t.SetStyle(table.StyleColoredDark)
+	// 	case "light":
+	// 		t.SetStyle(table.StyleColoredBright)
+	// 	case "d":
+	// 		t.SetStyle(table.StyleColoredDark)
+	// 	case "l":
+	// 		t.SetStyle(table.StyleColoredBright)
+	// 	}
+	// }
+	//t.SetStyle(table.StyleLight)
 
 	// 输出表格
 	t.Render()
