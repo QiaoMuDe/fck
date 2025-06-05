@@ -104,6 +104,13 @@ func checkListCmdArgs() error {
 		return errors.New("必须指定 -a 选项才能使用 -ho 选项")
 	}
 
+	// 检查是否-ts的表格样式是否为合法值
+	if *listCmdTableStyle != "" {
+		if _, ok := globals.TableStyleMap[*listCmdTableStyle]; !ok {
+			return fmt.Errorf("无效的表格样式: %s", *listCmdTableStyle)
+		}
+	}
+
 	return nil
 }
 
@@ -129,26 +136,6 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	if columns == 0 {
 		columns = 1 // 至少显示一列
 	}
-
-	// 设置表格样式
-	if *listCmdTheme != "" {
-		// 根据主题设置表格样式
-		switch *listCmdTheme {
-		case "dark":
-			t.SetStyle(table.StyleColoredDark)
-		case "light":
-			t.SetStyle(table.StyleColoredBright)
-		case "d":
-			t.SetStyle(table.StyleColoredDark)
-		case "l":
-			t.SetStyle(table.StyleColoredBright)
-		}
-	}
-
-	// 设置表格Name列的对齐方式为左对齐
-	t.SetColumnConfigs([]table.ColumnConfig{
-		{Name: "Name", Align: text.AlignLeft},
-	})
 
 	// 构建多列输出
 	for i := 0; i < len(lfs); i += columns {
@@ -180,7 +167,13 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 		t.AppendRow(row)
 	}
 
-	t.SetStyle(table.StyleLight)
+	// 设置表格样式
+	if *listCmdTableStyle != "" {
+		// 根据-ts的值设置表格样式
+		if style, ok := globals.TableStyleMap[*listCmdTableStyle]; ok {
+			t.SetStyle(style)
+		}
+	}
 
 	// 输出表格
 	t.Render()
@@ -194,11 +187,13 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 
-	// 设置表头
-	if *listCmdShowUserGroup {
-		t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
-	} else {
-		t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
+	// 设置表头, 只有在-ts为none时才设置表头
+	if *listCmdTableStyle != "none" {
+		if *listCmdShowUserGroup {
+			t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
+		} else {
+			t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
+		}
 	}
 
 	for _, info := range ifs {
@@ -260,25 +255,23 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 
 	// 设置列的对齐方式
 	t.SetColumnConfigs([]table.ColumnConfig{
-		{Name: "Size", Align: text.AlignRight},
-		{Name: "Type", Align: text.AlignCenter},
+		{Name: "Size", Align: text.AlignRight},     // 文件大小 - 右对齐
+		{Name: "Type", Align: text.AlignCenter},    // 文件类型 - 居中对齐
+		{Name: "Owner", Align: text.AlignCenter},   // 所有者 - 居中对齐
+		{Name: "Group", Align: text.AlignCenter},   // 组 - 居中对齐
+		{Name: "Perm", Align: text.AlignLeft},      // 权限 - 左对齐
+		{Name: "ModTime", Align: text.AlignCenter}, // 修改时间 - 居中对齐
+		{Name: "Unit", Align: text.AlignCenter},    // 单位 - 居中对齐
+		{Name: "Name", Align: text.AlignLeft},      // 文件名 - 左对齐
 	})
 
-	// // 设置表格样式
-	// if *listCmdTheme != "" {
-	// 	// 根据主题设置表格样式
-	// 	switch *listCmdTheme {
-	// 	case "dark":
-	// 		t.SetStyle(table.StyleColoredDark)
-	// 	case "light":
-	// 		t.SetStyle(table.StyleColoredBright)
-	// 	case "d":
-	// 		t.SetStyle(table.StyleColoredDark)
-	// 	case "l":
-	// 		t.SetStyle(table.StyleColoredBright)
-	// 	}
-	// }
-	//t.SetStyle(table.StyleLight)
+	// 设置表格样式
+	if *listCmdTableStyle != "" {
+		// 根据-ts的值设置表格样式
+		if style, ok := globals.TableStyleMap[*listCmdTableStyle]; ok {
+			t.SetStyle(style)
+		}
+	}
 
 	// 输出表格
 	t.Render()

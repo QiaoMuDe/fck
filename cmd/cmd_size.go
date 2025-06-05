@@ -9,17 +9,39 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/fck/globals"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 )
+
+// 用于存储在输出时的项
+type item struct {
+	Name string
+	Size string
+}
+
+// 用于存储在输出时的项列表
+type items []item
 
 // sizeCmdMain 是 size 子命令的主函数
 func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 	// 获取指定的路径
 	targetPaths := sizeCmd.Args()
 
-	// 如果没有指定路径, 则打印错误信息并退出
+	// 如果没有指定路径, 则默认计算当前目录下每个项目的大小
 	if len(targetPaths) == 0 {
-		return fmt.Errorf("请指定要计算大小的路径")
+		targetPaths = []string{"*"}
 	}
+
+	// 检查表格的样式是否有效
+	if *sizeCmdTableStyle != "" {
+		if _, ok := globals.TableStyleMap[*sizeCmdTableStyle]; !ok {
+			return fmt.Errorf("无效的表格样式: %s", *sizeCmdTableStyle)
+		}
+	}
+
+	// 新建一个表格项列表
+	var itemList items
 
 	// 遍历路径
 	for _, targetPath := range targetPaths {
@@ -46,16 +68,29 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 					continue
 				}
 
-				// 打印结果
-				if *sizeCmdColor {
-					if err := printStringColor(filePath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size, 2), filePath), cl); err != nil {
-						cl.PrintErrf("输出路径时出错: %s\n", err)
+				// 如果没启用表格输出, 则直接打印结果
+				if *sizeCmdTableStyle == "" {
+					if *sizeCmdColor {
+						if err := printStringColor(filePath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size, 2), filePath), cl); err != nil {
+							cl.PrintErrf("输出路径时出错: %s\n", err)
+							continue
+						}
+					} else {
+						fmt.Printf("%-15s\t%s\n", humanReadableSize(size, 2), filePath)
 						continue
 					}
 				} else {
-					fmt.Printf("%-15s\t%s\n", humanReadableSize(size, 2), filePath)
+					// 添加到 items 数组中
+					itemList = append(itemList, item{
+						Name: filePath,
+						Size: humanReadableSize(size, 2),
+					})
 				}
-				continue
+			}
+
+			// 打印输出
+			if *sizeCmdTableStyle != "" {
+				printSizeTable(itemList, cl)
 			}
 			return nil
 		}
@@ -65,14 +100,26 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			cl.PrintErrf("获取文件信息失败: 路径 %s 错误: %v\n", targetPath, err)
 			continue
 		} else if !info.IsDir() {
-			// 根据是否启用颜色打印结果
-			if *sizeCmdColor {
-				if err := printStringColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(info.Size(), 2), targetPath), cl); err != nil {
-					cl.PrintErrf("输出路径时出错: %s\n", err)
+			// 如果没启用表格输出, 则直接打印结果
+			if *sizeCmdTableStyle == "" {
+				// 根据是否启用颜色打印结果
+				if *sizeCmdColor {
+					if err := printStringColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(info.Size(), 2), targetPath), cl); err != nil {
+						cl.PrintErrf("输出路径时出错: %s\n", err)
+						continue
+					}
+				} else {
+					fmt.Printf("%-15s\t%s\n", humanReadableSize(info.Size(), 2), targetPath)
 					continue
 				}
 			} else {
-				fmt.Printf("%-15s\t%s\n", humanReadableSize(info.Size(), 2), targetPath)
+				// 添加到 items 数组中
+				itemList = append(itemList, item{
+					Name: targetPath,
+					Size: humanReadableSize(info.Size(), 2),
+				})
+				// 打印输出
+				printSizeTable(itemList, cl)
 				continue
 			}
 		}
@@ -84,14 +131,27 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			continue
 		}
 
-		// 根据是否启用颜色打印结果
-		if *sizeCmdColor {
-			if err := printStringColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size, 2), targetPath), cl); err != nil {
-				cl.PrintErrf("输出路径时出错: %s\n", err)
+		// 如果没启用表格输出, 则直接打印结果
+		if *sizeCmdTableStyle == "" {
+			// 根据是否启用颜色打印结果
+			if *sizeCmdColor {
+				if err := printStringColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size, 2), targetPath), cl); err != nil {
+					cl.PrintErrf("输出路径时出错: %s\n", err)
+					continue
+				}
+			} else {
+				fmt.Printf("%-15s\t%s\n", humanReadableSize(size, 2), targetPath)
 				continue
 			}
 		} else {
-			fmt.Printf("%-15s\t%s\n", humanReadableSize(size, 2), targetPath)
+			// 添加到 items 数组中
+			itemList = append(itemList, item{
+				Name: targetPath,
+				Size: humanReadableSize(size, 2),
+			})
+
+			// 打印输出
+			printSizeTable(itemList, cl)
 			continue
 		}
 	}
@@ -224,4 +284,53 @@ func humanReadableSize(size int64, fn int) string {
 	result := fmt.Sprintf("%s %s", sizeF, unit)
 
 	return result
+}
+
+// 打印文件大小表格到控制台
+func printSizeTable(its items, cl *colorlib.ColorLib) {
+	// 创建表格
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+
+	// 设置表头, 只有在-ts为none时才设置表头
+	if *sizeCmdTableStyle != "" && *sizeCmdTableStyle != "none" {
+		t.AppendHeader(table.Row{"Size", "Name"})
+	}
+
+	for i := range its {
+		// 添加行
+		if *sizeCmdColor {
+			colorSize, sizeErr := SprintStringColor(its[i].Name, its[i].Size, cl)
+			if sizeErr != nil {
+				colorSize = its[i].Size
+			}
+
+			colorName, nameErr := SprintStringColor(its[i].Name, its[i].Name, cl)
+			if nameErr != nil {
+				colorName = its[i].Name
+			}
+
+			t.AppendRow(table.Row{colorSize, colorName})
+
+		} else {
+			t.AppendRow(table.Row{its[i].Size, its[i].Name})
+		}
+	}
+
+	// 设置列的对齐方式
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Name: "Size", Align: text.AlignRight}, // 文件大小 - 右对齐
+		{Name: "Name", Align: text.AlignLeft},  // 文件名 - 左对齐
+	})
+
+	// 设置表格样式
+	if *sizeCmdTableStyle != "" {
+		// 根据-ts的值设置表格样式
+		if style, ok := globals.TableStyleMap[*sizeCmdTableStyle]; ok {
+			t.SetStyle(style)
+		}
+	}
+
+	// 输出表格
+	t.Render()
 }

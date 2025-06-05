@@ -255,6 +255,43 @@ func printStringColor(path string, s string, cl *colorlib.ColorLib) error {
 	return nil
 }
 
+// SPrintStringColor 根据路径类型以不同颜色输出字符串
+// 参数:
+//
+//	p: 要检查的路径(用于获取文件类型信息)
+//	s: 返回字符串内容
+//	cl: colorlib.ColorLib实例, 用于彩色输出
+//
+// 返回值:
+//
+//	error: 如果获取路径信息失败则返回错误, 否则返回nil
+func SprintStringColor(p string, s string, cl *colorlib.ColorLib) (string, error) {
+	// 获取路径信息
+	pathInfo, statErr := os.Lstat(p)
+	if statErr != nil {
+		return "", fmt.Errorf("获取路径信息失败: %v", statErr)
+	}
+
+	// 根据路径类型设置颜色
+	switch mode := pathInfo.Mode(); {
+	case mode.IsDir():
+		// 目录 - 使用蓝色输出
+		return cl.Sblue(s), nil
+
+	case mode.IsRegular():
+		// 普通文件 - 使用绿色输出
+		return cl.Sgreen(s), nil
+
+	case mode&os.ModeSymlink != 0:
+		// 符号链接 - 使用青色输出
+		return cl.Scyan(s), nil
+
+	default:
+		// 其他类型文件 - 使用白色输出
+		return cl.Swhite(s), nil
+	}
+}
+
 // printPathColor 根据路径类型以不同颜色输出路径字符串
 // 参数:
 //

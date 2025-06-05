@@ -22,9 +22,30 @@ var (
 	hashCmdHidden    = hashCmd.Bool("H", false, "启用计算隐藏文件/目录的哈希值，默认跳过")
 
 	// fck size 子命令
-	sizeCmd      = flag.NewFlagSet("size", flag.ExitOnError)
-	sizeCmdHelp  = sizeCmd.Bool("h", false, "打印帮助信息并退出")
-	sizeCmdColor = sizeCmd.Bool("c", false, "启用颜色输出")
+	sizeCmd           = flag.NewFlagSet("size", flag.ExitOnError)
+	sizeCmdHelp       = sizeCmd.Bool("h", false, "打印帮助信息并退出")
+	sizeCmdColor      = sizeCmd.Bool("c", false, "启用颜色输出")
+	sizeCmdTableStyle = sizeCmd.String("ts", "", "指定表格样式，支持以下选项：\n"+
+		"  default - 默认样式\n"+
+		"  l      - 浅色样式\n"+
+		"  r      - 圆角样式\n"+
+		"  bd     - 粗体样式\n"+
+		"  cb     - 亮色彩色样式\n"+
+		"  cd     - 暗色彩色样式\n"+
+		"  db     - 双线样式\n"+
+		"  cbb    - 黑色背景蓝色字体\n"+
+		"  cbc    - 青色背景蓝色字体\n"+
+		"  cbg    - 绿色背景蓝色字体\n"+
+		"  cbm    - 紫色背景蓝色字体\n"+
+		"  cby    - 黄色背景蓝色字体\n"+
+		"  cbr    - 红色背景蓝色字体\n"+
+		"  cwb    - 蓝色背景白色字体\n"+
+		"  ccw    - 青色背景白色字体\n"+
+		"  cgw    - 绿色背景白色字体\n"+
+		"  cmw    - 紫色背景白色字体\n"+
+		"  crw    - 红色背景白色字体\n"+
+		"  cyw    - 黄色背景白色字体\n"+
+		"  none   - 禁用表格样式")
 
 	// fck diff 子命令
 	diffCmd      = flag.NewFlagSet("diff", flag.ExitOnError)
@@ -85,5 +106,25 @@ var (
 	listCmdQuoteNames    = listCmd.Bool("q", false, "在输出时用双引号包裹条目")
 	listCmdRecursion     = listCmd.Bool("R", false, "递归列出目录及其子目录的内容")
 	listCmdShowUserGroup = listCmd.Bool("u", false, "显示文件的用户和组信息")
-	listCmdTheme         = listCmd.String("tc", "dark", "指定输出主题, 可选项有: dark、light")
+	listCmdTableStyle    = listCmd.String("ts", "none", "指定表格样式，支持以下选项：\n"+
+		"  default - 默认样式\n"+
+		"  l      - 浅色样式\n"+
+		"  r      - 圆角样式\n"+
+		"  bd     - 粗体样式\n"+
+		"  cb     - 亮色彩色样式\n"+
+		"  cd     - 暗色彩色样式\n"+
+		"  db     - 双线样式\n"+
+		"  cbb    - 黑色背景蓝色字体\n"+
+		"  cbc    - 青色背景蓝色字体\n"+
+		"  cbg    - 绿色背景蓝色字体\n"+
+		"  cbm    - 紫色背景蓝色字体\n"+
+		"  cby    - 黄色背景蓝色字体\n"+
+		"  cbr    - 红色背景蓝色字体\n"+
+		"  cwb    - 蓝色背景白色字体\n"+
+		"  ccw    - 青色背景白色字体\n"+
+		"  cgw    - 绿色背景白色字体\n"+
+		"  cmw    - 紫色背景白色字体\n"+
+		"  crw    - 红色背景白色字体\n"+
+		"  cyw    - 黄色背景白色字体\n"+
+		"  none   - 禁用表格样式")
 )
