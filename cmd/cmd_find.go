@@ -115,14 +115,19 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string) error {
 	// 使用 filepath.WalkDir 遍历目录
 	walkDirErr := filepath.WalkDir(findPath, func(path string, entry os.DirEntry, err error) error {
-		// 检查路径是否存在
-		if _, statErr := os.Stat(path); os.IsNotExist(statErr) {
-			// 忽略不存在的路径
-			return nil
-		}
-
 		// 检查遍历过程中是否遇到错误
 		if err != nil {
+			// 忽略不存在的报错
+			if os.IsNotExist(err) {
+				// 路径不存在，跳过
+				return nil
+			}
+
+			// 检查是否为权限不足的报错
+			if os.IsPermission(err) {
+				return fmt.Errorf("权限不足，无法访问某些目录: %v", err)
+			}
+
 			return fmt.Errorf("访问文件时出错：%s", err)
 		}
 
@@ -132,7 +137,7 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 		}
 
 		// 检查当前路径的深度是否超过最大深度(先将路径统一转为/分隔符)
-		depth := strings.Count(filepath.ToSlash(path[len(findPath):]), "/")
+		depth := strings.Count(path[len(findPath):], string(filepath.Separator))
 		if *findCmdMaxDepth >= 0 && depth > *findCmdMaxDepth {
 			return filepath.SkipDir
 		}
@@ -145,8 +150,8 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 		}
 
 		// 处理文件或目录
-		if err := processFindCmd(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, entry, path); err != nil {
-			return err
+		if processErr := processFindCmd(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, entry, path); processErr != nil {
+			return processErr
 		}
 
 		return nil
@@ -516,6 +521,11 @@ func checkFindCmdArgs(findPath string) error {
 		}
 	}
 
+	// 检查软连接最大解析深度是否小于 1
+	if *findCmdMaxDepthLimit < 1 {
+		return fmt.Errorf("软连接最大解析深度不能小于 1")
+	}
+
 	return nil
 }
 
@@ -789,39 +799,44 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 	return nil
 }
 
-// isSymlinkLoop 检查路径是否是符号链接循环
-// 判断路径是否是符号链接循环
+// isSymlinkLoop 检查符号链接是否存在循环
+// 参数:
+//
+//	path: 要检查的路径
+//
+// 返回值:
+//
+//	bool: true表示存在循环，false表示无循环
 func isSymlinkLoop(path string) bool {
-	// 创建一个map，用于存储已经访问过的路径
+	maxDepth := *findCmdMaxDepthLimit // 最大解析深度限制
 	visited := make(map[string]bool)
-	// 无限循环
-	for {
-		// 如果当前路径已经访问过，则说明存在循环
-		if visited[path] {
-			return true // 检测到循环
-		}
-		// 将当前路径标记为已访问
-		visited[path] = true
+	currentPath := filepath.Clean(path)
 
-		// 获取当前路径的信息
-		info, err := os.Lstat(path)
-		// 如果出错或者当前路径不是符号链接，则返回false
+	for depth := 0; depth < maxDepth; depth++ {
+		// 检查是否已访问过当前路径
+		if visited[currentPath] {
+			return true
+		}
+		visited[currentPath] = true
+
+		// 获取文件信息
+		info, err := os.Lstat(currentPath)
 		if err != nil || info.Mode()&os.ModeSymlink == 0 {
-			return false // 不是符号链接或出错
+			return false
 		}
 
-		// 读取符号链接指向的路径
-		newPath, err := os.Readlink(path)
-		// 如果出错，则返回false
+		// 解析符号链接
+		newPath, err := os.Readlink(currentPath)
 		if err != nil {
 			return false
 		}
 
-		// 如果符号链接指向的路径不是绝对路径，则将其转换为绝对路径
+		// 处理相对路径
 		if !filepath.IsAbs(newPath) {
-			newPath = filepath.Join(filepath.Dir(path), newPath)
+			newPath = filepath.Join(filepath.Dir(currentPath), newPath)
 		}
-		// 将当前路径更新为符号链接指向的路径
-		path = newPath
+		currentPath = filepath.Clean(newPath)
 	}
+
+	return false // 达到最大深度仍未发现循环
 }
