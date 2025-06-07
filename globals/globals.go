@@ -7,6 +7,7 @@ import (
 	"crypto/sha512"
 	_ "embed"
 	"hash"
+	"os"
 	"sort"
 	"time"
 
@@ -243,3 +244,15 @@ var StyleNone = table.Style{
 		BottomRight:      " ", // 右下角
 	},
 }
+
+// 包装 os.DirEntry 以便复用 processFindCmd
+type DirEntryWrapper struct {
+	NameVal  string
+	IsDirVal bool
+	ModeVal  os.FileMode
+}
+
+func (d *DirEntryWrapper) Name() string               { return d.NameVal }
+func (d *DirEntryWrapper) IsDir() bool                { return d.IsDirVal }
+func (d *DirEntryWrapper) Type() os.FileMode          { return d.ModeVal }
+func (d *DirEntryWrapper) Info() (os.FileInfo, error) { return nil, nil }

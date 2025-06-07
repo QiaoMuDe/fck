@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -10,9 +11,12 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/fck/globals"
 )
 
 // findCmdMain 是 find 子命令的主函数
@@ -94,15 +98,26 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		return fmt.Errorf("表达式编译错误: %v, %v, %v, %v", nameRegexErr, exNameRegexErr, pathRegexErr, exPathRegexErr)
 	}
 
-	// 默认运行processWalkDir单线程遍历模式
-	var matchCount int
-	if walkDirErr := processWalkDir(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); walkDirErr != nil {
-		return walkDirErr
+	// 定义一个统计匹配项的
+	matchCount := atomic.Int64{}
+	matchCount.Store(0)
+
+	// 检查是否启用了并发处理
+	if *findCmdJobs == 0 {
+		// 运行processWalkDir单线程遍历模式
+		if walkDirErr := processWalkDir(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); walkDirErr != nil {
+			return walkDirErr
+		}
+	} else {
+		// 启用多协程模式
+		if err := processWalkDirConcurrent(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); err != nil {
+			return err
+		}
 	}
 
 	// 如果启用了count标志, 只输出匹配数量
 	if *findCmdCount {
-		fmt.Println(matchCount)
+		fmt.Println(matchCount.Load())
 		return nil
 	}
 
@@ -119,7 +134,7 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 // - findPath: 要查找的路径
 // 返回值:
 // - error: 错误信息
-func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string, matchCount *int) error {
+func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string, matchCount *atomic.Int64) error {
 	// 使用 filepath.WalkDir 遍历目录
 	walkDirErr := filepath.WalkDir(findPath, func(path string, entry os.DirEntry, err error) error {
 		// 检查遍历过程中是否遇到错误
@@ -132,10 +147,11 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 
 			// 检查是否为权限不足的报错
 			if os.IsPermission(err) {
-				return fmt.Errorf("权限不足，无法访问某些目录: %v", err)
+				cl.PrintErrf("权限不足，无法访问某些目录: %s\n", path)
+				return nil
 			}
 
-			return fmt.Errorf("访问文件时出错：%s", err)
+			return fmt.Errorf("访问时出错：%s", err)
 		}
 
 		// 跳过*findCmdPath目录本身
@@ -178,7 +194,8 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 }
 
 // processFindCmd 用于处理 find 命令的逻辑
-func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, entry os.DirEntry, path string, matchCount *int) error {
+func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, entry os.DirEntry, path string, matchCount *atomic.Int64) error {
+
 	// 如果指定了-n和-p参数, 并且指定了-or参数, 则只检查文件名或路径是否匹配(默认为或操作)
 	if *findCmdOr && *findCmdName != "" && *findCmdPath != "" {
 		// 执行或操作
@@ -231,7 +248,7 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 }
 
 // 用于在循环中筛选条件的函数
-func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exNameRegex, exPathRegex *regexp.Regexp, matchCount *int) error {
+func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exNameRegex, exPathRegex *regexp.Regexp, matchCount *atomic.Int64) error {
 	// 如果只查找文件，跳过目录
 	if *findCmdFile && entry.IsDir() {
 		return nil
@@ -376,7 +393,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 	// 根据标志, 输出输出完整路径还是匹配到的路径
 	if *findCmdFullPath {
 		// 增加匹配计数
-		*matchCount++
+		matchCount.Add(1)
 
 		// 如果启用了count标志, 则不输出路径
 		if !*findCmdCount {
@@ -398,7 +415,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	} else {
 		// 增加匹配计数
-		*matchCount++
+		matchCount.Add(1)
 
 		// 如果没有启用count标志, 才输出路径
 		if !*findCmdCount {
@@ -875,4 +892,165 @@ func isSymlinkLoop(path string) bool {
 	}
 
 	return false // 达到最大深度仍未发现循环
+}
+
+// 并发版本的目录遍历函数
+func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string, matchCount *atomic.Int64) error {
+	var wg sync.WaitGroup
+	pathChan := make(chan string, 10000) // 增大通道缓冲区
+	errorChan := make(chan error, 10)    // 错误通道
+
+	// 定义最大并发数量
+	var maxWorkers int
+
+	// 根据标志设置最大并发数量
+	if *findCmdJobs == -1 {
+		maxWorkers = runtime.NumCPU() * 2 // 调整为 CPU 核心数两倍
+		if maxWorkers > 20 {
+			maxWorkers = 20
+		}
+	} else {
+		// 使用指定的并发数量
+		if *findCmdJobs <= 0 {
+			maxWorkers = 1
+		} else {
+			maxWorkers = *findCmdJobs
+		}
+	}
+
+	// 启动多个 worker goroutine 处理路径
+	for i := 0; i < maxWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer func() {
+				// 捕获 panic
+				if r := recover(); r != nil {
+					errorChan <- fmt.Errorf("worker goroutine 发生 panic: %v", r)
+				}
+
+				wg.Done()
+			}()
+
+			// 处理路径
+			for path := range pathChan {
+				// 检查是否存在
+				entry, lstatErr := os.Lstat(path)
+				if lstatErr != nil {
+					// 忽略不存在的路径错误
+					if os.IsNotExist(lstatErr) {
+						continue
+					}
+					errorChan <- fmt.Errorf("无法访问 %s: %v", path, lstatErr)
+					continue
+				}
+
+				// 构建 DirEntryWrapper
+				dirEntry := &globals.DirEntryWrapper{
+					NameVal:  entry.Name(),
+					IsDirVal: entry.IsDir(),
+					ModeVal:  entry.Mode(),
+				}
+
+				// 通过 processFindCmd 处理路径
+				processErr := processFindCmd(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, dirEntry, path, matchCount)
+				if processErr != nil {
+					if processErr == filepath.SkipDir {
+						// 如果是 SkipDir，跳过该目录即可
+						continue
+					}
+
+					if errors.Is(processErr, os.ErrPermission) {
+						cl.PrintErrf("路径 %s 权限不足，已跳过\n", path)
+						// 跳过该路径
+						continue
+					}
+
+					errorChan <- fmt.Errorf("处理路径失败 %s: %v", path, processErr)
+				}
+			}
+		}()
+	}
+
+	// 主逻辑通过 WalkDir 将路径发送到 channel
+	walkDirErr := filepath.WalkDir(findPath, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			// 忽略不存在的路径错误
+			if os.IsNotExist(err) {
+				return nil
+			}
+
+			// 忽略权限错误
+			if os.IsPermission(err) {
+				cl.PrintErrf("路径 %s 因权限不足已跳过\n", p)
+				return nil
+			}
+
+			return fmt.Errorf("访问 %s 时出错: %s", p, err)
+		}
+
+		// 跳过findPath本身
+		if p == findPath {
+			return nil
+		}
+
+		// 检查当前路径的深度是否超过最大深度(先将路径统一转为/分隔符)
+		depth := strings.Count(p[len(findPath):], string(filepath.Separator))
+		if *findCmdMaxDepth >= 0 && depth > *findCmdMaxDepth {
+			return filepath.SkipDir
+		}
+
+		// 检查是否为符号链接循环, 然后做相应处理
+		if d.Type()&os.ModeSymlink != 0 {
+			if isSymlinkLoop(p) {
+				return filepath.SkipDir
+			}
+		}
+
+		// 发送路径到 channel
+		pathChan <- p
+
+		return nil
+	})
+
+	// 遍历完成，关闭路径通道
+	close(pathChan)
+
+	// 等待所有 worker 完成
+	wg.Wait()
+
+	// 关闭错误通道
+	close(errorChan)
+
+	// 优先检查遍历过程中是否遇到错误
+	if walkDirErr != nil {
+		if os.IsPermission(walkDirErr) {
+			return fmt.Errorf("权限不足，无法访问某些目录:  %v", walkDirErr)
+		} else if os.IsNotExist(walkDirErr) {
+			return fmt.Errorf("路径不存在: %v", walkDirErr)
+		}
+		return fmt.Errorf("遍历目录时出错: %v", walkDirErr)
+	}
+
+	// 收集并分类错误（限制最多显示5个不同错误）
+	errorMap := make(map[string]error)
+	errorCount := 0
+	for err := range errorChan {
+		if err != nil && errorCount < 5 {
+			if _, exists := errorMap[err.Error()]; !exists {
+				errorMap[err.Error()] = err
+				errorCount++
+			}
+		}
+	}
+
+	// 合并错误并添加统计信息
+	if len(errorMap) > 0 {
+		var combinedErr error
+		for _, err := range errorMap {
+			combinedErr = errors.Join(combinedErr, err)
+		}
+		return fmt.Errorf("共发现%d类错误(显示前5类): %w", len(errorMap), combinedErr)
+	}
+
+	return nil
 }

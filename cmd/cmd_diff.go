@@ -447,10 +447,12 @@ func getFiles(dir string) (map[string]string, error) {
 // compareFiles 比较两个目录的文件
 func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, cl *colorlib.ColorLib, fileWrite *os.File) error {
 	// 初始化统计计数器
-	sameCount := 0
-	diffCount := 0
-	onlyACount := 0
-	onlyBCount := 0
+	sameCount := 0  // 相同文件计数
+	diffCount := 0  // 不同文件计数
+	onlyACount := 0 // 目录 A 中独有的文件计数
+	onlyBCount := 0 // 目录 B 中独有的文件计数
+
+	var hasCompared bool // 新增标志位，表示是否有进行过比较
 
 	// 比较相同路径的文件
 	matchFileNameFiles := "=== 比较具有相同名称的文件 ==="
@@ -468,13 +470,16 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 	// 遍历目录 A 中的文件
 	for relPath, pathA := range filesA {
 		if pathB, ok := filesB[relPath]; ok {
+			// 标记已进行过比较
+			hasCompared = true
+
 			// 获取文件大小
-			fileInfoA, err := os.Stat(pathA)
+			fileInfoA, err := os.Lstat(pathA)
 			if err != nil {
 				cl.PrintErrf("获取文件 %s 的大小时出错: %v\n", pathA, err)
 				continue
 			}
-			fileInfoB, err := os.Stat(pathB)
+			fileInfoB, err := os.Lstat(pathB)
 			if err != nil {
 				cl.PrintErrf("获取文件 %s 的大小时出错: %v\n", pathB, err)
 				continue
@@ -547,25 +552,44 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 		}
 	}
 
-	// 如果没有相同文件则输出提示
-	if sameCount == 0 {
-		if *diffCmdWrite {
-			if _, writeErr := fileWrite.WriteString("暂无相同文件\n"); writeErr != nil {
-				return fmt.Errorf("写入文件时出错: %v", writeErr)
+	// 根据比较结果输出提示
+	if hasCompared {
+		if sameCount == 0 && diffCount == 0 {
+			if *diffCmdWrite {
+				if _, writeErr := fileWrite.WriteString("暂无匹配文件\n"); writeErr != nil {
+					return fmt.Errorf("写入文件时出错: %v", writeErr)
+				}
+			} else {
+				fmt.Println("暂无匹配文件")
 			}
-		} else {
-			fmt.Println("暂无相同文件")
-		}
-	}
 
-	// 如果没有不同文件则输出提示
-	if diffCount == 0 {
+		} else {
+			if sameCount > 0 {
+				if *diffCmdWrite {
+					if _, writeErr := fileWrite.WriteString(fmt.Sprintf("找到 %d 个相同文件\n", sameCount)); writeErr != nil {
+						return fmt.Errorf("写入文件时出错: %v", writeErr)
+					}
+				} else {
+					fmt.Printf("找到 %d 个相同文件\n", sameCount)
+				}
+			}
+			if diffCount > 0 {
+				if *diffCmdWrite {
+					if _, writeErr := fileWrite.WriteString(fmt.Sprintf("找到 %d 个不同文件\n", diffCount)); writeErr != nil {
+						return fmt.Errorf("写入文件时出错: %v", writeErr)
+					}
+				} else {
+					fmt.Printf("找到 %d 个不同文件\n", diffCount)
+				}
+			}
+		}
+	} else {
 		if *diffCmdWrite {
-			if _, writeErr := fileWrite.WriteString("暂无不同文件\n"); writeErr != nil {
+			if _, writeErr := fileWrite.WriteString("无匹配文件\n"); writeErr != nil {
 				return fmt.Errorf("写入文件时出错: %v", writeErr)
 			}
 		} else {
-			fmt.Println("暂无不同文件")
+			fmt.Println("无匹配文件")
 		}
 	}
 
@@ -656,6 +680,8 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	onlyCheckFileCount := 0
 	onlyDirFileCount := 0
 
+	var hasCompared bool // 新增标志位，表示是否有进行过比较
+
 	// 比较相同文件名的文件
 	matchFileNameFiles := "=== 比较具有相同名称的文件 ==="
 	if *diffCmdWrite {
@@ -669,6 +695,9 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	// 遍历校验文件中的文件
 	for virtualPath, checkEntry := range checkFileHashes {
 		if targetPath, ok := targetFiles[virtualPath]; ok {
+			// 标记已进行过比较
+			hasCompared = true
+
 			// 如果目录中存在同名文件，计算其哈希值并比较
 			hashValue, err := checksum(targetPath, hashFunc)
 			if err != nil {
@@ -698,25 +727,44 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 		}
 	}
 
-	// 如果没有相同文件则输出提示
-	if sameCount == 0 {
-		if *diffCmdWrite {
-			if _, writeErr := fileWrite.WriteString("暂无相同文件\n"); writeErr != nil {
-				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+	// 根据比较结果输出提示
+	if hasCompared {
+		if sameCount == 0 && diffCount == 0 {
+			if *diffCmdWrite {
+				if _, writeErr := fileWrite.WriteString("暂无匹配文件\n"); writeErr != nil {
+					return fmt.Errorf("写入文件时出错: %v", writeErr)
+				}
+			} else {
+				fmt.Println("暂无匹配文件")
 			}
-		} else {
-			fmt.Println("暂无相同文件")
-		}
-	}
 
-	// 如果没有不同文件则输出提示
-	if diffCount == 0 {
+		} else {
+			if sameCount > 0 {
+				if *diffCmdWrite {
+					if _, writeErr := fileWrite.WriteString(fmt.Sprintf("找到 %d 个相同文件\n", sameCount)); writeErr != nil {
+						return fmt.Errorf("写入文件时出错: %v", writeErr)
+					}
+				} else {
+					fmt.Printf("找到 %d 个相同文件\n", sameCount)
+				}
+			}
+			if diffCount > 0 {
+				if *diffCmdWrite {
+					if _, writeErr := fileWrite.WriteString(fmt.Sprintf("找到 %d 个不同文件\n", diffCount)); writeErr != nil {
+						return fmt.Errorf("写入文件时出错: %v", writeErr)
+					}
+				} else {
+					fmt.Printf("找到 %d 个不同文件\n", diffCount)
+				}
+			}
+		}
+	} else {
 		if *diffCmdWrite {
-			if _, writeErr := fileWrite.WriteString("暂无不同文件\n"); writeErr != nil {
-				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+			if _, writeErr := fileWrite.WriteString("无匹配文件\n"); writeErr != nil {
+				return fmt.Errorf("写入文件时出错: %v", writeErr)
 			}
 		} else {
-			fmt.Println("暂无不同文件")
+			fmt.Println("无匹配文件")
 		}
 	}
 

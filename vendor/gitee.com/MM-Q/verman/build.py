@@ -483,10 +483,13 @@ def get_git_info():
 
 def generate_output_file_name(base_name, system, git_version=None):
     """根据操作系统生成默认输出文件名, 可选的git版本号"""
+    # 创建输出目录, 如果不存在则创建
     os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
+
     name = base_name
     if git_version is not None:
         name = f"{name}_{git_version}"
+
     if system == "windows":
         return os.path.join(DEFAULT_OUTPUT_DIR, f"{name}.exe")
     return os.path.join(DEFAULT_OUTPUT_DIR, name)
@@ -626,8 +629,15 @@ def parse_arguments():
     parser.add_argument(
         "-i",
         "--install",
-        help="将可执行文件安装到GOPATH/bin目录",
+        help="安装指定路径的可执行文件到GOPATH/bin目录",
         default=None,
+    )
+    parser.add_argument(
+        "-ai",
+        "--auto-install",
+        action="store_true",
+        help="构建完成后自动安装可执行文件到GOPATH/bin目录",
+        default=False,
     )
     parser.add_argument(
         "-f",
@@ -658,7 +668,7 @@ def parse_arguments():
 # 主程序入口 #
 def install_executable(executable_path, args=None):
     """将可执行文件安装到GOPATH/bin目录
-    
+
     参数:
         executable_path: 要安装的可执行文件路径
         args: 命令行参数对象，包含force等标志
@@ -719,7 +729,7 @@ def main():
     # 解析命令行参数
     args = parse_arguments()
 
-    # 如果指定了安装参数
+    # 如果指定了单独安装参数
     if args.install:
         if not install_executable(args.install, args):
             sys.exit(1)
@@ -738,8 +748,12 @@ def main():
 
     # 如果是批量构建模式
     if args.batch:
-        batch_build(args)
-        return
+        try:
+            batch_build(args)
+        except Exception as e:
+            print_error(f"批量构建失败: {str(e)}")
+            sys.exit(1)
+        sys.exit(0)
 
     entry_file = args.entry  # 指定入口文件路径
     ldflags = args.ldflags  # 指定构建时的链接器标志
@@ -826,9 +840,7 @@ def main():
     if args.simple_name:
         base_name = f"{BASE_OUTPUT_NAME}"
         # 生成默认的输出文件名
-        output_file = generate_output_file_name(
-            base_name, system, git_version if inject_git else None
-        )
+        output_file = generate_output_file_name(base_name, system, None)
     else:
         # 生成带有系统和架构信息的默认输出文件名
         base_name = f"{BASE_OUTPUT_NAME}_{system}_{architecture}"
@@ -862,6 +874,12 @@ def main():
     # 计算构建耗时
     elapsed_time = end_time - start_time
     print_success(f"本次构建耗时: {elapsed_time:.2f} 秒")
+
+    # 单独构建模式下自动安装
+    if args.auto_install and not args.batch:
+        if not install_executable(output_file, args):
+            sys.exit(1)
+        sys.exit(0)
 
 
 if __name__ == "__main__":

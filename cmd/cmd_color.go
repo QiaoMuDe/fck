@@ -143,6 +143,7 @@ var PermissionColorMap = map[int]string{
 
 // printColoredFile 根据文件后缀名以不同颜色输出文件路径
 func printColoredFile(fs string, cl *colorlib.ColorLib) {
+
 	// 获取文件后缀名
 	fileExt := strings.ToLower(filepath.Ext(fs))
 
@@ -302,6 +303,7 @@ func SprintStringColor(p string, s string, cl *colorlib.ColorLib) (string, error
 //
 //	error: 如果获取路径信息失败则返回错误, 否则返回nil
 func printPathColor(path string, cl *colorlib.ColorLib) error {
+
 	// 获取路径信息
 	pathInfo, statErr := os.Lstat(path)
 	if statErr != nil {
