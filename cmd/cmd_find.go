@@ -102,7 +102,7 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	matchCount := atomic.Int64{}
 	matchCount.Store(0)
 
-	// 检查是否启用了并发处理
+	// // 检查是否启用了并发处理
 	if *findCmdJobs == 0 {
 		// 运行processWalkDir单线程遍历模式
 		if walkDirErr := processWalkDir(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); walkDirErr != nil {
@@ -898,7 +898,7 @@ func isSymlinkLoop(path string) bool {
 func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string, matchCount *atomic.Int64) error {
 	var wg sync.WaitGroup
 	pathChan := make(chan string, 10000) // 增大通道缓冲区
-	errorChan := make(chan error, 10)    // 错误通道
+	errorChan := make(chan error, 100)   // 错误通道
 
 	// 定义最大并发数量
 	var maxWorkers int
@@ -939,7 +939,9 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 					if os.IsNotExist(lstatErr) {
 						continue
 					}
-					errorChan <- fmt.Errorf("无法访问 %s: %v", path, lstatErr)
+					if len(errorChan) < cap(errorChan) {
+						errorChan <- fmt.Errorf("无法访问 %s: %v", path, lstatErr)
+					}
 					continue
 				}
 
@@ -964,7 +966,9 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 						continue
 					}
 
-					errorChan <- fmt.Errorf("处理路径失败 %s: %v", path, processErr)
+					if len(errorChan) < cap(errorChan) {
+						errorChan <- fmt.Errorf("处理路径失败 %s: %v", path, processErr)
+					}
 				}
 			}
 		}()

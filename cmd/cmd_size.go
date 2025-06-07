@@ -216,7 +216,9 @@ func getPathSize(path string) (int64, error) {
 			for filePath := range fileChan {
 				fileInfo, err := os.Lstat(filePath)
 				if err != nil {
-					errChan <- fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", filePath, err)
+					if len(errChan) < cap(errChan) {
+						errChan <- fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", filePath, err)
+					}
 					continue
 				}
 

@@ -191,7 +191,7 @@ fileLoop:
 				}()
 
 				// 检查文件路径是否存在
-				if _, err := os.Stat(file); err != nil {
+				if _, err := os.Lstat(file); err != nil {
 					errors <- fmt.Errorf("文件 %s 不存在或无法访问: %v", file, err)
 					once.Do(func() { cancel(fmt.Errorf("文件 %s 不存在或无法访问: %v", file, err)) }) // 只取消一次
 					return
