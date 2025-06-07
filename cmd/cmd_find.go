@@ -905,17 +905,16 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 
 	// 根据标志设置最大并发数量
 	if *findCmdJobs == -1 {
-		maxWorkers = runtime.NumCPU() * 2 // 调整为 CPU 核心数两倍
-		if maxWorkers > 20 {
-			maxWorkers = 20
-		}
-	} else {
-		// 使用指定的并发数量
-		if *findCmdJobs <= 0 {
-			maxWorkers = 1
-		} else {
-			maxWorkers = *findCmdJobs
-		}
+		// 自动设置为 CPU 核心数的两倍
+		maxWorkers = runtime.NumCPU() * 2
+	}
+	if *findCmdJobs <= 0 {
+		// 如果小于等于0，则设置为1
+		maxWorkers = 1
+	}
+	if maxWorkers > 20 {
+		// 如果超过20，则设置为20
+		maxWorkers = 20
 	}
 
 	// 启动多个 worker goroutine 处理路径
