@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -36,15 +37,21 @@ func hashCmdMain(cmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		return fmt.Errorf("请指定要计算哈希值的路径")
 	}
 
-	// 检查并发数是否有效
-	if *hashCmdJob <= 0 {
-		return fmt.Errorf("在校验哈希值时，并发数必须大于 0")
-	}
-
 	// 检查指定的哈希算法是否有效
 	hashType, ok := globals.SupportedAlgorithms[*hashCmdType]
 	if !ok {
 		return fmt.Errorf("在校验哈希值时，哈希算法 %s 无效", *hashCmdType)
+	}
+
+	// 设置并发任务数
+	if *hashCmdJob == -1 {
+		*hashCmdJob = runtime.NumCPU() * 2 // 使用CPU核数*2
+	}
+	if *hashCmdJob <= 0 {
+		*hashCmdJob = 1 // 最小并发数为1
+	}
+	if *hashCmdJob > 20 {
+		*hashCmdJob = 20 // 最大并发数为20
 	}
 
 	// 创建一个可以被外部取消的上下文（支持指定取消原因）

@@ -17,7 +17,7 @@ var (
 	hashCmdHelp      = hashCmd.Bool("h", false, "打印帮助信息并退出")
 	hashCmdType      = hashCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
 	hashCmdRecursion = hashCmd.Bool("r", false, "递归处理目录")
-	hashCmdJob       = hashCmd.Int("j", 1, "指定并发数量")
+	hashCmdJob       = hashCmd.Int("j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
 	hashCmdWrite     = hashCmd.Bool("w", false, "将哈希值写入文件, 文件名为checksum.hash")
 	hashCmdHidden    = hashCmd.Bool("H", false, "启用计算隐藏文件/目录的哈希值，默认跳过")
 
