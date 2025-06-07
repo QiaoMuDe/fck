@@ -102,16 +102,16 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	matchCount := atomic.Int64{}
 	matchCount.Store(0)
 
-	// // 检查是否启用了并发处理
-	if *findCmdJobs == 0 {
+	// 检查是否启用并发模式
+	if *findCmdX {
+		// 启用并发模式
+		if err := processWalkDirConcurrent(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); err != nil {
+			return err
+		}
+	} else {
 		// 运行processWalkDir单线程遍历模式
 		if walkDirErr := processWalkDir(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); walkDirErr != nil {
 			return walkDirErr
-		}
-	} else {
-		// 启用多协程模式
-		if err := processWalkDirConcurrent(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); err != nil {
-			return err
 		}
 	}
 
@@ -897,25 +897,11 @@ func isSymlinkLoop(path string) bool {
 // 并发版本的目录遍历函数
 func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string, matchCount *atomic.Int64) error {
 	var wg sync.WaitGroup
-	pathChan := make(chan string, 10000) // 增大通道缓冲区
+	pathChan := make(chan string, 30000) // 通道缓冲区
 	errorChan := make(chan error, 100)   // 错误通道
 
-	// 定义最大并发数量
-	var maxWorkers int
-
-	// 根据标志设置最大并发数量
-	if *findCmdJobs == -1 {
-		// 自动设置为 CPU 核心数的两倍
-		maxWorkers = runtime.NumCPU() * 2
-	}
-	if *findCmdJobs <= 0 {
-		// 如果小于等于0，则设置为1
-		maxWorkers = 1
-	}
-	if maxWorkers > 20 {
-		// 如果超过20，则设置为20
-		maxWorkers = 20
-	}
+	// 设置最大并发数量为 CPU 核心数的两倍
+	maxWorkers := runtime.NumCPU() * 2
 
 	// 启动多个 worker goroutine 处理路径
 	for i := 0; i < maxWorkers; i++ {

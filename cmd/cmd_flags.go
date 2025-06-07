@@ -88,7 +88,7 @@ var (
 	findCmdOr            = findCmd.Bool("or", false, "用于在-n和-p参数中组合条件, 默认为false, 表示只要满足任一条件即可")
 	findCmdMaxDepthLimit = findCmd.Int("max-depth", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")
 	findCmdCount         = findCmd.Bool("count", false, "仅统计匹配项的数量而不显示具体路径")
-	findCmdJobs          = findCmd.Int("j", -1, "指定并发任务数, 默认为-1表示根据CPU核心数自动设置, 0表示单线程执行, 其余整数表示并发任务数")
+	findCmdX             = findCmd.Bool("X", false, "启用并发模式")
 
 	// fck list 子命令
 	listCmd              = flag.NewFlagSet("list", flag.ExitOnError)
