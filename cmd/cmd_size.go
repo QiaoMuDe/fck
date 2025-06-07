@@ -6,7 +6,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/globals"
@@ -64,8 +66,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			for _, filePath := range filePaths {
 				size, err := getPathSize(filePath)
 				if err != nil {
-					cl.PrintErrf("计算文件大小失败: %v\n", err)
-					continue
+					cl.PrintErrf("计算大小时出现错误: %s\n", err)
 				}
 
 				// 如果没启用表格输出, 则直接打印结果
@@ -186,20 +187,69 @@ func getPathSize(path string) (int64, error) {
 
 	// 定义总大小
 	var totalSize int64
+
+	// 创建并发任务池
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	fileChan := make(chan string, 10000) // 缓冲区大小为10000
+	errChan := make(chan error, 100)     // 错误通道大小为100
+
+	// 启动worker goroutines
+	workers := *sizeCmdJob
+	if workers == -1 {
+		// 如果未指定并发数量, 则根据CPU核心数自动设置 (每个核心2个worker)
+		workers = runtime.NumCPU() * 2
+	}
+	if workers <= 0 {
+		// 如果并发数量小于等于0, 则使用单线程执行
+		workers = 1
+	}
+	if workers > 20 {
+		// 如果并发数量大于20, 则限制为20
+		workers = 20
+	}
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for filePath := range fileChan {
+				fileInfo, err := os.Lstat(filePath)
+				if err != nil {
+					errChan <- fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", filePath, err)
+					continue
+				}
+
+				mu.Lock()
+				totalSize += fileInfo.Size()
+				mu.Unlock()
+			}
+		}()
+	}
+
 	// 遍历目录
 	walkErr := filepath.Walk(path, func(filePath string, fileInfo fs.FileInfo, err error) error {
 		// 如果遍历目录遇到权限错误, 则忽略该错误并给出更友好的提示信息
 		if err != nil {
+			// 跳过不存在的文件或目录
+			if os.IsNotExist(err) {
+				return nil
+			}
+
 			// 如果遍历目录失败, 返回错误
 			return fmt.Errorf("遍历目录失败: 路径 %s 错误: %v", filePath, err)
 		}
 
-		// 如果是文件或者不是根目录, 则累加文件大小
+		// 如果是文件或者不是根目录, 则发送到worker处理
 		if !fileInfo.IsDir() || (fileInfo.IsDir() && filePath != path) {
-			totalSize += fileInfo.Size()
+			fileChan <- filePath
 		}
 		return nil
 	})
+
+	close(fileChan) // 关闭文件通道
+	wg.Wait()       // 等待所有worker完成
+	close(errChan)  // 关闭错误通道
 
 	if walkErr != nil {
 		// 如果遍历目录遇到权限错误, 则忽略该错误并给出更友好的提示信息
@@ -217,7 +267,47 @@ func getPathSize(path string) (int64, error) {
 		// 如果遍历目录失败, 返回错误
 		return 0, fmt.Errorf("遍历目录失败: %v", walkErr)
 	}
-	// 返回总大小
+
+	// 检查并去重错误，最多显示5类错误
+	errorMap := make(map[string]bool)
+	errorCount := 0
+	var otherErrors []error
+	for err := range errChan {
+		errStr := err.Error()
+		if !errorMap[errStr] {
+			errorMap[errStr] = true
+			errorCount++
+			if strings.Contains(errStr, "遍历目录失败") {
+				// walkErr是目录遍历错误
+				if walkErr == nil {
+					walkErr = err
+				} else {
+					walkErr = fmt.Errorf("%v; %v", walkErr, err)
+				}
+			} else if errorCount <= 5 {
+				// 其他类型错误
+				otherErrors = append(otherErrors, err)
+			}
+		}
+	}
+	// 组合所有错误
+	if len(otherErrors) > 0 {
+		if walkErr != nil {
+			walkErr = fmt.Errorf("%v; 其他错误: %v", walkErr, otherErrors)
+		} else {
+			walkErr = fmt.Errorf("其他错误: %v", otherErrors)
+		}
+	}
+	if errorCount > 5 {
+		walkErr = fmt.Errorf("%v (还有%d个类似错误...)", walkErr, errorCount-5)
+	}
+
+	// 根据是否有错误返回不同内容
+	if walkErr != nil {
+		// 有错误时返回错误和计算得到的大小
+		return totalSize, fmt.Errorf("计算完成但遇到错误: %v (总大小: %s)", walkErr, humanReadableSize(totalSize, 2))
+	}
+	// 无错误时只返回大小
 	return totalSize, nil
 }
 

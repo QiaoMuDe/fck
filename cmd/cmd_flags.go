@@ -25,6 +25,7 @@ var (
 	sizeCmd           = flag.NewFlagSet("size", flag.ExitOnError)
 	sizeCmdHelp       = sizeCmd.Bool("h", false, "打印帮助信息并退出")
 	sizeCmdColor      = sizeCmd.Bool("c", false, "启用颜色输出")
+	sizeCmdJob        = sizeCmd.Int("j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
 	sizeCmdTableStyle = sizeCmd.String("ts", "", "指定表格样式，支持以下选项：\n"+
 		"  default - 默认样式\n"+
 		"  l      - 浅色样式\n"+
