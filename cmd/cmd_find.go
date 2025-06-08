@@ -283,16 +283,6 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	}
 
-	// 如果指定了排除文件或目录名, 跳过匹配的文件或目录
-	if *findCmdExcludeName != "" && exNameRegex.MatchString(entry.Name()) {
-		return nil
-	}
-
-	// 如果指定了排除路径, 跳过匹配的路径
-	if *findCmdExcludePath != "" && exPathRegex.MatchString(path) {
-		return nil
-	}
-
 	// 1. 基础类型检查（快速失败）
 	// 如果只查找文件，跳过目录
 	if *findCmdFile {
@@ -395,6 +385,35 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	}
 
+	// 5. 排除检查（放在耗时检查之后，因为已经获取了文件信息）
+	// 如果指定了排除文件或目录名, 跳过匹配的文件或目录
+	if *findCmdExcludeName != "" && exNameRegex.MatchString(entry.Name()) {
+		return nil
+	}
+	// 如果指定了排除路径, 跳过匹配的路径
+	if *findCmdExcludePath != "" && exPathRegex.MatchString(path) {
+		return nil
+	}
+
+	// 6. 扩展名检查（放在耗时检查之后，因为已经获取了文件信息）
+	// 扩展名检查
+	if *findCmdExt != "" {
+		ext := filepath.Ext(entry.Name())       // 获取文件扩展名
+		exts := strings.Split(*findCmdExt, ",") // 分割多个扩展名
+		match := false                          // 标记是否匹配
+		for _, e := range exts {                // 遍历所有扩展名
+			if ext == strings.TrimSpace(e) { // 检查当前扩展名是否匹配
+				match = true // 匹配成功
+				break
+			}
+		}
+		// 如果没有匹配到任何扩展名, 跳过
+		if !match {
+			return nil
+		}
+	}
+
+	// 7. 执行动作（放在耗时检查之后，因为已经获取了文件信息）
 	// 如果启用了count标志, 则不执行任何操作
 	if !*findCmdCount {
 		// 如果启用了delete标志, 删除匹配的文件或目录
@@ -438,7 +457,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	}
 
-	// 根据标志, 输出输出完整路径还是匹配到的路径
+	// 根据标志, 输出完整路径还是匹配到的路径
 	if *findCmdFullPath {
 		// 增加匹配计数
 		matchCount.Add(1)
@@ -461,20 +480,22 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 				fmt.Println(fullPath)
 			}
 		}
-	} else {
-		// 增加匹配计数
-		matchCount.Add(1)
 
-		// 如果没有启用count标志, 才输出路径
-		if !*findCmdCount {
-			if *findCmdColor {
-				if err := printPathColor(path, cl); err != nil {
-					return fmt.Errorf("输出路径时出错: %s", err)
-				}
-			} else {
-				// 如果没有启用颜色输出, 直接打印路径
-				fmt.Println(path)
+		return nil
+	}
+
+	// 输出匹配的路径
+	matchCount.Add(1) // 增加匹配计数
+
+	// 如果没有启用count标志, 才输出路径
+	if !*findCmdCount {
+		if *findCmdColor {
+			if err := printPathColor(path, cl); err != nil {
+				return fmt.Errorf("输出路径时出错: %s", err)
 			}
+		} else {
+			// 如果没有启用颜色输出, 直接打印路径
+			fmt.Println(path)
 		}
 	}
 
@@ -627,6 +648,20 @@ func checkFindCmdArgs(findPath string) error {
 
 		// 其他错误, 返回错误信息
 		return fmt.Errorf("检查路径时出错: %s: %v", findPath, err)
+	}
+
+	// 添加扩展名参数验证
+	if *findCmdExt != "" {
+		exts := strings.Split(*findCmdExt, ",")
+		for _, ext := range exts {
+			ext = strings.TrimSpace(ext)
+			if strings.ContainsAny(ext, "\\/:") {
+				return fmt.Errorf("扩展名包含非法字符: %s", ext)
+			}
+			if !strings.HasPrefix(ext, ".") {
+				return fmt.Errorf("扩展名应以点开头: %s (建议使用 .%s)", ext, ext)
+			}
+		}
 	}
 
 	return nil
