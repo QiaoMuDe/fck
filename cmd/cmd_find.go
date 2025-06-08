@@ -194,6 +194,17 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 }
 
 // processFindCmd 用于处理 find 命令的逻辑
+// 参数:
+// - cl: 颜色库
+// - nameRegex: 文件名正则表达式
+// - exNameRegex: 排除的文件名正则表达式
+// - pathRegex: 路径正则表达式
+// - exPathRegex: 排除的路径正则表达式
+// - entry: 文件或目录的DirEntry对象
+// - path: 文件或目录的完整路径
+// - matchCount: 匹配数量
+// 返回值:
+// - error: 错误信息
 func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, entry os.DirEntry, path string, matchCount *atomic.Int64) error {
 
 	// 如果指定了-n和-p参数, 并且指定了-or参数, 则只检查文件名或路径是否匹配(默认为或操作)
@@ -247,16 +258,54 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	return nil
 }
 
-// 用于在循环中筛选条件的函数
+// filterConditions 用于在循环中筛选条件的函数
+// 参数:
+// - entry: 文件或目录的DirEntry对象
+// - path: 文件或目录的完整路径
+// - cl: 颜色库
+// - exNameRegex: 排除的文件名正则表达式
+// - exPathRegex: 排除的路径正则表达式
+// - matchCount: 匹配数量
+// 返回值:
+// - error: 错误信息
 func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exNameRegex, exPathRegex *regexp.Regexp, matchCount *atomic.Int64) error {
-	// 如果只查找文件，跳过目录
-	if *findCmdFile && entry.IsDir() {
+	// 默认隐藏文件或目录不参与匹配
+	// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
+	if !*findCmdHidden {
+		if isHidden(path) {
+			// 如果是隐藏目录，跳过整个目录
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+
+			// 如果是隐藏文件，跳过单个文件
+			return nil
+		}
+	}
+
+	// 如果指定了排除文件或目录名, 跳过匹配的文件或目录
+	if *findCmdExcludeName != "" && exNameRegex.MatchString(entry.Name()) {
 		return nil
 	}
 
-	// 如果只查找目录，跳过文件
-	if *findCmdDir && !entry.IsDir() {
+	// 如果指定了排除路径, 跳过匹配的路径
+	if *findCmdExcludePath != "" && exPathRegex.MatchString(path) {
 		return nil
+	}
+
+	// 1. 基础类型检查（快速失败）
+	// 如果只查找文件，跳过目录
+	if *findCmdFile {
+		if entry.IsDir() {
+			return nil
+		}
+	}
+
+	// 如果只查找目录，跳过文件
+	if *findCmdDir {
+		if !entry.IsDir() {
+			return nil
+		}
 	}
 
 	// 如果只查找软链接，跳过非软链接
@@ -285,16 +334,22 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	}
 
+	// 2. 快速属性检查
 	// 如果只显示隐藏文件或目录, 跳过非隐藏文件或目录
-	if *findCmdHidden && !isHidden(path) && *findCmdHiddenOnly {
-		return nil
+	if *findCmdHidden {
+		if !isHidden(path) && *findCmdHiddenOnly {
+			return nil
+		}
 	}
 
 	// 如果只显示只读文件或目录 跳过非只读文件或目录
-	if *findCmdReadOnly && !isReadOnly(path) {
-		return nil
+	if *findCmdReadOnly {
+		if !isReadOnly(path) {
+			return nil
+		}
 	}
 
+	// 3. 耗时检查（需要获取文件信息）
 	// 如果指定了文件大小, 跳过不符合条件的文件
 	if *findCmdSize != "" {
 		fileInfo, sizeErr := entry.Info()
@@ -318,25 +373,26 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	}
 
-	// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
-	if !*findCmdHidden && isHidden(path) {
-		// 如果是隐藏目录，跳过整个目录
+	// 4. 空文件检查（放在耗时检查之后，因为已经获取了文件信息）
+	// 如果只查找空文件或目录
+	if *findCmdEmpty {
+		// 检查是否为空目录
 		if entry.IsDir() {
-			return filepath.SkipDir
+			// 检查目录是否为空
+			dirEntries, err := os.ReadDir(path)
+			if err != nil || len(dirEntries) > 0 {
+				return nil
+			}
+		} else {
+			// 如果是文件, 检查文件是否为空
+			fileInfo, sizeErr := entry.Info()
+			if sizeErr != nil {
+				return nil
+			}
+			if fileInfo.Size() > 0 {
+				return nil
+			}
 		}
-
-		// 如果是隐藏文件，跳过单个文件
-		return nil
-	}
-
-	// 如果指定了排除文件或目录名, 跳过匹配的文件或目录
-	if *findCmdExcludeName != "" && exNameRegex.MatchString(entry.Name()) {
-		return nil
-	}
-
-	// 如果指定了排除路径, 跳过匹配的路径
-	if *findCmdExcludePath != "" && exPathRegex.MatchString(path) {
-		return nil
 	}
 
 	// 如果启用了count标志, 则不执行任何操作
@@ -373,16 +429,8 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 
 		// 如果启用了-exec标志, 执行指定的命令
 		if *findCmdExec != "" {
-			// 替换{}为实际的文件路径，并根据系统类型选择引用方式
-			var cmdStr string
-			if runtime.GOOS == "windows" {
-				cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("\"%s\"", path), -1) // Windows使用双引号
-			} else {
-				cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("'%s'", path), -1) // Linux使用单引号
-			}
-
 			// 执行命令
-			if err := runCommand(cmdStr, cl); err != nil {
+			if err := runCommand(*findCmdExec, cl, path); err != nil {
 				return fmt.Errorf("执行-exec命令时发生了错误: %v", err)
 			}
 
@@ -434,6 +482,8 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 }
 
 // 用于检查find命令的相关参数是否正确
+// 参数:
+// - findPath: 要查找的路径
 func checkFindCmdArgs(findPath string) error {
 	// 检查要查找的最大深度是否小于 -1
 	if *findCmdMaxDepth < -1 {
@@ -583,6 +633,14 @@ func checkFindCmdArgs(findPath string) error {
 }
 
 // matchFileSize 检查文件大小是否符合指定的条件
+// 参数:
+//
+//	fileSize: 文件大小
+//	sizeCondition: 文件大小条件
+//
+// 返回值:
+//
+//	bool: 如果文件大小符合条件, 返回true, 否则返回false
 func matchFileSize(fileSize int64, sizeCondition string) bool {
 	if len(sizeCondition) < 2 {
 		return false
@@ -668,11 +726,51 @@ func matchFileTime(fileTime time.Time, timeCondition string) bool {
 }
 
 // runCommand 执行单个命令， 支持跨平台并检查shell是否存在
-// 参数cmdStr是要执行的命令字符串
-// 参数cl是颜色库实例
-// 返回执行过程中的错误
-func runCommand(cmdStr string, cl *colorlib.ColorLib) error {
+// 参数:
+//
+//	cmdStr: 要执行的命令字符串
+//	cl: 颜色库实例
+//	p: 用于替换{}的路径
+//
+// 返回值:
+//
+//	error: 如果执行过程中发生错误, 返回错误信息, 否则返回nil
+func runCommand(cmdStr string, cl *colorlib.ColorLib, p string) error {
+	// 检查cmdStr是否为空
+	if cmdStr == "" {
+		return fmt.Errorf("cmd is nil")
+	}
+
+	// 检查路径是否为空
+	if p == "" {
+		return fmt.Errorf("path is nil")
+	}
+
+	// 检查是否包含{}
+	if !strings.Contains(cmdStr, "{}") {
+		return fmt.Errorf("使用-exec标志时必须包含{}作为路径占位符")
+	}
+
+	// 检查路径是否存在
+	if _, err := os.Lstat(p); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("文件/目录不存在: %s", p)
+		}
+
+		return fmt.Errorf("无法访问文件/目录: %s", p)
+	}
+
+	// 替换{}为实际的文件路径，并根据系统类型选择引用方式
+	if runtime.GOOS == "windows" {
+		cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("\"%s\"", p), -1) // Windows使用双引号
+	} else {
+		cmdStr = strings.Replace(*findCmdExec, "{}", fmt.Sprintf("'%s'", p), -1) // Linux使用单引号
+	}
+
+	// 根据操作系统选择shell
 	var shell string
+
+	// 定义参数数组
 	var args []string
 
 	// 根据系统选择默认shell
@@ -725,7 +823,7 @@ func deleteMatchedItem(path string, isDir bool, cl *colorlib.ColorLib) error {
 	}
 
 	// 先检查文件/目录是否存在
-	if _, err := os.Stat(path); err != nil {
+	if _, err := os.Lstat(path); err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("文件/目录不存在: %s", path)
 		}
@@ -783,7 +881,7 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 	}
 
 	// 检查源路径是否存在
-	if _, err := os.Stat(path); err != nil {
+	if _, err := os.Lstat(path); err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("源文件/目录不存在: %s", path)
 		}
