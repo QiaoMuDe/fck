@@ -47,6 +47,7 @@ var (
 		"  crw    - 红色背景白色字体\n"+
 		"  cyw    - 黄色背景白色字体\n"+
 		"  none   - 禁用表格样式")
+	sizeCmdHidden = sizeCmd.Bool("H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
 
 	// fck diff 子命令
 	diffCmd      = flag.NewFlagSet("diff", flag.ExitOnError)

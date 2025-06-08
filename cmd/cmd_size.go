@@ -62,8 +62,17 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 				cl.PrintErr("没有找到匹配的文件")
 				continue
 			}
+
 			// 计算每个匹配路径的大小
 			for _, filePath := range filePaths {
+				// 如果是隐藏文件且未启用-H选项，则跳过
+				if !*sizeCmdHidden {
+					if isHidden(filePath) {
+						continue
+					}
+				}
+
+				// 获取文件大小
 				size, err := getPathSize(filePath)
 				if err != nil {
 					cl.PrintErrf("计算大小时出现错误: %s\n", err)
@@ -96,11 +105,22 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			return nil
 		}
 
-		// 如果是文件, 则直接计算大小
-		if info, err := os.Stat(targetPath); err != nil {
-			cl.PrintErrf("获取文件信息失败: 路径 %s 错误: %v\n", targetPath, err)
+		// 如果是隐藏文件且未启用-H选项，则跳过
+		if !*sizeCmdHidden {
+			if isHidden(targetPath) {
+				continue
+			}
+		}
+
+		// 获取文件信息
+		info, statErr := os.Lstat(targetPath)
+		if statErr != nil {
+			cl.PrintErrf("获取文件信息失败: 路径 %s 错误: %v\n", targetPath, statErr)
 			continue
-		} else if !info.IsDir() {
+		}
+
+		// 如果是文件, 则直接计算大小
+		if !info.IsDir() {
 			// 如果没启用表格输出, 则直接打印结果
 			if *sizeCmdTableStyle == "" {
 				// 根据是否启用颜色打印结果
@@ -121,14 +141,14 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 				})
 				// 打印输出
 				printSizeTable(itemList, cl)
-				continue
 			}
+			continue
 		}
 
 		// 如果是目录, 则递归计算大小
-		size, err := getPathSize(targetPath)
-		if err != nil {
-			cl.PrintErrf("计算目录大小失败: 路径 %s 错误: %v\n", targetPath, err)
+		size, getErr := getPathSize(targetPath)
+		if getErr != nil {
+			cl.PrintErrf("计算目录大小失败: 路径 %s 错误: %v\n", targetPath, getErr)
 			continue
 		}
 
@@ -162,8 +182,15 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 
 // getPathSize 获取路径大小
 func getPathSize(path string) (int64, error) {
+	// 如果是隐藏文件且未启用-H选项，则跳过
+	if !*sizeCmdHidden {
+		if isHidden(path) {
+			return 0, nil
+		}
+	}
+
 	// 获取文件信息
-	info, statErr := os.Stat(path)
+	info, statErr := os.Lstat(path)
 	if statErr != nil {
 		// 检查是否为权限错误
 		if os.IsPermission(statErr) {
@@ -223,7 +250,7 @@ func getPathSize(path string) (int64, error) {
 				}
 
 				mu.Lock()
-				totalSize += fileInfo.Size()
+				totalSize += fileInfo.Size() // 累加文件大小
 				mu.Unlock()
 			}
 		}()
@@ -242,8 +269,20 @@ func getPathSize(path string) (int64, error) {
 			return fmt.Errorf("遍历目录失败: 路径 %s 错误: %v", filePath, err)
 		}
 
-		// 如果是文件或者不是根目录, 则发送到worker处理
-		if !fileInfo.IsDir() || (fileInfo.IsDir() && filePath != path) {
+		// 如果是指定的路径, 则跳过
+		if filePath == path {
+			return nil
+		}
+
+		// 如果是隐藏文件且未启用-H选项，则跳过
+		if !*sizeCmdHidden {
+			if isHidden(filePath) {
+				return nil
+			}
+		}
+
+		// 把文件发送到通道, 由worker处理
+		if !fileInfo.IsDir() {
 			fileChan <- filePath
 		}
 		return nil
