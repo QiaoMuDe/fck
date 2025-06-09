@@ -459,6 +459,7 @@ func getFileInfos(p string) (globals.ListInfos, error) {
 //	  "e" - 空文件
 //	  "?" - 未知类型
 func getEntryType(fileInfo os.FileInfo) string {
+	// 获取文件模式
 	mode := fileInfo.Mode()
 
 	// 检查是否是目录
@@ -498,21 +499,22 @@ func getEntryType(fileInfo os.FileInfo) string {
 			return globals.EmptyType
 		}
 
+		// 检查文件扩展名
+		ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
+		switch ext {
+		case ".exe", ".com", ".bat", ".cmd": // 添加更多Windows可执行文件类型
+			return globals.ExecutableType
+		case ".lnk", ".url": // 添加更多快捷方式类型
+			return globals.SymlinkType
+		}
+
 		// 检查是否是可执行文件
 		if mode&0111 != 0 {
 			return globals.ExecutableType
 		}
 
-		// 检查文件扩展名
-		ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
-		switch ext {
-		case ".exe":
-			return globals.ExecutableType
-		case ".lnk":
-			return globals.SymlinkType
-		default:
-			return globals.FileType
-		}
+		// 默认为普通文件
+		return globals.FileType
 	}
 
 	// 其他类型

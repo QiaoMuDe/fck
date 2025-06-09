@@ -1168,10 +1168,12 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 	// 合并错误并添加统计信息
 	if len(errorMap) > 0 {
 		var combinedErr error
+		var errorList []string
 		for _, err := range errorMap {
 			combinedErr = errors.Join(combinedErr, err)
+			errorList = append(errorList, fmt.Sprintf("\t- %s", err))
 		}
-		return fmt.Errorf("共发现%d类错误(显示前5类): %w", len(errorMap), combinedErr)
+		return fmt.Errorf("共发现%d类错误:\n%s", len(errorMap), strings.Join(errorList, "\n"))
 	}
 
 	return nil
