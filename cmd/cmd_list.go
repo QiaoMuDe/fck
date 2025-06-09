@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
@@ -462,14 +463,14 @@ func getEntryType(fileInfo os.FileInfo) string {
 	// 获取文件模式
 	mode := fileInfo.Mode()
 
-	// 检查是否是目录
-	if mode.IsDir() {
-		return globals.DirType
-	}
-
 	// 检查是否是符号链接
 	if mode&os.ModeSymlink != 0 {
 		return globals.SymlinkType
+	}
+
+	// 检查是否是目录
+	if mode.IsDir() {
+		return globals.DirType
 	}
 
 	// 检查是否是套接字
@@ -482,14 +483,12 @@ func getEntryType(fileInfo os.FileInfo) string {
 		return globals.PipeType
 	}
 
-	// 检查是否是块设备
+	// 块设备和字符设备
 	if mode&os.ModeDevice != 0 {
+		if mode&os.ModeCharDevice != 0 {
+			return globals.CharDeviceType
+		}
 		return globals.BlockDeviceType
-	}
-
-	// 检查是否是字符设备
-	if mode&os.ModeCharDevice != 0 {
-		return globals.CharDeviceType
 	}
 
 	// 检查是否是普通文件
@@ -499,18 +498,22 @@ func getEntryType(fileInfo os.FileInfo) string {
 			return globals.EmptyType
 		}
 
-		// 检查文件扩展名
-		ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
-		switch ext {
-		case ".exe", ".com", ".bat", ".cmd": // 添加更多Windows可执行文件类型
-			return globals.ExecutableType
-		case ".lnk", ".url": // 添加更多快捷方式类型
-			return globals.SymlinkType
-		}
-
-		// 检查是否是可执行文件
-		if mode&0111 != 0 {
-			return globals.ExecutableType
+		// 平台特定的可执行文件判断
+		switch runtime.GOOS {
+		case "windows":
+			// Windows可执行文件扩展名
+			ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
+			switch ext {
+			case ".exe", ".com", ".cmd", ".bat", ".ps1":
+				return globals.ExecutableType
+			case ".lnk", ".url":
+				return globals.SymlinkType
+			}
+		case "linux", "darwin":
+			// Unix-like系统可执行文件判断
+			if mode&0111 != 0 {
+				return globals.ExecutableType
+			}
 		}
 
 		// 默认为普通文件
