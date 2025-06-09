@@ -37,6 +37,13 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		return err
 	}
 
+	// 根据*findCmdColor选项设置颜色
+	if *findCmdColor {
+		cl.NoColor.Store(false)
+	} else {
+		cl.NoColor.Store(true)
+	}
+
 	// 根据标志决定是否启用正则表达式匹配
 	var escapedName, escapedPath, exCludedName, exCludedPath string
 	if *findCmdRegex {
@@ -471,13 +478,8 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 			}
 
 			// 输出完整路径
-			if *findCmdColor {
-				if err := printPathColor(fullPath, cl); err != nil {
-					return fmt.Errorf("输出路径时出错: %s", err)
-				}
-			} else {
-				// 如果没有启用颜色输出, 直接打印路径
-				fmt.Println(fullPath)
+			if err := printPathColor(fullPath, cl); err != nil {
+				return fmt.Errorf("输出路径时出错: %s", err)
 			}
 		}
 
@@ -489,13 +491,8 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 
 	// 如果没有启用count标志, 才输出路径
 	if !*findCmdCount {
-		if *findCmdColor {
-			if err := printPathColor(path, cl); err != nil {
-				return fmt.Errorf("输出路径时出错: %s", err)
-			}
-		} else {
-			// 如果没有启用颜色输出, 直接打印路径
-			fmt.Println(path)
+		if err := printPathColor(path, cl); err != nil {
+			return fmt.Errorf("输出路径时出错: %s", err)
 		}
 	}
 

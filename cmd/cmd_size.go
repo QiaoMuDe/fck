@@ -42,6 +42,13 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		}
 	}
 
+	// 根据*sizeCmdColor设置颜色模式
+	if *sizeCmdColor {
+		cl.NoColor.Store(false)
+	} else {
+		cl.NoColor.Store(true)
+	}
+
 	// 新建一个表格项列表
 	var itemList items
 
@@ -65,7 +72,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 
 			// 计算每个匹配路径的大小
 			for _, filePath := range filePaths {
-				// 如果是隐藏文件且未启用-H选项，则跳过
+				// 如果是隐藏文件且未启用-H选项, 则跳过
 				if !*sizeCmdHidden {
 					if isHidden(filePath) {
 						continue
@@ -80,21 +87,18 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 
 				// 如果没启用表格输出, 则直接打印结果
 				if *sizeCmdTableStyle == "" {
-					if *sizeCmdColor {
-						if err := printStringColor(filePath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size, 2), filePath), cl); err != nil {
-							cl.PrintErrf("输出路径时出错: %s\n", err)
-							continue
-						}
-					} else {
-						fmt.Printf("%-15s\t%s\n", humanReadableSize(size, 2), filePath)
+					if err := printSizeColor(filePath, size, cl); err != nil {
+						cl.PrintErrf("输出路径时出错: %s\n", err)
 						continue
 					}
+					continue
 				} else {
 					// 添加到 items 数组中
 					itemList = append(itemList, item{
 						Name: filePath,
 						Size: humanReadableSize(size, 2),
 					})
+					continue
 				}
 			}
 
@@ -105,7 +109,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			return nil
 		}
 
-		// 如果是隐藏文件且未启用-H选项，则跳过
+		// 如果是隐藏文件且未启用-H选项, 则跳过
 		if !*sizeCmdHidden {
 			if isHidden(targetPath) {
 				continue
@@ -124,15 +128,11 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			// 如果没启用表格输出, 则直接打印结果
 			if *sizeCmdTableStyle == "" {
 				// 根据是否启用颜色打印结果
-				if *sizeCmdColor {
-					if err := printStringColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(info.Size(), 2), targetPath), cl); err != nil {
-						cl.PrintErrf("输出路径时出错: %s\n", err)
-						continue
-					}
-				} else {
-					fmt.Printf("%-15s\t%s\n", humanReadableSize(info.Size(), 2), targetPath)
+				if err := printSizeColor(targetPath, info.Size(), cl); err != nil {
+					cl.PrintErrf("输出路径时出错: %s\n", err)
 					continue
 				}
+				continue
 			} else {
 				// 添加到 items 数组中
 				itemList = append(itemList, item{
@@ -154,16 +154,11 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 
 		// 如果没启用表格输出, 则直接打印结果
 		if *sizeCmdTableStyle == "" {
-			// 根据是否启用颜色打印结果
-			if *sizeCmdColor {
-				if err := printStringColor(targetPath, fmt.Sprintf("%-15s\t%s", humanReadableSize(size, 2), targetPath), cl); err != nil {
-					cl.PrintErrf("输出路径时出错: %s\n", err)
-					continue
-				}
-			} else {
-				fmt.Printf("%-15s\t%s\n", humanReadableSize(size, 2), targetPath)
+			if err := printSizeColor(targetPath, size, cl); err != nil {
+				cl.PrintErrf("输出路径时出错: %s\n", err)
 				continue
 			}
+			continue
 		} else {
 			// 添加到 items 数组中
 			itemList = append(itemList, item{
@@ -428,24 +423,24 @@ func printSizeTable(its items, cl *colorlib.ColorLib) {
 		t.AppendHeader(table.Row{"Size", "Name"})
 	}
 
+	// 遍历items数组, 添加行
 	for i := range its {
 		// 添加行
-		if *sizeCmdColor {
-			colorSize, sizeErr := SprintStringColor(its[i].Name, its[i].Size, cl)
-			if sizeErr != nil {
-				colorSize = its[i].Size
-			}
+		// colorSize, sizeErr := SprintStringColor(its[i].Name, its[i].Size, cl)
+		// if sizeErr != nil {
+		// 	colorSize = its[i].Size
+		// }
 
-			colorName, nameErr := SprintStringColor(its[i].Name, its[i].Name, cl)
-			if nameErr != nil {
-				colorName = its[i].Name
-			}
+		// 大小列使用白色
+		colorSize := cl.Swhite(its[i].Size)
 
-			t.AppendRow(table.Row{colorSize, colorName})
-
-		} else {
-			t.AppendRow(table.Row{its[i].Size, its[i].Name})
+		// 文件名列根据类型着色
+		colorName, nameErr := SprintStringColor(its[i].Name, its[i].Name, cl)
+		if nameErr != nil {
+			colorName = its[i].Name
 		}
+
+		t.AppendRow(table.Row{colorSize, colorName})
 	}
 
 	// 设置列的对齐方式

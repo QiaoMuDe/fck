@@ -267,63 +267,59 @@ var PermissionColorMap = map[int]string{
 // 	}
 // }
 
-// printStringColor 根据路径类型以不同颜色输出字符串
+// printSizeColor 根据路径类型以不同颜色输出字符串
 // 参数:
 //
-//	path: 要检查的路径(用于获取文件类型信息)
-//	s: 要输出的字符串内容
+//	path: 路径或文件名
+//	s: 文件大小
 //	cl: colorlib.ColorLib实例, 用于彩色输出
 //
 // 返回值:
 //
 //	error: 如果获取路径信息失败则返回错误, 否则返回nil
-func printStringColor(path string, s string, cl *colorlib.ColorLib) error {
+func printSizeColor(p string, s int64, cl *colorlib.ColorLib) error {
 	// 获取路径信息
-	pathInfo, statErr := os.Lstat(path)
+	pathInfo, statErr := os.Lstat(p)
 	if statErr != nil {
 		return fmt.Errorf("获取路径信息失败: %v", statErr)
 	}
 
-	// 根据路径类型设置颜色
+	// 第一列固定为白色显示大小
+	sizeStr := cl.Swhite(humanReadableSize(s, 2))
+
+	// 根据路径类型设置第二列颜色
+	var pathStr string
 	switch mode := pathInfo.Mode(); {
 	case mode&os.ModeSymlink != 0:
-		// 符号链接 - 使用青色输出
-		cl.Scyan(s)
-	case runtime.GOOS == "windows" && mode.IsRegular() && filepath.Ext(path) == ".lnk":
-		// Windows下的快捷方式文件 - 使用青色输出
-		cl.Scyan(s)
+		pathStr = cl.Scyan(p) // 符号链接 - 青色
+	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".lnk" || filepath.Ext(p) == ".url"):
+		pathStr = cl.Scyan(p) // Windows快捷方式 - 青色
 	case mode.IsDir():
-		// 目录 - 使用蓝色输出
-		cl.Blue(s)
+		pathStr = cl.Sblue(p) // 目录 - 蓝色
 	case mode&os.ModeDevice != 0:
-		// 设备文件 - 使用黄色输出
-		cl.Yellow(s)
+		pathStr = cl.Syellow(p) // 设备文件 - 黄色
 	case mode&os.ModeNamedPipe != 0:
-		// 命名管道文件 - 使用黄色输出
-		cl.Yellow(s)
+		pathStr = cl.Syellow(p) // 命名管道 - 黄色
 	case mode&os.ModeSocket != 0:
-		// 套接字文件 - 使用黄色输出
-		cl.Yellow(s)
+		pathStr = cl.Syellow(p) // 套接字 - 黄色
 	case mode&os.ModeType == 0 && mode&os.ModeCharDevice != 0:
-		// 字符设备文件 - 使用黄色输出
-		cl.Yellow(s)
+		pathStr = cl.Syellow(p) // 字符设备 - 黄色
 	case mode.IsRegular() && pathInfo.Size() == 0:
-		// 空文件 - 使用灰色输出
-		cl.Gray(s)
+		pathStr = cl.Sgray(p) // 空文件 - 灰色
 	case mode.IsRegular() && mode&0111 != 0:
-		// 可执行文件 - 使用绿色输出
-		cl.Green(s)
-	case runtime.GOOS == "windows" && mode.IsRegular() && filepath.Ext(path) == ".exe":
-		// Windows下的可执行文件 - 使用绿色输出
-		cl.Green(s)
-	case mode.IsRegular():
-		// 普通文件 - 使用白色输出
-		cl.White(s)
+		pathStr = cl.Sgreen(p) // 可执行文件 - 绿色
+	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".exe" || filepath.Ext(p) == ".bat" || filepath.Ext(p) == ".cmd" || filepath.Ext(p) == ".msi" || filepath.Ext(p) == ".ps1" || filepath.Ext(p) == ".psm1"):
+		pathStr = cl.Sgreen(p) // Windows可执行文件 - 绿色
 	default:
-		// 其他类型文件 - 使用白色输出
-		cl.White(s)
+		pathStr = cl.Swhite(p) // 其他文件 - 白色
 	}
 
+	// 格式化输出
+	if *sizeCmdColor {
+		fmt.Printf("%-25s\t%s\n", sizeStr, pathStr)
+	} else {
+		fmt.Printf("%-15s\t%s\n", sizeStr, p)
+	}
 	return nil
 }
 

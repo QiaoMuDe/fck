@@ -41,6 +41,13 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		return nil
 	}
 
+	// 根据*listCmdColor选项启用颜色输出
+	if *listCmdColor {
+		cl.NoColor.Store(false)
+	} else {
+		cl.NoColor.Store(true)
+	}
+
 	// 根据命令行参数排序文件信息切片
 	if *listCmdSortByTime && !*listCmdReverseSort {
 		// -t 为 true, -r 为 true, 则按文件修改时间降序排序
@@ -201,57 +208,57 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 		// 获取文件权限字符串
 		infoPerm := FormatPermissionString(cl, info)
 
-		// 启用颜色输出
-		if *listCmdColor {
-			// 类型
-			infoType := getColorString(info, info.EntryType, cl)
+		// 类型
+		infoType := getColorString(info, info.EntryType, cl)
 
-			// 文件大小 和 单位
-			infoSize, infoSizeUnit := humanSize(info.Size)
+		// 文件大小 和 单位
+		infoSize, infoSizeUnit := humanSize(info.Size)
 
-			// 渲染文件大小
-			infoSize = cl.Syellow(infoSize)
+		// 渲染文件大小
+		infoSize = cl.Syellow(infoSize)
 
-			// 渲染文件大小单位
-			infoSizeUnit = cl.Syellow(infoSizeUnit)
+		// 渲染文件大小单位
+		infoSizeUnit = cl.Syellow(infoSizeUnit)
 
-			// 修改时间
-			infoModTime := cl.Sgreen(info.ModTime.Format("2006-01-02 15:04:05"))
+		// 修改时间
+		infoModTime := cl.Sgreen(info.ModTime.Format("2006-01-02 15:04:05"))
 
-			// 文件名
-			var infoName string
-			// 检查是否启用引号
-			if *listCmdQuoteNames {
-				infoName = getColorString(info, fmt.Sprintf("%q", info.Name), cl)
-			} else {
-				infoName = getColorString(info, info.Name, cl)
-			}
-
-			// 添加行到表格
-			if *listCmdShowUserGroup {
-				t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName})
-			} else {
-				t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName})
-			}
+		// 文件名
+		var infoName string
+		// 检查是否启用引号
+		if *listCmdQuoteNames {
+			infoName = getColorString(info, fmt.Sprintf("%q", info.Name), cl)
 		} else {
-			// 不启用颜色输出 (默认)
-			infoSize, infoSizeUnit := humanSize(info.Size)
-			if *listCmdShowUserGroup {
-				// 判断是否启用引号
-				if *listCmdQuoteNames {
-					t.AppendRow(table.Row{info.EntryType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), fmt.Sprintf("%q", info.Name)})
-				} else {
-					t.AppendRow(table.Row{info.EntryType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), info.Name})
-				}
-			} else {
-				// 判断是否启用引号
-				if *listCmdQuoteNames {
-					t.AppendRow(table.Row{info.EntryType, infoPerm, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), fmt.Sprintf("%q", info.Name)})
-				} else {
-					t.AppendRow(table.Row{info.EntryType, infoPerm, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), info.Name})
-				}
-			}
+			infoName = getColorString(info, info.Name, cl)
 		}
+
+		// 添加行到表格
+		if *listCmdShowUserGroup {
+			t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName})
+		} else {
+			t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName})
+		}
+
+		// 	} else {
+		// 		// 不启用颜色输出 (默认)
+		// 		infoSize, infoSizeUnit := humanSize(info.Size)
+		// 		if *listCmdShowUserGroup {
+		// 			// 判断是否启用引号
+		// 			if *listCmdQuoteNames {
+		// 				t.AppendRow(table.Row{info.EntryType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), fmt.Sprintf("%q", info.Name)})
+		// 			} else {
+		// 				t.AppendRow(table.Row{info.EntryType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), info.Name})
+		// 			}
+		// 		} else {
+		// 			// 判断是否启用引号
+		// 			if *listCmdQuoteNames {
+		// 				t.AppendRow(table.Row{info.EntryType, infoPerm, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), fmt.Sprintf("%q", info.Name)})
+		// 			} else {
+		// 				t.AppendRow(table.Row{info.EntryType, infoPerm, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), info.Name})
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 
 	// 设置列的对齐方式
@@ -297,7 +304,7 @@ func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (forma
 			}
 		}
 	} else {
-		// 如果不启用颜色输出，直接返回权限字符串（后9位）
+		// 如果不启用颜色输出, 直接返回权限字符串(后9位)
 		formattedPerm = info.Perm[1:]
 	}
 
