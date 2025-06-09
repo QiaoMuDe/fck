@@ -152,40 +152,9 @@ def run_go_mod_tidy(go_compiler, use_vendor):
         sys.exit(1)
 
 
-def which(cmd):
-    """检查命令是否在PATH环境变量中"""
-    for path in os.environ["PATH"].split(os.pathsep):
-        full_path = os.path.join(path, cmd)
-        if os.path.exists(full_path):
-            return full_path
-    return None
-
-
 def run_code_check(go_compiler):
-    """执行代码检查, 优先使用golangci-lint.exe, 如果找不到则使用go vet"""
-    # 检查golangci-lint是否在PATH中
-    golangci_path = which("golangci-lint.exe")
-    if golangci_path:
-        try:
-            print_success("正在使用golangci-lint检查代码...")
-            subprocess.run(
-                ["golangci-lint.exe", "run", "./..."],
-                capture_output=True,
-                text=True,
-                check=True,
-                encoding="utf-8",
-            )
-            return
-        except subprocess.CalledProcessError as e:
-            print_error("golangci-lint检查失败：")
-            print_error(e.stderr.strip())
-            sys.exit(1)
-    else:
-        print_success("未找到golangci-lint.exe, 将使用go vet检查")
-
-    # 回退到go vet检查
-    command = [go_compiler, "vet"]
-    command.append("./...")
+    """执行代码检查, 使用go vet"""
+    command = [go_compiler, "vet", "./..."]
     try:
         print_success("正在执行 go vet 检查代码...")
         subprocess.run(
