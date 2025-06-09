@@ -504,7 +504,7 @@ func getEntryType(fileInfo os.FileInfo) string {
 			// Windows可执行文件扩展名
 			ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
 			switch ext {
-			case ".exe", ".com", ".cmd", ".bat", ".ps1":
+			case ".exe", ".com", ".cmd", ".bat", ".ps1", ".psm1":
 				return globals.ExecutableType
 			case ".lnk", ".url":
 				return globals.SymlinkType
