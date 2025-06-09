@@ -409,6 +409,16 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 		} else {
 			cl.Cyan(path) // 如果没有目录分割符，则直接输出文件名
 		}
+	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(path) == ".lnk" || filepath.Ext(path) == ".url"):
+		// Windows快捷方式 - 使用青色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+			fmt.Println(cl.Scyan(dir) + cl.Scyan(file))
+		} else {
+			cl.Cyan(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	case mode.IsDir():
 		// 目录 - 使用蓝色输出
 		// 检查是否包含目录分割符
@@ -421,6 +431,16 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 		}
 	case mode&os.ModeDevice != 0:
 		// 设备文件 - 使用黄色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
+		} else {
+			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
+		}
+	case mode&os.ModeCharDevice != 0:
+		// 字符设备文件 - 使用黄色输出
 		// 检查是否包含目录分割符
 		if strings.Contains(path, string(os.PathSeparator)) {
 			// 把路径分割成目录和文件名
@@ -459,6 +479,16 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 		} else {
 			cl.Green(path) // 如果没有目录分割符，则直接输出文件名
 		}
+	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(path) == ".exe" || filepath.Ext(path) == ".bat" || filepath.Ext(path) == ".cmd" || filepath.Ext(path) == ".msi" || filepath.Ext(path) == ".ps1" || filepath.Ext(path) == ".psm1"):
+		// Windows可执行文件 - 使用绿色输出
+		// 检查是否包含目录分割符
+		if strings.Contains(path, string(os.PathSeparator)) {
+			// 把路径分割成目录和文件名
+			dir, file := filepath.Split(path)
+			fmt.Println(cl.Scyan(dir) + cl.Sgreen(file))
+		} else {
+			cl.Green(path) // 如果没有目录分割符，则直接输出文件名
+		}
 	case pathInfo.Size() == 0:
 		// 空文件 - 使用灰色输出
 		// 检查是否包含目录分割符
@@ -470,7 +500,7 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 			cl.Gray(path) // 如果没有目录分割符，则直接输出文件名
 		}
 	case mode.IsRegular():
-		// 普通文件 - 用于根据文件名的后缀输出
+		// 普通文件 - 使用白色输出
 		// printColoredFile(path, cl)
 		// 检查是否包含目录分割符
 		if strings.Contains(path, string(os.PathSeparator)) {
