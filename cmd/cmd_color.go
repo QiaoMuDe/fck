@@ -24,38 +24,6 @@ var PermissionColorMap = map[int]string{
 	9: "red",    // 其他-执行-红色
 }
 
-// 定义文件类型到颜色的映射
-var fileTypeColorMap = map[string]int{
-	globals.SymlinkType:     colorlib.Cyan,
-	globals.DirType:         colorlib.Blue,
-	globals.ExecutableType:  colorlib.Green,
-	globals.SocketType:      colorlib.Yellow,
-	globals.PipeType:        colorlib.Yellow,
-	globals.BlockDeviceType: colorlib.Yellow,
-	globals.CharDeviceType:  colorlib.Yellow,
-	globals.EmptyType:       colorlib.Gray,
-	globals.FileType:        colorlib.White,
-}
-
-// 定义 Windows 和 MacOS 特殊文件类型映射
-var windowsFileColorMap = map[string]int{
-	"exe":  colorlib.Green,
-	"bat":  colorlib.Green,
-	"cmd":  colorlib.Green,
-	"ps1":  colorlib.Green,
-	"psm1": colorlib.Green,
-	"msi":  colorlib.Green,
-	"lnk":  colorlib.Cyan,
-	"url":  colorlib.Cyan,
-}
-
-var macosFileColorMap = map[string]int{
-	".DS_Store":  colorlib.Gray,
-	".localized": colorlib.Gray,
-	"._":         colorlib.Gray,
-	".app":       colorlib.Green,
-}
-
 // splitPathColor 函数用于根据路径类型以不同颜色返回字符串
 func splitPathColor(p string, cl *colorlib.ColorLib, dirCode int, fileCode int) string {
 	// 获取路径的目录和文件名
@@ -290,7 +258,7 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) str
 		// 对于 Linux 系统下的普通文件，使用白色来渲染字符串
 		return cl.Swhite(pF)
 	default:
-		// 对于未匹配的类型，使用灰色来渲染字符串
-		return cl.Sgray(pF)
+		// 对于未匹配的类型，使用白色来渲染字符串
+		return cl.Swhite(pF)
 	}
 }
