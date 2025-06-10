@@ -87,10 +87,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 
 				// 如果没启用表格输出, 则直接打印结果
 				if *sizeCmdTableStyle == "" {
-					if err := printSizeColor(filePath, size, cl); err != nil {
-						cl.PrintErrf("输出路径时出错: %s\n", err)
-						continue
-					}
+					printSizeColor(filePath, size, cl)
 					continue
 				} else {
 					// 添加到 items 数组中
@@ -128,10 +125,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			// 如果没启用表格输出, 则直接打印结果
 			if *sizeCmdTableStyle == "" {
 				// 根据是否启用颜色打印结果
-				if err := printSizeColor(targetPath, info.Size(), cl); err != nil {
-					cl.PrintErrf("输出路径时出错: %s\n", err)
-					continue
-				}
+				printSizeColor(targetPath, info.Size(), cl)
 				continue
 			} else {
 				// 添加到 items 数组中
@@ -154,10 +148,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 
 		// 如果没启用表格输出, 则直接打印结果
 		if *sizeCmdTableStyle == "" {
-			if err := printSizeColor(targetPath, size, cl); err != nil {
-				cl.PrintErrf("输出路径时出错: %s\n", err)
-				continue
-			}
+			printSizeColor(targetPath, size, cl)
 			continue
 		} else {
 			// 添加到 items 数组中
@@ -435,11 +426,9 @@ func printSizeTable(its items, cl *colorlib.ColorLib) {
 		colorSize := cl.Swhite(its[i].Size)
 
 		// 文件名列根据类型着色
-		colorName, nameErr := SprintStringColor(its[i].Name, its[i].Name, cl)
-		if nameErr != nil {
-			colorName = its[i].Name
-		}
+		colorName := SprintStringColor(its[i].Name, its[i].Name, cl)
 
+		// 添加行
 		t.AppendRow(table.Row{colorSize, colorName})
 	}
 

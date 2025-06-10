@@ -478,9 +478,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 			}
 
 			// 输出完整路径
-			if err := printPathColor(fullPath, cl); err != nil {
-				return fmt.Errorf("输出路径时出错: %s", err)
-			}
+			printPathColor(fullPath, cl)
 		}
 
 		return nil
@@ -489,11 +487,9 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 	// 输出匹配的路径
 	matchCount.Add(1) // 增加匹配计数
 
-	// 如果没有启用count标志, 才输出路径
+	// 如果没有启用count标志, 才输出匹配路径
 	if !*findCmdCount {
-		if err := printPathColor(path, cl); err != nil {
-			return fmt.Errorf("输出路径时出错: %s", err)
-		}
+		printPathColor(path, cl)
 	}
 
 	return nil
