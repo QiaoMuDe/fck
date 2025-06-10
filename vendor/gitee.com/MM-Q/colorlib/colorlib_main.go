@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// GetCL 是一个线程安全用于获取全局 ColorLib 实例的函数
+// GetCL 是一个线程安全用于获取全局唯一的 ColorLib 实例的函数
 func GetCL() *ColorLib {
 	once.Do(func() {
 		CL = NewColorLib()
@@ -28,11 +28,11 @@ func NewColorLib() *ColorLib {
 		},
 	}
 
-	// 初始化是否加粗
-	cl.NoBold.Store(false)
-
 	// 初始化是否禁用颜色
 	cl.NoColor.Store(false)
+
+	// 初始化是否禁用加粗
+	cl.NoBold.Store(false)
 
 	// 初始化是否下划线
 	cl.Underline.Store(false)
@@ -77,13 +77,13 @@ func (c *ColorLib) printWithColor(color string, msg ...any) {
 
 	// 构建ANSI控制序列
 	var ansiCodes []string
-	if !c.NoBold.Load() {
+	if !c.NoBold.Load() { // 检查是否加粗
 		ansiCodes = append(ansiCodes, "1")
 	}
-	if c.Underline.Load() {
+	if c.Underline.Load() { // 检查是否下划线
 		ansiCodes = append(ansiCodes, "4")
 	}
-	if c.Blink.Load() {
+	if c.Blink.Load() { // 检查是否闪烁
 		ansiCodes = append(ansiCodes, "5")
 	}
 

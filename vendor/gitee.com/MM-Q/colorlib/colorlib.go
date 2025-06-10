@@ -178,4 +178,10 @@ type ColorLibInterface interface {
 	PrintInff(format string, a ...any)  // 打印信息到控制台（带占位符）
 	PrintDbgf(format string, a ...any)  // 打印调试信息到控制台（带占位符）
 	PrintWarnf(format string, a ...any) // 打印警告信息到控制台（带占位符）
+
+	// 新增通用颜色方法
+	PrintColorf(code int, format string, a ...any)    // 打印通用颜色信息到控制台（带占位符）
+	PrintColor(code int, msg ...any)                  // 打印通用颜色信息到控制台, 无需占位符
+	Scolorf(code int, format string, a ...any) string // 返回构造后的通用颜色字符串（带占位符）
+	Scolor(code int, msg ...any) string               // 返回构造后的通用颜色字符串, 无需占位符
 }

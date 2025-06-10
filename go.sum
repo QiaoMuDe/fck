@@ -1,7 +1,7 @@
-gitee.com/MM-Q/colorlib v1.2.0 h1:T3+P9g3G+D6ukDWEUtlkTzdbSxYXfEYea+rB2AHsp2Q=
-gitee.com/MM-Q/colorlib v1.2.0/go.mod h1:k7AxDD3mOIFVdGRqLqz3jYOGRC2vV7QVjnZWpt/J3Ds=
-gitee.com/MM-Q/verman v0.0.12 h1:XhtTO6QHnOwbDuL6pzR84GG7CswyLNCRCqY3J+8VAVQ=
-gitee.com/MM-Q/verman v0.0.12/go.mod h1:sJaGRO3zat1r9e6qu8mcwlJDI5IvFBFBG5NqgCwa6m0=
+gitee.com/MM-Q/colorlib v1.2.3 h1:BfhOdsmUBC703YOJvFsMcHU8Pi7zYGWTCz5Qzt4tKb8=
+gitee.com/MM-Q/colorlib v1.2.3/go.mod h1:k7AxDD3mOIFVdGRqLqz3jYOGRC2vV7QVjnZWpt/J3Ds=
+gitee.com/MM-Q/verman v0.0.14 h1:8lgKxKN7ttMYNwPUQH/PkDVXNMPy7Gtpv3vMljizdEg=
+gitee.com/MM-Q/verman v0.0.14/go.mod h1:sJaGRO3zat1r9e6qu8mcwlJDI5IvFBFBG5NqgCwa6m0=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/jedib0t/go-pretty/v6 v6.6.7 h1:m+LbHpm0aIAPLzLbMfn8dc3Ht8MW7lsSO4MPItz/Uuo=

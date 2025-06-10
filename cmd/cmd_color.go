@@ -24,6 +24,47 @@ var PermissionColorMap = map[int]string{
 	9: "red",    // 其他-执行-红色
 }
 
+// 定义文件类型到颜色的映射
+var fileTypeColorMap = map[string]string{
+	globals.SymlinkType:     "cyan",
+	globals.DirType:         "blue",
+	globals.ExecutableType:  "green",
+	globals.SocketType:      "yellow",
+	globals.PipeType:        "yellow",
+	globals.BlockDeviceType: "yellow",
+	globals.CharDeviceType:  "yellow",
+	globals.EmptyType:       "gray",
+	globals.FileType:        "white",
+}
+
+// 定义 Windows 和 MacOS 特殊文件类型映射
+var windowsFileColorMap = map[string]string{
+	"exe":  "green",
+	"bat":  "green",
+	"cmd":  "green",
+	"ps1":  "green",
+	"psm1": "green",
+	"msi":  "green",
+	"lnk":  "cyan",
+	"url":  "cyan",
+}
+
+var macosFileColorMap = map[string]string{
+	".DS_Store":  "gray",
+	".localized": "gray",
+	"._":         "gray",
+	".app":       "green",
+}
+
+// splitPath 分割路径为目录和文件名
+func splitPath(path string) (dir, file string) {
+	dir, file = filepath.Split(path)
+	if dir == "" {
+		dir = "."
+	}
+	return dir, file
+}
+
 // printSizeColor 根据路径类型以不同颜色输出字符串
 // 参数:
 //
@@ -322,6 +363,17 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) (co
 				colorString = cl.Swhite(pF)
 			}
 			return colorString
+		}
+
+		// 添加MacOS特殊文件处理
+		if runtime.GOOS == "darwin" {
+			base := filepath.Base(pF)
+			switch {
+			case base == ".DS_Store" || base == ".localized" || strings.HasPrefix(base, "._"):
+				return cl.Sgray(pF) // MacOS系统文件使用灰色
+			case filepath.Ext(pF) == ".app":
+				return cl.Sgreen(pF) // MacOS应用程序包使用绿色
+			}
 		}
 
 		// 对于 Linux 系统下的普通文件，使用白色来渲染字符串
