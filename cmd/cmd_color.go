@@ -25,44 +25,49 @@ var PermissionColorMap = map[int]string{
 }
 
 // 定义文件类型到颜色的映射
-var fileTypeColorMap = map[string]string{
-	globals.SymlinkType:     "cyan",
-	globals.DirType:         "blue",
-	globals.ExecutableType:  "green",
-	globals.SocketType:      "yellow",
-	globals.PipeType:        "yellow",
-	globals.BlockDeviceType: "yellow",
-	globals.CharDeviceType:  "yellow",
-	globals.EmptyType:       "gray",
-	globals.FileType:        "white",
+var fileTypeColorMap = map[string]int{
+	globals.SymlinkType:     colorlib.Cyan,
+	globals.DirType:         colorlib.Blue,
+	globals.ExecutableType:  colorlib.Green,
+	globals.SocketType:      colorlib.Yellow,
+	globals.PipeType:        colorlib.Yellow,
+	globals.BlockDeviceType: colorlib.Yellow,
+	globals.CharDeviceType:  colorlib.Yellow,
+	globals.EmptyType:       colorlib.Gray,
+	globals.FileType:        colorlib.White,
 }
 
 // 定义 Windows 和 MacOS 特殊文件类型映射
-var windowsFileColorMap = map[string]string{
-	"exe":  "green",
-	"bat":  "green",
-	"cmd":  "green",
-	"ps1":  "green",
-	"psm1": "green",
-	"msi":  "green",
-	"lnk":  "cyan",
-	"url":  "cyan",
+var windowsFileColorMap = map[string]int{
+	"exe":  colorlib.Green,
+	"bat":  colorlib.Green,
+	"cmd":  colorlib.Green,
+	"ps1":  colorlib.Green,
+	"psm1": colorlib.Green,
+	"msi":  colorlib.Green,
+	"lnk":  colorlib.Cyan,
+	"url":  colorlib.Cyan,
 }
 
-var macosFileColorMap = map[string]string{
-	".DS_Store":  "gray",
-	".localized": "gray",
-	"._":         "gray",
-	".app":       "green",
+var macosFileColorMap = map[string]int{
+	".DS_Store":  colorlib.Gray,
+	".localized": colorlib.Gray,
+	"._":         colorlib.Gray,
+	".app":       colorlib.Green,
 }
 
-// splitPath 分割路径为目录和文件名
-func splitPath(path string) (dir, file string) {
-	dir, file = filepath.Split(path)
+// splitPathColor 函数用于根据路径类型以不同颜色返回字符串
+func splitPathColor(p string, cl *colorlib.ColorLib, dirCode int, fileCode int) string {
+	// 获取路径的目录和文件名
+	dir, file := filepath.Split(p)
+
+	// 如果目录为空，则返回文件名
 	if dir == "" {
-		dir = "."
+		return fmt.Sprint(cl.SColor(fileCode, file))
 	}
-	return dir, file
+
+	// 设置渐进式颜色
+	return fmt.Sprint(cl.SColor(dirCode, dir), cl.SColor(fileCode, file))
 }
 
 // printSizeColor 根据路径类型以不同颜色输出字符串
@@ -75,41 +80,46 @@ func splitPath(path string) (dir, file string) {
 // 返回值:
 //
 //	error: 如果获取路径信息失败则返回错误, 否则返回nil
-func printSizeColor(p string, s int64, cl *colorlib.ColorLib) error {
+func printSizeColor(p string, s int64, cl *colorlib.ColorLib) {
+	// 第一列固定为白色显示大小
+	sizeStr := cl.Swhite(humanReadableSize(s, 2))
+
 	// 获取路径信息
 	pathInfo, statErr := os.Lstat(p)
 	if statErr != nil {
-		return fmt.Errorf("获取路径信息失败: %v", statErr)
+		if *sizeCmdColor {
+			fmt.Printf("%-25s\t%s\n", sizeStr, cl.Sred(p))
+		} else {
+			fmt.Printf("%-15s\t%s\n", sizeStr, p)
+		}
+		return
 	}
-
-	// 第一列固定为白色显示大小
-	sizeStr := cl.Swhite(humanReadableSize(s, 2))
 
 	// 根据路径类型设置第二列颜色
 	var pathStr string
 	switch mode := pathInfo.Mode(); {
-	case mode&os.ModeSymlink != 0:
-		pathStr = cl.Scyan(p) // 符号链接 - 青色
-	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".lnk" || filepath.Ext(p) == ".url"):
-		pathStr = cl.Scyan(p) // Windows快捷方式 - 青色
-	case mode.IsDir():
-		pathStr = cl.Sblue(p) // 目录 - 蓝色
-	case mode&os.ModeDevice != 0:
-		pathStr = cl.Syellow(p) // 设备文件 - 黄色
-	case mode&os.ModeNamedPipe != 0:
-		pathStr = cl.Syellow(p) // 命名管道 - 黄色
-	case mode&os.ModeSocket != 0:
-		pathStr = cl.Syellow(p) // 套接字 - 黄色
-	case mode&os.ModeType == 0 && mode&os.ModeCharDevice != 0:
-		pathStr = cl.Syellow(p) // 字符设备 - 黄色
-	case mode.IsRegular() && pathInfo.Size() == 0:
-		pathStr = cl.Sgray(p) // 空文件 - 灰色
-	case mode.IsRegular() && mode&0111 != 0:
-		pathStr = cl.Sgreen(p) // 可执行文件 - 绿色
-	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".exe" || filepath.Ext(p) == ".bat" || filepath.Ext(p) == ".cmd" || filepath.Ext(p) == ".msi" || filepath.Ext(p) == ".ps1" || filepath.Ext(p) == ".psm1"):
-		pathStr = cl.Sgreen(p) // Windows可执行文件 - 绿色
-	default:
-		pathStr = cl.Swhite(p) // 其他文件 - 白色
+	case mode&os.ModeSymlink != 0: // 符号链接 - 青色
+		pathStr = cl.Scyan(p)
+	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".lnk" || filepath.Ext(p) == ".url"): // Windows快捷方式 - 青色
+		pathStr = cl.Scyan(p)
+	case mode.IsDir(): // 目录 - 蓝色
+		pathStr = cl.Sblue(p)
+	case mode&os.ModeDevice != 0: // 设备文件 - 黄色
+		pathStr = cl.Syellow(p)
+	case mode&os.ModeNamedPipe != 0: // 命名管道 - 黄色
+		pathStr = cl.Syellow(p)
+	case mode&os.ModeSocket != 0: // 套接字 - 黄色
+		pathStr = cl.Syellow(p)
+	case mode&os.ModeType == 0 && mode&os.ModeCharDevice != 0: // 字符设备 - 黄色
+		pathStr = cl.Syellow(p)
+	case mode.IsRegular() && pathInfo.Size() == 0: // 空文件 - 灰色
+		pathStr = cl.Sgray(p)
+	case mode.IsRegular() && mode&0111 != 0: // 可执行文件 - 绿色
+		pathStr = cl.Sgreen(p)
+	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".exe" || filepath.Ext(p) == ".bat" || filepath.Ext(p) == ".cmd" || filepath.Ext(p) == ".msi" || filepath.Ext(p) == ".ps1" || filepath.Ext(p) == ".psm1"): // Windows可执行文件 - 绿色
+		pathStr = cl.Sgreen(p)
+	default: // 其他文件 - 白色
+		pathStr = cl.Swhite(p)
 	}
 
 	// 格式化输出
@@ -118,7 +128,6 @@ func printSizeColor(p string, s int64, cl *colorlib.ColorLib) error {
 	} else {
 		fmt.Printf("%-15s\t%s\n", sizeStr, p)
 	}
-	return nil
 }
 
 // SPrintStringColor 根据路径类型以不同颜色输出字符串
@@ -199,125 +208,40 @@ func printPathColor(path string, cl *colorlib.ColorLib) error {
 	switch mode := pathInfo.Mode(); {
 	case mode&os.ModeSymlink != 0:
 		// 符号链接 - 使用青色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Scyan(file))
-		} else {
-			cl.Cyan(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Cyan))
 	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(path) == ".lnk" || filepath.Ext(path) == ".url"):
 		// Windows快捷方式 - 使用青色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Scyan(file))
-		} else {
-			cl.Cyan(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Cyan))
 	case mode.IsDir():
 		// 目录 - 使用蓝色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Sblue(file))
-		} else {
-			cl.Blue(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Blue))
 	case mode&os.ModeDevice != 0:
 		// 设备文件 - 使用黄色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
-		} else {
-			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Yellow))
 	case mode&os.ModeCharDevice != 0:
 		// 字符设备文件 - 使用黄色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
-		} else {
-			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Yellow))
 	case mode&os.ModeNamedPipe != 0:
 		// 命名管道 - 使用黄色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
-		} else {
-			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Yellow))
 	case mode&os.ModeSocket != 0:
 		// 套接字文件 - 使用黄色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Syellow(file))
-		} else {
-			cl.Yellow(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Yellow))
 	case mode&os.ModeType == 0 && mode&0111 != 0:
 		// 可执行文件 - 使用绿色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Sgreen(file))
-		} else {
-			cl.Green(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Green))
 	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(path) == ".exe" || filepath.Ext(path) == ".bat" || filepath.Ext(path) == ".cmd" || filepath.Ext(path) == ".msi" || filepath.Ext(path) == ".ps1" || filepath.Ext(path) == ".psm1"):
 		// Windows可执行文件 - 使用绿色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Sgreen(file))
-		} else {
-			cl.Green(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Green))
 	case pathInfo.Size() == 0:
 		// 空文件 - 使用灰色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Sgray(file))
-		} else {
-			cl.Gray(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Gray))
 	case mode.IsRegular():
 		// 普通文件 - 使用白色输出
-		// printColoredFile(path, cl)
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Swhite(file))
-		} else {
-			cl.White(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.White))
 	default:
 		// 其他类型文件 - 使用白色输出
-		// 检查是否包含目录分割符
-		if strings.Contains(path, string(os.PathSeparator)) {
-			// 把路径分割成目录和文件名
-			dir, file := filepath.Split(path)
-			fmt.Println(cl.Scyan(dir) + cl.Swhite(file))
-		} else {
-			cl.White(path) // 如果没有目录分割符，则直接输出文件名
-		}
+		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.White))
 	}
 
 	return nil
