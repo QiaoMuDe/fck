@@ -227,9 +227,19 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 		var infoName string
 		// 检查是否启用引号
 		if *listCmdQuoteNames {
-			infoName = getColorString(info, fmt.Sprintf("%q", info.Name), cl)
+			// 检查是否为软链接
+			if info.EntryType == globals.SymlinkType {
+				infoName = getColorString(info, fmt.Sprintf("%q -> %q", info.Name, info.LinkTargetPath), cl)
+			} else {
+				infoName = getColorString(info, fmt.Sprintf("%q", info.Name), cl)
+			}
 		} else {
-			infoName = getColorString(info, info.Name, cl)
+			// 检查是否为软链接
+			if info.EntryType == globals.SymlinkType {
+				infoName = getColorString(info, fmt.Sprintf("%s -> %s", info.Name, info.LinkTargetPath), cl)
+			} else {
+				infoName = getColorString(info, info.Name, cl)
+			}
 		}
 
 		// 添加行到表格
@@ -238,27 +248,6 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 		} else {
 			t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName})
 		}
-
-		// 	} else {
-		// 		// 不启用颜色输出 (默认)
-		// 		infoSize, infoSizeUnit := humanSize(info.Size)
-		// 		if *listCmdShowUserGroup {
-		// 			// 判断是否启用引号
-		// 			if *listCmdQuoteNames {
-		// 				t.AppendRow(table.Row{info.EntryType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), fmt.Sprintf("%q", info.Name)})
-		// 			} else {
-		// 				t.AppendRow(table.Row{info.EntryType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), info.Name})
-		// 			}
-		// 		} else {
-		// 			// 判断是否启用引号
-		// 			if *listCmdQuoteNames {
-		// 				t.AppendRow(table.Row{info.EntryType, infoPerm, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), fmt.Sprintf("%q", info.Name)})
-		// 			} else {
-		// 				t.AppendRow(table.Row{info.EntryType, infoPerm, infoSize, infoSizeUnit, info.ModTime.Format("2006-01-02 15:04:05"), info.Name})
-		// 			}
-		// 		}
-		// 	}
-		// }
 	}
 
 	// 设置列的对齐方式
@@ -645,6 +634,17 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string) globals.ListInfo {
 		fileExt = filepath.Ext(baseName)
 	}
 
+	// 检查是否为符号链接，如果是，则获取符号链接指向的目标文件的信息
+	var linkTargetPath string
+	var linkGetErr error
+	if entryType == globals.SymlinkType {
+		// 获取符号链接指向的目标文件的绝对路径
+		linkTargetPath, linkGetErr = os.Readlink(absPath)
+		if linkGetErr != nil {
+			linkTargetPath = "?"
+		}
+	}
+
 	// 构建并返回一个 globals.ListInfo 结构体实例，将前面获取到的文件信息填充到结构体中
 	return globals.ListInfo{
 		// 文件的条目类型，如 'd' 表示目录，'f' 表示普通文件等
@@ -663,6 +663,8 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string) globals.ListInfo {
 		Group: g,
 		// 文件的扩展名，如果没有则为空字符串
 		FileExt: fileExt,
+		// 符号链接指向的目标文件的绝对路径，如果不是符号链接则为空字符串
+		LinkTargetPath: linkTargetPath,
 	}
 }
 

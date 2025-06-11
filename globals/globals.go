@@ -130,6 +130,9 @@ type ListInfo struct {
 
 	// 扩展名 - 扩展名
 	FileExt string
+
+	// 如果是软链接，则指向的文件路径，否则为空字符串
+	LinkTargetPath string
 }
 
 // list子命令用于存储文件信息的结构体切片
