@@ -50,13 +50,14 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 
 		// 如果路径模式没有匹配任何文件，则打印错误信息
 		if len(matches) == 0 {
-			cl.PrintErrf("路径 %q 不存在或没有匹配项\n", path)
+			cl.PrintWarnf("该路径下为空或不是一个有效路径: %s\n", path)
 			continue
 		}
 
 		// 过滤掉应该跳过的文件
 		for _, match := range matches {
-			if !isHidden(match) {
+			// 如果 -a=true ，则显示所有文件，包括隐藏文件, 如果 -a=false ，则仅显示非隐藏文件
+			if *listCmdAll || !isHidden(match) {
 				expandedPaths = append(expandedPaths, match)
 			}
 		}
@@ -103,9 +104,19 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 				infos.SortByFileNameDesc()
 			}
 
-			// 只在处理多个项目时显示目录路径
+			// 只在处理多个项目时打印目录路径
 			if len(uniquePaths) > 1 {
-				cl.Bluef("%s: \n", path)
+				if *listCmdLongFormat {
+					// 获取绝对路径
+					absPath, absErr := filepath.Abs(path)
+					if absErr != nil {
+						absPath = path
+					}
+					cl.Bluef("%s: \n", absPath)
+				} else {
+					// 打印目录名
+					cl.Bluef("%s: \n", filepath.Base(path))
+				}
 			}
 
 			// 处理目录，单独生成表格
@@ -130,8 +141,8 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 
 	// 处理所有文件
 	if len(fileInfos) > 0 {
-		// 打印标题
-		cl.Blue("Files:")
+		// 打印文件组标题
+		cl.Green("Files List:")
 
 		// 根据命令行参数排序文件信息切片
 		if *listCmdSortByTime && !*listCmdReverseSort {

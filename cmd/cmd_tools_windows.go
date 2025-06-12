@@ -15,12 +15,15 @@ func isHidden(path string) bool {
 		return false
 	}
 
-	name := filepath.Base(path)
-	if len(name) > 2 && name[0] == '.' {
+	// 优先检查Windows隐藏属性
+	if isHiddenWindows(path) {
 		return true
 	}
 
-	return isHiddenWindows(path)
+	// 其次检查Unix风格的点文件
+	// 检查Unix风格的点文件(排除特殊目录)
+	name := filepath.Base(path)
+	return len(name) > 0 && name[0] == '.' && name != "." && name != ".."
 }
 
 // isDriveRoot 检查路径是否是盘符根目录

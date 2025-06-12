@@ -14,8 +14,9 @@ import (
 
 // isHidden 判断Unix文件或目录是否为隐藏
 func isHidden(path string) bool {
+	// 检查Unix风格的点文件(排除特殊目录)
 	name := filepath.Base(path)
-	return len(name) > 2 && name[0] == '.'
+	return len(name) > 0 && name[0] == '.' && name != "." && name != ".."
 }
 
 // isReadOnly 判断Unix文件或目录是否为只读
