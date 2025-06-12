@@ -27,6 +27,18 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		paths = []string{"."}
 	}
 
+	// 检查list命令的参数是否合法
+	if err := checkListCmdArgs(); err != nil {
+		return err
+	}
+
+	// 根据*listCmdColor选项启用颜色输出
+	if *listCmdColor {
+		cl.NoColor.Store(false)
+	} else {
+		cl.NoColor.Store(true)
+	}
+
 	// 展开通配符并收集所有路径
 	var expandedPaths []string
 	for _, path := range paths {
@@ -35,11 +47,23 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 			cl.PrintErrf("路径模式错误 %q: %v\n", path, err)
 			continue
 		}
+		// 如果路径模式没有匹配任何文件，则打印错误信息
 		if len(matches) == 0 {
 			cl.PrintErrf("路径 %q 不存在或没有匹配项\n", path)
 			continue
 		}
-		expandedPaths = append(expandedPaths, matches...)
+
+		// 过滤掉应该跳过的文件
+		for _, match := range matches {
+			fileInfo, err := os.Lstat(match)
+			if err != nil {
+				cl.PrintErrf("获取路径信息失败 %q: %v\n", match, err)
+				continue
+			}
+			if !shouldSkipFile(match, fileInfo.IsDir(), fileInfo, false) {
+				expandedPaths = append(expandedPaths, match)
+			}
+		}
 	}
 
 	// 去重路径
@@ -52,65 +76,86 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		}
 	}
 
-	// 检查list命令的参数是否合法
-	if err := checkListCmdArgs(); err != nil {
-		return err
-	}
-
-	// 获取所有文件信息并合并
-	var listInfos globals.ListInfos
+	// 分离处理文件和目录
+	var fileInfos globals.ListInfos
 	for _, path := range uniquePaths {
+		pathInfo, statErr := os.Lstat(path)
+		if statErr != nil {
+			cl.PrintErrf("获取路径信息失败 %q: %v\n", path, statErr)
+			continue
+		}
+
 		infos, getErr := getFileInfos(path, path)
 		if getErr != nil {
-			return fmt.Errorf("获取文件信息时发生了错误: %v", getErr)
+			cl.PrintErrf("获取文件信息失败 %q: %v\n", path, getErr)
+			continue
 		}
-		listInfos = append(listInfos, infos...)
-	}
 
-	// 检查切片是否为空
-	if len(listInfos) == 0 {
-		return nil
-	}
+		if pathInfo.IsDir() {
+			// 根据命令行参数排序目录中的文件信息
+			if *listCmdSortByTime && !*listCmdReverseSort {
+				infos.SortByModTimeDesc()
+			} else if *listCmdSortByTime && *listCmdReverseSort {
+				infos.SortByModTimeAsc()
+			} else if *listCmdSortBySize && !*listCmdReverseSort {
+				infos.SortByFileSizeDesc()
+			} else if *listCmdSortBySize && *listCmdReverseSort {
+				infos.SortByFileSizeAsc()
+			} else if *listCmdSortByName && *listCmdReverseSort {
+				infos.SortByFileNameAsc()
+			} else {
+				infos.SortByFileNameDesc()
+			}
 
-	// 根据*listCmdColor选项启用颜色输出
-	if *listCmdColor {
-		cl.NoColor.Store(false)
-	} else {
-		cl.NoColor.Store(true)
-	}
+			// 显示目录路径
+			cl.Bluef("%s: \n", path)
 
-	// 根据命令行参数排序文件信息切片
-	if *listCmdSortByTime && !*listCmdReverseSort {
-		// -t 为 true, -r 为 true, 则按文件修改时间降序排序
-		listInfos.SortByModTimeDesc()
-	} else if *listCmdSortByTime && *listCmdReverseSort {
-		// -t 为 true, -r 为 false, 则按文件修改时间升序排序
-		listInfos.SortByModTimeAsc()
-	} else if *listCmdSortBySize && !*listCmdReverseSort {
-		// -s 为 true, -r 为 true, 则按文件大小降序排序
-		listInfos.SortByFileSizeDesc()
-	} else if *listCmdSortBySize && *listCmdReverseSort {
-		// -s 为 true, -r 为 false, 则按文件大小升序排序
-		listInfos.SortByFileSizeAsc()
-	} else if *listCmdSortByName && *listCmdReverseSort {
-		// -n 为 true, -r 为 true, 则按文件名升序排序
-		listInfos.SortByFileNameAsc()
-	} else {
-		// 默认按文件名降序排序
-		listInfos.SortByFileNameDesc()
-	}
-
-	// 如果启用了长格式输出, 则调用 listCmdLong 函数
-	if *listCmdLongFormat {
-		if err := listCmdLong(cl, listInfos); err != nil {
-			return err
+			// 处理目录，单独生成表格
+			if *listCmdLongFormat {
+				if err := listCmdLong(cl, infos); err != nil {
+					cl.PrintErrf("处理目录 %q 时出错: %v\n", path, err)
+				}
+			} else {
+				if err := listCmdDefault(cl, infos); err != nil {
+					cl.PrintErrf("处理目录 %q 时出错: %v\n", path, err)
+				}
+			}
+			// 打印空行分隔
+			fmt.Println()
+		} else {
+			// 收集文件信息
+			fileInfos = append(fileInfos, infos...)
 		}
-		return nil
 	}
 
-	// list命令的默认运行函数
-	if defaultErr := listCmdDefault(cl, listInfos); defaultErr != nil {
-		return defaultErr
+	// 处理所有文件
+	if len(fileInfos) > 0 {
+		// 根据命令行参数排序文件信息切片
+		if *listCmdSortByTime && !*listCmdReverseSort {
+			fileInfos.SortByModTimeDesc()
+		} else if *listCmdSortByTime && *listCmdReverseSort {
+			fileInfos.SortByModTimeAsc()
+		} else if *listCmdSortBySize && !*listCmdReverseSort {
+			fileInfos.SortByFileSizeDesc()
+		} else if *listCmdSortBySize && *listCmdReverseSort {
+			fileInfos.SortByFileSizeAsc()
+		} else if *listCmdSortByName && *listCmdReverseSort {
+			fileInfos.SortByFileNameAsc()
+		} else {
+			fileInfos.SortByFileNameDesc()
+		}
+
+		if *listCmdLongFormat {
+			if err := listCmdLong(cl, fileInfos); err != nil {
+				return err
+			}
+		} else {
+			if err := listCmdDefault(cl, fileInfos); err != nil {
+				return err
+			}
+		}
+		// 打印空行分隔
+		fmt.Println()
 	}
 
 	return nil
@@ -786,6 +831,8 @@ func getEntryType(fileInfo os.FileInfo) string {
 // 参数:
 // - p: 表示文件或目录的名称，用于判断是否为隐藏文件。
 // - isDir: 布尔值，用于标识当前条目是否为目录。
+// - fileInfo: os.FileInfo 类型，包含文件或目录的详细信息，如权限、大小等。
+// - main: 布尔值，用于标识当前是否为处理目录本身，而非其子目录。
 // 返回值:
 // - 布尔类型，若满足跳过条件则返回 true，否则返回 false。
 func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool {
