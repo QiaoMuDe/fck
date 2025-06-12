@@ -47,6 +47,7 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 			cl.PrintErrf("路径模式错误 %q: %v\n", path, err)
 			continue
 		}
+
 		// 如果路径模式没有匹配任何文件，则打印错误信息
 		if len(matches) == 0 {
 			cl.PrintErrf("路径 %q 不存在或没有匹配项\n", path)
@@ -55,12 +56,7 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 
 		// 过滤掉应该跳过的文件
 		for _, match := range matches {
-			fileInfo, err := os.Lstat(match)
-			if err != nil {
-				cl.PrintErrf("获取路径信息失败 %q: %v\n", match, err)
-				continue
-			}
-			if !shouldSkipFile(match, fileInfo.IsDir(), fileInfo, false) {
+			if !isHidden(match) {
 				expandedPaths = append(expandedPaths, match)
 			}
 		}
@@ -68,7 +64,7 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 
 	// 去重路径
 	seen := make(map[string]bool)
-	uniquePaths := []string{}
+	uniquePaths := []string{} // 用于存储去重后的路径
 	for _, p := range expandedPaths {
 		if !seen[p] {
 			seen[p] = true
@@ -107,8 +103,10 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 				infos.SortByFileNameDesc()
 			}
 
-			// 显示目录路径
-			cl.Bluef("%s: \n", path)
+			// 只在处理多个项目时显示目录路径
+			if len(uniquePaths) > 1 {
+				cl.Bluef("%s: \n", path)
+			}
 
 			// 处理目录，单独生成表格
 			if *listCmdLongFormat {
@@ -120,8 +118,10 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 					cl.PrintErrf("处理目录 %q 时出错: %v\n", path, err)
 				}
 			}
-			// 打印空行分隔
-			fmt.Println()
+			// 只在处理多个项目时打印空行分隔
+			if len(uniquePaths) > 1 {
+				fmt.Println()
+			}
 		} else {
 			// 收集文件信息
 			fileInfos = append(fileInfos, infos...)
@@ -130,6 +130,9 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 
 	// 处理所有文件
 	if len(fileInfos) > 0 {
+		// 打印标题
+		cl.Blue("Files:")
+
 		// 根据命令行参数排序文件信息切片
 		if *listCmdSortByTime && !*listCmdReverseSort {
 			fileInfos.SortByModTimeDesc()
@@ -154,8 +157,6 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 				return err
 			}
 		}
-		// 打印空行分隔
-		fmt.Println()
 	}
 
 	return nil
@@ -848,18 +849,18 @@ func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool 
 		return true
 	}
 
-	// 场景 3: 启用 -f 选项，且当前条目为目录时，应跳过该条目
+	// 场景 3: 启用 -f 选项，且当前条目为目录时，且未启用仅显示目录选项，应跳过该条目
 	// -f 选项用于仅显示文件，若当前条目为目录，则不符合要求，需跳过
 	if !main {
-		if *listCmdFileOnly && isDir {
+		if *listCmdFileOnly && isDir && !*listCmdDirEctory {
 			return true
 		}
 	}
 
-	// 场景 4: 启用 -d 选项，且当前条目不是目录时，应跳过该条目
+	// 场景 4: 启用 -d 选项，且当前条目不是目录时，且未启用仅显示文件选项，应跳过该条目
 	// -d 选项用于仅显示目录，若当前条目不是目录，则不符合要求，需跳过
 	if !main {
-		if *listCmdDirOnly && !isDir {
+		if *listCmdDirOnly && !isDir && !*listCmdDirOnly {
 			return true
 		}
 	}
