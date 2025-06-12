@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
@@ -17,12 +18,35 @@ import (
 )
 
 func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
-	// 获取命令行参数
-	listPath := cmd.Arg(0)
+	// 获取所有命令行参数
+	paths := cmd.Args()
 
 	// 如果没有指定路径, 则默认为当前目录
-	if listPath == "" {
-		listPath = "."
+	if len(paths) == 0 {
+		paths = []string{"."}
+	}
+
+	// 展开通配符并收集所有路径
+	var expandedPaths []string
+	for _, path := range paths {
+		matches, err := filepath.Glob(path)
+		if err != nil {
+			return fmt.Errorf("路径模式错误 %q: %v", path, err)
+		}
+		if len(matches) == 0 {
+			return fmt.Errorf("路径 %q 不存在或没有匹配项", path)
+		}
+		expandedPaths = append(expandedPaths, matches...)
+	}
+
+	// 去重路径
+	seen := make(map[string]bool)
+	uniquePaths := []string{}
+	for _, p := range expandedPaths {
+		if !seen[p] {
+			seen[p] = true
+			uniquePaths = append(uniquePaths, p)
+		}
 	}
 
 	// 检查list命令的参数是否合法
@@ -30,10 +54,14 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		return err
 	}
 
-	// 获取文件信息切片
-	listInfos, getErr := getFileInfos(listPath)
-	if getErr != nil {
-		return fmt.Errorf("获取文件信息时发生了错误: %v", getErr)
+	// 获取所有文件信息并合并
+	var listInfos globals.ListInfos
+	for _, path := range uniquePaths {
+		infos, getErr := getFileInfos(path, path)
+		if getErr != nil {
+			return fmt.Errorf("获取文件信息时发生了错误: %v", getErr)
+		}
+		listInfos = append(listInfos, infos...)
 	}
 
 	// 检查切片是否为空
@@ -123,6 +151,7 @@ func checkListCmdArgs() error {
 }
 
 // list命令的默认运行函数
+// listCmdDefault 函数用于以默认格式输出文件信息，支持递归目录分组显示和多列表格布局。
 func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	// 获取终端宽度
 	width, _, err := term.GetSize(int(os.Stdout.Fd()))
@@ -130,45 +159,135 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 		return fmt.Errorf("获取终端宽度时发生了错误: %v", err)
 	}
 
-	// 创建表格
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
+	// 如果启用了递归，按目录分组显示
+	if *listCmdRecursion {
+		// 按目录分组文件
+		dirFiles := make(map[string][]globals.ListInfo)
+		for _, info := range lfs {
+			dir, _ := filepath.Split(info.Name)
+			if dir == "" {
+				dir = "."
+			}
+			dirFiles[dir] = append(dirFiles[dir], info)
+		}
 
-	// 动态计算每行可以容纳的列数
+		// 排序目录
+		dirs := make([]string, 0, len(dirFiles))
+		for dir := range dirFiles {
+			dirs = append(dirs, dir)
+		}
+		sort.Strings(dirs)
+
+		// 处理每个目录
+		for _, dir := range dirs {
+			infos := dirFiles[dir]
+			fileNames := make([]string, len(infos))
+
+			// 准备文件名
+			for i, info := range infos {
+				_, file := filepath.Split(info.Name)
+				var paddedFilename string
+				if *listCmdQuoteNames {
+					paddedFilename = fmt.Sprintf("%q", file)
+				} else {
+					paddedFilename = file
+				}
+
+				// 检查是否启用颜色输出
+				if *listCmdColor {
+					paddedFilename = getColorString(info, paddedFilename, cl)
+				}
+
+				fileNames[i] = paddedFilename
+			}
+
+			// 动态计算每行可以容纳的列数
+			maxWidth := text.LongestLineLen(strings.Join(fileNames, "\n"))
+			columns := width / (maxWidth + 2) // 每列增加2个字符的间距
+			if columns == 0 {
+				columns = 1 // 至少显示一列
+			}
+
+			// 打印目录名
+			cl.Bluef("%s:\n", dir)
+
+			// 创建表格
+			t := table.NewWriter()
+			t.SetOutputMirror(os.Stdout)
+
+			// 构建多列输出
+			for i := 0; i < len(fileNames); i += columns {
+				end := i + columns
+				if end > len(fileNames) {
+					end = len(fileNames)
+				}
+
+				// 创建一个临时表格行
+				row := make([]interface{}, end-i)
+				for j := i; j < end; j++ {
+					row[j-i] = fileNames[j]
+				}
+
+				// 添加行到表格
+				t.AppendRow(row)
+			}
+
+			// 设置表格样式
+			if *listCmdTableStyle != "" {
+				// 根据-ts的值设置表格样式
+				if style, ok := globals.TableStyleMap[*listCmdTableStyle]; ok {
+					t.SetStyle(style)
+				}
+			}
+
+			// 输出表格
+			t.Render()
+			fmt.Println() // 目录间空行
+		}
+
+		return nil
+	}
+
+	// 非递归模式，直接输出所有文件
 	fileNames := make([]string, len(lfs))
 	for i, info := range lfs {
-		fileNames[i] = info.Name
+		var paddedFilename string
+		if *listCmdQuoteNames {
+			paddedFilename = fmt.Sprintf("%q", info.Name)
+		} else {
+			paddedFilename = info.Name
+		}
+
+		// 检查是否启用颜色输出
+		if *listCmdColor {
+			paddedFilename = getColorString(info, paddedFilename, cl)
+		}
+
+		fileNames[i] = paddedFilename
 	}
+
+	// 动态计算每行可以容纳的列数
 	maxWidth := text.LongestLineLen(strings.Join(fileNames, "\n"))
-	columns := width / (maxWidth + 2) // 每列增加4个字符的间距
+	columns := width / (maxWidth + 2) // 每列增加2个字符的间距
 	if columns == 0 {
 		columns = 1 // 至少显示一列
 	}
 
+	// 创建表格
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+
 	// 构建多列输出
-	for i := 0; i < len(lfs); i += columns {
-		// 计算当前行要显示的文件数
+	for i := 0; i < len(fileNames); i += columns {
 		end := i + columns
-		if end > len(lfs) {
-			end = len(lfs)
+		if end > len(fileNames) {
+			end = len(fileNames)
 		}
 
 		// 创建一个临时表格行
 		row := make([]interface{}, end-i)
 		for j := i; j < end; j++ {
-			var paddedFilename string
-			if *listCmdQuoteNames {
-				paddedFilename = fmt.Sprintf("%q", lfs[j].Name)
-			} else {
-				paddedFilename = lfs[j].Name
-			}
-
-			// 检查是否启用颜色输出
-			if *listCmdColor {
-				paddedFilename = getColorString(lfs[j], paddedFilename, cl)
-			}
-
-			row[j-i] = paddedFilename
+			row[j-i] = fileNames[j]
 		}
 
 		// 添加行到表格
@@ -189,19 +308,134 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	return nil
 }
 
-// listCmdLong 函数用于以长格式输出文件信息。
+// listCmdLong 函数用于以长格式输出文件信息，支持递归目录分组显示。
 func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
+	// 如果启用了递归，按目录分组显示
+	if *listCmdRecursion {
+		// 按目录分组文件
+		dirFiles := make(map[string][]globals.ListInfo)
+		for _, info := range ifs {
+			dir, _ := filepath.Split(info.Name)
+			if dir == "" {
+				dir = "."
+			}
+			dirFiles[dir] = append(dirFiles[dir], info)
+		}
+
+		// 排序目录
+		dirs := make([]string, 0, len(dirFiles))
+		for dir := range dirFiles {
+			dirs = append(dirs, dir)
+		}
+		sort.Strings(dirs)
+
+		// 处理每个目录
+		for _, dir := range dirs {
+			infos := dirFiles[dir]
+
+			// 打印目录名
+			cl.Bluef("%s:\n", dir)
+
+			// 创建表格
+			t := table.NewWriter()
+			t.SetOutputMirror(os.Stdout)
+
+			// 设置表头, 只有在-ts为none时才设置表头
+			if *listCmdTableStyle != "none" {
+				if *listCmdShowUserGroup {
+					t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
+				} else {
+					t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
+				}
+			}
+
+			// 添加文件信息行
+			for _, info := range infos {
+				// 获取文件名（仅文件名，不含路径）
+				_, fileName := filepath.Split(info.Name)
+
+				// 获取文件权限字符串
+				infoPerm := FormatPermissionString(cl, info)
+
+				// 类型
+				infoType := getColorString(info, info.EntryType, cl)
+
+				// 文件大小 和 单位
+				infoSize, infoSizeUnit := humanSize(info.Size)
+
+				// 渲染文件大小
+				infoSize = cl.Syellow(infoSize)
+
+				// 渲染文件大小单位
+				infoSizeUnit = cl.Syellow(infoSizeUnit)
+
+				// 修改时间
+				infoModTime := cl.Sgreen(info.ModTime.Format("2006-01-02 15:04:05"))
+
+				// 文件名
+				var infoName string
+				// 检查是否启用引号
+				if *listCmdQuoteNames {
+					// 检查是否为软链接
+					if info.EntryType == globals.SymlinkType {
+						infoName = getColorString(info, fmt.Sprintf("%q -> %q", fileName, info.LinkTargetPath), cl)
+					} else {
+						infoName = getColorString(info, fmt.Sprintf("%q", fileName), cl)
+					}
+				} else {
+					// 检查是否为软链接
+					if info.EntryType == globals.SymlinkType {
+						infoName = getColorString(info, fmt.Sprintf("%s -> %s", fileName, info.LinkTargetPath), cl)
+					} else {
+						infoName = getColorString(info, fileName, cl)
+					}
+				}
+
+				// 添加行到表格
+				if *listCmdShowUserGroup {
+					t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName})
+				} else {
+					t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName})
+				}
+			}
+
+			// 设置列的对齐方式
+			t.SetColumnConfigs([]table.ColumnConfig{
+				{Name: "Size", Align: text.AlignRight},     // 文件大小 - 右对齐
+				{Name: "Type", Align: text.AlignCenter},    // 文件类型 - 居中对齐
+				{Name: "Owner", Align: text.AlignCenter},   // 所有者 - 居中对齐
+				{Name: "Group", Align: text.AlignCenter},   // 组 - 居中对齐
+				{Name: "Perm", Align: text.AlignLeft},      // 权限 - 左对齐
+				{Name: "ModTime", Align: text.AlignCenter}, // 修改时间 - 居中对齐
+				{Name: "Unit", Align: text.AlignCenter},    // 单位 - 居中对齐
+				{Name: "Name", Align: text.AlignLeft},      // 文件名 - 左对齐
+			})
+
+			// 设置表格样式
+			if *listCmdTableStyle != "" {
+				// 根据-ts的值设置表格样式
+				if style, ok := globals.TableStyleMap[*listCmdTableStyle]; ok {
+					t.SetStyle(style)
+				}
+			}
+
+			// 输出表格
+			t.Render()
+			fmt.Println() // 目录间空行
+		}
+		return nil
+	}
+
+	// 非递归模式，使用原始单个表格输出
 	// 创建表格
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 
-	// 设置表头, 只有在-ts为none时才设置表头
-	if *listCmdTableStyle != "none" {
-		if *listCmdShowUserGroup {
-			t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
-		} else {
-			t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
-		}
+	// 设置表头
+	if *listCmdShowUserGroup {
+		t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
+	} else {
+		t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
 	}
 
 	for _, info := range ifs {
@@ -303,7 +537,7 @@ func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (forma
 // getFileInfos 函数用于获取指定路径下所有文件和目录的详细信息。
 // 参数 path 表示要获取信息的目录路径。
 // 返回值为一个 globals.ListInfo 类型的切片，包含了每个文件和目录的详细信息，以及可能出现的错误。
-func getFileInfos(p string) (globals.ListInfos, error) {
+func getFileInfos(p string, rootDir string) (globals.ListInfos, error) {
 	// 初始化一个用于存储文件信息的切片
 	var infos globals.ListInfos
 
@@ -348,7 +582,8 @@ func getFileInfos(p string) (globals.ListInfos, error) {
 			}
 
 			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
-			info := buildFileInfo(pathInfo, absPath)
+			// 由于 buildFileInfo 函数需要三个参数，这里添加 rootDir 参数，由于当前处理的是目录本身，rootDir 可以设为 absPath
+			info := buildFileInfo(pathInfo, absPath, absPath)
 
 			// 将构建好的目录信息添加到切片中
 			infos = append(infos, info)
@@ -395,7 +630,7 @@ func getFileInfos(p string) (globals.ListInfos, error) {
 				resultChan := make(chan result)
 
 				go func() {
-					subInfos, err := getFileInfos(absFilePath)
+					subInfos, err := getFileInfos(absFilePath, rootDir)
 					resultChan <- result{subInfos, err}
 				}()
 
@@ -409,7 +644,7 @@ func getFileInfos(p string) (globals.ListInfos, error) {
 			}
 
 			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
-			info := buildFileInfo(fileInfo, absFilePath)
+			info := buildFileInfo(fileInfo, absFilePath, rootDir)
 
 			// 将构建好的目录信息添加到切片中
 			infos = append(infos, info)
@@ -427,7 +662,8 @@ func getFileInfos(p string) (globals.ListInfos, error) {
 		}
 
 		// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
-		info := buildFileInfo(pathInfo, absPath)
+		// 由于 buildFileInfo 函数需要三个参数，这里第三个参数使用 absPath 作为 rootDir
+		info := buildFileInfo(pathInfo, absPath, absPath)
 
 		// 将构建好的目录信息添加到切片中
 		infos = append(infos, info)
@@ -606,9 +842,20 @@ func handleError(path string, err error) error {
 // - absPath: 文件的绝对路径字符串, 用于提取文件名以及获取文件所属的用户和组信息。
 // 返回值：
 // - 返回一个 globals.ListInfo 结构体实例，该实例封装了文件的完整信息。
-func buildFileInfo(fileInfo os.FileInfo, absPath string) globals.ListInfo {
+func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals.ListInfo {
 	// 从文件的绝对路径中提取出文件名，作为文件的显示名称
-	baseName := filepath.Base(absPath)
+	var baseName string
+	// 如果启用了递归显示，则使用相对路径作为文件名
+	if *listCmdRecursion {
+		relPath, err := filepath.Rel(rootDir, absPath)
+		if err != nil {
+			baseName = absPath // 如果无法获取相对路径，则使用绝对路径作为文件名
+		} else {
+			baseName = relPath // 如果成功获取相对路径，则使用相对路径作为文件名
+		}
+	} else {
+		baseName = filepath.Base(absPath) // 如果未启用递归显示，则直接使用文件名
+	}
 
 	// 调用 getEntryType 函数，根据文件的模式判断文件的条目类型，如目录、普通文件、符号链接等
 	entryType := getEntryType(fileInfo)
