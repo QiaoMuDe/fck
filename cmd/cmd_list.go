@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/globals"
@@ -31,10 +32,12 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	for _, path := range paths {
 		matches, err := filepath.Glob(path)
 		if err != nil {
-			return fmt.Errorf("路径模式错误 %q: %v", path, err)
+			cl.PrintErrf("路径模式错误 %q: %v\n", path, err)
+			continue
 		}
 		if len(matches) == 0 {
-			return fmt.Errorf("路径 %q 不存在或没有匹配项", path)
+			cl.PrintErrf("路径 %q 不存在或没有匹配项\n", path)
+			continue
 		}
 		expandedPaths = append(expandedPaths, matches...)
 	}
@@ -512,6 +515,11 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 
 // FormatPermissionString 根据颜色模式格式化权限字符串
 func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (formattedPerm string) {
+	// 检查权限字符串长度是否有效 (至少10个字符, 如 "-rwxr-xr-x")
+	if len(info.Perm) < 10 {
+		return "???-???-???"
+	}
+
 	if *listCmdColor {
 		for i := 1; i < len(info.Perm); i++ { // 跳过第一个字符（通常是文件类型标志）
 			colorName := PermissionColorMap[i] // 获取当前字符的颜色名称
@@ -538,8 +546,11 @@ func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (forma
 // 参数 path 表示要获取信息的目录路径。
 // 返回值为一个 globals.ListInfo 类型的切片，包含了每个文件和目录的详细信息，以及可能出现的错误。
 func getFileInfos(p string, rootDir string) (globals.ListInfos, error) {
-	// 初始化一个用于存储文件信息的切片
-	var infos globals.ListInfos
+	// 初始化一个用于存储文件信息的切片和互斥锁
+	var (
+		infos globals.ListInfos
+		mu    sync.Mutex
+	)
 
 	// 清理路径
 	p = filepath.Clean(p)
@@ -585,8 +596,10 @@ func getFileInfos(p string, rootDir string) (globals.ListInfos, error) {
 			// 由于 buildFileInfo 函数需要三个参数，这里添加 rootDir 参数，由于当前处理的是目录本身，rootDir 可以设为 absPath
 			info := buildFileInfo(pathInfo, absPath, absPath)
 
-			// 将构建好的目录信息添加到切片中
+			// 使用互斥锁保护切片操作
+			mu.Lock()
 			infos = append(infos, info)
+			mu.Unlock()
 
 			return infos, nil
 		}
@@ -622,14 +635,21 @@ func getFileInfos(p string, rootDir string) (globals.ListInfos, error) {
 
 			// 如果设置了-R标志且当前是目录, 则递归处理子目录
 			if *listCmdRecursion && file.IsDir() {
-				// 使用goroutine并行处理子目录
+				// 使用带并发控制的goroutine处理子目录
 				type result struct {
 					infos globals.ListInfos
 					err   error
 				}
 				resultChan := make(chan result)
 
+				// 获取CPU核心数并设置最大并发数为核心数*2
+				maxConcurrency := runtime.NumCPU() * 2
+				sem := make(chan struct{}, maxConcurrency)
+
 				go func() {
+					sem <- struct{}{}        // 获取信号量
+					defer func() { <-sem }() // 释放信号量
+
 					subInfos, err := getFileInfos(absFilePath, rootDir)
 					resultChan <- result{subInfos, err}
 				}()
@@ -639,8 +659,10 @@ func getFileInfos(p string, rootDir string) (globals.ListInfos, error) {
 					return nil, fmt.Errorf("递归处理目录 %s 时出错: %v", absFilePath, res.err)
 				}
 
-				// 将子目录中的文件信息添加到切片中
+				// 使用互斥锁保护切片操作
+				mu.Lock()
 				infos = append(infos, res.infos...)
+				mu.Unlock()
 			}
 
 			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
@@ -875,11 +897,22 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals
 	// 初始化文件的扩展名变量，默认为空字符串
 	var fileExt string
 
-	// 检查文件名中是否包含点号（.），如果包含则尝试提取文件的扩展名
-	if strings.Contains(baseName, ".") {
+	// 检查文件名是否以点开头，如果是，则从第二个字符开始检查是否包含点号
+	if strings.HasPrefix(baseName, ".") && len(baseName) > 1 {
+		if strings.Contains(baseName[1:], ".") {
+			// 调用 filepath.Ext 函数从文件名中提取文件的扩展名
+			fileExt = filepath.Ext(baseName)
+		}
+	} else if strings.Contains(baseName, ".") {
 		// 调用 filepath.Ext 函数从文件名中提取文件的扩展名
 		fileExt = filepath.Ext(baseName)
 	}
+	/*
+		- .bashrc → 不提取扩展名（fileExt为空）
+		- .vimrc.bak → 提取 ".bak" 作为扩展名
+		- document.txt → 提取 ".txt" 作为扩展名
+		- Makefile → 不提取扩展名
+	*/
 
 	// 检查是否为符号链接，如果是，则获取符号链接指向的目标文件的信息
 	var linkTargetPath string
@@ -954,26 +987,22 @@ func humanSize(size int64) (string, string) {
 		sizeFloat /= base * base * base * base * base
 	}
 
-	// 先将转换后的大小和单位拼接成一个字符串
-	sizeF := fmt.Sprintf("%.0f", sizeFloat)
-
-	// 如果转换后的大小为 0, 则返回 "0B"
-	if sizeF == "0.00" {
-		return "0", "B"
+	// 根据数值大小选择合适精度
+	var sizeF string
+	if sizeFloat < 10 {
+		sizeF = fmt.Sprintf("%.1f", sizeFloat) // 小于10时保留1位小数
+	} else {
+		sizeF = fmt.Sprintf("%.0f", sizeFloat) // 大于等于10时取整
 	}
 
-	// 如果转换后的大小为 0, 则返回 "0"
-	if sizeF == "0" {
-		return "0", "B"
+	// 处理特殊情况：10.0 -> 10
+	if strings.HasSuffix(sizeF, ".0") {
+		sizeF = strings.TrimSuffix(sizeF, ".0")
 	}
 
-	// 去除小数部分末尾的 .00 或 .0
-	sizeF = strings.TrimSuffix(sizeF, ".00")
-	sizeF = strings.TrimSuffix(sizeF, ".0")
-
-	// 去除小数点部分末尾的0
-	if strings.Contains(sizeF, ".") {
-		sizeF = strings.TrimRight(sizeF, "0")
+	// 处理0值情况
+	if sizeF == "0" || sizeF == "0.0" {
+		return "0", "B"
 	}
 
 	return sizeF, unit

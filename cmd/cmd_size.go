@@ -377,30 +377,33 @@ func humanReadableSize(size int64, fn int) string {
 		sizeFloat /= base * base * base * base * base
 	}
 
-	// 构造格式化字符串
-	format := fmt.Sprintf("%%.%df", fn)
+	// 根据数值大小动态调整精度
+	var sizeF string
+	if sizeFloat < 10 {
+		// 小于10时使用指定的小数位数，但至少保留1位
+		decimals := fn
+		if decimals < 1 {
+			decimals = 1
+		}
+		sizeF = fmt.Sprintf("%%.%df", decimals)
+		sizeF = fmt.Sprintf(sizeF, sizeFloat)
+	} else {
+		// 大于等于10时使用整数格式
+		sizeF = fmt.Sprintf("%.0f", sizeFloat)
+	}
 
-	// 使用构造的格式化字符串进行格式化
-	sizeF := fmt.Sprintf(format, sizeFloat)
+	// 处理特殊情况：10.0 -> 10
+	if strings.HasSuffix(sizeF, ".0") {
+		sizeF = strings.TrimSuffix(sizeF, ".0")
+	}
 
-	// 如果转换后的大小为 0, 则返回 "0B"
-	if sizeF == "0.00" {
+	// 处理0值情况
+	if sizeF == "0" || sizeF == "0.0" {
 		return "0 B"
 	}
 
-	// 去除小数部分末尾的 .00 或 .0
-	sizeF = strings.TrimSuffix(sizeF, ".00")
-	sizeF = strings.TrimSuffix(sizeF, ".0")
-
-	// 去除小数点部分末尾的0
-	if strings.Contains(sizeF, ".") {
-		sizeF = strings.TrimRight(sizeF, "0")
-	}
-
-	// 先将转换后的大小和单位拼接成一个字符串
-	result := fmt.Sprintf("%s %s", sizeF, unit)
-
-	return result
+	// 拼接最终结果
+	return fmt.Sprintf("%s %s", sizeF, unit)
 }
 
 // 打印文件大小表格到控制台
