@@ -276,7 +276,7 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 // 返回值:
 // - error: 错误信息
 func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exNameRegex, exPathRegex *regexp.Regexp, matchCount *atomic.Int64) error {
-	// 默认隐藏文件或目录不参与匹配
+	// 默认隐藏文件或隐藏目录不参与匹配
 	// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
 	if !*findCmdHidden {
 		if isHidden(path) {
@@ -292,21 +292,21 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 
 	// 1. 基础类型检查（快速失败）
 	// 如果只查找文件，跳过目录
-	if *findCmdFile {
+	if *findCmdType == globals.FindTypeFile || *findCmdType == globals.FindTypeFileShort {
 		if entry.IsDir() {
 			return nil
 		}
 	}
 
 	// 如果只查找目录，跳过文件
-	if *findCmdDir {
+	if *findCmdType == globals.FindTypeDir || *findCmdType == globals.FindTypeDirShort {
 		if !entry.IsDir() {
 			return nil
 		}
 	}
 
 	// 如果只查找软链接，跳过非软链接
-	if *findCmdSymlink {
+	if *findCmdType == globals.FindTypeSymlink || *findCmdType == globals.FindTypeSymlinkShort {
 		fileInfo, linkErr := os.Lstat(path)
 		if linkErr != nil {
 			return nil
@@ -333,14 +333,14 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 
 	// 2. 快速属性检查
 	// 如果只显示隐藏文件或目录, 跳过非隐藏文件或目录
-	if *findCmdHidden {
-		if !isHidden(path) && *findCmdHiddenOnly {
+	if *findCmdHidden && (*findCmdType == globals.FindTypeHidden || *findCmdType == globals.FindTypeHiddenShort) {
+		if !isHidden(path) {
 			return nil
 		}
 	}
 
 	// 如果只显示只读文件或目录 跳过非只读文件或目录
-	if *findCmdReadOnly {
+	if *findCmdType == globals.FindTypeReadonly || *findCmdType == globals.FindTypeReadonlyShort {
 		if !isReadOnly(path) {
 			return nil
 		}
@@ -372,7 +372,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 
 	// 4. 空文件检查（放在耗时检查之后，因为已经获取了文件信息）
 	// 如果只查找空文件或目录
-	if *findCmdEmpty {
+	if *findCmdType == globals.FindTypeEmpty || *findCmdType == globals.FindTypeEmptyShort {
 		// 检查是否为空目录
 		if entry.IsDir() {
 			// 检查目录是否为空
@@ -474,7 +474,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 			// 获取完整路径
 			fullPath, pathErr := filepath.Abs(path)
 			if pathErr != nil {
-				return fmt.Errorf("获取完整路径时出错: %s", pathErr)
+				fullPath = path // 如果获取完整路径失败, 则使用相对路径
 			}
 
 			// 输出完整路径
@@ -504,39 +504,14 @@ func checkFindCmdArgs(findPath string) error {
 		return fmt.Errorf("查找最大深度不能小于 -1")
 	}
 
-	// 检查是否同时指定了文件和目录和软链接
-	if *findCmdFile && *findCmdDir && *findCmdSymlink {
-		return fmt.Errorf("不能同时指定 -f、-d 和 -l 标志")
-	}
-
-	// 检查是否同时指定了文件和目录
-	if *findCmdFile && *findCmdDir {
-		return fmt.Errorf("不能同时指定 -f 和 -d 标志")
-	}
-
-	// 检查是否同时指定了文件和软链接
-	if *findCmdFile && *findCmdSymlink {
-		return fmt.Errorf("不能同时指定 -f 和 -l 标志")
-	}
-
-	// 检查是否同时指定了目录和软链接
-	if *findCmdDir && *findCmdSymlink {
-		return fmt.Errorf("不能同时指定 -d 和 -l 标志")
-	}
-
-	// 检查是否同时指定了文件和只读文件
-	if *findCmdFile && *findCmdReadOnly {
-		return fmt.Errorf("不能同时指定 -f 和 -ro 标志")
-	}
-
-	// 检查是否同时指定了目录和只读文件
-	if *findCmdDir && *findCmdReadOnly {
-		return fmt.Errorf("不能同时指定 -d 和 -ro 标志")
+	// 检查是否为受支持限制查找类型
+	if !globals.IsValidFindType(*findCmdType) {
+		return fmt.Errorf("无效的类型: %s, 请使用%s", *findCmdType, globals.GetSupportedFindTypes()[:])
 	}
 
 	// 如果只显示隐藏文件或目录, 则必须指定 -H 标志
-	if *findCmdHiddenOnly && !*findCmdHidden {
-		return fmt.Errorf("必须指定 -H 标志才能使用 -ho 标志")
+	if !*findCmdHidden && (*findCmdType == globals.FindTypeHidden || *findCmdType == globals.FindTypeHiddenShort) {
+		return fmt.Errorf("必须指定 -H 标志才能使用 -type hidden 或 -type h 选项")
 	}
 
 	// 检查是否同时指定了-or

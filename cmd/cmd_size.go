@@ -392,10 +392,8 @@ func humanReadableSize(size int64, fn int) string {
 		sizeF = fmt.Sprintf("%.0f", sizeFloat)
 	}
 
-	// 处理特殊情况：10.0 -> 10
-	if strings.HasSuffix(sizeF, ".0") {
-		sizeF = strings.TrimSuffix(sizeF, ".0")
-	}
+	// 处理特殊情况: 10.0 -> 10
+	sizeF = strings.TrimSuffix(sizeF, ".0")
 
 	// 处理0值情况
 	if sizeF == "0" || sizeF == "0.0" {

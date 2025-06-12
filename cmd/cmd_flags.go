@@ -66,12 +66,6 @@ var (
 	findCmdPath          = findCmd.String("p", "", "指定要查找的路径")
 	findCmdExt           = findCmd.String("ext", "", "按文件扩展名查找(支持多个扩展名，如 .txt,.go)")
 	findCmdMaxDepth      = findCmd.Int("m", -1, "指定查找的最大深度, -1 表示不限制")
-	findCmdFile          = findCmd.Bool("f", false, "限制只查找文件")
-	findCmdDir           = findCmd.Bool("d", false, "限制只查找目录")
-	findCmdSymlink       = findCmd.Bool("l", false, "限制只查找软链接")
-	findCmdReadOnly      = findCmd.Bool("ro", false, "限制只查找只读文件")
-	findCmdHiddenOnly    = findCmd.Bool("ho", false, "限制只显示隐藏文件或目录")
-	findCmdEmpty         = findCmd.Bool("e", false, "限制只查找空文件或目录")
 	findCmdSize          = findCmd.String("size", "", "按文件大小过滤, 格式如+5M(大于5M)或-5M(小于5M), 支持单位B/K/M/G")
 	findCmdModTime       = findCmd.String("mtime", "", "按修改时间查找, 格式如+5(5天前)或-5(5天内)")
 	findCmdCase          = findCmd.Bool("C", false, "启用大小写敏感匹配, 默认不区分大小写")
@@ -92,6 +86,14 @@ var (
 	findCmdMaxDepthLimit = findCmd.Int("max-depth", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")
 	findCmdCount         = findCmd.Bool("count", false, "仅统计匹配项的数量而不显示具体路径")
 	findCmdX             = findCmd.Bool("X", false, "启用并发模式")
+	findCmdType          = findCmd.String("type", "all", `指定要查找的类型，支持以下选项：
+	           	           all - 列出所有文件和目录
+	                       file - 只查找文件
+	                       dir - 只查找目录
+	                       symlink - 只查找软链接
+	                       readonly - 只查找只读文件
+	                       hidden - 只显示隐藏文件或目录
+	                       empty - 只查找空文件或目录`)
 
 	// fck list 子命令
 	listCmd              = flag.NewFlagSet("list", flag.ExitOnError)

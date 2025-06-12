@@ -69,6 +69,9 @@ var (
 		"../../../":       true,
 		"../../../../":    true,
 		"../../../../../": true,
+		"../*":            true,
+		"../**":           true,
+		"../../*":         true,
 	}
 )
 
@@ -259,3 +262,81 @@ func (d *DirEntryWrapper) Name() string               { return d.NameVal }
 func (d *DirEntryWrapper) IsDir() bool                { return d.IsDirVal }
 func (d *DirEntryWrapper) Type() os.FileMode          { return d.ModeVal }
 func (d *DirEntryWrapper) Info() (os.FileInfo, error) { return nil, nil }
+
+// 查找类型常量定义
+const (
+	// 查找所有类型
+	FindTypeAll = "all"
+	// 查找所有类型-短参数
+	FindTypeAllShort = "a"
+	// 只查找文件
+	FindTypeFile = "file"
+	// 只查找文件-短参数
+	FindTypeFileShort = "f"
+	// 只查找目录
+	FindTypeDir = "dir"
+	// 只查找目录-短参数
+	FindTypeDirShort = "d"
+	// 只查找软链接
+	FindTypeSymlink = "symlink"
+	// 只查找软链接-短参数
+	FindTypeSymlinkShort = "l"
+	// 只查找只读文件
+	FindTypeReadonly = "readonly"
+	// 只查找只读文件-短参数
+	FindTypeReadonlyShort = "r"
+	// 只查找隐藏文件或目录
+	FindTypeHidden = "hidden"
+	// 只查找隐藏文件或目录-短参数
+	FindTypeHiddenShort = "h"
+	// 只查找空文件或目录
+	FindTypeEmpty = "empty"
+	// 只查找空文件或目录-短参数
+	FindTypeEmptyShort = "e"
+)
+
+// 定义find子命令限制查找的参数
+var FindLimits = map[string]bool{
+	FindTypeAll:           true, // 查找所有类型
+	FindTypeAllShort:      true, // 查找所有类型-短参数
+	FindTypeFile:          true, // 只查找文件
+	FindTypeFileShort:     true, // 只查找文件-短参数
+	FindTypeDir:           true, // 只查找目录
+	FindTypeDirShort:      true, // 只查找目录-短参数
+	FindTypeSymlink:       true, // 只查找软链接
+	FindTypeSymlinkShort:  true, // 只查找软链接-短参数
+	FindTypeReadonly:      true, // 只查找只读文件
+	FindTypeReadonlyShort: true, // 只查找只读文件-短参数
+	FindTypeHidden:        true, // 只查找隐藏文件或目录
+	FindTypeHiddenShort:   true, // 只查找隐藏文件或目录-短参数
+	FindTypeEmpty:         true, // 只查找空文件或目录
+	FindTypeEmptyShort:    true, // 只查找空文件或目录-短参数
+
+	// "socket": true,
+	// "pipe":   true,
+	// "block":  true,
+	// "char":   true,
+	// "exec":   true,
+}
+
+// IsValidFindType 检查给定的类型参数是否有效
+// 参数:
+//   - typeStr: 要检查的类型字符串
+//
+// 返回值:
+//   - bool: 如果类型有效返回true, 否则返回false
+func IsValidFindType(typeStr string) bool {
+	_, ok := FindLimits[typeStr]
+	return ok
+}
+
+// GetSupportedFindTypes 获取所有支持的查找类型列表
+// 返回值:
+//   - []string: 包含所有支持类型的字符串切片
+func GetSupportedFindTypes() []string {
+	types := make([]string, 0, len(FindLimits))
+	for t := range FindLimits {
+		types = append(types, t)
+	}
+	return types
+}
