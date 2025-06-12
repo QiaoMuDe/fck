@@ -434,11 +434,13 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 
-	// 设置表头
-	if *listCmdShowUserGroup {
-		t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
-	} else {
-		t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
+	// 设置表头, 只有在-ts为none时才设置表头
+	if *listCmdTableStyle != "none" {
+		if *listCmdShowUserGroup {
+			t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
+		} else {
+			t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
+		}
 	}
 
 	for _, info := range ifs {
