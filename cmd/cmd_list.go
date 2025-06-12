@@ -42,6 +42,10 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 	// 展开通配符并收集所有路径
 	var expandedPaths []string
 	for _, path := range paths {
+		// 清理路径
+		path = filepath.Clean(path)
+
+		// 处理路径中的通配符
 		matches, err := filepath.Glob(path)
 		if err != nil {
 			cl.PrintErrf("路径模式错误 %q: %v\n", path, err)
@@ -82,6 +86,7 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 			continue
 		}
 
+		// 收集文件信息 指定路径和root路径
 		infos, getErr := getFileInfos(path, path)
 		if getErr != nil {
 			cl.PrintErrf("获取文件信息失败 %q: %v\n", path, getErr)
