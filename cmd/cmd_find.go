@@ -504,6 +504,9 @@ func checkFindCmdArgs(findPath string) error {
 		return fmt.Errorf("查找最大深度不能小于 -1")
 	}
 
+	// 将限制查找类型转为小写
+	*findCmdType = strings.ToLower(*findCmdType)
+
 	// 检查是否为受支持限制查找类型
 	if !globals.IsValidFindType(*findCmdType) {
 		return fmt.Errorf("无效的类型: %s, 请使用%s", *findCmdType, globals.GetSupportedFindTypes()[:])
