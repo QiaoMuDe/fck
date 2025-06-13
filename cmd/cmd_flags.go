@@ -86,7 +86,21 @@ var (
 	findCmdMaxDepthLimit = findCmd.Int("max-depth", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")
 	findCmdCount         = findCmd.Bool("count", false, "仅统计匹配项的数量而不显示具体路径")
 	findCmdX             = findCmd.Bool("X", false, "启用并发模式")
-	findCmdType          = findCmd.String("type", "all", "指定要查找的类型，支持以下选项：\n all - 列出所有文件和目录 \n file - 只查找文件 \n dir - 只查找目录 \n symlink - 只查找软链接 \n readonly - 只查找只读文件 \n hidden - 只显示隐藏文件或目录 \n empty - 只查找空文件或目录")
+	findCmdType          = findCmd.String("type", "all", "指定要查找的类型，支持以下选项：\n"+
+		" [f|file]       - 只查找文件\n"+
+		" [d|dir]        - 只查找目录\n"+
+		" [l|symlink]    - 只查找软链接\n"+
+		" [r|readonly]   - 只查找只读文件\n"+
+		" [h|hidden]     - 只显示隐藏文件或目录\n"+
+		" [e|empty]      - 只查找空文件或目录\n"+
+		" [x|executable] - 只查找可执行文件\n"+
+		" [s|socket]     - 只查找socket文件\n"+
+		" [p|pipe]       - 只查找管道文件\n"+
+		" [b|block]      - 只查找块设备文件\n"+
+		" [c|char]       - 只查找字符设备文件\n"+
+		" [a|append]     - 只查找追加模式文件\n"+
+		" [n|nonappend]  - 只查找非追加模式文件\n"+
+		" [u|exclusive]  - 只查找独占模式文件")
 
 	// fck list 子命令
 	listCmd              = flag.NewFlagSet("list", flag.ExitOnError)
@@ -127,5 +141,5 @@ var (
 		"  cmw    - 紫色背景白色字体\n"+
 		"  crw    - 红色背景白色字体\n"+
 		"  cyw    - 黄色背景白色字体\n"+
-		"  none   - 禁用表格样式")
+		"  none   - 禁用边框样式")
 )

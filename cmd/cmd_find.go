@@ -371,11 +371,74 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 			}
 		}
 	case globals.FindTypeSocket, globals.FindTypeSocketShort:
-		// 如果只查找socket文件或目录
-		if runtime.GOOS != "windows" {
-			if entry.Type()&os.ModeSocket == 0 {
-				return nil
-			}
+		// Windows不支持Unix domain socket，直接返回nil
+		if runtime.GOOS == "windows" {
+			return nil
+		}
+
+		// 如果只查找socket文件, 跳过非socket文件
+		if entry.Type()&os.ModeSocket == 0 {
+			return nil
+		}
+	case globals.FindTypePipe, globals.FindTypePipeShort:
+		// Windows不支持Unix命名管道，直接返回nil
+		if runtime.GOOS == "windows" {
+			return nil
+		}
+
+		// 如果只查找管道文件, 跳过非管道文件
+		if entry.Type()&os.ModeNamedPipe == 0 {
+			return nil
+		}
+	case globals.FindTypeBlock, globals.FindTypeBlockShort:
+		// Windows不支持Unix块设备文件，直接返回nil
+		if runtime.GOOS == "windows" {
+			return nil
+		}
+
+		// 如果只查找块设备文件, 跳过非块设备文件
+		if entry.Type()&os.ModeDevice == 0 {
+			return nil
+		}
+	case globals.FindTypeChar, globals.FindTypeCharShort:
+		// Windows不支持Unix字符设备文件，直接返回nil
+		if runtime.GOOS == "windows" {
+			return nil
+		}
+
+		// 如果只查找字符设备文件, 跳过非字符设备文件
+		if entry.Type()&os.ModeCharDevice == 0 {
+			return nil
+		}
+	case globals.FindTypeAppend, globals.FindTypeAppendShort:
+		// Windows文件系统不支持Unix追加模式标志，直接返回nil
+		if runtime.GOOS == "windows" {
+			return nil
+		}
+
+		// 如果只查找追加模式文件, 跳过非追加模式文件
+		if entry.Type()&os.ModeAppend == 0 {
+			return nil
+		}
+	case globals.FindTypeNonAppend, globals.FindTypeNonAppendShort:
+		// Windows文件系统不支持Unix追加模式标志，直接返回nil
+		if runtime.GOOS == "windows" {
+			return nil
+		}
+
+		// 如果只查找非追加模式文件, 跳过追加模式文件
+		if entry.Type()&os.ModeAppend != 0 {
+			return nil
+		}
+	case globals.FindTypeExclusive, globals.FindTypeExclusiveShort:
+		// Windows文件系统不支持Unix独占模式标志，直接返回nil
+		if runtime.GOOS == "windows" {
+			return nil
+		}
+
+		// 如果只查找独占模式文件, 跳过非独占模式文件
+		if entry.Type()&os.ModeExclusive == 0 {
+			return nil
 		}
 	}
 

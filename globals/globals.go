@@ -265,6 +265,9 @@ func (d *DirEntryWrapper) Info() (os.FileInfo, error) { return nil, nil }
 
 // 查找类型常量定义
 const (
+	// 查找所有类型
+	FindTypeAll = "all"
+
 	// 只查找文件
 	FindTypeFile = "file"
 	// 只查找文件-短参数
@@ -338,20 +341,19 @@ const (
 
 // 定义find子命令限制查找的参数
 var FindLimits = map[string]bool{
-	FindTypeFile:          true, // 只查找文件
-	FindTypeFileShort:     true, // 只查找文件-短参数
-	FindTypeDir:           true, // 只查找目录
-	FindTypeDirShort:      true, // 只查找目录-短参数
-	FindTypeSymlink:       true, // 只查找软链接
-	FindTypeSymlinkShort:  true, // 只查找软链接-短参数
-	FindTypeReadonly:      true, // 只查找只读文件
-	FindTypeReadonlyShort: true, // 只查找只读文件-短参数
-	FindTypeHidden:        true, // 只查找隐藏文件或目录
-	FindTypeHiddenShort:   true, // 只查找隐藏文件或目录-短参数
-	FindTypeEmpty:         true, // 只查找空文件或目录
-	FindTypeEmptyShort:    true, // 只查找空文件或目录-短参数
-
-	// 新增的查找类型
+	FindTypeAll:             true, // 查找所有类型
+	FindTypeFile:            true, // 只查找文件
+	FindTypeFileShort:       true, // 只查找文件-短参数
+	FindTypeDir:             true, // 只查找目录
+	FindTypeDirShort:        true, // 只查找目录-短参数
+	FindTypeSymlink:         true, // 只查找软链接
+	FindTypeSymlinkShort:    true, // 只查找软链接-短参数
+	FindTypeReadonly:        true, // 只查找只读文件
+	FindTypeReadonlyShort:   true, // 只查找只读文件-短参数
+	FindTypeHidden:          true, // 只查找隐藏文件或目录
+	FindTypeHiddenShort:     true, // 只查找隐藏文件或目录-短参数
+	FindTypeEmpty:           true, // 只查找空文件或目录
+	FindTypeEmptyShort:      true, // 只查找空文件或目录-短参数
 	FindTypeExecutable:      true, // 只查找可执行文件
 	FindTypeExecutableShort: true, // 只查找可执行文件-短参数
 	FindTypeSocket:          true, // 只查找socket文件(套接字)
