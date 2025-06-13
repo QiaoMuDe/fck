@@ -265,40 +265,79 @@ func (d *DirEntryWrapper) Info() (os.FileInfo, error) { return nil, nil }
 
 // 查找类型常量定义
 const (
-	// 查找所有类型
-	FindTypeAll = "all"
-	// 查找所有类型-短参数
-	FindTypeAllShort = "a"
 	// 只查找文件
 	FindTypeFile = "file"
 	// 只查找文件-短参数
 	FindTypeFileShort = "f"
+
 	// 只查找目录
 	FindTypeDir = "dir"
 	// 只查找目录-短参数
 	FindTypeDirShort = "d"
+
 	// 只查找软链接
 	FindTypeSymlink = "symlink"
 	// 只查找软链接-短参数
 	FindTypeSymlinkShort = "l"
+
 	// 只查找只读文件
 	FindTypeReadonly = "readonly"
 	// 只查找只读文件-短参数
 	FindTypeReadonlyShort = "r"
+
 	// 只查找隐藏文件或目录
 	FindTypeHidden = "hidden"
 	// 只查找隐藏文件或目录-短参数
 	FindTypeHiddenShort = "h"
+
 	// 只查找空文件或目录
 	FindTypeEmpty = "empty"
 	// 只查找空文件或目录-短参数
 	FindTypeEmptyShort = "e"
+
+	// 只查找可执行文件
+	FindTypeExecutable = "executable"
+	// 只查找可执行文件-短参数
+	FindTypeExecutableShort = "x"
+
+	// 只查找socket文件(套接字)
+	FindTypeSocket = "socket"
+	// 只查找socket文件-短参数
+	FindTypeSocketShort = "s"
+
+	// 只查找管道文件
+	FindTypePipe = "pipe"
+	// 只查找管道文件-短参数
+	FindTypePipeShort = "p"
+
+	// 只查找块设备文件
+	FindTypeBlock = "block"
+	// 只查找块设备文件-短参数
+	FindTypeBlockShort = "b"
+
+	// 只查找字符设备文件
+	FindTypeChar = "char"
+	// 只查找字符设备文件-短参数
+	FindTypeCharShort = "c"
+
+	// 只查找追加模式的文件
+	FindTypeAppend = "append"
+	// 只查找追加模式的文件-短参数
+	FindTypeAppendShort = "a"
+
+	// 只查找非追加模式的文件
+	FindTypeNonAppend = "nonappend"
+	// 只查找非追加模式的文件-短参数
+	FindTypeNonAppendShort = "n"
+
+	// 只查找为独占模式的文件
+	FindTypeExclusive = "exclusive"
+	// 只查找为独占模式的文件-短参数
+	FindTypeExclusiveShort = "u"
 )
 
 // 定义find子命令限制查找的参数
 var FindLimits = map[string]bool{
-	FindTypeAll:           true, // 查找所有类型
-	FindTypeAllShort:      true, // 查找所有类型-短参数
 	FindTypeFile:          true, // 只查找文件
 	FindTypeFileShort:     true, // 只查找文件-短参数
 	FindTypeDir:           true, // 只查找目录
@@ -312,11 +351,23 @@ var FindLimits = map[string]bool{
 	FindTypeEmpty:         true, // 只查找空文件或目录
 	FindTypeEmptyShort:    true, // 只查找空文件或目录-短参数
 
-	// "socket": true,
-	// "pipe":   true,
-	// "block":  true,
-	// "char":   true,
-	// "exec":   true,
+	// 新增的查找类型
+	FindTypeExecutable:      true, // 只查找可执行文件
+	FindTypeExecutableShort: true, // 只查找可执行文件-短参数
+	FindTypeSocket:          true, // 只查找socket文件(套接字)
+	FindTypeSocketShort:     true, // 只查找socket文件-短参数
+	FindTypePipe:            true, // 只查找管道文件
+	FindTypePipeShort:       true, // 只查找管道文件-短参数
+	FindTypeBlock:           true, // 只查找块设备文件
+	FindTypeBlockShort:      true, // 只查找块设备文件-短参数
+	FindTypeChar:            true, // 只查找字符设备文件
+	FindTypeCharShort:       true, // 只查找字符设备文件-短参数
+	FindTypeAppend:          true, // 只查找追加模式的文件
+	FindTypeAppendShort:     true, // 只查找追加模式的文件-短参数
+	FindTypeNonAppend:       true, // 只查找非追加模式的文件
+	FindTypeNonAppendShort:  true, // 只查找非追加模式的文件-短参数
+	FindTypeExclusive:       true, // 只查找为独占模式的文件
+	FindTypeExclusiveShort:  true, // 只查找为独占模式的文件-短参数
 }
 
 // IsValidFindType 检查给定的类型参数是否有效
@@ -339,4 +390,14 @@ func GetSupportedFindTypes() []string {
 		types = append(types, t)
 	}
 	return types
+}
+
+// 定义Windows可执行文件扩展名map
+var WindowsExecutableExts = map[string]bool{
+	".exe":  true, // 可执行文件
+	".bat":  true, // 批处理文件
+	".cmd":  true, // 命令文件
+	".ps1":  true, // PowerShell脚本文件
+	".psm1": true, // PowerShell模块文件
+	".msi":  true, // Windows安装程序
 }

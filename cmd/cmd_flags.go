@@ -86,14 +86,7 @@ var (
 	findCmdMaxDepthLimit = findCmd.Int("max-depth", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")
 	findCmdCount         = findCmd.Bool("count", false, "仅统计匹配项的数量而不显示具体路径")
 	findCmdX             = findCmd.Bool("X", false, "启用并发模式")
-	findCmdType          = findCmd.String("type", "all", `指定要查找的类型，支持以下选项：
-	           	           all - 列出所有文件和目录
-	                       file - 只查找文件
-	                       dir - 只查找目录
-	                       symlink - 只查找软链接
-	                       readonly - 只查找只读文件
-	                       hidden - 只显示隐藏文件或目录
-	                       empty - 只查找空文件或目录`)
+	findCmdType          = findCmd.String("type", "all", "指定要查找的类型，支持以下选项：\n all - 列出所有文件和目录 \n file - 只查找文件 \n dir - 只查找目录 \n symlink - 只查找软链接 \n readonly - 只查找只读文件 \n hidden - 只显示隐藏文件或目录 \n empty - 只查找空文件或目录")
 
 	// fck list 子命令
 	listCmd              = flag.NewFlagSet("list", flag.ExitOnError)

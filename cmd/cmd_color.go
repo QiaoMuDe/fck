@@ -136,7 +136,7 @@ func SprintStringColor(p string, s string, cl *colorlib.ColorLib) string {
 	case mode.IsRegular() && mode&0111 != 0:
 		// 可执行文件 - 使用绿色输出
 		return cl.Sgreen(s)
-	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".exe" || filepath.Ext(p) == ".bat" || filepath.Ext(p) == ".cmd" || filepath.Ext(p) == ".msi" || filepath.Ext(p) == ".ps1" || filepath.Ext(p) == ".psm1"):
+	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsExecutableExts[filepath.Ext(p)]:
 		// Windows下的可执行文件 - 使用绿色输出
 		return cl.Sgreen(s)
 	case mode.IsRegular():
@@ -188,7 +188,7 @@ func printPathColor(path string, cl *colorlib.ColorLib) {
 	case mode&os.ModeType == 0 && mode&0111 != 0:
 		// 可执行文件 - 使用绿色输出
 		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Green))
-	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(path) == ".exe" || filepath.Ext(path) == ".bat" || filepath.Ext(path) == ".cmd" || filepath.Ext(path) == ".msi" || filepath.Ext(path) == ".ps1" || filepath.Ext(path) == ".psm1"):
+	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsExecutableExts[filepath.Ext(path)]:
 		// Windows可执行文件 - 使用绿色输出
 		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Green))
 	case pathInfo.Size() == 0:

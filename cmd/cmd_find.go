@@ -290,63 +290,95 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	}
 
-	// 1. 基础类型检查（快速失败）
-	// 如果只查找文件，跳过目录
-	if *findCmdType == globals.FindTypeFile || *findCmdType == globals.FindTypeFileShort {
+	// 如果指定了排除文件或目录名, 跳过匹配的文件或目录
+	if *findCmdExcludeName != "" {
+		if exNameRegex.MatchString(entry.Name()) {
+			return nil
+		}
+	}
+
+	// 如果指定了排除路径, 跳过匹配的路径
+	if *findCmdExcludePath != "" {
+		if exPathRegex.MatchString(path) {
+			return nil
+		}
+	}
+
+	// 根据findCmdType的值，跳过不符合要求的文件或目录
+	switch *findCmdType {
+	case globals.FindTypeFile, globals.FindTypeFileShort:
+		// 如果只查找文件，跳过目录
 		if entry.IsDir() {
 			return nil
 		}
-	}
-
-	// 如果只查找目录，跳过文件
-	if *findCmdType == globals.FindTypeDir || *findCmdType == globals.FindTypeDirShort {
+	case globals.FindTypeDir, globals.FindTypeDirShort:
+		// 如果只查找目录，跳过文件
 		if !entry.IsDir() {
 			return nil
 		}
-	}
-
-	// 如果只查找软链接，跳过非软链接
-	if *findCmdType == globals.FindTypeSymlink || *findCmdType == globals.FindTypeSymlinkShort {
-		fileInfo, linkErr := os.Lstat(path)
-		if linkErr != nil {
-			return nil
-		}
-
+	case globals.FindTypeSymlink, globals.FindTypeSymlinkShort:
+		// 如果只查找软链接，跳过非软链接
 		// Windows系统特殊处理
 		if runtime.GOOS == "windows" {
-			// 检查.lnk后缀
-			if strings.HasSuffix(entry.Name(), ".lnk") {
-				// 是快捷方式，继续后续处理
-			} else if fileInfo.Mode()&os.ModeSymlink != 0 {
-				// 是mklink创建的符号链接
-			} else {
-				// 既不是.lnk也不是符号链接, 跳过
+			// 如果不是不是.lnk文件，跳过
+			if !strings.HasSuffix(entry.Name(), ".lnk") || !strings.HasSuffix(entry.Name(), ".url") {
 				return nil
 			}
-		} else {
-			// 非Windows系统只检查ModeSymlink标志
-			if fileInfo.Mode()&os.ModeSymlink == 0 {
-				return nil // 不是符号链接, 跳过
-			}
 		}
-	}
 
-	// 2. 快速属性检查
-	// 如果只显示隐藏文件或目录, 跳过非隐藏文件或目录
-	if *findCmdHidden && (*findCmdType == globals.FindTypeHidden || *findCmdType == globals.FindTypeHiddenShort) {
+		// 统一检查符号链接标志
+		if entry.Type()&os.ModeSymlink == 0 {
+			return nil // 不是符号链接, 跳过
+		}
+
+	case globals.FindTypeHidden, globals.FindTypeHiddenShort:
+		// 如果只显示隐藏文件或目录, 跳过非隐藏文件或目录
 		if !isHidden(path) {
 			return nil
 		}
-	}
-
-	// 如果只显示只读文件或目录 跳过非只读文件或目录
-	if *findCmdType == globals.FindTypeReadonly || *findCmdType == globals.FindTypeReadonlyShort {
+	case globals.FindTypeReadonly, globals.FindTypeReadonlyShort:
+		// 如果只显示只读文件或目录 跳过非只读文件或目录
 		if !isReadOnly(path) {
 			return nil
 		}
+	case globals.FindTypeEmpty, globals.FindTypeEmptyShort:
+		// 如果只查找空文件或目录
+		if entry.IsDir() {
+			// 检查目录是否为空
+			dirEntries, err := os.ReadDir(path)
+			if err != nil || len(dirEntries) > 0 {
+				return nil
+			}
+		} else {
+			// 如果是文件, 检查文件是否为空
+			fileInfo, sizeErr := entry.Info()
+			if sizeErr != nil || fileInfo.Size() > 0 {
+				return nil
+			}
+		}
+	case globals.FindTypeExecutable, globals.FindTypeExecutableShort:
+		// 如果只查找可执行文件或目录
+		if runtime.GOOS == "windows" {
+			// Windows系统检查文件扩展名
+			ext := strings.ToLower(filepath.Ext(entry.Name()))
+			if !globals.WindowsExecutableExts[ext] {
+				return nil
+			}
+		} else {
+			// 非Windows系统检查可执行权限
+			if entry.Type().IsRegular() && entry.Type()&0111 == 0 {
+				return nil
+			}
+		}
+	case globals.FindTypeSocket, globals.FindTypeSocketShort:
+		// 如果只查找socket文件或目录
+		if runtime.GOOS != "windows" {
+			if entry.Type()&os.ModeSocket == 0 {
+				return nil
+			}
+		}
 	}
 
-	// 3. 耗时检查（需要获取文件信息）
 	// 如果指定了文件大小, 跳过不符合条件的文件
 	if *findCmdSize != "" {
 		fileInfo, sizeErr := entry.Info()
@@ -370,39 +402,6 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	}
 
-	// 4. 空文件检查（放在耗时检查之后，因为已经获取了文件信息）
-	// 如果只查找空文件或目录
-	if *findCmdType == globals.FindTypeEmpty || *findCmdType == globals.FindTypeEmptyShort {
-		// 检查是否为空目录
-		if entry.IsDir() {
-			// 检查目录是否为空
-			dirEntries, err := os.ReadDir(path)
-			if err != nil || len(dirEntries) > 0 {
-				return nil
-			}
-		} else {
-			// 如果是文件, 检查文件是否为空
-			fileInfo, sizeErr := entry.Info()
-			if sizeErr != nil {
-				return nil
-			}
-			if fileInfo.Size() > 0 {
-				return nil
-			}
-		}
-	}
-
-	// 5. 排除检查（放在耗时检查之后，因为已经获取了文件信息）
-	// 如果指定了排除文件或目录名, 跳过匹配的文件或目录
-	if *findCmdExcludeName != "" && exNameRegex.MatchString(entry.Name()) {
-		return nil
-	}
-	// 如果指定了排除路径, 跳过匹配的路径
-	if *findCmdExcludePath != "" && exPathRegex.MatchString(path) {
-		return nil
-	}
-
-	// 6. 扩展名检查（放在耗时检查之后，因为已经获取了文件信息）
 	// 扩展名检查
 	if *findCmdExt != "" {
 		ext := filepath.Ext(entry.Name())       // 获取文件扩展名
@@ -420,7 +419,6 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		}
 	}
 
-	// 7. 执行动作（放在耗时检查之后，因为已经获取了文件信息）
 	// 如果启用了count标志, 则不执行任何操作
 	if !*findCmdCount {
 		// 如果启用了delete标志, 删除匹配的文件或目录
