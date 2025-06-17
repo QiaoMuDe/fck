@@ -212,6 +212,11 @@ func checkListCmdArgs() error {
 		}
 	}
 
+	// 检查是否同时指定了 -c 和 --dev-color 选项
+	if *listCmdDevColor && !*listCmdColor {
+		return fmt.Errorf("如果要启用开发模式颜色方案, 必须要启用颜色输出")
+	}
+
 	return nil
 }
 

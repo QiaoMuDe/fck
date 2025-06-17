@@ -232,10 +232,10 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) str
 		// 若文件类型为普通文件，则根据平台差异来设置颜色
 		if runtime.GOOS == "windows" {
 			switch info.FileExt {
-			case "exe", "bat", "cmd", "ps1", "psm1", "msi":
+			case ".exe", ".bat", ".cmd", ".ps1", ".psm1", ".msi":
 				// 对于 Windows 系统下的可执行文件，使用绿色来渲染字符串
 				return cl.Sgreen(pF)
-			case "lnk", "url":
+			case ".lnk", ".url":
 				// 对于 Windows 系统下的符号链接，使用青色来渲染字符串
 				return cl.Scyan(pF)
 			default:
@@ -261,4 +261,71 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) str
 		// 对于未匹配的类型，使用白色来渲染字符串
 		return cl.Swhite(pF)
 	}
+}
+
+// getDecolorString 函数的作用是根据传入的文件信息、路径字符串以及颜色库实例，返回不带颜色的路径字符串(开发环境配色方案)
+// 函数参数:
+// info: 包含文件类型和文件后缀名等信息的 globals.ListInfo 结构体实例。
+// pF: 要处理的路径字符串。
+// cl: 用于处理颜色的 colorlib.ColorLib 实例。
+// 返回值:
+// decolorString: 不带颜色的路径字符串。
+func getDevcolorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) string {
+	// 依据文件的类型来确定输出的颜色
+	switch info.EntryType {
+	case globals.SymlinkType:
+		// 若文件类型为符号链接，则使用青色来渲染字符串
+		return cl.Scyan(pF)
+	case globals.DirType:
+		// 若文件类型为目录，则使用蓝色来渲染字符串
+		return cl.Sblue(pF)
+	case globals.ExecutableType:
+		// 若文件类型为可执行文件，则使用绿色来渲染字符串
+		return cl.Sgreen(pF)
+	case globals.SocketType, globals.PipeType, globals.BlockDeviceType, globals.CharDeviceType:
+		// 若文件类型为套接字、管道、块设备、字符设备，则使用灰色来渲染字符串
+		return cl.Sgray(pF)
+	case globals.EmptyType:
+		// 若文件类型为空文件, 则使用灰色来渲染字符串
+		return cl.Sgray(pF)
+	case globals.FileType:
+		// 若文件类型为普通文件，则根据开发环境配色方案来设置颜色
+		for color, extMap := range devColorMap {
+			if extMap[info.FileExt] {
+				switch color {
+				case "yellow":
+					return cl.Syellow(pF)
+				case "green":
+					return cl.Sgreen(pF)
+				case "red":
+					return cl.Sred(pF)
+				case "purple":
+					return cl.Spurple(pF)
+				}
+			}
+		}
+
+		// 对于 Linux 系统下的普通文件，使用白色来渲染字符串
+		return cl.Swhite(pF)
+	default:
+		// 对于未匹配的类型，使用白色来渲染字符串
+		return cl.Swhite(pF)
+	}
+}
+
+// 颜色映射表，用于开发环境配色方案
+var devColorMap = map[string]map[string]bool{
+	// 代码文件
+	"green": {},
+	// 配置文件或环境文件
+	"yellow": {},
+	// 数据文件或压缩文件
+	"red": {
+		"zip": true,
+		"tar": true,
+		"gz":  true,
+		"bz2": true,
+	},
+	// 库文件
+	"purple": {},
 }
