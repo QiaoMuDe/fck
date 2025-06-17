@@ -93,29 +93,8 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		}
 
 		if pathInfo.IsDir() {
-			// 根据命令行参数排序目录中的文件信息 //
-			// 若同时指定按时间排序且不反转排序顺序，则按修改时间降序排序
-			if *listCmdSortByTime && !*listCmdReverseSort {
-				infos.SortByModTimeDesc()
-				// 若同时指定按时间排序且反转排序顺序，则按修改时间升序排序
-			} else if *listCmdSortByTime && *listCmdReverseSort {
-				infos.SortByModTimeAsc()
-				// 若同时指定按文件大小排序且不反转排序顺序，则按文件大小降序排序
-			} else if *listCmdSortBySize && !*listCmdReverseSort {
-				infos.SortByFileSizeDesc()
-				// 若同时指定按文件大小排序且反转排序顺序，则按文件大小升序排序
-			} else if *listCmdSortBySize && *listCmdReverseSort {
-				infos.SortByFileSizeAsc()
-				// 若同时指定按文件名排序且反转排序顺序，则按文件名升序排序
-			} else if *listCmdSortByName && *listCmdReverseSort {
-				infos.SortByFileNameAsc()
-				// 默认为按文件名降序排序, 如果仅指定反转排序顺序，则按文件名升序排序
-			} else if *listCmdReverseSort {
-				fileInfos.SortByFileNameAsc()
-			} else {
-				// 其他情况，按文件名降序排序
-				infos.SortByFileNameDesc()
-			}
+			// 根据命令行参数排序目录中的文件信息
+			sortFileInfos(infos, *listCmdSortByTime, *listCmdSortBySize, *listCmdSortByName, *listCmdReverseSort)
 
 			// 只在处理多个项目时打印目录路径
 			if len(uniquePaths) > 1 {
@@ -157,29 +136,8 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		// 打印文件组标题
 		cl.Green("Files:")
 
-		// 根据命令行参数排序文件信息切片 //
-		// 若同时指定按时间排序且不反转排序顺序，则按修改时间降序排序
-		if *listCmdSortByTime && !*listCmdReverseSort {
-			fileInfos.SortByModTimeDesc()
-			// 若同时指定按时间排序且反转排序顺序，则按修改时间升序排序
-		} else if *listCmdSortByTime && *listCmdReverseSort {
-			fileInfos.SortByModTimeAsc()
-			// 若同时指定按文件大小排序且不反转排序顺序，则按文件大小降序排序
-		} else if *listCmdSortBySize && !*listCmdReverseSort {
-			fileInfos.SortByFileSizeDesc()
-			// 若同时指定按文件大小排序且反转排序顺序，则按文件大小升序排序
-		} else if *listCmdSortBySize && *listCmdReverseSort {
-			fileInfos.SortByFileSizeAsc()
-			// 若同时指定按文件名排序且反转排序顺序，则按文件名升序排序
-		} else if *listCmdSortByName && *listCmdReverseSort {
-			fileInfos.SortByFileNameAsc()
-			// 默认为按文件名降序排序, 如果仅指定反转排序顺序，则按文件名升序排序
-		} else if *listCmdReverseSort {
-			fileInfos.SortByFileNameAsc()
-		} else {
-			// 其他情况，按文件名降序排序
-			fileInfos.SortByFileNameDesc()
-		}
+		// 根据命令行参数排序文件信息切片
+		sortFileInfos(fileInfos, *listCmdSortByTime, *listCmdSortBySize, *listCmdSortByName, *listCmdReverseSort)
 
 		if *listCmdLongFormat {
 			if err := listCmdLong(cl, fileInfos); err != nil {
@@ -762,6 +720,39 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals
 		FileExt: fileExt,
 		// 符号链接指向的目标文件的绝对路径，如果不是符号链接则为空字符串
 		LinkTargetPath: linkTargetPath,
+	}
+}
+
+// sortFileInfos 根据排序参数对文件信息进行排序
+// 参数:
+//
+//	infos - 要排序的文件信息切片
+//	sortByTime - 是否按修改时间排序
+//	sortBySize - 是否按文件大小排序
+//	sortByName - 是否按文件名排序
+//	reverse - 是否反转排序顺序
+func sortFileInfos(infos globals.ListInfos, sortByTime, sortBySize, sortByName, reverse bool) {
+	// 若同时指定按时间排序且不反转排序顺序，则按修改时间降序排序
+	if sortByTime && !reverse {
+		infos.SortByModTimeDesc()
+		// 若同时指定按时间排序且反转排序顺序，则按修改时间升序排序
+	} else if sortByTime && reverse {
+		infos.SortByModTimeAsc()
+		// 若同时指定按文件大小排序且不反转排序顺序，则按文件大小降序排序
+	} else if sortBySize && !reverse {
+		infos.SortByFileSizeDesc()
+		// 若同时指定按文件大小排序且反转排序顺序，则按文件大小升序排序
+	} else if sortBySize && reverse {
+		infos.SortByFileSizeAsc()
+		// 若同时指定按文件名排序且反转排序顺序，则按文件名升序排序
+	} else if sortByName && reverse {
+		infos.SortByFileNameAsc()
+		// 默认为按文件名降序排序, 如果仅指定反转排序顺序，则按文件名升序排序
+	} else if reverse {
+		infos.SortByFileNameAsc()
+	} else {
+		// 其他情况，按文件名降序排序
+		infos.SortByFileNameDesc()
 	}
 }
 
