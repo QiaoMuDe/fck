@@ -142,5 +142,6 @@ var (
 		"  crw    - 红色背景白色字体\n"+
 		"  cyw    - 黄色背景白色字体\n"+
 		"  none   - 禁用边框样式")
-	listCmdDevColor = listCmd.Bool("dev-color", false, "启用开发模式下的颜色输出")
+	listCmdDevColor      = listCmd.Bool("dev-color", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
+	listCmdDevColorShort = listCmd.Bool("dc", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
 )

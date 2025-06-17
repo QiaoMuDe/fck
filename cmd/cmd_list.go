@@ -87,7 +87,8 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		}
 
 		// 收集文件信息 指定路径和root路径
-		infos, getErr := getFileInfos(path, path)
+		mu := &sync.Mutex{}
+		infos, getErr := getFileInfos(path, path, mu)
 		if getErr != nil {
 			cl.PrintErrf("获取文件信息失败 %q: %v\n", path, getErr)
 			continue
@@ -212,9 +213,9 @@ func checkListCmdArgs() error {
 		}
 	}
 
-	// 检查是否同时指定了 -c 和 --dev-color 选项
-	if *listCmdDevColor && !*listCmdColor {
-		return fmt.Errorf("如果要启用开发模式颜色方案, 必须要启用颜色输出")
+	// 检查是否同时指定了 -c 和 --dev-color 或 -c 和 -dc
+	if *listCmdDevColor && !*listCmdColor || *listCmdDevColorShort && !*listCmdColor {
+		return fmt.Errorf("如果要启用开发环境颜色方案, 必须要启用颜色输出")
 	}
 
 	return nil
@@ -614,12 +615,9 @@ func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (forma
 // getFileInfos 函数用于获取指定路径下所有文件和目录的详细信息。
 // 参数 path 表示要获取信息的目录路径。
 // 返回值为一个 globals.ListInfo 类型的切片，包含了每个文件和目录的详细信息，以及可能出现的错误。
-func getFileInfos(p string, rootDir string) (globals.ListInfos, error) {
-	// 初始化一个用于存储文件信息的切片和互斥锁
-	var (
-		infos globals.ListInfos
-		mu    sync.Mutex
-	)
+func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, error) {
+	// 初始化一个用于存储文件信息的切片
+	var infos globals.ListInfos
 
 	// 清理路径
 	p = filepath.Clean(p)
@@ -719,7 +717,7 @@ func getFileInfos(p string, rootDir string) (globals.ListInfos, error) {
 					sem <- struct{}{}        // 获取信号量
 					defer func() { <-sem }() // 释放信号量
 
-					subInfos, err := getFileInfos(absFilePath, rootDir)
+					subInfos, err := getFileInfos(absFilePath, rootDir, mu)
 					resultChan <- result{subInfos, err}
 				}()
 
