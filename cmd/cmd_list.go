@@ -440,8 +440,10 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 				// 渲染文件大小单位
 				infoSizeUnit = cl.Syellow(infoSizeUnit)
 
-				// 修改时间
-				infoModTime := cl.Sgreen(info.ModTime.Format("2006-01-02 15:04:05"))
+				// 修改时间 禁用加粗
+				cl.NoBold.Store(true)
+				infoModTime := cl.Sblue(info.ModTime.Format("2006-01-02 15:04:05"))
+				cl.NoBold.Store(false)
 
 				// 文件名
 				var infoName string
@@ -527,8 +529,10 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 		// 渲染文件大小单位
 		infoSizeUnit = cl.Syellow(infoSizeUnit)
 
-		// 修改时间
-		infoModTime := cl.Sgreen(info.ModTime.Format("2006-01-02 15:04:05"))
+		// 修改时间 禁用加粗
+		cl.NoBold.Store(true)
+		infoModTime := cl.Sblue(info.ModTime.Format("2006-01-02 15:04:05"))
+		cl.NoBold.Store(false)
 
 		// 文件名
 		var infoName string
