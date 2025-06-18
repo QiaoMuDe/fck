@@ -403,3 +403,9 @@ var WindowsExecutableExts = map[string]bool{
 	".psm1": true, // PowerShell模块文件
 	".msi":  true, // Windows安装程序
 }
+
+// 定义windows系统软链接或快捷方式扩展名map
+var WindowsSymlinkExts = map[string]bool{
+	".lnk": true, // 快捷方式
+	".url": true, // 链接文件
+}

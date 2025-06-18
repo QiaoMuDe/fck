@@ -306,16 +306,15 @@ var devColorMap = map[string]map[string]bool{
 		".myi":       true, // MySQL 索引文件
 		".ndb":       true, // MySQL Cluster 数据文件
 		".pgdata":    true, // PostgreSQL 数据目录
-
-		".whl":  true, // Python wheel 包文件
-		".pex":  true, // Python 可执行包文件
-		".rpm":  true, // Red Hat 包管理器文件
-		".deb":  true, // Debian 包文件
-		".aab":  true, // Android App Bundle
-		".xap":  true, // Windows Phone 应用包
-		".appx": true, // Windows 应用包
-		".pkg":  true, // macOS 安装包
-		".msi":  true, // Windows 安装包
+		".whl":       true, // Python wheel 包文件
+		".pex":       true, // Python 可执行包文件
+		".rpm":       true, // Red Hat 包管理器文件
+		".deb":       true, // Debian 包文件
+		".aab":       true, // Android App Bundle
+		".xap":       true, // Windows Phone 应用包
+		".appx":      true, // Windows 应用包
+		".pkg":       true, // macOS 安装包
+		".msi":       true, // Windows 安装包
 	},
 	// 库文件或静态库文件或编译后的产物
 	"purple": {
@@ -404,7 +403,7 @@ func printSizeColor(p string, s int64, cl *colorlib.ColorLib) {
 	switch mode := pathInfo.Mode(); {
 	case mode&os.ModeSymlink != 0: // 符号链接 - 青色
 		pathStr = cl.Scyan(p)
-	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".lnk" || filepath.Ext(p) == ".url"): // Windows快捷方式 - 青色
+	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsSymlinkExts[filepath.Ext(p)]: // Windows快捷方式 - 青色
 		pathStr = cl.Scyan(p)
 	case mode.IsDir(): // 目录 - 蓝色
 		pathStr = cl.Sblue(p)
@@ -420,7 +419,7 @@ func printSizeColor(p string, s int64, cl *colorlib.ColorLib) {
 		pathStr = cl.Sgray(p)
 	case mode.IsRegular() && mode&0111 != 0: // 可执行文件 - 绿色
 		pathStr = cl.Sgreen(p)
-	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".exe" || filepath.Ext(p) == ".bat" || filepath.Ext(p) == ".cmd" || filepath.Ext(p) == ".msi" || filepath.Ext(p) == ".ps1" || filepath.Ext(p) == ".psm1"): // Windows可执行文件 - 绿色
+	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsExecutableExts[filepath.Ext(p)]: // Windows可执行文件 - 绿色
 		pathStr = cl.Sgreen(p)
 	default: // 其他文件 - 白色
 		pathStr = cl.Swhite(p)
@@ -452,7 +451,7 @@ func SprintStringColor(p string, s string, cl *colorlib.ColorLib) string {
 	case mode&os.ModeSymlink != 0:
 		// 符号链接 - 使用青色输出
 		return cl.Scyan(s)
-	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(p) == ".lnk" || filepath.Ext(p) == ".url"):
+	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsSymlinkExts[filepath.Ext(p)]:
 		// Windows下的快捷方式文件 - 使用青色输出
 		return cl.Scyan(s)
 	case mode.IsDir():
@@ -507,7 +506,7 @@ func printPathColor(path string, cl *colorlib.ColorLib) {
 	case mode&os.ModeSymlink != 0:
 		// 符号链接 - 使用青色输出
 		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Cyan))
-	case runtime.GOOS == "windows" && mode.IsRegular() && (filepath.Ext(path) == ".lnk" || filepath.Ext(path) == ".url"):
+	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsSymlinkExts[filepath.Ext(path)]:
 		// Windows快捷方式 - 使用青色输出
 		fmt.Println(splitPathColor(path, cl, colorlib.Cyan, colorlib.Cyan))
 	case mode.IsDir():
@@ -576,11 +575,11 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) str
 	case globals.FileType:
 		// 若文件类型为普通文件，则根据平台差异来设置颜色
 		if runtime.GOOS == "windows" {
-			switch info.FileExt {
-			case ".exe", ".bat", ".cmd", ".ps1", ".psm1", ".msi":
+			switch {
+			case globals.WindowsExecutableExts[info.FileExt]:
 				// 对于 Windows 系统下的可执行文件，使用绿色来渲染字符串
 				return cl.Sgreen(pF)
-			case ".lnk", ".url":
+			case globals.WindowsSymlinkExts[info.FileExt]:
 				// 对于 Windows 系统下的符号链接，使用青色来渲染字符串
 				return cl.Scyan(pF)
 			default:
@@ -632,6 +631,18 @@ func getDevColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) 
 		return cl.Sgray(pF)
 	case globals.FileType:
 		// 若文件类型为普通文件，则根据开发环境配色方案来设置颜色
+		if runtime.GOOS == "windows" {
+			switch {
+			case globals.WindowsExecutableExts[info.FileExt]:
+				// 对于 Windows 系统下的可执行文件，使用绿色来渲染字符串
+				return cl.Sgreen(pF)
+			case globals.WindowsSymlinkExts[info.FileExt]:
+				// 对于 Windows 系统下的符号链接，使用青色来渲染字符串
+				return cl.Scyan(pF)
+			}
+		}
+
+		// 常规配色方案
 		for color, extMap := range devColorMap {
 			if extMap[info.FileExt] {
 				switch color {
