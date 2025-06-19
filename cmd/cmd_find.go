@@ -72,6 +72,29 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		escapedPath = regexp.QuoteMeta(*findCmdPath)
 	}
 
+	// 新增完整关键字匹配逻辑
+	if *findCmdWholeWord {
+		// 名字在关键字前后添加单词边界
+		if escapedName != "" {
+			escapedName = "\\b" + escapedName + "\\b"
+		}
+
+		// 排除的名字在关键字前后添加单词边界
+		if exCludedName != "" {
+			exCludedName = "\\b" + exCludedName + "\\b"
+		}
+
+		// 路径在关键字前后添加单词边界
+		if escapedPath != "" {
+			escapedPath = "\\b" + escapedPath + "\\b"
+		}
+
+		// 排除的路径在关键字前后添加单词边界
+		if exCludedPath != "" {
+			exCludedPath = "\\b" + exCludedPath + "\\b"
+		}
+	}
+
 	// 根据用户选择是否区分大小写
 	var nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp
 	var nameRegexErr, exNameRegexErr, pathRegexErr, exPathRegexErr error

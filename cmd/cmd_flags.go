@@ -101,6 +101,7 @@ var (
 		" [a|append]     - 只查找追加模式文件\n"+
 		" [n|nonappend]  - 只查找非追加模式文件\n"+
 		" [u|exclusive]  - 只查找独占模式文件")
+	findCmdWholeWord = findCmd.Bool("W", false, "匹配完整关键字")
 
 	// fck list 子命令
 	listCmd              = flag.NewFlagSet("list", flag.ExitOnError)
