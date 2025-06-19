@@ -74,24 +74,24 @@ func findCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 
 	// 新增完整关键字匹配逻辑
 	if *findCmdWholeWord {
-		// 名字在关键字前后添加单词边界
+		// 名字在关键字前后添加开头和结尾匹配
 		if escapedName != "" {
-			escapedName = "\\b" + escapedName + "\\b"
+			escapedName = "^" + escapedName + "$"
 		}
 
-		// 排除的名字在关键字前后添加单词边界
+		// 排除的名字在关键字前后添加开头和结尾匹配
 		if exCludedName != "" {
-			exCludedName = "\\b" + exCludedName + "\\b"
+			exCludedName = "^" + exCludedName + "$"
 		}
 
-		// 路径在关键字前后添加单词边界
+		// 路径在关键字前后添加开头和结尾匹配
 		if escapedPath != "" {
-			escapedPath = "\\b" + escapedPath + "\\b"
+			escapedPath = "^" + escapedPath + "$"
 		}
 
-		// 排除的路径在关键字前后添加单词边界
+		// 排除的路径在关键字前后添加开头和结尾匹配
 		if exCludedPath != "" {
-			exCludedPath = "\\b" + exCludedPath + "\\b"
+			exCludedPath = "^" + exCludedPath + "$"
 		}
 	}
 
