@@ -2,52 +2,56 @@ package cmd
 
 import (
 	"flag"
+	"fmt"
+	"os"
 
 	"gitee.com/MM-Q/fck/globals"
+	"gitee.com/MM-Q/qflag"
+	"gitee.com/MM-Q/verman"
 )
 
 var (
-	// versionF 版本信息
-	versionF = flag.Bool("v", false, "打印版本信息并退出")
-	// helpF 帮助信息
-	helpF = flag.Bool("h", false, "打印帮助信息并退出")
+	// // versionF 版本信息
+	// versionF = flag.Bool("v", false, "打印版本信息并退出")
+	// // helpF 帮助信息
+	// helpF = flag.Bool("h", false, "打印帮助信息并退出")
 
-	// fck hash 子命令
-	hashCmd          = flag.NewFlagSet("hash", flag.ExitOnError)
-	hashCmdHelp      = hashCmd.Bool("h", false, "打印帮助信息并退出")
-	hashCmdType      = hashCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
-	hashCmdRecursion = hashCmd.Bool("r", false, "递归处理目录")
-	hashCmdJob       = hashCmd.Int("j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
-	hashCmdWrite     = hashCmd.Bool("w", false, "将哈希值写入文件, 文件名为checksum.hash")
-	hashCmdHidden    = hashCmd.Bool("H", false, "启用计算隐藏文件/目录的哈希值，默认跳过")
+	// // fck hash 子命令
+	// hashCmd          = flag.NewFlagSet("hash", flag.ExitOnError)
+	// hashCmdHelp      = hashCmd.Bool("h", false, "打印帮助信息并退出")
+	// hashCmdType      = hashCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
+	// hashCmdRecursion = hashCmd.Bool("r", false, "递归处理目录")
+	// hashCmdJob       = hashCmd.Int("j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
+	// hashCmdWrite     = hashCmd.Bool("w", false, "将哈希值写入文件, 文件名为checksum.hash")
+	// hashCmdHidden    = hashCmd.Bool("H", false, "启用计算隐藏文件/目录的哈希值，默认跳过")
 
-	// fck size 子命令
-	sizeCmd           = flag.NewFlagSet("size", flag.ExitOnError)
-	sizeCmdHelp       = sizeCmd.Bool("h", false, "打印帮助信息并退出")
-	sizeCmdColor      = sizeCmd.Bool("c", false, "启用颜色输出")
-	sizeCmdJob        = sizeCmd.Int("j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
-	sizeCmdTableStyle = sizeCmd.String("ts", "", "指定表格样式，支持以下选项：\n"+
-		"  default - 默认样式\n"+
-		"  l      - 浅色样式\n"+
-		"  r      - 圆角样式\n"+
-		"  bd     - 粗体样式\n"+
-		"  cb     - 亮色彩色样式\n"+
-		"  cd     - 暗色彩色样式\n"+
-		"  db     - 双线样式\n"+
-		"  cbb    - 黑色背景蓝色字体\n"+
-		"  cbc    - 青色背景蓝色字体\n"+
-		"  cbg    - 绿色背景蓝色字体\n"+
-		"  cbm    - 紫色背景蓝色字体\n"+
-		"  cby    - 黄色背景蓝色字体\n"+
-		"  cbr    - 红色背景蓝色字体\n"+
-		"  cwb    - 蓝色背景白色字体\n"+
-		"  ccw    - 青色背景白色字体\n"+
-		"  cgw    - 绿色背景白色字体\n"+
-		"  cmw    - 紫色背景白色字体\n"+
-		"  crw    - 红色背景白色字体\n"+
-		"  cyw    - 黄色背景白色字体\n"+
-		"  none   - 禁用表格样式")
-	sizeCmdHidden = sizeCmd.Bool("H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
+	// // fck size 子命令
+	// sizeCmd           = flag.NewFlagSet("size", flag.ExitOnError)
+	// sizeCmdHelp       = sizeCmd.Bool("h", false, "打印帮助信息并退出")
+	// sizeCmdColor      = sizeCmd.Bool("c", false, "启用颜色输出")
+	// sizeCmdJob        = sizeCmd.Int("j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
+	// sizeCmdTableStyle = sizeCmd.String("ts", "", "指定表格样式，支持以下选项：\n"+
+	// 	"  default - 默认样式\n"+
+	// 	"  l      - 浅色样式\n"+
+	// 	"  r      - 圆角样式\n"+
+	// 	"  bd     - 粗体样式\n"+
+	// 	"  cb     - 亮色彩色样式\n"+
+	// 	"  cd     - 暗色彩色样式\n"+
+	// 	"  db     - 双线样式\n"+
+	// 	"  cbb    - 黑色背景蓝色字体\n"+
+	// 	"  cbc    - 青色背景蓝色字体\n"+
+	// 	"  cbg    - 绿色背景蓝色字体\n"+
+	// 	"  cbm    - 紫色背景蓝色字体\n"+
+	// 	"  cby    - 黄色背景蓝色字体\n"+
+	// 	"  cbr    - 红色背景蓝色字体\n"+
+	// 	"  cwb    - 蓝色背景白色字体\n"+
+	// 	"  ccw    - 青色背景白色字体\n"+
+	// 	"  cgw    - 绿色背景白色字体\n"+
+	// 	"  cmw    - 紫色背景白色字体\n"+
+	// 	"  crw    - 红色背景白色字体\n"+
+	// 	"  cyw    - 黄色背景白色字体\n"+
+	// 	"  none   - 禁用表格样式")
+	// sizeCmdHidden = sizeCmd.Bool("H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
 
 	// fck diff 子命令
 	diffCmd      = flag.NewFlagSet("diff", flag.ExitOnError)
@@ -146,3 +150,93 @@ var (
 	listCmdDevColor      = listCmd.Bool("dev-color", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
 	listCmdDevColorShort = listCmd.Bool("dc", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
 )
+
+var (
+	// fck hash 子命令
+	hashCmd          *qflag.Cmd
+	hashCmdType      *qflag.EnumFlag // type 标志
+	hashCmdRecursion *qflag.BoolFlag // recursion 标志
+	hashCmdJob       *qflag.IntFlag  // job 标志
+	hashCmdWrite     *qflag.BoolFlag // write 标志
+	hashCmdHidden    *qflag.BoolFlag // hidden 标志
+
+	// fck size 子命令
+	sizeCmd           *qflag.Cmd
+	sizeCmdColor      *qflag.BoolFlag   // color 标志
+	sizeCmdJob        *qflag.IntFlag    // job 标志
+	sizeCmdTableStyle *qflag.StringFlag // ts 标志
+	sizeCmdHidden     *qflag.BoolFlag   // hidden 标志
+)
+
+func init() {
+	defer func() {
+		if err := recover(); err != nil {
+			// 打印错误信息并退出
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
+		}
+	}()
+
+	// 注册版本信息标志
+	versionF := qflag.Bool("version", "v", false, "显示版本信息并退出")
+	qflag.QCommandLine.SetUseChinese(true)                                    // 启用中文帮助信息
+	qflag.QCommandLine.SetDescription("多功能文件处理工具集, 提供文件哈希计算、大小统计、查找和校验等实用功能") // 设置命令行描述
+
+	// fck hash 子命令
+	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError)
+	hashCmd.SetUseChinese(true)                                     // 启用中文帮助信息
+	hashCmd.SetDescription("文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理") // 设置命令行描述
+	hashCmdType = hashCmd.Enum("type", "t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512", []string{"md5", "sha1", "sha256", "sha512"})
+	hashCmdRecursion = hashCmd.Bool("recursion", "r", false, "递归处理目录")
+	hashCmdJob = hashCmd.Int("job", "j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
+	hashCmdWrite = hashCmd.Bool("write", "w", false, "将哈希值写入文件, 文件名为checksum.hash")
+	hashCmdHidden = hashCmd.Bool("hidden", "H", false, "启用计算隐藏文件/目录的哈希值，默认跳过")
+
+	// fck size 子命令
+	sizeCmd = qflag.NewCmd("size", "s", flag.ExitOnError)
+	sizeCmd.SetUseChinese(true) // 启用中文帮助信息
+	sizeCmd.SetDescription("文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示")
+	sizeCmdColor = sizeCmd.Bool("color", "c", false, "启用颜色输出")
+	sizeCmdJob = sizeCmd.Int("job", "j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
+	sizeCmdHidden = sizeCmd.Bool("hidden", "H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
+	sizeCmdTableStyle = sizeCmd.String("table-style", "ts", "", "指定表格样式，支持以下选项：\n"+
+		"\t\t\t\tdefault - 默认样式\n"+
+		"\t\t\t\tl       - 浅色样式\n"+
+		"\t\t\t\tr       - 圆角样式\n"+
+		"\t\t\t\tbd      - 粗体样式\n"+
+		"\t\t\t\tcb      - 亮色彩色样式\n"+
+		"\t\t\t\tcd      - 暗色彩色样式\n"+
+		"\t\t\t\tdb      - 双线样式\n"+
+		"\t\t\t\tcbb     - 黑色背景蓝色字体\n"+
+		"\t\t\t\tcbc     - 青色背景蓝色字体\n"+
+		"\t\t\t\tcbg     - 绿色背景蓝色字体\n"+
+		"\t\t\t\tcbm     - 紫色背景蓝色字体\n"+
+		"\t\t\t\tcby     - 黄色背景蓝色字体\n"+
+		"\t\t\t\tcbr     - 红色背景蓝色字体\n"+
+		"\t\t\t\tcwb     - 蓝色背景白色字体\n"+
+		"\t\t\t\tccw     - 青色背景白色字体\n"+
+		"\t\t\t\tcgw     - 绿色背景白色字体\n"+
+		"\t\t\t\tcmw     - 紫色背景白色字体\n"+
+		"\t\t\t\tcrw     - 红色背景白色字体\n"+
+		"\t\t\t\tcyw     - 黄色背景白色字体\n"+
+		"\t\t\t\tnone    - 禁用表格样式")
+
+	// 添加子命令
+	if addErr := qflag.QCommandLine.AddSubCmd(hashCmd, sizeCmd); addErr != nil {
+		fmt.Printf("err: %v\n", addErr)
+		os.Exit(1)
+	}
+
+	// 解析全局参数
+	if err := qflag.Parse(); err != nil {
+		fmt.Printf("err: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 检查版本信息标志
+	if versionF.Get() {
+		v := verman.Get()
+		fmt.Println(v.AppName, v.GitVersion)
+		os.Exit(0)
+	}
+}

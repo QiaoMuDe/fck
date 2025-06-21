@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -26,7 +25,7 @@ type item struct {
 type items []item
 
 // sizeCmdMain 是 size 子命令的主函数
-func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
+func sizeCmdMain(cl *colorlib.ColorLib) error {
 	// 获取指定的路径
 	targetPaths := sizeCmd.Args()
 
@@ -36,14 +35,14 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 	}
 
 	// 检查表格的样式是否有效
-	if *sizeCmdTableStyle != "" {
-		if _, ok := globals.TableStyleMap[*sizeCmdTableStyle]; !ok {
-			return fmt.Errorf("无效的表格样式: %s", *sizeCmdTableStyle)
+	if sizeCmdTableStyle.Get() != "" {
+		if _, ok := globals.TableStyleMap[sizeCmdTableStyle.Get()]; !ok {
+			return fmt.Errorf("无效的表格样式: %s", sizeCmdTableStyle.Get())
 		}
 	}
 
-	// 根据*sizeCmdColor设置颜色模式
-	if *sizeCmdColor {
+	// 根据sizeCmdColor设置颜色模式
+	if sizeCmdColor.Get() {
 		cl.NoColor.Store(false)
 	} else {
 		cl.NoColor.Store(true)
@@ -73,7 +72,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			// 计算每个匹配路径的大小
 			for _, filePath := range filePaths {
 				// 如果是隐藏文件且未启用-H选项, 则跳过
-				if !*sizeCmdHidden {
+				if !sizeCmdHidden.Get() {
 					if isHidden(filePath) {
 						continue
 					}
@@ -86,7 +85,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 				}
 
 				// 如果没启用表格输出, 则直接打印结果
-				if *sizeCmdTableStyle == "" {
+				if sizeCmdTableStyle.Get() == "" {
 					printSizeColor(filePath, size, cl)
 					continue
 				} else {
@@ -100,14 +99,14 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 			}
 
 			// 打印输出
-			if *sizeCmdTableStyle != "" {
+			if sizeCmdTableStyle.Get() != "" {
 				printSizeTable(itemList, cl)
 			}
 			return nil
 		}
 
 		// 如果是隐藏文件且未启用-H选项, 则跳过
-		if !*sizeCmdHidden {
+		if !sizeCmdHidden.Get() {
 			if isHidden(targetPath) {
 				continue
 			}
@@ -123,7 +122,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		// 如果是文件, 则直接计算大小
 		if !info.IsDir() {
 			// 如果没启用表格输出, 则直接打印结果
-			if *sizeCmdTableStyle == "" {
+			if sizeCmdTableStyle.Get() == "" {
 				// 根据是否启用颜色打印结果
 				printSizeColor(targetPath, info.Size(), cl)
 				continue
@@ -147,7 +146,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 		}
 
 		// 如果没启用表格输出, 则直接打印结果
-		if *sizeCmdTableStyle == "" {
+		if sizeCmdTableStyle.Get() == "" {
 			printSizeColor(targetPath, size, cl)
 			continue
 		} else {
@@ -169,7 +168,7 @@ func sizeCmdMain(sizeCmd *flag.FlagSet, cl *colorlib.ColorLib) error {
 // getPathSize 获取路径大小
 func getPathSize(path string) (int64, error) {
 	// 如果是隐藏文件且未启用-H选项，则跳过
-	if !*sizeCmdHidden {
+	if !sizeCmdHidden.Get() {
 		if isHidden(path) {
 			return 0, nil
 		}
@@ -208,7 +207,7 @@ func getPathSize(path string) (int64, error) {
 	errChan := make(chan error, 100)     // 错误通道大小为100
 
 	// 启动worker goroutines
-	workers := *sizeCmdJob
+	workers := sizeCmdJob.Get()
 	if workers == -1 {
 		// 如果未指定并发数量, 则根据CPU核心数自动设置 (每个核心2个worker)
 		workers = runtime.NumCPU() * 2
@@ -261,7 +260,7 @@ func getPathSize(path string) (int64, error) {
 		}
 
 		// 如果是隐藏文件且未启用-H选项，则跳过
-		if !*sizeCmdHidden {
+		if !sizeCmdHidden.Get() {
 			if isHidden(filePath) {
 				return nil
 			}
@@ -411,7 +410,7 @@ func printSizeTable(its items, cl *colorlib.ColorLib) {
 	t.SetOutputMirror(os.Stdout)
 
 	// 设置表头, 只有在-ts为none时才设置表头
-	if *sizeCmdTableStyle != "" && *sizeCmdTableStyle != "none" {
+	if sizeCmdTableStyle.Get() != "" && sizeCmdTableStyle.Get() != "none" {
 		t.AppendHeader(table.Row{"Size", "Name"})
 	}
 
@@ -440,9 +439,9 @@ func printSizeTable(its items, cl *colorlib.ColorLib) {
 	})
 
 	// 设置表格样式
-	if *sizeCmdTableStyle != "" {
+	if sizeCmdTableStyle.Get() != "" {
 		// 根据-ts的值设置表格样式
-		if style, ok := globals.TableStyleMap[*sizeCmdTableStyle]; ok {
+		if style, ok := globals.TableStyleMap[sizeCmdTableStyle.Get()]; ok {
 			t.SetStyle(style)
 		}
 	}

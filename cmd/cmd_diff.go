@@ -142,7 +142,7 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 		defer fileWrite.Close()
 
 		// 写入文件头
-		if err := writeFileHeader(fileWrite, *hashCmdType, globals.TimestampFormat); err != nil {
+		if err := writeFileHeader(fileWrite, hashCmdType.Get(), globals.TimestampFormat); err != nil {
 			return fmt.Errorf("写入文件头失败: %v", err)
 		}
 	}
@@ -906,7 +906,7 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 		defer fileWrite.Close()
 
 		// 写入文件头
-		if err := writeFileHeader(fileWrite, *hashCmdType, globals.TimestampFormat); err != nil {
+		if err := writeFileHeader(fileWrite, hashCmdType.Get(), globals.TimestampFormat); err != nil {
 			return fmt.Errorf("写入文件头失败: %v", err)
 		}
 	}

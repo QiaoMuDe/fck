@@ -390,7 +390,7 @@ func printSizeColor(p string, s int64, cl *colorlib.ColorLib) {
 	// 获取路径信息
 	pathInfo, statErr := os.Lstat(p)
 	if statErr != nil {
-		if *sizeCmdColor {
+		if sizeCmdColor.Get() {
 			fmt.Printf("%-25s\t%s\n", sizeStr, cl.Sred(p))
 		} else {
 			fmt.Printf("%-15s\t%s\n", sizeStr, p)
@@ -426,7 +426,7 @@ func printSizeColor(p string, s int64, cl *colorlib.ColorLib) {
 	}
 
 	// 格式化输出
-	if *sizeCmdColor {
+	if sizeCmdColor.Get() {
 		fmt.Printf("%-25s\t%s\n", sizeStr, pathStr)
 	} else {
 		fmt.Printf("%-15s\t%s\n", sizeStr, p)
