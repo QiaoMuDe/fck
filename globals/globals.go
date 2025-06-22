@@ -75,35 +75,35 @@ var (
 	}
 )
 
-// hash 子命令帮助信息
-//
-//go:embed help/help_hash.txt
-var HashHelp string
+// // hash 子命令帮助信息
+// //
+// //go:embed help/help_hash.txt
+// var HashHelp string
 
-// size 子命令帮助信息
-//
-//go:embed help/help_size.txt
-var SizeHelp string
+// // size 子命令帮助信息
+// //
+// //go:embed help/help_size.txt
+// var SizeHelp string
 
-// check 子命令帮助信息
-//
-//go:embed help/help_diff.txt
-var DiffHelp string
+// // check 子命令帮助信息
+// //
+// //go:embed help/help_diff.txt
+// var DiffHelp string
 
-// find 子命令帮助信息
-//
-//go:embed help/help_find.txt
-var FindHelp string
+// // find 子命令帮助信息
+// //
+// //go:embed help/help_find.txt
+// var FindHelp string
 
-// fck 主命令帮助信息
-//
-//go:embed help/help.txt
-var FckHelp string
+// // fck 主命令帮助信息
+// //
+// //go:embed help/help.txt
+// var FckHelp string
 
-// list 子命令帮助信息
-//
-//go:embed help/help_list.txt
-var ListHelp string
+// // list 子命令帮助信息
+// //
+// //go:embed help/help_list.txt
+// var ListHelp string
 
 // list子命令用于存储文件信息的结构体
 type ListInfo struct {

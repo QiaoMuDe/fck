@@ -551,7 +551,7 @@ func printPathColor(path string, cl *colorlib.ColorLib) {
 // colorString: 经过颜色处理后的路径字符串。
 func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) string {
 	// 如果启用了开发环境模式, 则返回开发模式下的颜色处理结果
-	if *listCmdDevColor || *listCmdDevColorShort {
+	if listCmdDevColor.Get() {
 		return getDevColorString(info, pF, cl)
 	}
 

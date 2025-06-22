@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/globals"
+	"gitee.com/MM-Q/qflag"
 )
 
 func Run() {
@@ -18,9 +18,6 @@ func Run() {
 			os.Exit(1)
 		}
 	}()
-
-	// 解析命令行参数
-	flag.Parse()
 
 	// 获取子命令专用cl
 	cmdCl := colorlib.NewColorLib()
@@ -63,77 +60,33 @@ func Run() {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
-	case "find":
+	case findCmd.LongName(), findCmd.ShortName(): // find 子命令
 		// 解析 find 子命令的参数
 		if err := findCmd.Parse(flag.Args()[1:]); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
 
-		// 如果是 -h 或 help, 则打印帮助信息并退出
-		if *findCmdHelp {
-			fmt.Println(globals.FindHelp)
-			os.Exit(0)
-		}
-
 		// 执行 find 子命令
-		if err := findCmdMain(cmdCl, findCmd); err != nil {
+		if err := findCmdMain(cmdCl); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
-	case "f":
-		// 解析 find 子命令的参数
-		if err := findCmd.Parse(flag.Args()[1:]); err != nil {
-			fmt.Printf("err: %v\n", err)
-			os.Exit(1)
-		}
-
-		// 如果是 -h 或 help, 则打印帮助信息并退出
-		if *findCmdHelp {
-			fmt.Println(globals.FindHelp)
-			os.Exit(0)
-		}
-
-		// 执行 find 子命令
-		if err := findCmdMain(cmdCl, findCmd); err != nil {
-			fmt.Printf("err: %v\n", err)
-			os.Exit(1)
-		}
-	case "list":
+	case listCmd.LongName(), listCmd.ShortName(): // list 子命令
 		// 解析 list 子命令的参数
 		if err := listCmd.Parse(flag.Args()[1:]); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
-		// 如果是 -h 或 help, 则打印帮助信息并退出
-		if *listCmdHelp {
-			fmt.Println(globals.ListHelp)
-			os.Exit(0)
-		}
 		// 执行 list 子命令
-		if err := listCmdMain(cmdCl, listCmd); err != nil {
-			fmt.Printf("err: %v\n", err)
-			os.Exit(1)
-		}
-	case "ls":
-		// 解析 list 子命令的参数
-		if err := listCmd.Parse(flag.Args()[1:]); err != nil {
-			fmt.Printf("err: %v\n", err)
-			os.Exit(1)
-		}
-		// 如果是 -h 或 help, 则打印帮助信息并退出
-		if *listCmdHelp {
-			fmt.Println(globals.ListHelp)
-			os.Exit(0)
-		}
-		// 执行 list 子命令
-		if err := listCmdMain(cmdCl, listCmd); err != nil {
+		if err := listCmdMain(cmdCl); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
 	default:
 		// 如果是未知的子命令, 则打印帮助信息并退出
-		fmt.Println(globals.FckHelp)
+		fmt.Printf("err: 未知的子命令 %s\n", qflag.Arg(0))
+		qflag.PrintHelp()
 		os.Exit(0)
 	}
 

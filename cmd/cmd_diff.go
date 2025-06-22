@@ -104,7 +104,9 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 		if err != nil {
 			return fmt.Errorf("无法获取目录A的绝对路径: %v", err)
 		}
-		diffCmdDirA.Set(absDirA)
+		if setErr := diffCmdDirA.Set(absDirA); setErr != nil {
+			return fmt.Errorf("无法设置目录A的绝对路径: %v", setErr)
+		}
 	}
 
 	// 检查目录B是否为绝对路径，如果不是，则转换为绝对路径
@@ -113,7 +115,9 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 		if err != nil {
 			return fmt.Errorf("无法获取目录B的绝对路径: %v", err)
 		}
-		diffCmdDirB.Set(absDirB)
+		if setErr := diffCmdDirB.Set(absDirB); setErr != nil {
+			return fmt.Errorf("无法设置目录B的绝对路径: %v", setErr)
+		}
 	}
 
 	// 校验目录A 和 目录B //
@@ -850,7 +854,9 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 // checkWithFileAndDir 根据校验文件和目录进行校验的逻辑
 func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) error {
 	// 清理路径
-	diffCmdDirs.Set(filepath.Clean(diffCmdDirs.Get()))
+	if setErr := diffCmdDirs.Set(filepath.Clean(diffCmdDirs.Get())); setErr != nil {
+		return fmt.Errorf("清理路径 %s 失败: %v", diffCmdDirs.Get(), setErr)
+	}
 
 	// 检查指定的目录是否包含禁止输入的路径
 	if _, ok := globals.ForbiddenPaths[diffCmdDirs.Get()]; ok {

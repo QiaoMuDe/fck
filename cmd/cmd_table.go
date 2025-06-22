@@ -117,8 +117,8 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 	t.SetOutputMirror(os.Stdout)
 
 	// 设置表头
-	if *listCmdTableStyle != "none" {
-		if *listCmdShowUserGroup {
+	if listCmdTableStyle.Get() != "none" {
+		if listCmdShowUserGroup.Get() {
 			t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
 		} else {
 			t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
@@ -153,7 +153,7 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 		// 文件名
 		var infoName string
 		// 检查是否启用引号
-		if *listCmdQuoteNames {
+		if listCmdQuoteNames.Get() {
 			// 检查是否为软链接
 			if info.EntryType == globals.SymlinkType {
 				infoName = getColorString(info, fmt.Sprintf("%q -> %q", fileName, info.LinkTargetPath), cl)
@@ -170,7 +170,7 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 		}
 
 		// 添加行到表格
-		if *listCmdShowUserGroup {
+		if listCmdShowUserGroup.Get() {
 			t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName})
 		} else {
 			t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName})
@@ -190,9 +190,9 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 	})
 
 	// 设置表格样式
-	if *listCmdTableStyle != "" {
+	if listCmdTableStyle.Get() != "" {
 		// 根据-ts的值设置表格样式
-		if style, ok := globals.TableStyleMap[*listCmdTableStyle]; ok {
+		if style, ok := globals.TableStyleMap[listCmdTableStyle.Get()]; ok {
 			t.SetStyle(style)
 		}
 	}

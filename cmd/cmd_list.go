@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,9 +15,9 @@ import (
 	"golang.org/x/term"
 )
 
-func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
+func listCmdMain(cl *colorlib.ColorLib) error {
 	// 获取所有命令行参数
-	paths := cmd.Args()
+	paths := listCmd.Args()
 
 	// 如果没有指定路径, 则默认为当前目录
 	if len(paths) == 0 {
@@ -30,8 +29,8 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		return err
 	}
 
-	// 根据*listCmdColor选项启用颜色输出
-	if *listCmdColor {
+	// 根据listCmdColor.Get()选项启用颜色输出
+	if listCmdColor.Get() {
 		cl.NoColor.Store(false)
 	} else {
 		cl.NoColor.Store(true)
@@ -59,7 +58,7 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		// 过滤掉应该跳过的文件
 		for _, match := range matches {
 			// 如果 -a=true ，则显示所有文件，包括隐藏文件, 如果 -a=false ，则仅显示非隐藏文件
-			if *listCmdAll || !isHidden(match) {
+			if listCmdAll.Get() || !isHidden(match) {
 				expandedPaths = append(expandedPaths, match)
 			}
 		}
@@ -94,11 +93,11 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 
 		if pathInfo.IsDir() {
 			// 根据命令行参数排序目录中的文件信息
-			sortFileInfos(infos, *listCmdSortByTime, *listCmdSortBySize, *listCmdSortByName, *listCmdReverseSort)
+			sortFileInfos(infos, listCmdSortByTime.Get(), listCmdSortBySize.Get(), listCmdSortByName.Get(), listCmdReverseSort.Get())
 
 			// 只在处理多个项目时打印目录路径
 			if len(uniquePaths) > 1 {
-				if *listCmdLongFormat {
+				if listCmdLongFormat.Get() {
 					// 获取绝对路径
 					absPath, absErr := filepath.Abs(path)
 					if absErr != nil {
@@ -112,7 +111,7 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 			}
 
 			// 处理目录，单独生成表格
-			if *listCmdLongFormat {
+			if listCmdLongFormat.Get() {
 				if err := listCmdLong(cl, infos); err != nil {
 					cl.PrintErrf("处理目录 %q 时出错: %v\n", path, err)
 				}
@@ -137,9 +136,9 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 		cl.Green("Files:")
 
 		// 根据命令行参数排序文件信息切片
-		sortFileInfos(fileInfos, *listCmdSortByTime, *listCmdSortBySize, *listCmdSortByName, *listCmdReverseSort)
+		sortFileInfos(fileInfos, listCmdSortByTime.Get(), listCmdSortBySize.Get(), listCmdSortByName.Get(), listCmdReverseSort.Get())
 
-		if *listCmdLongFormat {
+		if listCmdLongFormat.Get() {
 			if err := listCmdLong(cl, fileInfos); err != nil {
 				return err
 			}
@@ -156,40 +155,40 @@ func listCmdMain(cl *colorlib.ColorLib, cmd *flag.FlagSet) error {
 // checkListCmdArgs 检查list命令的参数是否合法
 func checkListCmdArgs() error {
 	// 检查是否同时指定了 -s 和 -t 选项
-	if *listCmdSortBySize && *listCmdSortByTime {
+	if listCmdSortBySize.Get() && listCmdSortByTime.Get() {
 		return errors.New("不能同时指定 -s 和 -t 选项")
 	}
 
 	// 检查是否同时指定了 -s 和 -n 选项
-	if *listCmdSortBySize && *listCmdSortByName {
+	if listCmdSortBySize.Get() && listCmdSortByName.Get() {
 		return errors.New("不能同时指定 -s 和 -n 选项")
 	}
 
 	// 检查是否同时指定了 -t 和 -n 选项
-	if *listCmdSortByTime && *listCmdSortByName {
+	if listCmdSortByTime.Get() && listCmdSortByName.Get() {
 		return errors.New("不能同时指定 -t 和 -n 选项")
 	}
 
 	// 检查是否同时指定了 -f 和 -d 选项
-	if *listCmdFileOnly && *listCmdDirOnly {
+	if listCmdFileOnly.Get() && listCmdDirOnly.Get() {
 		return errors.New("不能同时指定 -f 和 -d 选项")
 	}
 
 	// 如果指定了-ho检查是否指定-a
-	if *listCmdHiddenOnly && !*listCmdAll {
+	if listCmdHiddenOnly.Get() && !listCmdAll.Get() {
 		return errors.New("必须指定 -a 选项才能使用 -ho 选项")
 	}
 
 	// 检查是否-ts的表格样式是否为合法值
-	if *listCmdTableStyle != "" {
-		if _, ok := globals.TableStyleMap[*listCmdTableStyle]; !ok {
-			return fmt.Errorf("无效的表格样式: %s", *listCmdTableStyle)
+	if listCmdTableStyle.Get() != "" {
+		if _, ok := globals.TableStyleMap[listCmdTableStyle.Get()]; !ok {
+			return fmt.Errorf("无效的表格样式: %s", listCmdTableStyle.Get())
 		}
 	}
 
-	// 检查是否同时指定了 -c 和 --dev-color 或 -c 和 -dc
-	if *listCmdDevColor && !*listCmdColor || *listCmdDevColorShort && !*listCmdColor {
-		return fmt.Errorf("如果要启用开发环境颜色方案, 必须要启用颜色输出")
+	// 检查是否同时指定了 -c 和 --dev-color
+	if listCmdDevColor.Get() && !listCmdColor.Get() {
+		return fmt.Errorf("如果要使用 -%s, 必须要先启用 -%s", listCmdDevColor.ShortName(), listCmdColor.ShortName())
 	}
 
 	return nil
@@ -205,7 +204,7 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	}
 
 	// 如果启用了递归，按目录分组显示
-	if *listCmdRecursion {
+	if listCmdRecursion.Get() {
 		// 按目录分组文件
 		dirFiles := make(map[string][]globals.ListInfo)
 		for _, info := range lfs {
@@ -226,13 +225,13 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 		// 处理每个目录
 		for _, dir := range dirs {
 			infos := dirFiles[dir]
-			fileNames := prepareFileNames(infos, *listCmdQuoteNames, *listCmdColor, cl)
+			fileNames := prepareFileNames(infos, listCmdQuoteNames.Get(), listCmdColor.Get(), cl)
 
 			// 打印目录名
 			cl.Bluef("%s:\n", dir)
 
 			// 创建并渲染表格
-			if err := renderDefaultTable(fileNames, width, *listCmdTableStyle); err != nil {
+			if err := renderDefaultTable(fileNames, width, listCmdTableStyle.Get()); err != nil {
 				return fmt.Errorf("渲染目录 %s 表格失败: %v", dir, err)
 			}
 			fmt.Println() // 目录间空行
@@ -242,16 +241,16 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	}
 
 	// 非递归模式，直接输出所有文件
-	fileNames := prepareFileNames(lfs, *listCmdQuoteNames, *listCmdColor, cl)
+	fileNames := prepareFileNames(lfs, listCmdQuoteNames.Get(), listCmdColor.Get(), cl)
 
 	// 创建并渲染表格
-	return renderDefaultTable(fileNames, width, *listCmdTableStyle)
+	return renderDefaultTable(fileNames, width, listCmdTableStyle.Get())
 }
 
 // listCmdLong 函数用于以长格式输出文件信息，支持递归目录分组显示。
 func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 	// 如果启用了递归，按目录分组显示
-	if *listCmdRecursion {
+	if listCmdRecursion.Get() {
 		// 按目录分组文件
 		dirFiles := make(map[string][]globals.ListInfo)
 		for _, info := range ifs {
@@ -296,7 +295,7 @@ func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (forma
 		return "???-???-???"
 	}
 
-	if *listCmdColor {
+	if listCmdColor.Get() {
 		for i := 1; i < len(info.Perm); i++ { // 跳过第一个字符（通常是文件类型标志）
 			colorName := PermissionColorMap[i] // 获取当前字符的颜色名称
 			switch colorName {
@@ -354,7 +353,7 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 	// 根据是否为目录进行处理
 	if pathInfo.IsDir() {
 		// 如果设置了 -D 标志，只列出目录本身
-		if *listCmdDirEctory {
+		if listCmdDirEctory.Get() {
 			if isSystemFileOrDir(filepath.Base(absPath)) {
 				return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
 			}
@@ -407,7 +406,7 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 			}
 
 			// 如果设置了-R标志且当前是目录, 则递归处理子目录
-			if *listCmdRecursion && file.IsDir() {
+			if listCmdRecursion.Get() && file.IsDir() {
 				// 使用带并发控制的goroutine处理子目录
 				type result struct {
 					infos globals.ListInfos
@@ -564,20 +563,20 @@ func getEntryType(fileInfo os.FileInfo) string {
 func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool {
 	// 场景 1: 未启用 -a 选项，且当前文件或目录为隐藏文件时，应跳过该条目
 	// -a 选项用于显示所有文件，若未启用该选项，隐藏文件默认不显示
-	if !*listCmdAll && isHidden(p) {
+	if !listCmdAll.Get() && isHidden(p) {
 		return true
 	}
 
 	// 场景 2: 同时启用 -a 和 -ho 选项，但当前文件或目录并非隐藏文件时，应跳过该条目
 	// -a 选项用于显示所有文件，-ho 选项用于仅显示隐藏文件，两者同时启用时，非隐藏文件需跳过
-	if *listCmdAll && *listCmdHiddenOnly && !isHidden(p) {
+	if listCmdAll.Get() && listCmdHiddenOnly.Get() && !isHidden(p) {
 		return true
 	}
 
 	// 场景 3: 启用 -f 选项，且当前条目为目录时，且未启用仅显示目录选项，应跳过该条目
 	// -f 选项用于仅显示文件，若当前条目为目录，则不符合要求，需跳过
 	if !main {
-		if *listCmdFileOnly && isDir && !*listCmdDirEctory {
+		if listCmdFileOnly.Get() && isDir && !listCmdDirEctory.Get() {
 			return true
 		}
 	}
@@ -585,7 +584,7 @@ func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool 
 	// 场景 4: 启用 -d 选项，且当前条目不是目录时，且未启用仅显示文件选项，应跳过该条目
 	// -d 选项用于仅显示目录，若当前条目不是目录，则不符合要求，需跳过
 	if !main {
-		if *listCmdDirOnly && !isDir && !*listCmdDirOnly {
+		if listCmdDirOnly.Get() && !isDir && !listCmdDirOnly.Get() {
 			return true
 		}
 	}
@@ -593,7 +592,7 @@ func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool 
 	// 场景 5: 启用 -L 选项，且当前条目不是软链接时，应跳过该条目
 	// 如果设置了-L标志且当前不是软链接, 则跳过
 	if !main {
-		if *listCmdSymlink && (fileInfo.Mode()&os.ModeSymlink == 0) {
+		if listCmdSymlink.Get() && (fileInfo.Mode()&os.ModeSymlink == 0) {
 			return true
 		}
 	}
@@ -601,7 +600,7 @@ func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool 
 	// 场景 6: 启用 -ro 选项，且当前文件不是只读时，应跳过该条目
 	// 如果设置了-ro标志且当前文件不是只读, 则跳过
 	if !main {
-		if *listCmdReadOnly && !isReadOnly(p) {
+		if listCmdReadOnly.Get() && !isReadOnly(p) {
 			return true
 		}
 	}
@@ -643,7 +642,7 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals
 	// 从文件的绝对路径中提取出文件名，作为文件的显示名称
 	var baseName string
 	// 如果启用了递归显示，则使用相对路径作为文件名
-	if *listCmdRecursion {
+	if listCmdRecursion.Get() {
 		relPath, err := filepath.Rel(rootDir, absPath)
 		if err != nil {
 			baseName = absPath // 如果无法获取相对路径，则使用绝对路径作为文件名
