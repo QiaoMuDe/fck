@@ -53,15 +53,15 @@ var (
 	// 	"  none   - 禁用表格样式")
 	// sizeCmdHidden = sizeCmd.Bool("H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
 
-	// fck diff 子命令
-	diffCmd      = flag.NewFlagSet("diff", flag.ExitOnError)
-	diffCmdHelp  = diffCmd.Bool("h", false, "打印帮助信息并退出")
-	diffCmdFile  = diffCmd.String("f", globals.OutputFileName, "指定用于校验的哈希值文件，程序将依据该文件中的哈希值进行校验操作")
-	diffCmdDirs  = diffCmd.String("d", "", "指定需要根据哈希值文件进行校验的目标目录")
-	diffCmdDirA  = diffCmd.String("a", "", "指定要对比的目录A")
-	diffCmdDirB  = diffCmd.String("b", "", "指定要对比的目录B")
-	diffCmdType  = diffCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
-	diffCmdWrite = diffCmd.Bool("w", false, "将校验结果写入文件, 文件名为check_dir.check")
+	// // fck diff 子命令
+	// diffCmd      = flag.NewFlagSet("diff", flag.ExitOnError)
+	// diffCmdHelp  = diffCmd.Bool("h", false, "打印帮助信息并退出")
+	// diffCmdFile  = diffCmd.String("f", globals.OutputFileName, "指定用于校验的哈希值文件，程序将依据该文件中的哈希值进行校验操作")
+	// diffCmdDirs  = diffCmd.String("d", "", "指定需要根据哈希值文件进行校验的目标目录")
+	// diffCmdDirA  = diffCmd.String("a", "", "指定要对比的目录A")
+	// diffCmdDirB  = diffCmd.String("b", "", "指定要对比的目录B")
+	// diffCmdType  = diffCmd.String("t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512")
+	// diffCmdWrite = diffCmd.Bool("w", false, "将校验结果写入文件, 文件名为check_dir.check")
 
 	// fck find 子命令
 	findCmd              = flag.NewFlagSet("find", flag.ExitOnError)
@@ -166,6 +166,15 @@ var (
 	sizeCmdJob        *qflag.IntFlag    // job 标志
 	sizeCmdTableStyle *qflag.StringFlag // ts 标志
 	sizeCmdHidden     *qflag.BoolFlag   // hidden 标志
+
+	// fck diff 子命令
+	diffCmd      *qflag.Cmd
+	diffCmdFile  *qflag.StringFlag // file 标志
+	diffCmdDirs  *qflag.StringFlag // dirs 标志
+	diffCmdDirA  *qflag.StringFlag // dirA 标志
+	diffCmdDirB  *qflag.StringFlag // dirB 标志
+	diffCmdType  *qflag.EnumFlag   // type 标志
+	diffCmdWrite *qflag.BoolFlag   // write 标志
 )
 
 func init() {
@@ -199,7 +208,7 @@ func init() {
 	sizeCmdColor = sizeCmd.Bool("color", "c", false, "启用颜色输出")
 	sizeCmdJob = sizeCmd.Int("job", "j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
 	sizeCmdHidden = sizeCmd.Bool("hidden", "H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
-	sizeCmdTableStyle = sizeCmd.String("table-style", "ts", "", "指定表格样式，支持以下选项：\n"+
+	sizeCmdTableStyle = sizeCmd.String("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\tdefault - 默认样式\n"+
 		"\t\t\t\tl       - 浅色样式\n"+
 		"\t\t\t\tr       - 圆角样式\n"+
@@ -221,8 +230,19 @@ func init() {
 		"\t\t\t\tcyw     - 黄色背景白色字体\n"+
 		"\t\t\t\tnone    - 禁用表格样式")
 
+	// fck diff 子命令
+	diffCmd = qflag.NewCmd("diff", "d", flag.ExitOnError)
+	diffCmd.SetUseChinese(true) // 启用中文帮助信息
+	diffCmd.SetDescription("文件校验工具, 对比指定目录A和目录B的文件差异, 并支持指定校验类型")
+	diffCmdFile = diffCmd.String("file", "f", globals.OutputFileName, "指定用于校验的哈希值文件，程序将依据该文件中的哈希值进行校验操作")
+	diffCmdDirs = diffCmd.String("dir", "d", "", "指定需要根据哈希值文件进行校验的目标目录")
+	diffCmdDirA = diffCmd.String("dirA", "a", "", "指定要对比的目录A")
+	diffCmdDirB = diffCmd.String("dirB", "b", "", "指定要对比的目录B")
+	diffCmdWrite = diffCmd.Bool("write", "w", false, "将校验结果写入文件, 文件名为check_dir.check")
+	diffCmdType = diffCmd.Enum("type", "t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512", []string{"md5", "sha1", "sha256", "sha512"})
+
 	// 添加子命令
-	if addErr := qflag.QCommandLine.AddSubCmd(hashCmd, sizeCmd); addErr != nil {
+	if addErr := qflag.QCommandLine.AddSubCmd(hashCmd, sizeCmd, diffCmd); addErr != nil {
 		fmt.Printf("err: %v\n", addErr)
 		os.Exit(1)
 	}

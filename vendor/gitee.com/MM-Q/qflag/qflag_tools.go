@@ -13,6 +13,19 @@ import (
 // cmd: 当前命令
 // 返回值: 命令帮助信息
 func generateHelpInfo(cmd *Cmd) string {
+	// 处理根命令
+	if cmd == nil {
+		return ""
+	}
+
+	// 确保内置标志已初始化
+	cmd.initBuiltinFlags()
+
+	// 如果用户指定了自定义帮助信息则优先返回
+	if cmd.help != "" {
+		return cmd.help
+	}
+
 	// 根据语言选择模板实例
 	var tpl HelpTemplate
 	if cmd.useChinese {
@@ -70,23 +83,37 @@ func writeCommandHeader(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 func writeUsageLine(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 	// 使用模板中的用法说明前缀
 	usageLinePrefix := tpl.UsagePrefix
+	var usageLine string
 
-	// 获取命令的完整路径
-	fullCmdPath := getFullCommandPath(cmd)
-	usageLine := usageLinePrefix + fullCmdPath
-
-	// 如果存在子命令，则需要添加子命令用法
-	if len(cmd.subCmds) > 0 {
-		usageLine += tpl.UsageSubCmd
-	}
-
-	// 收集标志并判断是否有选项
-	flags := collectFlags(cmd)
-	// 根据是否有标志选择不同的用法模板
-	if len(flags) > 0 {
-		usageLine += tpl.UseageInfoWithOptions
+	// 优先使用用户自定义用法
+	if cmd.usage != "" {
+		usageLine = usageLinePrefix + cmd.usage
 	} else {
-		usageLine += tpl.UseageInfoWithoutOptions
+		// 获取命令的完整路径
+		fullCmdPath := getFullCommandPath(cmd)
+		usageLine = usageLinePrefix + fullCmdPath
+
+		// 如果是主命令(父命令为nil)，使用全局选项模板
+		if cmd.parentCmd == nil {
+			// 添加子命令部分
+			if len(cmd.subCmds) > 0 {
+				usageLine += tpl.UseageGlobalOptions
+				usageLine += tpl.UsageSubCmd
+			}
+
+			// 添加选项部分
+			usageLine += tpl.UseageInfoWithOptions
+
+		} else {
+			// 子命令，使用子命令选项模板
+			// 如果存在子命令，则添加子命令用法
+			if len(cmd.subCmds) > 0 {
+				usageLine += tpl.UsageSubCmd
+			}
+
+			// 添加选项部分
+			usageLine += tpl.UseageInfoWithOptions
+		}
 	}
 
 	buf.WriteString(usageLine)

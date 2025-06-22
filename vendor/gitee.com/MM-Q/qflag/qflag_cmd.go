@@ -20,7 +20,8 @@ type Cmd struct {
 	showInstallPathFlag *BoolFlag     // 安装路径标志指针,用于绑定和检查
 	subCmds             []*Cmd        // 子命令列表, 用于关联子命令
 	parentCmd           *Cmd          // 父命令指针,用于递归调用, 根命令的父命令为nil
-	usage               string        // 自定义帮助内容,可由用户直接赋值
+	help                string        // 自定义帮助内容
+	usage               string        // 用户自定义命令用法信息
 	description         string        // 自定义描述,用于帮助信息中显示
 	longName            string        // 命令长名称,用于帮助信息中显示
 	shortName           string        // 命令短名称,用于帮助信息中显示
@@ -47,7 +48,8 @@ type CmdInterface interface {
 	ShortName() string                 // 获取命令短名称，如"a"
 	Description() string               // 获取命令描述信息
 	SetDescription(desc string)        // 设置命令描述信息，用于帮助输出
-	Usage() string                     // 获取自定义用法说明，为空时自动生成
+	Help() string                      // 获取自定义帮助信息
+	SetHelp(help string)               // 设置自定义帮助信息，覆盖自动生成内容
 	SetUsage(usage string)             // 设置自定义用法说明，覆盖自动生成内容
 	GetUseChinese() bool               // 获取是否使用中文帮助信息
 	SetUseChinese(useChinese bool)     // 设置是否使用中文帮助信息
@@ -60,7 +62,7 @@ type CmdInterface interface {
 	NArg() int                         // 获取非标志参数的数量
 	NFlag() int                        // 获取已解析的标志数量
 	FlagExists(name string) bool       // 检查指定名称的标志是否存在(支持长/短名称)
-	PrintUsage()                       // 打印命令使用说明到标准输出
+	PrintHelp()                        // 打印命令帮助信息
 	AddNote(note string)               // 添加备注信息
 	GetNotes() []string                // 获取所有备注信息
 	AddExample(e ExampleInfo)          // 添加示例信息
@@ -120,14 +122,28 @@ func (c *Cmd) SetDescription(desc string) {
 	c.description = desc
 }
 
-// Usage 返回命令用法
-func (c *Cmd) Usage() string { return c.usage }
+// Help 返回命令用法
+func (c *Cmd) Help() string {
+	if c.help != "" {
+		return c.help
+	}
 
-// SetUsage 设置命令用法
+	// 自动生成帮助信息
+	return generateHelpInfo(c)
+}
+
+// SetUsage 设置自定义命令用法
 func (c *Cmd) SetUsage(usage string) {
 	c.setMu.Lock()
 	defer c.setMu.Unlock()
 	c.usage = usage
+}
+
+// SetHelp 设置用户自定义命令帮助信息
+func (c *Cmd) SetHelp(help string) {
+	c.setMu.Lock()
+	defer c.setMu.Unlock()
+	c.help = help
 }
 
 // SubCmds 返回子命令列表
@@ -162,9 +178,9 @@ func (c *Cmd) NArg() int { return len(c.args) }
 // NFlag 获取标志的数量
 func (c *Cmd) NFlag() int { return c.fs.NFlag() }
 
-// PrintUsage 打印命令的帮助信息, 优先打印用户的帮助信息, 否则自动生成帮助信息
-func (c *Cmd) PrintUsage() {
-	c.printUsage()
+// PrintHelp 打印命令的帮助信息, 优先打印用户的帮助信息, 否则自动生成帮助信息
+func (c *Cmd) PrintHelp() {
+	fmt.Println(generateHelpInfo(c))
 }
 
 // FlagExists 检查指定名称的标志是否存在
@@ -212,6 +228,17 @@ func (c *Cmd) initBuiltinFlags() {
 
 	// 初始化内置标志
 	c.initFlagOnce.Do(func() {
+		// 新增: 确保flagRegistry已初始化
+		if c.flagRegistry == nil {
+			// 为空时自动初始化
+			c.flagRegistry = &FlagRegistry{
+				mu:       sync.RWMutex{},
+				byLong:   make(map[string]*FlagMeta),
+				byShort:  make(map[string]*FlagMeta),
+				allFlags: []*FlagMeta{},
+			}
+		}
+
 		if c.helpFlag == nil {
 			// 为空时自动初始化
 			c.helpFlag = &BoolFlag{}
@@ -254,19 +281,19 @@ func (c *Cmd) initBuiltinFlags() {
 	})
 }
 
-// printUsage 打印帮助内容, 优先显示用户自定义的Usage, 否则自动生成
-func (c *Cmd) printUsage() {
-	// 确保内置标志已初始化
-	c.initBuiltinFlags()
+// // printHelp 打印帮助内容, 优先显示用户自定义的Usage, 否则自动生成
+// func (c *Cmd) printHelp() {
+// 	// 确保内置标志已初始化
+// 	c.initBuiltinFlags()
 
-	// 如果用户自定义了Usage，则直接打印
-	if c.usage != "" {
-		fmt.Println(c.usage)
-	} else {
-		// 自动生成帮助信息
-		fmt.Println(generateHelpInfo(c))
-	}
-}
+// 	// 如果用户自定义了Usage，则直接打印
+// 	if c.help != "" {
+// 		fmt.Println(c.help)
+// 	} else {
+// 		// 自动生成帮助信息
+// 		fmt.Println(generateHelpInfo(c))
+// 	}
+// }
 
 // validateFlag 通用标志验证逻辑
 // 参数:
@@ -442,7 +469,7 @@ func (c *Cmd) Parse(args []string) (err error) {
 
 		// 设置使用说明
 		c.fs.Usage = func() {
-			c.printUsage()
+			c.PrintHelp()
 		}
 
 		// 调用flag库解析参数
@@ -454,7 +481,7 @@ func (c *Cmd) Parse(args []string) (err error) {
 		// 检查是否使用-h/--help标志
 		if c.helpFlag.Get() {
 			if c.fs.ErrorHandling() != flag.ContinueOnError {
-				c.printUsage() // 只有在ExitOnError或PanicOnError时才打印使用说明
+				c.PrintHelp() // 只有在ExitOnError或PanicOnError时才打印使用说明
 				os.Exit(0)
 			}
 			return

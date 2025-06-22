@@ -51,35 +51,11 @@ func Run() {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
-	case "diff":
+	case diffCmd.LongName(), diffCmd.ShortName(): // diff 子命令
 		// 解析 diff 子命令的参数
 		if err := diffCmd.Parse(flag.Args()[1:]); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
-		}
-
-		// 如果是 -h 或 help, 则打印帮助信息并退出
-		if *diffCmdHelp {
-			fmt.Println(globals.DiffHelp)
-			os.Exit(0)
-		}
-
-		// 执行 diff 子命令
-		if err := diffCmdMain(cmdCl); err != nil {
-			fmt.Printf("err: %v\n", err)
-			os.Exit(1)
-		}
-	case "d":
-		// 解析 diff 子命令的参数
-		if err := diffCmd.Parse(flag.Args()[1:]); err != nil {
-			fmt.Printf("err: %v\n", err)
-			os.Exit(1)
-		}
-
-		// 如果是 -h 或 help, 则打印帮助信息并退出
-		if *diffCmdHelp {
-			fmt.Println(globals.DiffHelp)
-			os.Exit(0)
 		}
 
 		// 执行 diff 子命令
