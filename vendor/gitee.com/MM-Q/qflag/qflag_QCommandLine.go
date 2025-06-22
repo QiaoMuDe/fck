@@ -17,6 +17,28 @@ var parseOnce sync.Once
 // QCommandLineInterface 定义了全局默认命令行接口，提供统一的命令行参数管理功能
 // 该接口封装了命令行程序的常用操作，包括标志添加、参数解析和帮助信息展示
 type QCommandLineInterface interface {
+	LongName() string                                                                                    // 获取命令长名称
+	ShortName() string                                                                                   // 获取命令短名称
+	Description() string                                                                                 // 获取命令描述信息
+	SetDescription(desc string)                                                                          // 设置命令描述信息
+	Help() string                                                                                        // 获取命令帮助信息
+	SetHelp(help string)                                                                                 // 设置命令帮助信息
+	SetUsage(usage string)                                                                               // 设置命令用法格式
+	GetUseChinese() bool                                                                                 // 获取是否使用中文帮助信息
+	SetUseChinese(useChinese bool)                                                                       // 设置是否使用中文帮助信息
+	AddSubCmd(subCmd *Cmd)                                                                               // 添加子命令，子命令会继承父命令的上下文
+	SubCmds() []*Cmd                                                                                     // 获取所有已注册的子命令列表
+	Parse() error                                                                                        // 解析命令行参数，自动处理标志和子命令
+	Args() []string                                                                                      // 获取所有非标志参数(未绑定到任何标志的参数)
+	Arg(i int) string                                                                                    // 获取指定索引的非标志参数，索引越界返回空字符串
+	NArg() int                                                                                           // 获取非标志参数的数量
+	NFlag() int                                                                                          // 获取已解析的标志数量
+	PrintHelp()                                                                                          // 打印命令帮助信息
+	FlagExists(name string) bool                                                                         // 检查指定名称的标志是否存在(支持长/短名称)
+	AddNote(note string)                                                                                 // 添加一个注意事项
+	GetNotes() []string                                                                                  // 获取所有备注信息
+	AddExample(e ExampleInfo)                                                                            // 添加一个示例信息
+	GetExamples() []ExampleInfo                                                                          // 获取示例信息列表
 	String(longName, shortName, defValue, usage string) *StringFlag                                      // 添加字符串类型标志
 	Int(longName, shortName string, defValue int, usage string) *IntFlag                                 // 添加整数类型标志
 	Bool(longName, shortName string, defValue bool, usage string) *BoolFlag                              // 添加布尔类型标志
@@ -29,30 +51,10 @@ type QCommandLineInterface interface {
 	FloatVar(f *FloatFlag, longName, shortName string, defValue float64, usage string)                   // 绑定浮点数标志到指定变量
 	DurationVar(f *DurationFlag, longName, shortName string, defValue time.Duration, usage string)       // 绑定时间间隔类型标志到指定变量
 	EnumVar(f *EnumFlag, longName, shortName string, defValue string, usage string, enumValues []string) // 绑定枚举标志到指定变量
-
-	Parse() error                // 解析命令行参数，自动处理标志和子命令
-	AddSubCmd(subCmd *Cmd)       // 添加子命令，子命令会继承父命令的上下文
-	SubCmds() []*Cmd             // 获取所有已注册的子命令列表
-	Args() []string              // 获取所有非标志参数(未绑定到任何标志的参数)
-	Arg(i int) string            // 获取指定索引的非标志参数，索引越界返回空字符串
-	NArg() int                   // 获取非标志参数的数量
-	NFlag() int                  // 获取已解析的标志数量
-	PrintHelp()                  // 打印命令帮助信息
-	FlagExists(name string) bool // 检查指定名称的标志是否存在(支持长/短名称)
-	Help() string                // 获取命令帮助信息
-	SetHelp(help string)         // 设置命令帮助信息
-	SetUsage(usage string)       // 设置命令用法格式
-	LongName() string            // 获取命令长名称
-	ShortName() string           // 获取命令短名称
-	Description() string         // 获取命令描述信息
-
-	AddNote(note string)           // 添加一个注意事项
-	GetNotes() []string            // 获取所有备注信息
-	GetUseChinese() bool           // 获取是否使用中文帮助信息
-	SetUseChinese(useChinese bool) // 设置是否使用中文帮助信息
-	AddExample(e ExampleInfo)      // 添加一个示例信息
-	GetExamples() []ExampleInfo    // 获取示例信息列表
-
+	SetLogoText(logoText string)                                                                         // 设置logo文本
+	GetLogoText() string                                                                                 // 获取logo文本
+	SetModuleHelps(moduleHelps string)                                                                   // 设置自定义模块帮助信息
+	GetModuleHelps() string                                                                              // 获取自定义模块帮助信息
 }
 
 // 在包初始化时创建全局默认Cmd实例
@@ -179,12 +181,12 @@ func FloatVar(f *FloatFlag, longName, shortName string, defValue float64, usage 
 	QCommandLine.FloatVar(f, longName, shortName, defValue, usage)
 }
 
-// Parse 解析命令行参数, 自动检查长短标志互斥, 并处理帮助标志 (全局默认命令)
-// 该方法会自动处理以下情况:
-// 1. 长短标志互斥检查
-// 2. -h/--help 帮助标志处理
-// 3. -sip/--show-install-path 安装路径标志处理
-// 4. 子命令自动检测和参数传递(当第一个非标志参数匹配子命令名称时)
+// Parse 解析命令行参数, 自动检查长短标志, 并处理内置标志(全局实例)
+// 如果有子命令则会自动解析子命令的参数
+// 参数:
+//
+//	args: 命令行参数切片
+//
 // 注意: 该方法保证每个Cmd实例只会解析一次
 func Parse() error {
 	var err error
@@ -270,6 +272,11 @@ func ShortName() string {
 // Description 获取命令描述信息
 func Description() string {
 	return QCommandLine.Description()
+}
+
+// SetDescription 设置命令描述信息
+func SetDescription(desc string) {
+	QCommandLine.SetDescription(desc)
 }
 
 // GetNotes 获取所有备注信息
@@ -400,4 +407,37 @@ func SetHelp(help string) {
 //	qflag.SetUsage("Usage: qflag [options]")
 func SetUsage(usage string) {
 	QCommandLine.SetUsage(usage)
+}
+
+// SetLogoText 配置全局默认命令实例 `QCommandLine` 的 logo 文本。
+// 默认 logo 文本为：
+//
+//	qflag v1.0.0
+//	https://github.com/qinguoyi/qflag
+//
+// 参数:
+//   - logoText: 配置的 logo 文本，字符串类型。
+func SetLogoText(logoText string) {
+	QCommandLine.SetLogoText(logoText)
+}
+
+// GetLogoText 获取全局默认命令实例 `QCommandLine` 的 logo 文本。
+// 返回值:
+//   - string: 配置的 logo 文本。
+func GetLogoText() string {
+	return QCommandLine.GetLogoText()
+}
+
+// SetModuleHelps 配置模块帮助信息。
+// 参数:
+//   - moduleHelps: 模块帮助信息，字符串类型。
+func SetModuleHelps(moduleHelps string) {
+	QCommandLine.SetModuleHelps(moduleHelps)
+}
+
+// GetModuleHelps 获取模块帮助信息。
+// 返回值:
+//   - string: 模块帮助信息。
+func GetModuleHelps() string {
+	return QCommandLine.GetModuleHelps()
 }

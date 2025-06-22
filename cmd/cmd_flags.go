@@ -97,8 +97,8 @@ func init() {
 
 	// 注册版本信息标志
 	versionF := qflag.Bool("version", "v", false, "显示版本信息并退出")
-	qflag.QCommandLine.SetUseChinese(true)                                    // 启用中文帮助信息
-	qflag.QCommandLine.SetDescription("多功能文件处理工具集, 提供文件哈希计算、大小统计、查找和校验等实用功能") // 设置命令行描述
+	qflag.SetUseChinese(true)                                    // 启用中文帮助信息
+	qflag.SetDescription("多功能文件处理工具集, 提供文件哈希计算、大小统计、查找和校验等实用功能") // 设置命令行描述
 	qflag.AddNote("各子命令有独立帮助文档，可通过-h参数查看, 例如 'fck <子命令> -h' 查看各子命令详细帮助")
 	qflag.AddNote("所有路径参数支持Windows和Unix风格")
 
