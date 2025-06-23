@@ -89,7 +89,7 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 	// 分离处理文件和目录
 	var fileInfos globals.ListInfos
 	for _, path := range uniquePaths {
-		pathInfo, statErr := os.Lstat(path)
+		pathInfo, statErr := os.Stat(path)
 		if statErr != nil {
 			cl.PrintErrf("获取路径信息失败 %q: %v\n", path, statErr)
 			continue
