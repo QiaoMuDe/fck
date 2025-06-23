@@ -31,7 +31,7 @@ func sizeCmdMain(cl *colorlib.ColorLib) error {
 
 	// 如果没有指定路径, 则默认计算当前目录下每个项目的大小
 	if len(targetPaths) == 0 {
-		targetPaths = []string{"*"}
+		return fmt.Errorf("请指定要计算大小路径")
 	}
 
 	// 检查表格的样式是否有效

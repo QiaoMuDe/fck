@@ -21,7 +21,19 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 
 	// 如果没有指定路径, 则默认为当前目录
 	if len(paths) == 0 {
-		paths = []string{"."}
+		if runtime.GOOS == "windows" {
+			// 获取当前目录
+			dir, pwdErr := os.Getwd()
+			if pwdErr != nil {
+				// 如果获取当前目录失败，则使用 "."
+				paths = []string{"."}
+			}
+			// 如果获取当前目录成功，则使用当前目录
+			paths = []string{dir}
+		} else {
+			// 非Windows系统下，使用 "."
+			paths = []string{"."}
+		}
 	}
 
 	// 检查list命令的参数是否合法
