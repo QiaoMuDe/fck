@@ -145,7 +145,7 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 	// 处理所有文件
 	if len(fileInfos) > 0 {
 		// 打印文件组标题
-		cl.Green("Files:")
+		//cl.Green("Files:")
 
 		// 根据命令行参数排序文件信息切片
 		sortFileInfos(fileInfos, listCmdSortByTime.Get(), listCmdSortBySize.Get(), listCmdSortByName.Get(), listCmdReverseSort.Get())
