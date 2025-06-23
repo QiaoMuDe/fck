@@ -48,35 +48,51 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 	wholeWord := findCmdWholeWord.Get() // 是否匹配完整关键字
 	caseSensitive := findCmdCase.Get()  // 是否区分大小写
 
-	// 构建检索文件名的正则表达式模式
-	escapedName := RegexBuilder(findCmdName.Get(), isRegex, wholeWord, caseSensitive)
-
-	// 构建排除文件名的正则表达式模式
-	excludedName := RegexBuilder(findCmdExcludeName.Get(), isRegex, wholeWord, caseSensitive)
-
-	// 构建检索路径的正则表达式模式
-	escapedPath := RegexBuilder(findCmdPath.Get(), isRegex, wholeWord, caseSensitive)
-
-	// 构建排除路径的正则表达式模式
-	excludedPath := RegexBuilder(findCmdExcludePath.Get(), isRegex, wholeWord, caseSensitive)
-
 	// 定义正则表达式和错误处理
 	var (
 		nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp
 		nameErr, exNameErr, pathErr, exPathErr         error
 	)
 
-	if nameRegex, nameErr = CompileRegex(escapedName); nameErr != nil {
-		return fmt.Errorf("文件名正则表达式编译错误: %v", nameErr)
-	}
-	if exNameRegex, exNameErr = CompileRegex(excludedName); exNameErr != nil {
-		return fmt.Errorf("排除文件名正则表达式编译错误: %v", exNameErr)
-	}
-	if pathRegex, pathErr = CompileRegex(escapedPath); pathErr != nil {
-		return fmt.Errorf("路径正则表达式编译错误: %v", pathErr)
-	}
-	if exPathRegex, exPathErr = CompileRegex(excludedPath); exPathErr != nil {
-		return fmt.Errorf("排除路径正则表达式编译错误: %v", exPathErr)
+	// 启用正则模式
+	if isRegex {
+		// 构建检索文件名的正则表达式模式
+		escapedName := RegexBuilder(findCmdName.Get(), isRegex, wholeWord, caseSensitive)
+
+		// 构建排除文件名的正则表达式模式
+		excludedName := RegexBuilder(findCmdExcludeName.Get(), isRegex, wholeWord, caseSensitive)
+
+		// 构建检索路径的正则表达式模式
+		escapedPath := RegexBuilder(findCmdPath.Get(), isRegex, wholeWord, caseSensitive)
+
+		// 构建排除路径的正则表达式模式
+		excludedPath := RegexBuilder(findCmdExcludePath.Get(), isRegex, wholeWord, caseSensitive)
+
+		// 构建文件名的正则表达式
+		if nameRegex, nameErr = CompileRegex(escapedName); nameErr != nil {
+			return fmt.Errorf("文件名正则表达式编译错误: %v", nameErr)
+		}
+
+		// 构建排除文件名的正则表达式
+		if exNameRegex, exNameErr = CompileRegex(excludedName); exNameErr != nil {
+			return fmt.Errorf("排除文件名正则表达式编译错误: %v", exNameErr)
+		}
+
+		// 构建路径的正则表达式
+		if pathRegex, pathErr = CompileRegex(escapedPath); pathErr != nil {
+			return fmt.Errorf("路径正则表达式编译错误: %v", pathErr)
+		}
+
+		// 构建排除路径的正则表达式
+		if exPathRegex, exPathErr = CompileRegex(excludedPath); exPathErr != nil {
+			return fmt.Errorf("排除路径正则表达式编译错误: %v", exPathErr)
+		}
+	} else {
+		// 禁用正则匹配
+		nameRegex = nil
+		pathRegex = nil
+		exNameRegex = nil
+		exPathRegex = nil
 	}
 
 	// 定义一个统计匹配项的
@@ -1202,4 +1218,47 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 	}
 
 	return nil
+}
+
+// matchPattern 通用匹配函数，检查输入字符串是否匹配模式
+// 参数:
+//
+//	input: 输入字符串(文件名或路径)
+//	pattern: 匹配模式字符串
+//	regex: 编译好的正则表达式(如果启用正则)
+//	isRegex: 是否启用正则匹配
+//	wholeWord: 是否全词匹配
+//	caseSensitive: 是否区分大小写
+//
+// 返回值:
+//
+//	bool: 是否匹配
+func matchPattern(input, pattern string, regex *regexp.Regexp, isRegex, wholeWord, caseSensitive bool) bool {
+	if pattern == "" {
+		return true
+	}
+
+	if isRegex {
+		if regex == nil {
+			return false
+		}
+		return regex.MatchString(input)
+	}
+
+	s := input   // 输入字符串
+	p := pattern // 匹配模式
+
+	// 默认统一转为小写实现不区分大小写, 如区分大小写则不转换
+	if !caseSensitive {
+		s = strings.ToLower(s)
+		p = strings.ToLower(p)
+	}
+
+	// 全字匹配处理
+	if wholeWord {
+		return s == p
+	}
+
+	// 匹配模式处理
+	return strings.Contains(s, p)
 }

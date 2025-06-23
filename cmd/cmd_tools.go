@@ -73,9 +73,9 @@ func RegexBuilder(pattern string, isRegex, wholeWord, caseSensitive bool) string
 	}
 
 	// 非正则模式下转义特殊字符
-	if !isRegex {
-		pattern = regexp.QuoteMeta(pattern)
-	}
+	// if !isRegex {
+	// 	pattern = regexp.QuoteMeta(pattern)
+	// }
 
 	// 全字匹配处理
 	if wholeWord {
