@@ -10,6 +10,7 @@ type FlagInfo struct {
 	shortFlag string // 短标志名称
 	usage     string // 用法说明
 	defValue  string // 默认值
+	typeStr   string // 参数类型字符串
 }
 
 // ExampleInfo 示例信息结构体
@@ -35,17 +36,15 @@ const (
 	FlagTypeString                       // 字符串类型
 	FlagTypeBool                         // 布尔类型
 	FlagTypeFloat                        // 浮点数类型
-	FlagTypeSlice                        // 切片类型
 	FlagTypeEnum                         // 枚举类型
 	FlagTypeDuration                     // 时间间隔类型
 )
 
 // 内置标志名称
 var (
-	helpFlagName                 = "help"
-	helpFlagShortName            = "h"
-	showInstallPathFlagName      = "show-install-path"
-	showInstallPathFlagShortName = "sip"
+	helpFlagName            = "help" // 帮助标志名称
+	helpFlagShortName       = "h"    // 帮助标志短名称
+	showInstallPathFlagName = "sip"  // 显示安装路径标志名称
 )
 
 // HelpTemplate 帮助信息模板结构体
@@ -81,8 +80,8 @@ var EnglishTemplate = HelpTemplate{
 	CmdNameWithShort:      "Name: %s(%s)\n\n",                                                                                                                    // 命令名称带短名称模板
 	CmdDescription:        "Desc: %s\n\n",                                                                                                                        // 命令描述模板
 	OptionsHeader:         "Options:\n",                                                                                                                          // 选项头部模板
-	Option1:               "  --%s, -%s",                                                                                                                         // 选项模板(带短选项)
-	Option2:               "  --%s",                                                                                                                              // 选项模板(无短选项)
+	Option1:               "  --%s, -%s %s",                                                                                                                      // 选项模板(带短选项)
+	Option2:               "  --%s %s",                                                                                                                           // 选项模板(无短选项)
 	OptionDefault:         "%s%*s%s (default: %s)\n",                                                                                                             // 选项模板默认值
 	SubCmdsHeader:         "\nSubCmds:\n",                                                                                                                        // 子命令头部模板
 	SubCmd:                "  %s\t%s\n",                                                                                                                          // 子命令模板
@@ -104,8 +103,8 @@ var ChineseTemplate = HelpTemplate{
 	CmdNameWithShort:      "名称: %s(%s)\n\n",              // 命令名称带短名称模板
 	CmdDescription:        "描述: %s\n\n",                  // 命令描述模板
 	OptionsHeader:         "选项:\n",                       // 选项头部模板
-	Option1:               "  --%s, -%s",                 // 选项模板(带短选项)
-	Option2:               "  --%s",                      // 选项模板(无短选项)
+	Option1:               "  --%s, -%s %s",              // 选项模板(带短选项)
+	Option2:               "  --%s %s",                   // 选项模板(无短选项)
 	OptionDefault:         "%s%*s%s (默认值: %s)\n",         // 选项模板默认值
 	SubCmdsHeader:         "\n子命令:\n",                    // 子命令头部模板
 	SubCmd:                "  %s\t%s\n",                  // 子命令模板

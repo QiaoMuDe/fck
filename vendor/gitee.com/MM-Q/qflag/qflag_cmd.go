@@ -317,17 +317,16 @@ func (c *Cmd) initBuiltinFlags() {
 		}
 
 		// 绑定显示安装路径标志
-		installPathUsage := "Show install path"
+		installPathUsage := "Show the installation path of the program"
 		if c.GetUseChinese() {
-			installPathUsage = "显示安装路径"
+			installPathUsage = "显示程序的安装路径"
 		}
-		c.BoolVar(c.showInstallPathFlag, showInstallPathFlagName, showInstallPathFlagShortName, false, installPathUsage)
+		c.BoolVar(c.showInstallPathFlag, showInstallPathFlagName, "", false, installPathUsage)
 
 		// 添加内置标志到检测映射
 		c.builtinFlagNameMap.Store(helpFlagName, true)
 		c.builtinFlagNameMap.Store(helpFlagShortName, true)
 		c.builtinFlagNameMap.Store(showInstallPathFlagName, true)
-		c.builtinFlagNameMap.Store(showInstallPathFlagShortName, true)
 
 		// 添加默认的注意事项
 		if c.GetUseChinese() {

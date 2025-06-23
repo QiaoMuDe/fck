@@ -101,6 +101,7 @@ func init() {
 	qflag.SetDescription("多功能文件处理工具集, 提供文件哈希计算、大小统计、查找和校验等实用功能") // 设置命令行描述
 	qflag.AddNote("各子命令有独立帮助文档，可通过-h参数查看, 例如 'fck <子命令> -h' 查看各子命令详细帮助")
 	qflag.AddNote("所有路径参数支持Windows和Unix风格")
+	qflag.SetLogoText(globals.FckHelpLogo) // 设置命令行logo
 
 	// fck hash 子命令
 	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError)
@@ -122,26 +123,26 @@ func init() {
 	sizeCmdJob = sizeCmd.Int("job", "j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
 	sizeCmdHidden = sizeCmd.Bool("hidden", "H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
 	sizeCmdTableStyle = sizeCmd.String("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
-		"\t\t\t\tdefault - 默认样式\n"+
-		"\t\t\t\tl       - 浅色样式\n"+
-		"\t\t\t\tr       - 圆角样式\n"+
-		"\t\t\t\tbd      - 粗体样式\n"+
-		"\t\t\t\tcb      - 亮色彩色样式\n"+
-		"\t\t\t\tcd      - 暗色彩色样式\n"+
-		"\t\t\t\tdb      - 双线样式\n"+
-		"\t\t\t\tcbb     - 黑色背景蓝色字体\n"+
-		"\t\t\t\tcbc     - 青色背景蓝色字体\n"+
-		"\t\t\t\tcbg     - 绿色背景蓝色字体\n"+
-		"\t\t\t\tcbm     - 紫色背景蓝色字体\n"+
-		"\t\t\t\tcby     - 黄色背景蓝色字体\n"+
-		"\t\t\t\tcbr     - 红色背景蓝色字体\n"+
-		"\t\t\t\tcwb     - 蓝色背景白色字体\n"+
-		"\t\t\t\tccw     - 青色背景白色字体\n"+
-		"\t\t\t\tcgw     - 绿色背景白色字体\n"+
-		"\t\t\t\tcmw     - 紫色背景白色字体\n"+
-		"\t\t\t\tcrw     - 红色背景白色字体\n"+
-		"\t\t\t\tcyw     - 黄色背景白色字体\n"+
-		"\t\t\t\tnone    - 禁用表格样式")
+		"\t\t\t\t\t[default] - 默认样式\n"+
+		"\t\t\t\t\t[l  ]     - 浅色样式\n"+
+		"\t\t\t\t\t[r  ]     - 圆角样式\n"+
+		"\t\t\t\t\t[bd ]     - 粗体样式\n"+
+		"\t\t\t\t\t[cb ]     - 亮色彩色样式\n"+
+		"\t\t\t\t\t[cd ]     - 暗色彩色样式\n"+
+		"\t\t\t\t\t[db ]     - 双线样式\n"+
+		"\t\t\t\t\t[cbb]     - 黑色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbc]     - 青色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbg]     - 绿色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbm]     - 紫色背景蓝色字体\n"+
+		"\t\t\t\t\t[cby]     - 黄色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbr]     - 红色背景蓝色字体\n"+
+		"\t\t\t\t\t[cwb]     - 蓝色背景白色字体\n"+
+		"\t\t\t\t\t[ccw]     - 青色背景白色字体\n"+
+		"\t\t\t\t\t[cgw]     - 绿色背景白色字体\n"+
+		"\t\t\t\t\t[cmw]     - 紫色背景白色字体\n"+
+		"\t\t\t\t\t[crw]     - 红色背景白色字体\n"+
+		"\t\t\t\t\t[cyw]     - 黄色背景白色字体\n"+
+		"\t\t\t\t\t[none]    - 禁用表格样式")
 
 	// fck diff 子命令
 	diffCmd = qflag.NewCmd("diff", "d", flag.ExitOnError)
@@ -191,20 +192,20 @@ func init() {
 	findCmdCount = findCmd.Bool("count", "ct", false, "仅统计匹配项的数量而不显示具体路径")
 	findCmdX = findCmd.Bool("xmode", "X", false, "启用并发模式")
 	findCmdType = findCmd.String("type", "t", "all", "指定要查找的类型，支持以下选项：\n"+
-		"\t\t\t\t[f|file]       - 只查找文件\n"+
-		"\t\t\t\t[d|dir]        - 只查找目录\n"+
-		"\t\t\t\t[l|symlink]    - 只查找软链接\n"+
-		"\t\t\t\t[r|readonly]   - 只查找只读文件\n"+
-		"\t\t\t\t[h|hidden]     - 只显示隐藏文件或目录\n"+
-		"\t\t\t\t[e|empty]      - 只查找空文件或目录\n"+
-		"\t\t\t\t[x|executable] - 只查找可执行文件\n"+
-		"\t\t\t\t[s|socket]     - 只查找socket文件\n"+
-		"\t\t\t\t[p|pipe]       - 只查找管道文件\n"+
-		"\t\t\t\t[b|block]      - 只查找块设备文件\n"+
-		"\t\t\t\t[c|char]       - 只查找字符设备文件\n"+
-		"\t\t\t\t[a|append]     - 只查找追加模式文件\n"+
-		"\t\t\t\t[n|nonappend]  - 只查找非追加模式文件\n"+
-		"\t\t\t\t[u|exclusive]  - 只查找独占模式文件")
+		"\t\t\t\t\t[f | file]       - 只查找文件\n"+
+		"\t\t\t\t\t[d | dir]        - 只查找目录\n"+
+		"\t\t\t\t\t[l | symlink]    - 只查找软链接\n"+
+		"\t\t\t\t\t[r | readonly]   - 只查找只读文件\n"+
+		"\t\t\t\t\t[h | hidden]     - 只显示隐藏文件或目录\n"+
+		"\t\t\t\t\t[e | empty]      - 只查找空文件或目录\n"+
+		"\t\t\t\t\t[x | executable] - 只查找可执行文件\n"+
+		"\t\t\t\t\t[s | socket]     - 只查找socket文件\n"+
+		"\t\t\t\t\t[p | pipe]       - 只查找管道文件\n"+
+		"\t\t\t\t\t[b | block]      - 只查找块设备文件\n"+
+		"\t\t\t\t\t[c | char]       - 只查找字符设备文件\n"+
+		"\t\t\t\t\t[a | append]     - 只查找追加模式文件\n"+
+		"\t\t\t\t\t[n | nonappend]  - 只查找非追加模式文件\n"+
+		"\t\t\t\t\t[u | exclusive]  - 只查找独占模式文件")
 	findCmdWholeWord = findCmd.Bool("whole-word", "W", false, "匹配完整关键字")
 
 	// fck list 子命令
@@ -231,26 +232,26 @@ func init() {
 	listCmdRecursion = listCmd.Bool("recursion", "R", false, "递归列出目录及其子目录的内容")
 	listCmdShowUserGroup = listCmd.Bool("user-group", "u", false, "显示文件的用户和组信息")
 	listCmdTableStyle = listCmd.String("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
-		"\t\t\t\tdefault - 默认样式\n"+
-		"\t\t\t\tl      - 浅色样式\n"+
-		"\t\t\t\tr      - 圆角样式\n"+
-		"\t\t\t\tbd     - 粗体样式\n"+
-		"\t\t\t\tcb     - 亮色彩色样式\n"+
-		"\t\t\t\tcd     - 暗色彩色样式\n"+
-		"\t\t\t\tdb     - 双线样式\n"+
-		"\t\t\t\tcbb    - 黑色背景蓝色字体\n"+
-		"\t\t\t\tcbc    - 青色背景蓝色字体\n"+
-		"\t\t\t\tcbg    - 绿色背景蓝色字体\n"+
-		"\t\t\t\tcbm    - 紫色背景蓝色字体\n"+
-		"\t\t\t\tcby    - 黄色背景蓝色字体\n"+
-		"\t\t\t\tcbr    - 红色背景蓝色字体\n"+
-		"\t\t\t\tcwb    - 蓝色背景白色字体\n"+
-		"\t\t\t\tccw    - 青色背景白色字体\n"+
-		"\t\t\t\tcgw    - 绿色背景白色字体\n"+
-		"\t\t\t\tcmw    - 紫色背景白色字体\n"+
-		"\t\t\t\tcrw    - 红色背景白色字体\n"+
-		"\t\t\t\tcyw    - 黄色背景白色字体\n"+
-		"\t\t\t\tnone   - 禁用边框样式")
+		"\t\t\t\t\t[default] - 默认样式\n"+
+		"\t\t\t\t\t[l  ]     - 浅色样式\n"+
+		"\t\t\t\t\t[r  ]     - 圆角样式\n"+
+		"\t\t\t\t\t[bd ]     - 粗体样式\n"+
+		"\t\t\t\t\t[cb ]     - 亮色彩色样式\n"+
+		"\t\t\t\t\t[cd ]     - 暗色彩色样式\n"+
+		"\t\t\t\t\t[db ]     - 双线样式\n"+
+		"\t\t\t\t\t[cbb]     - 黑色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbc]     - 青色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbg]     - 绿色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbm]     - 紫色背景蓝色字体\n"+
+		"\t\t\t\t\t[cby]     - 黄色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbr]     - 红色背景蓝色字体\n"+
+		"\t\t\t\t\t[cwb]     - 蓝色背景白色字体\n"+
+		"\t\t\t\t\t[ccw]     - 青色背景白色字体\n"+
+		"\t\t\t\t\t[cgw]     - 绿色背景白色字体\n"+
+		"\t\t\t\t\t[cmw]     - 紫色背景白色字体\n"+
+		"\t\t\t\t\t[crw]     - 红色背景白色字体\n"+
+		"\t\t\t\t\t[cyw]     - 黄色背景白色字体\n"+
+		"\t\t\t\t\t[none]    - 禁用边框样式")
 	listCmdDevColor = listCmd.Bool("dev-color", "dc", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
 
 	// 添加子命令

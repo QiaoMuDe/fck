@@ -163,9 +163,10 @@ func writeOptions(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 	// 计算描述信息对齐位置
 	maxWidth, err := calculateMaxWidth(flags)
 	if err != nil {
+		// 如果计算宽度出错，则使用默认宽度
 		maxWidth = 30
 	}
-	descStartPos := maxWidth + 5 // 增加4个空格作为间距
+	descStartPos := maxWidth + 5 // 增加5个空格作为间距
 
 	for _, flag := range flags {
 		// 格式化选项部分
@@ -173,11 +174,11 @@ func writeOptions(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 
 		// 如果标志有短标志, 则使用模板1, 否则使用模板2
 		if flag.shortFlag != "" {
-			// --longFlag, -shortFlag
-			optPart = fmt.Sprintf(tpl.Option1, flag.longFlag, flag.shortFlag)
+			// --longFlag, -shortFlag <type>
+			optPart = fmt.Sprintf(tpl.Option1, flag.longFlag, flag.shortFlag, flag.typeStr)
 		} else {
-			// --longFlag
-			optPart = fmt.Sprintf(tpl.Option2, flag.longFlag)
+			// --longFlag <type>
+			optPart = fmt.Sprintf(tpl.Option2, flag.longFlag, flag.typeStr)
 		}
 
 		// 计算选项部分需要的填充空格
@@ -204,6 +205,7 @@ func collectFlags(cmd *Cmd) []FlagInfo {
 			shortFlag: flag.GetShortName(),
 			usage:     flag.GetUsage(),
 			defValue:  fmt.Sprintf("%v", flag.GetDefault()),
+			typeStr:   flagTypeToString(flag.GetFlagType()),
 		})
 	}
 
@@ -320,11 +322,11 @@ func calculateMaxWidth(flags []FlagInfo) (int, error) {
 	for _, flag := range flags {
 		var nameLength int
 		if flag.shortFlag != "" {
-			// 格式: "-s, --longname"
-			nameLength = len(flag.shortFlag) + len(flag.longFlag) + 5 // 1('-') + 2(', ') + 2('--')
+			// 格式: "--longFlag, -shortFlag <type>"
+			nameLength = len(flag.longFlag) + len(flag.shortFlag) + len(flag.typeStr) + 8 // 2('--') + 1(' ') + 2('<type>') + 2(', ') + 1('-')
 		} else {
-			// 格式: "--longname"
-			nameLength = len(flag.longFlag) + 2 // 2('--')
+			// 格式: "--longFlag <type>"
+			nameLength = len(flag.longFlag) + len(flag.typeStr) + 5 // 2('--') + 1(' ') + 2('<type>')
 		}
 
 		// 如果名称长度大于最大宽度，则更新最大宽度
@@ -482,4 +484,25 @@ func GetExecutablePath() string {
 		return exePath
 	}
 	return absPath
+}
+
+// flagTypeToString 将FlagType转换为字符串
+func flagTypeToString(flagType FlagType) string {
+	switch flagType {
+	case FlagTypeInt:
+		return "<int>"
+	case FlagTypeString:
+		return "<string>"
+	case FlagTypeBool:
+		// 布尔类型没有参数类型字符串
+		return ""
+	case FlagTypeFloat:
+		return "<float>"
+	case FlagTypeEnum:
+		return "<enum>"
+	case FlagTypeDuration:
+		return "<duration>"
+	default:
+		return "<unknown>"
+	}
 }
