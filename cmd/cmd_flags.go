@@ -269,12 +269,6 @@ func init() {
 		os.Exit(1)
 	}
 
-	if len(qflag.Args()) == 0 {
-		// 如果没有子命令, 则打印帮助信息并退出
-		fmt.Println("err: 未指定子命令")
-		os.Exit(0)
-	}
-
 	// 检查版本信息标志
 	if versionF.Get() {
 		v := verman.Get()
