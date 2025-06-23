@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -23,10 +22,10 @@ func Run() {
 	cmdCl := colorlib.NewColorLib()
 
 	// 执行子命令
-	switch flag.Arg(0) {
+	switch qflag.Arg(0) {
 	case hashCmd.LongName(), hashCmd.ShortName(): // hash 子命令
 		// 解析 hash 子命令的参数
-		if err := hashCmd.Parse(flag.Args()[1:]); err != nil {
+		if err := hashCmd.Parse(qflag.Args()[1:]); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
@@ -38,7 +37,7 @@ func Run() {
 		}
 	case sizeCmd.LongName(), sizeCmd.ShortName(): // size 子命令
 		// 解析 size 子命令的参数
-		if err := sizeCmd.Parse(flag.Args()[1:]); err != nil {
+		if err := sizeCmd.Parse(qflag.Args()[1:]); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
@@ -50,7 +49,7 @@ func Run() {
 		}
 	case diffCmd.LongName(), diffCmd.ShortName(): // diff 子命令
 		// 解析 diff 子命令的参数
-		if err := diffCmd.Parse(flag.Args()[1:]); err != nil {
+		if err := diffCmd.Parse(qflag.Args()[1:]); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
@@ -62,7 +61,7 @@ func Run() {
 		}
 	case findCmd.LongName(), findCmd.ShortName(): // find 子命令
 		// 解析 find 子命令的参数
-		if err := findCmd.Parse(flag.Args()[1:]); err != nil {
+		if err := findCmd.Parse(qflag.Args()[1:]); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
@@ -74,7 +73,7 @@ func Run() {
 		}
 	case listCmd.LongName(), listCmd.ShortName(): // list 子命令
 		// 解析 list 子命令的参数
-		if err := listCmd.Parse(flag.Args()[1:]); err != nil {
+		if err := listCmd.Parse(qflag.Args()[1:]); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"runtime"
 
 	"golang.org/x/sys/unix"
 )
@@ -32,11 +31,6 @@ func isReadOnly(path string) bool {
 // 在 Linux 和 macOS 上返回用户和组名称
 // 在 Windows 上返回问号 (?)
 func getFileOwner(filePath string) (string, string) {
-	// 检查操作系统
-	if runtime.GOOS == "windows" {
-		return "?", "?"
-	}
-
 	// 使用 unix.Stat 获取文件状态
 	var stat unix.Stat_t
 	if err := unix.Stat(filePath, &stat); err != nil {

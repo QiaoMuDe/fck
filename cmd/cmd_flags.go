@@ -11,6 +11,9 @@ import (
 )
 
 var (
+	// fck 命令
+	versionF *qflag.BoolFlag
+
 	// fck hash 子命令
 	hashCmd          *qflag.Cmd
 	hashCmdType      *qflag.EnumFlag // type 标志
@@ -96,7 +99,7 @@ func init() {
 	}()
 
 	// 注册版本信息标志
-	versionF := qflag.Bool("version", "v", false, "显示版本信息并退出")
+	versionF = qflag.Bool("version", "v", false, "显示版本信息并退出")
 	qflag.SetUseChinese(true)                                    // 启用中文帮助信息
 	qflag.SetDescription("多功能文件处理工具集, 提供文件哈希计算、大小统计、查找和校验等实用功能") // 设置命令行描述
 	qflag.AddNote("各子命令有独立帮助文档，可通过-h参数查看, 例如 'fck <子命令> -h' 查看各子命令详细帮助")
@@ -255,7 +258,7 @@ func init() {
 	listCmdDevColor = listCmd.Bool("dev-color", "dc", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
 
 	// 添加子命令
-	if addErr := qflag.QCommandLine.AddSubCmd(hashCmd, sizeCmd, diffCmd, findCmd, listCmd); addErr != nil {
+	if addErr := qflag.AddSubCmd(hashCmd, sizeCmd, diffCmd, findCmd, listCmd); addErr != nil {
 		fmt.Printf("err: %v\n", addErr)
 		os.Exit(1)
 	}
@@ -264,6 +267,12 @@ func init() {
 	if err := qflag.Parse(); err != nil {
 		fmt.Printf("err: %v\n", err)
 		os.Exit(1)
+	}
+
+	if len(qflag.Args()) == 0 {
+		// 如果没有子命令, 则打印帮助信息并退出
+		fmt.Println("err: 未指定子命令")
+		os.Exit(0)
 	}
 
 	// 检查版本信息标志
