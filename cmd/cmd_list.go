@@ -115,9 +115,11 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 					if absErr != nil {
 						absPath = path
 					}
+
+					// 打印目录标题
 					cl.Bluef("%s: \n", absPath)
 				} else {
-					// 打印目录名
+					// 打印目录标题
 					cl.Bluef("%s: \n", filepath.Base(path))
 				}
 			}
@@ -144,8 +146,12 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 
 	// 处理所有文件
 	if len(fileInfos) > 0 {
-		// 打印文件组标题
-		//cl.Green("Files:")
+		// 打印文件组标题（当前目录）
+		currentDir, err := os.Getwd()
+		if err != nil {
+			currentDir = "."
+		}
+		cl.Bluef("%s: \n", currentDir)
 
 		// 根据命令行参数排序文件信息切片
 		sortFileInfos(fileInfos, listCmdSortByTime.Get(), listCmdSortBySize.Get(), listCmdSortByName.Get(), listCmdReverseSort.Get())
