@@ -27,9 +27,10 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 			if pwdErr != nil {
 				// 如果获取当前目录失败，则使用 "."
 				paths = []string{"."}
+			} else {
+				// 如果获取当前目录成功，则使用当前目录
+				paths = []string{dir}
 			}
-			// 如果获取当前目录成功，则使用当前目录
-			paths = []string{dir}
 		} else {
 			// 非Windows系统下，使用 "."
 			paths = []string{"."}

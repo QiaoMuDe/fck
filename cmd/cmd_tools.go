@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 )
 
@@ -58,4 +59,43 @@ func isSystemFileOrDir(name string) bool {
 	}
 
 	return false
+}
+
+// RegexBuilder 构建正则表达式模式字符串
+// pattern: 原始匹配模式
+// isRegex: 是否启用正则表达式模式（true时不转义特殊字符）
+// wholeWord: 是否启用全字匹配（在模式前后添加^和$）
+// caseSensitive: 是否区分大小写（false时添加(?i)标志）
+// 返回构建后的正则表达式字符串
+func RegexBuilder(pattern string, isRegex, wholeWord, caseSensitive bool) string {
+	if pattern == "" {
+		return ""
+	}
+
+	// 非正则模式下转义特殊字符
+	if !isRegex {
+		pattern = regexp.QuoteMeta(pattern)
+	}
+
+	// 全字匹配处理
+	if wholeWord {
+		pattern = "^" + pattern + "$"
+	}
+
+	// 大小写处理
+	if !caseSensitive {
+		pattern = "(?i)" + pattern
+	}
+
+	return pattern
+}
+
+// CompileRegex 编译正则表达式（仅在模式不为空时）
+// pattern: 正则表达式模式字符串
+// 返回编译后的正则表达式对象和可能的错误
+func CompileRegex(pattern string) (*regexp.Regexp, error) {
+	if pattern == "" {
+		return nil, nil
+	}
+	return regexp.Compile(pattern)
 }

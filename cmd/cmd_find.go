@@ -43,88 +43,40 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 		cl.NoColor.Store(true)
 	}
 
-	// 根据标志决定是否启用正则表达式匹配
-	var escapedName, escapedPath, exCludedName, exCludedPath string
-	if findCmdRegex.Get() {
-		// 不转义关键字中的特殊字符, 即启用正则表达式匹配
-		escapedName = findCmdName.Get()
+	// 准备正则表达式模式
+	isRegex := findCmdRegex.Get()       // 是否启用正则表达式
+	wholeWord := findCmdWholeWord.Get() // 是否匹配完整关键字
+	caseSensitive := findCmdCase.Get()  // 是否区分大小写
 
-		// 不转义要排除的关键字中的特殊字符, 即启用正则表达式匹配
-		exCludedName = findCmdExcludeName.Get()
+	// 构建检索文件名的正则表达式模式
+	escapedName := RegexBuilder(findCmdName.Get(), isRegex, wholeWord, caseSensitive)
 
-		// 如果指定了排除路径, 则转义路径中的特殊字符
-		exCludedPath = findCmdExcludePath.Get()
+	// 构建排除文件名的正则表达式模式
+	excludedName := RegexBuilder(findCmdExcludeName.Get(), isRegex, wholeWord, caseSensitive)
 
-		// 如果指定了查找路径, 则转义路径中的特殊字符
-		escapedPath = findCmdPath.Get()
-	} else {
-		// 转义关键字中的特殊字符, 即不启用正则表达式匹配
-		escapedName = regexp.QuoteMeta(findCmdName.Get())
+	// 构建检索路径的正则表达式模式
+	escapedPath := RegexBuilder(findCmdPath.Get(), isRegex, wholeWord, caseSensitive)
 
-		// 转义要排除的关键字中的特殊字符, 即不启用正则表达式匹配
-		exCludedName = regexp.QuoteMeta(findCmdExcludeName.Get())
+	// 构建排除路径的正则表达式模式
+	excludedPath := RegexBuilder(findCmdExcludePath.Get(), isRegex, wholeWord, caseSensitive)
 
-		// 如果指定了排除路径, 则转义路径中的特殊字符
-		exCludedPath = regexp.QuoteMeta(findCmdExcludePath.Get())
+	// 定义正则表达式和错误处理
+	var (
+		nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp
+		nameErr, exNameErr, pathErr, exPathErr         error
+	)
 
-		// 如果指定了查找路径, 则转义路径中的特殊字符
-		escapedPath = regexp.QuoteMeta(findCmdPath.Get())
+	if nameRegex, nameErr = CompileRegex(escapedName); nameErr != nil {
+		return fmt.Errorf("文件名正则表达式编译错误: %v", nameErr)
 	}
-
-	// 新增完整关键字匹配逻辑
-	if findCmdWholeWord.Get() {
-		// 名字在关键字前后添加开头和结尾匹配
-		if escapedName != "" {
-			escapedName = "^" + escapedName + "$"
-		}
-
-		// 排除的名字在关键字前后添加开头和结尾匹配
-		if exCludedName != "" {
-			exCludedName = "^" + exCludedName + "$"
-		}
-
-		// 路径在关键字前后添加开头和结尾匹配
-		if escapedPath != "" {
-			escapedPath = "^" + escapedPath + "$"
-		}
-
-		// 排除的路径在关键字前后添加开头和结尾匹配
-		if exCludedPath != "" {
-			exCludedPath = "^" + exCludedPath + "$"
-		}
+	if exNameRegex, exNameErr = CompileRegex(excludedName); exNameErr != nil {
+		return fmt.Errorf("排除文件名正则表达式编译错误: %v", exNameErr)
 	}
-
-	// 根据用户选择是否区分大小写
-	var nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp
-	var nameRegexErr, exNameRegexErr, pathRegexErr, exPathRegexErr error
-	// 默认不区分大小写
-	if findCmdCase.Get() {
-		// 编译查找文件或目录名的正则表达式
-		nameRegex, nameRegexErr = regexp.Compile(escapedName)
-
-		// 编译排除的关键字的正则表达式
-		exNameRegex, exNameRegexErr = regexp.Compile(exCludedName)
-
-		// 编译查找路径的正则表达式
-		pathRegex, pathRegexErr = regexp.Compile(escapedPath)
-
-		// 编译排除路径的正则表达式
-		exPathRegex, exPathRegexErr = regexp.Compile(exCludedPath)
-	} else {
-		// 不区分大小写的正则表达式
-		nameRegex, nameRegexErr = regexp.Compile("(?i)" + escapedName)
-
-		// 编译排除的关键字的正则表达式
-		exNameRegex, exNameRegexErr = regexp.Compile("(?i)" + exCludedName)
-
-		// 编译查找路径的正则表达式
-		pathRegex, pathRegexErr = regexp.Compile("(?i)" + escapedPath)
-
-		// 编译排除路径的正则表达式
-		exPathRegex, exPathRegexErr = regexp.Compile("(?i)" + exCludedPath)
+	if pathRegex, pathErr = CompileRegex(escapedPath); pathErr != nil {
+		return fmt.Errorf("路径正则表达式编译错误: %v", pathErr)
 	}
-	if nameRegexErr != nil || exNameRegexErr != nil || pathRegexErr != nil || exPathRegexErr != nil {
-		return fmt.Errorf("表达式编译错误: %v, %v, %v, %v", nameRegexErr, exNameRegexErr, pathRegexErr, exPathRegexErr)
+	if exPathRegex, exPathErr = CompileRegex(excludedPath); exPathErr != nil {
+		return fmt.Errorf("排除路径正则表达式编译错误: %v", exPathErr)
 	}
 
 	// 定义一个统计匹配项的
