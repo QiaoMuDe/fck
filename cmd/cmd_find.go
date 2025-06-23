@@ -235,7 +235,6 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 // 返回值:
 // - error: 错误信息
 func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, entry os.DirEntry, path string, matchCount *atomic.Int64) error {
-
 	// 如果指定了-n和-p参数, 并且指定了-or参数, 则只检查文件名或路径是否匹配(默认为或操作)
 	if findCmdOr.Get() && findCmdName.Get() != "" && findCmdPath.Get() != "" {
 		// 执行或操作
@@ -1179,6 +1178,20 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 		depth := strings.Count(p[len(findPath):], string(filepath.Separator))
 		if findCmdMaxDepth.Get() >= 0 && depth > findCmdMaxDepth.Get() {
 			return filepath.SkipDir
+		}
+
+		// 默认隐藏文件或隐藏目录不参与匹配
+		// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
+		if !findCmdHidden.Get() {
+			if isHidden(p) {
+				// 如果是隐藏目录，跳过整个目录
+				if d.IsDir() {
+					return filepath.SkipDir
+				}
+
+				// 如果是隐藏文件，跳过单个文件
+				return nil
+			}
 		}
 
 		// 检查是否为符号链接循环, 然后做相应处理
