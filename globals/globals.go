@@ -8,9 +8,12 @@ import (
 	_ "embed"
 	"hash"
 	"os"
+	"regexp"
 	"sort"
+	"sync/atomic"
 	"time"
 
+	"gitee.com/MM-Q/colorlib"
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
@@ -420,3 +423,21 @@ var FckHelpLogo = ` ________      ________          ___  __
     \|__|         \|_______|        \|__| \|__|
                 FCK CLI                        
 `
+
+// FindConfig 用于封装find命令的配置参数和共享资源
+// 避免函数参数过多难以管理
+type FindConfig struct {
+	Cl            *colorlib.ColorLib // 颜色库实例
+	NameRegex     *regexp.Regexp     // 文件名匹配正则
+	ExNameRegex   *regexp.Regexp     // 排除文件名正则
+	PathRegex     *regexp.Regexp     // 路径匹配正则
+	ExPathRegex   *regexp.Regexp     // 排除路径正则
+	IsRegex       bool               // 是否启用正则匹配
+	WholeWord     bool               // 是否全词匹配
+	CaseSensitive bool               // 是否区分大小写
+	MatchCount    *atomic.Int64      // 匹配计数原子变量
+	NamePattern   string             // 文件名匹配模式
+	PathPattern   string             // 路径匹配模式
+	ExNamePattern string             // 排除文件名匹配模式
+	ExPathPattern string             // 排除路径匹配模式
+}

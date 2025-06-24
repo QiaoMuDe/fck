@@ -99,15 +99,32 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 	matchCount := atomic.Int64{}
 	matchCount.Store(0)
 
+	// 创建FindConfig实例
+	config := &globals.FindConfig{
+		Cl:            cl,                       // 颜色库实例
+		NameRegex:     nameRegex,                // 文件名匹配正则
+		ExNameRegex:   exNameRegex,              // 排除文件名正则
+		PathRegex:     pathRegex,                // 路径匹配正则
+		ExPathRegex:   exPathRegex,              // 排除路径正则
+		IsRegex:       isRegex,                  // 是否启用正则匹配
+		WholeWord:     wholeWord,                // 是否全词匹配
+		CaseSensitive: caseSensitive,            // 是否区分大小写
+		MatchCount:    &matchCount,              // 匹配计数
+		NamePattern:   findCmdName.Get(),        // 文件名匹配模式
+		PathPattern:   findCmdPath.Get(),        // 路径匹配模式
+		ExNamePattern: findCmdExcludeName.Get(), // 排除文件名模式
+		ExPathPattern: findCmdExcludePath.Get(), // 排除路径模式
+	}
+
 	// 检查是否启用并发模式
 	if findCmdX.Get() {
 		// 启用并发模式
-		if err := processWalkDirConcurrent(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); err != nil {
+		if err := processWalkDirConcurrent(config, findPath); err != nil {
 			return err
 		}
 	} else {
 		// 运行processWalkDir单线程遍历模式
-		if walkDirErr := processWalkDir(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, findPath, &matchCount); walkDirErr != nil {
+		if walkDirErr := processWalkDir(config, findPath); walkDirErr != nil {
 			return walkDirErr
 		}
 	}
@@ -123,15 +140,11 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 
 // processWalkDir 用于处理 filepath.WalkDir 的逻辑
 // 参数:
-// - cl: 颜色库
-// - nameRegex: 文件名正则表达式
-// - exNameRegex: 排除的文件名正则表达式
-// - pathRegex: 路径正则表达式
-// - exPathRegex: 排除的路径正则表达式
+// - config: 查找配置结构体
 // - findPath: 要查找的路径
 // 返回值:
 // - error: 错误信息
-func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string, matchCount *atomic.Int64) error {
+func processWalkDir(config *globals.FindConfig, findPath string) error {
 	// 使用 filepath.WalkDir 遍历目录
 	walkDirErr := filepath.WalkDir(findPath, func(path string, entry os.DirEntry, err error) error {
 		// 检查遍历过程中是否遇到错误
@@ -144,7 +157,7 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 
 			// 检查是否为权限不足的报错
 			if os.IsPermission(err) {
-				cl.PrintErrf("权限不足，无法访问某些目录: %s\n", path)
+				config.Cl.PrintErrf("权限不足，无法访问某些目录: %s\n", path)
 				return nil
 			}
 
@@ -170,7 +183,7 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 		}
 
 		// 处理文件或目录
-		if processErr := processFindCmd(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, entry, path, matchCount); processErr != nil {
+		if processErr := processFindCmd(config, entry, path); processErr != nil {
 			return processErr
 		}
 
@@ -192,22 +205,17 @@ func processWalkDir(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 
 // processFindCmd 用于处理 find 命令的逻辑
 // 参数:
-// - cl: 颜色库
-// - nameRegex: 文件名正则表达式
-// - exNameRegex: 排除的文件名正则表达式
-// - pathRegex: 路径正则表达式
-// - exPathRegex: 排除的路径正则表达式
+// - config: 查找配置结构体
 // - entry: 文件或目录的DirEntry对象
 // - path: 文件或目录的完整路径
-// - matchCount: 匹配数量
 // 返回值:
 // - error: 错误信息
-func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, entry os.DirEntry, path string, matchCount *atomic.Int64) error {
+func processFindCmd(config *globals.FindConfig, entry os.DirEntry, path string) error {
 	// 如果指定了-n和-p参数, 并且指定了-or参数, 则只检查文件名或路径是否匹配(默认为或操作)
-	if findCmdOr.Get() && findCmdName.Get() != "" && findCmdPath.Get() != "" {
+	if findCmdOr.Get() && config.NamePattern != "" && config.PathPattern != "" {
 		// 执行或操作
-		if nameRegex.MatchString(entry.Name()) || pathRegex.MatchString(path) {
-			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
+		if matchPattern(entry.Name(), config.NamePattern, config.NameRegex, config) || matchPattern(path, config.PathPattern, config.PathRegex, config) {
+			if err := filterConditions(config, entry, path); err != nil {
 				return err
 			}
 		}
@@ -215,10 +223,10 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	}
 
 	// 如果指定了-n和-p参数, 则同时检查文件名和路径是否匹配(默认为-and操作)
-	if findCmdAnd.Get() && findCmdName.Get() != "" && findCmdPath.Get() != "" {
-		if nameRegex.MatchString(entry.Name()) && pathRegex.MatchString(path) {
+	if findCmdAnd.Get() && config.NamePattern != "" && config.PathPattern != "" {
+		if matchPattern(entry.Name(), config.NamePattern, config.NameRegex, config) && matchPattern(path, config.PathPattern, config.PathRegex, config) {
 			// 如果同时匹配, 则执行筛选条件
-			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
+			if err := filterConditions(config, entry, path); err != nil {
 				return err
 			}
 		}
@@ -227,9 +235,9 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	}
 
 	// 如果指定了-n参数, 则检查文件名是否匹配
-	if findCmdName.Get() != "" {
-		if nameRegex.MatchString(entry.Name()) {
-			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
+	if config.NamePattern != "" {
+		if matchPattern(entry.Name(), config.NamePattern, config.NameRegex, config) {
+			if err := filterConditions(config, entry, path); err != nil {
 				return err
 			}
 		}
@@ -237,9 +245,9 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	}
 
 	// 如果指定了-p参数, 则检查路径是否匹配
-	if findCmdPath.Get() != "" {
-		if pathRegex.MatchString(path) {
-			if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
+	if config.PathPattern != "" {
+		if matchPattern(path, config.PathPattern, config.PathRegex, config) {
+			if err := filterConditions(config, entry, path); err != nil {
 				return err
 			}
 		}
@@ -247,7 +255,7 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 	}
 
 	// 默认情况下
-	if err := filterConditions(entry, path, cl, exNameRegex, exPathRegex, matchCount); err != nil {
+	if err := filterConditions(config, entry, path); err != nil {
 		return err
 	}
 
@@ -256,15 +264,12 @@ func processFindCmd(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, ex
 
 // filterConditions 用于在循环中筛选条件的函数
 // 参数:
+// - config: 查找配置结构体
 // - entry: 文件或目录的DirEntry对象
 // - path: 文件或目录的完整路径
-// - cl: 颜色库
-// - exNameRegex: 排除的文件名正则表达式
-// - exPathRegex: 排除的路径正则表达式
-// - matchCount: 匹配数量
 // 返回值:
 // - error: 错误信息
-func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exNameRegex, exPathRegex *regexp.Regexp, matchCount *atomic.Int64) error {
+func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string) error {
 	// 默认隐藏文件或隐藏目录不参与匹配
 	// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
 	if !findCmdHidden.Get() {
@@ -280,15 +285,22 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 	}
 
 	// 如果指定了排除文件或目录名, 跳过匹配的文件或目录
-	if findCmdExcludeName.Get() != "" {
-		if exNameRegex.MatchString(entry.Name()) {
+	if config.ExNamePattern != "" {
+		if matchPattern(entry.Name(), config.ExNamePattern, config.ExNameRegex, config) {
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+
 			return nil
 		}
 	}
 
 	// 如果指定了排除路径, 跳过匹配的路径
-	if findCmdExcludePath.Get() != "" {
-		if exPathRegex.MatchString(path) {
+	if config.ExPathPattern != "" {
+		if matchPattern(path, config.ExPathPattern, config.ExPathRegex, config) {
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 	}
@@ -475,7 +487,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 	if !findCmdCount.Get() {
 		// 如果启用了delete标志, 删除匹配的文件或目录
 		if findCmdDelete.Get() {
-			if err := deleteMatchedItem(path, entry.IsDir(), cl); err != nil {
+			if err := deleteMatchedItem(path, entry.IsDir(), config.Cl); err != nil {
 				return err
 			}
 
@@ -490,7 +502,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 
 		// 如果启用了-mv标志, 将匹配的文件或目录移动到指定位置
 		if findCmdMove.Get() != "" {
-			if err := moveMatchedItem(path, findCmdMove.Get(), cl); err != nil {
+			if err := moveMatchedItem(path, findCmdMove.Get(), config.Cl); err != nil {
 				return err
 			}
 
@@ -506,7 +518,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 		// 如果启用了-exec标志, 执行指定的命令
 		if findCmdExec.Get() != "" {
 			// 执行命令
-			if err := runCommand(findCmdExec.Get(), cl, path); err != nil {
+			if err := runCommand(findCmdExec.Get(), config.Cl, path); err != nil {
 				return fmt.Errorf("执行-exec命令时发生了错误: %v", err)
 			}
 
@@ -517,7 +529,7 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 	// 根据标志, 输出完整路径还是匹配到的路径
 	if findCmdFullPath.Get() {
 		// 增加匹配计数
-		matchCount.Add(1)
+		config.MatchCount.Add(1)
 
 		// 如果启用了count标志, 则不输出路径
 		if !findCmdCount.Get() {
@@ -528,18 +540,18 @@ func filterConditions(entry os.DirEntry, path string, cl *colorlib.ColorLib, exN
 			}
 
 			// 输出完整路径
-			printPathColor(fullPath, cl)
+			printPathColor(fullPath, config.Cl)
 		}
 
 		return nil
 	}
 
 	// 输出匹配的路径
-	matchCount.Add(1) // 增加匹配计数
+	config.MatchCount.Add(1) // 增加匹配计数
 
 	// 如果没有启用count标志, 才输出匹配路径
 	if !findCmdCount.Get() {
-		printPathColor(path, cl)
+		printPathColor(path, config.Cl)
 	}
 
 	return nil
@@ -688,6 +700,11 @@ func checkFindCmdArgs(findPath string) error {
 				return fmt.Errorf("扩展名应以点开头: %s (建议使用 .%s)", ext, ext)
 			}
 		}
+	}
+
+	// 检查软连接最大解析深度是否小于 1
+	if findCmdMaxDepthLimit.Get() < 1 {
+		return fmt.Errorf("软连接最大解析深度不能小于1")
 	}
 
 	return nil
@@ -1055,10 +1072,10 @@ func isSymlinkLoop(path string) bool {
 }
 
 // 并发版本的目录遍历函数
-func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pathRegex, exPathRegex *regexp.Regexp, findPath string, matchCount *atomic.Int64) error {
+func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error {
 	var wg sync.WaitGroup
-	pathChan := make(chan string, 30000) // 通道缓冲区
-	errorChan := make(chan error, 100)   // 错误通道
+	pathChan := make(chan string, runtime.NumCPU()*2000) // 通道缓冲区
+	errorChan := make(chan error, 100)                   // 错误通道
 
 	// 设置最大并发数量为 CPU 核心数的两倍
 	maxWorkers := runtime.NumCPU() * 2
@@ -1099,7 +1116,7 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 				}
 
 				// 通过 processFindCmd 处理路径
-				processErr := processFindCmd(cl, nameRegex, exNameRegex, pathRegex, exPathRegex, dirEntry, path, matchCount)
+				processErr := processFindCmd(config, dirEntry, path)
 				if processErr != nil {
 					if processErr == filepath.SkipDir {
 						// 如果是 SkipDir，跳过该目录即可
@@ -1107,7 +1124,7 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 					}
 
 					if errors.Is(processErr, os.ErrPermission) {
-						cl.PrintErrf("路径 %s 权限不足，已跳过\n", path)
+						config.Cl.PrintErrf("路径 %s 权限不足，已跳过\n", path)
 						// 跳过该路径
 						continue
 					}
@@ -1130,7 +1147,7 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 
 			// 忽略权限错误
 			if os.IsPermission(err) {
-				cl.PrintErrf("路径 %s 因权限不足已跳过\n", p)
+				config.Cl.PrintErrf("路径 %s 因权限不足已跳过\n", p)
 				return nil
 			}
 
@@ -1226,36 +1243,39 @@ func processWalkDirConcurrent(cl *colorlib.ColorLib, nameRegex, exNameRegex, pat
 //	input: 输入字符串(文件名或路径)
 //	pattern: 匹配模式字符串
 //	regex: 编译好的正则表达式(如果启用正则)
-//	isRegex: 是否启用正则匹配
-//	wholeWord: 是否全词匹配
-//	caseSensitive: 是否区分大小写
+//	config: 配置参数
 //
 // 返回值:
 //
 //	bool: 是否匹配
-func matchPattern(input, pattern string, regex *regexp.Regexp, isRegex, wholeWord, caseSensitive bool) bool {
+func matchPattern(input, pattern string, regex *regexp.Regexp, config *globals.FindConfig) bool {
+	// 如果模式为空，则不匹配
 	if pattern == "" {
-		return true
+		return false
 	}
 
-	if isRegex {
+	// 如果启用正则匹配，使用正则表达式匹配
+	if config.IsRegex {
 		if regex == nil {
 			return false
 		}
 		return regex.MatchString(input)
 	}
 
-	s := input   // 输入字符串
-	p := pattern // 匹配模式
-
-	// 默认统一转为小写实现不区分大小写, 如区分大小写则不转换
-	if !caseSensitive {
-		s = strings.ToLower(s)
-		p = strings.ToLower(p)
+	// 根据大小写敏感性处理字符串
+	var s, p string
+	if config.CaseSensitive {
+		// 区分大小写
+		s = input
+		p = pattern
+	} else {
+		// 默认不区分大小写
+		s = strings.ToLower(input)
+		p = strings.ToLower(pattern)
 	}
 
 	// 全字匹配处理
-	if wholeWord {
+	if config.WholeWord {
 		return s == p
 	}
 
