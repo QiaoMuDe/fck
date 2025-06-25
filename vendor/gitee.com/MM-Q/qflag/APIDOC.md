@@ -166,10 +166,10 @@ func BoolVar(f *BoolFlag, longName, shortName string, defValue bool, usage strin
 - `defValue`: 标志的默认值，当命令行未指定该标志时使用。
 - `usage`: 标志的帮助说明信息，用于在显示帮助信息时展示给用户。
 
-### Description
+### GetDescription
 
 ```go
-func Description() string
+func GetDescription() string
 ```
 
 获取全局默认命令实例 `QCommandLine` 的描述信息。
@@ -303,10 +303,10 @@ func GetUseChinese() bool
 
 - `bool`: 若启用中文显示，则返回 `true`；否则返回 `false`。
 
-### Help
+### GetHelp
 
 ```go
-func Help() string
+func GetHelp() string
 ```
 
 生成全局默认命令实例 `QCommandLine` 的帮助文档。
@@ -412,6 +412,18 @@ func Parse() error
 
 - `error`: 若解析过程中发生错误（如无效的标志、缺少必填参数等），则返回错误信息；否则返回 `nil`。
 
+### ParseFlagsOnly
+
+```go
+func ParseFlagsOnly() error
+```
+
+解析命令行参数并填充到相应的标志中，但不处理子命令的参数解析。该函数会调用全局默认命令实例 `QCommandLine` 的 `ParseFlagsOnly` 方法。
+
+**返回值:**
+
+- `error`: 若解析过程中发生错误（如无效的标志、缺少必填参数等），则返回错误信息；否则返回 `nil`。
+
 ### PrintHelp
 
 ```go
@@ -471,10 +483,10 @@ func SetModuleHelps(moduleHelps string)
 
 - `moduleHelps`: 模块帮助信息字符串，用于描述模块功能和使用方法。
 
-### SetUsage
+### SetUsageSyntax
 
 ```go
-func SetUsage(usage string)
+func SetUsageSyntax(usageSyntax string)
 ```
 
 设置全局默认命令实例 `QCommandLine` 的使用说明。
@@ -827,6 +839,12 @@ func (c *Cmd) Parse(args []string) (err error)
 Parse 解析命令行参数，自动检查长短标志，并处理内置标志 如果有子命令则会自动解析子命令的参数 参数：args：命令行参数切片 注意：该方法保证每个 Cmd 实例只会解析一次。
 
 ```go
+func (c *Cmd) ParseFlagsOnly(args []string) (err error)
+```
+
+ParseFlagsOnly 仅解析当前命令的标志参数（忽略子命令, 不会自动解析子命令） 参数：args：命令行参数切片 注意：该方法保证每个 Cmd 实例只会解析一次。
+
+```go
 func (c *Cmd) PrintHelp()
 ```
 
@@ -898,16 +916,17 @@ SubCmds 返回子命令列表。
 type CmdInterface interface {
     LongName() string // 获取命令名称(长名称)，如"app"
     ShortName() string // 获取命令短名称，如"a"
-    Description() string // 获取命令描述信息
+    GetDescription() string // 获取命令描述信息
     SetDescription(desc string) // 设置命令描述信息，用于帮助输出
-    Help() string // 获取自定义帮助信息
+    GetHelp() string // 获取自定义帮助信息
     SetHelp(help string) // 设置用户自定义命令帮助信息，覆盖自动生成内容
-    SetUsage(usage string) // 设置自定义命令用法，覆盖自动生成内容
+    SetUsageSyntax(usageSyntax string) // 设置自定义命令用法，覆盖自动生成内容
     GetUseChinese() bool // 获取是否使用中文帮助信息
     SetUseChinese(useChinese bool) // 设置是否使用中文帮助信息
     AddSubCmd(subCmd *Cmd) // 添加子命令，子命令会继承父命令的上下文
     SubCmds() []*Cmd // 获取所有已注册的子命令列表
     Parse(args []string) error // 解析命令行参数，自动处理标志和子命令
+    ParseFlagsOnly(args []string) (err error) // 仅解析标志参数，不处理子命令
     Args() []string // 获取所有非标志参数(未绑定到任何标志的参数)
     Arg(i int) string // 获取指定索引的非标志参数，索引越界返回空字符串
     NArg() int // 获取非标志参数的数量
@@ -918,6 +937,8 @@ type CmdInterface interface {
     GetNotes() []string // 获取所有备注信息
     AddExample(e ExampleInfo) // 添加示例信息
     GetExamples() []ExampleInfo // 获取所有示例信息
+    SetVersion(version string)  // 设置版本信息
+	GetVersion() string     // 获取版本信息
     String(longName, shortName, usage, defValue string) *StringFlag // 添加字符串类型标志
     Int(longName, shortName, usage string, defValue int) *IntFlag // 添加整数类型标志
     Bool(longName, shortName, usage string, defValue bool) *BoolFlag // 添加布尔类型标志
@@ -1302,16 +1323,17 @@ Type 返回标志类型。
 type QCommandLineInterface interface {
     LongName() string // 获取命令长名称
     ShortName() string // 获取命令短名称
-    Description() string // 获取命令描述信息
+    GetDescription() string // 获取命令描述信息
     SetDescription(desc string) // 设置命令描述信息
-    Help() string // 获取命令帮助信息
+    GetHelp() string // 获取命令帮助信息
     SetHelp(help string) // 设置命令帮助信息
-    SetUsage(usage string) // 设置命令用法格式
+    SetUsageSyntax(usage string) // 设置命令用法格式
     GetUseChinese() bool // 获取是否使用中文帮助信息
     SetUseChinese(useChinese bool) // 设置是否使用中文帮助信息
     AddSubCmd(subCmd *Cmd) // 添加子命令，子命令会继承父命令的上下文
     SubCmds() []*Cmd // 获取所有已注册的子命令列表
     Parse() error // 解析命令行参数，自动处理标志和子命令
+    ParseFlagsOnly() error // 解析命令行参数，仅处理标志，不处理子命令
     Args() []string // 获取所有非标志参数(未绑定到任何标志的参数)
     Arg(i int) string // 获取指定索引的非标志参数，索引越界返回空字符串
     NArg() int // 获取非标志参数的数量
@@ -1322,6 +1344,8 @@ type QCommandLineInterface interface {
     GetNotes() []string // 获取所有备注信息
     AddExample(e ExampleInfo) // 添加一个示例信息
     GetExamples() []ExampleInfo // 获取示例信息列表
+    SetVersion(version string) // 设置版本信息
+	GetVersion() string // 获取版本信息
     String(longName, shortName, defValue, usage string) *StringFlag // 添加字符串类型标志
     Int(longName, shortName string, defValue int, usage string) *IntFlag // 添加整数类型标志
     Bool(longName, shortName string, defValue bool, usage string) *BoolFlag // 添加布尔类型标志
@@ -1375,11 +1399,12 @@ Type 返回标志类型。
 
 ```go
 type TypedFlag[T any] interface {
-    Flag // 继承标志接口
-    GetDefault() T // 获取标志的具体类型默认值
-    Get() T // 获取标志的具体类型值
-    Set(T) error // 设置标志的具体类型值
-    SetValidator(Validator) // 设置标志的验证器
+    Flag                     // 继承标志接口
+    GetDefault() T           // 获取标志的具体类型默认值
+    Get() T                  // 获取标志的具体类型值
+    GetPointer() *T          // 获取标志的具体类型值指针
+    Set(T) error             // 设置标志的具体类型值
+    SetValidator(Validator)  // 设置标志的验证器
 }
 ```
 

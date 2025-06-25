@@ -42,9 +42,11 @@ const (
 
 // 内置标志名称
 var (
-	helpFlagName            = "help" // 帮助标志名称
-	helpFlagShortName       = "h"    // 帮助标志短名称
-	showInstallPathFlagName = "sip"  // 显示安装路径标志名称
+	helpFlagName            = "help"    // 帮助标志名称
+	helpFlagShortName       = "h"       // 帮助标志短名称
+	showInstallPathFlagName = "sip"     // 显示安装路径标志名称
+	versionFlagLongName     = "version" // 版本标志名称
+	versionFlagShortName    = "v"       // 版本标志短名称
 )
 
 // HelpTemplate 帮助信息模板结构体
@@ -59,6 +61,7 @@ type HelpTemplate struct {
 	OptionsHeader         string // 选项头部模板
 	Option1               string // 选项模板(带短选项)
 	Option2               string // 选项模板(无短选项)
+	Option3               string // 选项模板(无长选项)
 	OptionDefault         string // 选项模板的默认值
 	SubCmdsHeader         string // 子命令头部模板
 	SubCmd                string // 子命令模板
@@ -77,11 +80,12 @@ var EnglishTemplate = HelpTemplate{
 	UsageSubCmd:           " [subcmd]",                                                                                                                           // 命令名称模板
 	UseageInfoWithOptions: " [options]\n\n",                                                                                                                      // 带选项的用法说明信息模板
 	UseageGlobalOptions:   " [global options]",                                                                                                                   // 全局选项部分
-	CmdNameWithShort:      "Name: %s(%s)\n\n",                                                                                                                    // 命令名称带短名称模板
+	CmdNameWithShort:      "Name: %s, %s\n\n",                                                                                                                    // 命令名称带短名称模板
 	CmdDescription:        "Desc: %s\n\n",                                                                                                                        // 命令描述模板
 	OptionsHeader:         "Options:\n",                                                                                                                          // 选项头部模板
 	Option1:               "  --%s, -%s %s",                                                                                                                      // 选项模板(带短选项)
 	Option2:               "  --%s %s",                                                                                                                           // 选项模板(无短选项)
+	Option3:               "  -%s %s",                                                                                                                            // 新增：仅短选项的模板
 	OptionDefault:         "%s%*s%s (default: %s)\n",                                                                                                             // 选项模板默认值
 	SubCmdsHeader:         "\nSubCmds:\n",                                                                                                                        // 子命令头部模板
 	SubCmd:                "  %s\t%s\n",                                                                                                                          // 子命令模板
@@ -90,7 +94,7 @@ var EnglishTemplate = HelpTemplate{
 	NoteItem:              "  %d. %s\n",                                                                                                                          // 注意事项模板
 	DefaultNote:           "In the case where both long options and short options are used at the same time,\n the option specified last shall take precedence.", // 默认注意事项
 	ExamplesHeader:        "\nExamples:\n",                                                                                                                       // 示例信息头部模板
-	ExampleItem:           "  %d. %s\n    %s\n",                                                                                                                  // 序号、描述、用法
+	ExampleItem:           "  %d. %s\n     %s\n",                                                                                                                 // 序号、描述、用法
 }
 
 // 中文模板实例
@@ -100,11 +104,12 @@ var ChineseTemplate = HelpTemplate{
 	UsageSubCmd:           " [子命令]",                      // 用法说明子命令模板
 	UseageInfoWithOptions: " [选项]\n\n",                   // 带选项的用法说明信息模板
 	UseageGlobalOptions:   " [全局选项]",                     // 全局选项部分
-	CmdNameWithShort:      "名称: %s(%s)\n\n",              // 命令名称带短名称模板
+	CmdNameWithShort:      "名称: %s, %s\n\n",              // 命令名称带短名称模板
 	CmdDescription:        "描述: %s\n\n",                  // 命令描述模板
 	OptionsHeader:         "选项:\n",                       // 选项头部模板
 	Option1:               "  --%s, -%s %s",              // 选项模板(带短选项)
 	Option2:               "  --%s %s",                   // 选项模板(无短选项)
+	Option3:               "  -%s %s",                    // 新增：仅短选项的模板
 	OptionDefault:         "%s%*s%s (默认值: %s)\n",         // 选项模板默认值
 	SubCmdsHeader:         "\n子命令:\n",                    // 子命令头部模板
 	SubCmd:                "  %s\t%s\n",                  // 子命令模板
@@ -113,5 +118,5 @@ var ChineseTemplate = HelpTemplate{
 	NoteItem:              "  %d、%s\n",                   //注意事项模板
 	DefaultNote:           "当长选项和短选项同时使用时，最后指定的选项将优先生效。", //默认注意事项
 	ExamplesHeader:        "\n示例:\n",                     // 示例信息头部模板
-	ExampleItem:           "  %d、%s\n    %s\n",           // 序号、描述、用法
+	ExampleItem:           "  %d、%s\n     %s\n",          // 序号、描述、用法
 }

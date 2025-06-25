@@ -66,9 +66,16 @@ func (r *FlagRegistry) RegisterFlag(meta *FlagMeta) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	// 检查长短标志是否都为空
+	if meta.GetLongName() == "" && meta.GetShortName() == "" {
+		return fmt.Errorf("flag must have at least one name")
+	}
+
 	// 检查长标志是否已存在
-	if _, exists := r.byLong[meta.GetLongName()]; exists {
-		return fmt.Errorf("flag %s already exists", meta.GetLongName())
+	if meta.GetLongName() != "" {
+		if _, exists := r.byLong[meta.GetLongName()]; exists {
+			return fmt.Errorf("long flag %s already exists", meta.GetLongName())
+		}
 	}
 
 	// 检查短标志是否已存在
@@ -80,7 +87,9 @@ func (r *FlagRegistry) RegisterFlag(meta *FlagMeta) error {
 	}
 
 	// 添加长标志索引
-	r.byLong[meta.GetLongName()] = meta
+	if meta.GetLongName() != "" {
+		r.byLong[meta.GetLongName()] = meta
+	}
 
 	// 只在短标志不为空时添加短标志索引
 	if meta.GetShortName() != "" {
@@ -98,10 +107,10 @@ func (r *FlagRegistry) RegisterFlag(meta *FlagMeta) error {
 //   - longName: 标志的长名称(如"help")
 //
 // 返回值:
-//   - *FlagMeta: 找到的标志元数据指针，未找到时为nil
-//   - bool: 是否找到标志，true表示找到
+//   - *FlagMeta: 找到的标志元数据指针, 未找到时为nil
+//   - bool: 是否找到标志, true表示找到
 func (r *FlagRegistry) GetByLong(longName string) (*FlagMeta, bool) {
-	r.mu.RLock()                       // 获取读锁，保证并发安全
+	r.mu.RLock()                       // 获取读锁, 保证并发安全
 	defer r.mu.RUnlock()               // 函数返回时释放读锁
 	meta, exists := r.byLong[longName] // 从长名称索引中查找
 	return meta, exists                // 返回查找结果
@@ -112,8 +121,8 @@ func (r *FlagRegistry) GetByLong(longName string) (*FlagMeta, bool) {
 //   - shortName: 标志的短名称(如"h"对应"help")
 //
 // 返回值:
-//   - *FlagMeta: 找到的标志元数据指针，未找到时为nil
-//   - bool: 是否找到标志，true表示找到
+//   - *FlagMeta: 找到的标志元数据指针, 未找到时为nil
+//   - bool: 是否找到标志, true表示找到
 func (r *FlagRegistry) GetByShort(shortName string) (*FlagMeta, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -124,8 +133,8 @@ func (r *FlagRegistry) GetByShort(shortName string) (*FlagMeta, bool) {
 // GetByName 通过标志名称查找标志元数据
 // 参数name可以是长名称(如"help")或短名称(如"h")
 // 返回值:
-//   - *FlagMeta: 找到的标志元数据指针，未找到时为nil
-//   - bool: 是否找到标志，true表示找到
+//   - *FlagMeta: 找到的标志元数据指针, 未找到时为nil
+//   - bool: 是否找到标志, true表示找到
 func (r *FlagRegistry) GetByName(name string) (*FlagMeta, bool) {
 	// 先尝试按长名称查找
 	if meta, exists := r.GetByLong(name); exists {

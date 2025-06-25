@@ -7,6 +7,7 @@ qflag 是一个用于解析命令行参数的 Go 语言库。它提供了丰富�
 ## 项目地址
 
 该项目托管在 Gitee 和 GitHub 上，您可以访问以下链接查看源代码和最新动态：
+
 - [Gitee](https://gitee.com/MM-Q/qflag.git)
 - [GitHub](https://github.com/QiaoMuDe/qflag.git)
 
@@ -30,6 +31,7 @@ go get -u gitee.com/MM-Q/qflag
 - 标志命名规则。
 
 ## 使用示例
+
 ### 基本使用示例
 
 以下是一个简单的使用示例，展示如何创建一个命令并添加一些标志：
@@ -104,7 +106,7 @@ func main() {
 	}
 
 	// 获取参数值
-	if runF.GetValue() {
+	if runF.Get() {
 		fmt.Printf("启动app: %s\n", nameF.GetValue())
 		fmt.Printf("app路径: %s\n", pathF.GetValue())
 	}

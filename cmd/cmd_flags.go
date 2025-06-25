@@ -11,9 +11,6 @@ import (
 )
 
 var (
-	// fck 命令
-	versionF *qflag.BoolFlag
-
 	// fck hash 子命令
 	hashCmd          *qflag.Cmd
 	hashCmdType      *qflag.EnumFlag // type 标志
@@ -99,16 +96,17 @@ func init() {
 	}()
 
 	// 注册版本信息标志
-	versionF = qflag.Bool("version", "v", false, "显示版本信息并退出")
-	qflag.SetUseChinese(true)                                    // 启用中文帮助信息
-	qflag.SetDescription("多功能文件处理工具集, 提供文件哈希计算、大小统计、查找和校验等实用功能") // 设置命令行描述
+	v := verman.Get()                                               // 获取版本信息
+	qflag.SetVersion(fmt.Sprintf("%s %s", v.AppName, v.GitVersion)) // 设置版本信息
+	qflag.SetUseChinese(true)                                       // 启用中文帮助信息
+	qflag.SetDescription("多功能文件处理工具集, 提供文件哈希计算、大小统计、查找和校验等实用功能")    // 设置命令行描述
 	qflag.AddNote("各子命令有独立帮助文档，可通过-h参数查看, 例如 'fck <子命令> -h' 查看各子命令详细帮助")
 	qflag.AddNote("所有路径参数支持Windows和Unix风格")
 	qflag.SetLogoText(globals.FckHelpLogo) // 设置命令行logo
 
 	// fck hash 子命令
 	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError)
-	hashCmd.SetUsage(fmt.Sprint(qflag.LongName(), " hash [options] <path>\n\n"))
+	hashCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " hash [options] <path>\n\n"))
 	hashCmd.SetUseChinese(true)                                     // 启用中文帮助信息
 	hashCmd.SetDescription("文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理") // 设置命令行描述
 	hashCmdType = hashCmd.Enum("type", "t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512", []string{"md5", "sha1", "sha256", "sha512"})
@@ -119,7 +117,7 @@ func init() {
 
 	// fck size 子命令
 	sizeCmd = qflag.NewCmd("size", "s", flag.ExitOnError)
-	sizeCmd.SetUsage(fmt.Sprint(qflag.LongName(), " size [options] <path>\n\n"))
+	sizeCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " size [options] <path>\n\n"))
 	sizeCmd.SetUseChinese(true) // 启用中文帮助信息
 	sizeCmd.AddNote("大小单位会自动选择最合适的(B/KB/MB/GB/TB)")
 	sizeCmd.SetDescription("文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示")
@@ -168,9 +166,9 @@ func init() {
 	findCmd.AddNote("不能同时指定-f、-d和-l标志")
 	findCmd.AddNote("不能同时执行-exec和-delete标志")
 	findCmd.AddNote("如果不指定路径，默认为当前目录")
-	findCmd.SetUseChinese(true)                                                  // 启用中文帮助信息
-	findCmd.SetDescription("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")                 // 设置命令行描述
-	findCmd.SetUsage(fmt.Sprint(qflag.LongName(), " find [options] <path>\n\n")) // 设置自定义使用说明
+	findCmd.SetUseChinese(true)                                                        // 启用中文帮助信息
+	findCmd.SetDescription("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")                       // 设置命令行描述
+	findCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " find [options] <path>\n\n")) // 设置自定义使用说明
 	findCmdName = findCmd.String("name", "n", "", "指定要查找的文件或目录名")
 	findCmdPath = findCmd.String("path", "p", "", "指定要查找的路径")
 	findCmdExt = findCmd.String("ext", "e", "", "按文件扩展名查找(支持多个扩展名，如 .txt .go)")
@@ -216,9 +214,9 @@ func init() {
 	listCmd = qflag.NewCmd("list", "ls", flag.ExitOnError)
 	listCmd.AddNote("如果不指定路径，默认为当前目录")
 	listCmd.AddNote("排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个")
-	listCmd.SetUseChinese(true)                                                  // 启用中文帮助信息
-	listCmd.SetDescription("文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项")               // 设置命令行描述
-	listCmd.SetUsage(fmt.Sprint(qflag.LongName(), " list [options] <path>\n\n")) // 设置自定义使用说明
+	listCmd.SetUseChinese(true)                                                        // 启用中文帮助信息
+	listCmd.SetDescription("文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项")                     // 设置命令行描述
+	listCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " list [options] <path>\n\n")) // 设置自定义使用说明
 	listCmdAll = listCmd.Bool("all", "a", false, "列出所有文件和目录，包括隐藏文件和目录")
 	listCmdColor = listCmd.Bool("color", "c", false, "启用颜色输出")
 	listCmdSortByTime = listCmd.Bool("time", "t", false, "按修改时间排序")
@@ -268,12 +266,5 @@ func init() {
 	if err := qflag.Parse(); err != nil {
 		fmt.Printf("err: %v\n", err)
 		os.Exit(1)
-	}
-
-	// 检查版本信息标志
-	if versionF.Get() {
-		v := verman.Get()
-		fmt.Println(v.AppName, v.GitVersion)
-		os.Exit(0)
 	}
 }
