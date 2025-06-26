@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Validator 验证器接口，所有自定义验证器需实现此接口
+// Validator 验证器接口, 所有自定义验证器需实现此接口
 type Validator interface {
 	// Validate 验证参数值是否合法
 	// value: 待验证的参数值
@@ -22,7 +22,10 @@ type Flag interface {
 	ShortName() string  // 获取标志的短名称
 	Usage() string      // 获取标志的用法
 	Type() FlagType     // 获取标志类型
-	GetDefaultAny() any // 获取标志的默认值
+	GetDefaultAny() any // 获取标志的默认值(any类型)
+	String() string     // 获取标志的字符串表示
+	IsSet() bool        // 判断标志是否已设置值
+	Reset()             // 重置标志值为默认值
 }
 
 // TypedFlag 所有标志类型的通用接口,定义了标志的元数据访问方法和默认值访问方法
@@ -62,7 +65,18 @@ func (f *BaseFlag[T]) GetDefault() T { return f.defValue }
 // GetDefaultAny 获取标志的默认值(any类型)
 func (f *BaseFlag[T]) GetDefaultAny() any { return f.defValue }
 
+// IsSet 判断标志是否已被设置值
+//
+// 返回值: true表示已设置值, false表示未设置
+func (f *BaseFlag[T]) IsSet() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.value != nil
+}
+
 // Get 获取标志的实际值
+// 优先级：已设置的值 > 默认值
+// 线程安全：使用互斥锁保证并发访问安全
 func (f *BaseFlag[T]) Get() T {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -79,8 +93,8 @@ func (f *BaseFlag[T]) Get() T {
 // GetPointer 返回标志值的指针
 //
 // 注意:
-//  1. 获取指针过程受锁保护，但直接修改指针指向的值仍会绕过验证机制
-//  2. 多线程环境下修改时需额外同步措施，建议优先使用Set()方法
+//  1. 获取指针过程受锁保护, 但直接修改指针指向的值仍会绕过验证机制
+//  2. 多线程环境下修改时需额外同步措施, 建议优先使用Set()方法
 func (f *BaseFlag[T]) GetPointer() *T {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -88,6 +102,10 @@ func (f *BaseFlag[T]) GetPointer() *T {
 }
 
 // Set 设置标志的值
+//
+// 参数: value 标志值
+//
+// 返回: 错误信息
 func (f *BaseFlag[T]) Set(value T) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -117,6 +135,19 @@ func (f *BaseFlag[T]) SetValidator(validator Validator) {
 	f.validator = validator
 }
 
+// String 返回标志的字符串表示
+func (f *BaseFlag[T]) String() string {
+	return fmt.Sprint(f.Get())
+}
+
+// Reset 将标志值重置为默认值
+// 线程安全：使用互斥锁保证并发安全
+func (f *BaseFlag[T]) Reset() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.value = nil // 重置为未设置状态,下次Get()会返回默认值
+}
+
 // IntFlag 整数类型标志结构体
 // 继承BaseFlag[int]泛型结构体,实现Flag接口
 type IntFlag struct {
@@ -134,6 +165,18 @@ type StringFlag struct {
 
 // Type 返回标志类型
 func (f *StringFlag) Type() FlagType { return FlagTypeString }
+
+// String 返回带引号的字符串值
+func (f *StringFlag) String() string {
+	return fmt.Sprintf("%q", f.Get())
+}
+
+// Len 获取字符串标志的长度
+//
+// 返回值：字符串的字符数(按UTF-8编码计算)
+func (f *StringFlag) Len() int {
+	return len(f.Get())
+}
 
 // BoolFlag 布尔类型标志结构体
 // 继承BaseFlag[bool]泛型结构体,实现Flag接口
@@ -259,7 +302,7 @@ func (f *SliceFlag) String() string {
 //
 // 参数: value 待解析的切片值
 //
-// 注意: 如果切片中包含分隔符,则根据分隔符进行分割，否则将整个值作为单个元素
+// 注意: 如果切片中包含分隔符,则根据分隔符进行分割, 否则将整个值作为单个元素
 // 例如: "a,b,c" -> ["a", "b", "c"]
 func (f *SliceFlag) Set(value string) error {
 	// 检查空值
@@ -340,9 +383,49 @@ func (f *SliceFlag) GetDelimiters() []string {
 
 // SetSkipEmpty 设置是否跳过空元素
 //
-// 参数: skip - 为true时跳过空元素，为false时保留空元素
+// 参数: skip - 为true时跳过空元素, 为false时保留空元素
 func (f *SliceFlag) SetSkipEmpty(skip bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.SkipEmpty = skip
+}
+
+// Len 获取切片长度
+//
+// 返回: 获取切片长度
+func (f *SliceFlag) Len() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// 如果切片为nil, 则返回0
+	if f.value == nil {
+		return 0
+	}
+
+	// 返回切片长度
+	return len(*f.value)
+}
+
+// Contains 检查切片是否包含指定元素
+// 当切片未设置值时,将使用默认值进行检查
+func (f *SliceFlag) Contains(element string) bool {
+	// 通过Get()获取当前值(已处理nil情况和线程安全)
+	current := f.Get()
+
+	// 直接遍历当前值(已确保非nil)
+	for _, item := range current {
+		if item == element {
+			return true
+		}
+	}
+	return false
+}
+
+// Clear 清空切片所有元素
+//
+// 注意：该方法会改变切片的指针
+func (f *SliceFlag) Clear() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.value = &[]string{}
 }

@@ -1077,6 +1077,9 @@ type Flag interface {
     Usage() string // 获取标志的用法
     Type() FlagType // 获取标志类型
     GetDefaultAny() any // 获取标志的默认值
+    String() string     // 获取标志的字符串表示 
+    IsSet() bool        // 判断标志是否已设置值 
+    Reset()             // 重置标志值为默认值
 }
 ```
 

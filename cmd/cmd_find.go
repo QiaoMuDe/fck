@@ -118,7 +118,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 检查是否指定了ext参数, 如果指定则存储到config.FindExtSliceMap中
-	if len(findCmdExt.Get()) > 0 {
+	if findCmdExt.Len() > 0 {
 		// 遍历ext切片
 		for _, ext := range findCmdExt.Get() {
 			// 检查扩展名是否包含常见危险字符（空格、换行符、制表符、特殊路径分隔符等）
@@ -492,7 +492,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 	}
 
 	// 如果指定了文件扩展名, 跳过不符合条件的文件
-	if len(findCmdExt.Get()) > 0 {
+	if findCmdExt.Len() > 0 {
 		if _, ok := config.FindExtSliceMap.Load(entryExt); !ok {
 			return nil
 		}
