@@ -13,61 +13,66 @@ var QCommandLine *Cmd
 // QCommandLineInterface 定义了全局默认命令行接口，提供统一的命令行参数管理功能
 // 该接口封装了命令行程序的常用操作，包括标志添加、参数解析和帮助信息展示
 type QCommandLineInterface interface {
-	LongName() string                                                                                    // 获取命令长名称
-	ShortName() string                                                                                   // 获取命令短名称
-	GetDescription() string                                                                              // 获取命令描述信息
-	SetDescription(desc string)                                                                          // 设置命令描述信息
-	GetHelp() string                                                                                     // 获取命令帮助信息
-	SetHelp(help string)                                                                                 // 设置命令帮助信息
-	SetUsageSyntax(usageSyntax string)                                                                   // 设置命令用法格式
-	GetUsageSyntax() string                                                                              // 获取命令用法格式
-	GetUseChinese() bool                                                                                 // 获取是否使用中文帮助信息
-	SetUseChinese(useChinese bool)                                                                       // 设置是否使用中文帮助信息
-	AddSubCmd(subCmd *Cmd)                                                                               // 添加子命令，子命令会继承父命令的上下文
-	SubCmds() []*Cmd                                                                                     // 获取所有已注册的子命令列表
-	Parse() error                                                                                        // 解析命令行参数，自动处理标志和子命令
-	ParseFlagsOnly() error                                                                               // 解析命令行参数，仅处理标志，不处理子命令
-	Args() []string                                                                                      // 获取所有非标志参数(未绑定到任何标志的参数)
-	Arg(i int) string                                                                                    // 获取指定索引的非标志参数，索引越界返回空字符串
-	NArg() int                                                                                           // 获取非标志参数的数量
-	NFlag() int                                                                                          // 获取已解析的标志数量
-	PrintHelp()                                                                                          // 打印命令帮助信息
-	FlagExists(name string) bool                                                                         // 检查指定名称的标志是否存在(支持长/短名称)
-	AddNote(note string)                                                                                 // 添加一个注意事项
-	GetNotes() []string                                                                                  // 获取所有备注信息
-	AddExample(e ExampleInfo)                                                                            // 添加一个示例信息
-	GetExamples() []ExampleInfo                                                                          // 获取示例信息列表
-	SetVersion(version string)                                                                           // 设置版本信息
-	GetVersion() string                                                                                  // 获取版本信息
-	String(longName, shortName, defValue, usage string) *StringFlag                                      // 添加字符串类型标志
-	Int(longName, shortName string, defValue int, usage string) *IntFlag                                 // 添加整数类型标志
-	Bool(longName, shortName string, defValue bool, usage string) *BoolFlag                              // 添加布尔类型标志
-	Float(longName, shortName string, defValue float64, usage string) *FloatFlag                         // 添加浮点数类型标志
-	Duration(longName, shortName string, defValue time.Duration, usage string) *DurationFlag             // 添加时间间隔类型标志
-	Enum(longName, shortName string, defValue string, usage string, enumValues []string) *EnumFlag       // 添加枚举类型标志
+	// 元数据操作方法
+	LongName() string                  // 获取命令长名称
+	ShortName() string                 // 获取命令短名称
+	GetDescription() string            // 获取命令描述信息
+	SetDescription(desc string)        // 设置命令描述信息
+	GetHelp() string                   // 获取命令帮助信息
+	SetHelp(help string)               // 设置命令帮助信息
+	SetUsageSyntax(usageSyntax string) // 设置命令用法格式
+	GetUsageSyntax() string            // 获取命令用法格式
+	GetUseChinese() bool               // 获取是否使用中文帮助信息
+	SetUseChinese(useChinese bool)     // 设置是否使用中文帮助信息
+	AddSubCmd(subCmd *Cmd)             // 添加子命令，子命令会继承父命令的上下文
+	SubCmds() []*Cmd                   // 获取所有已注册的子命令列表
+	Parse() error                      // 解析命令行参数，自动处理标志和子命令
+	ParseFlagsOnly() error             // 解析命令行参数，仅处理标志，不处理子命令
+	Args() []string                    // 获取所有非标志参数(未绑定到任何标志的参数)
+	Arg(i int) string                  // 获取指定索引的非标志参数，索引越界返回空字符串
+	NArg() int                         // 获取非标志参数的数量
+	NFlag() int                        // 获取已解析的标志数量
+	PrintHelp()                        // 打印命令帮助信息
+	FlagExists(name string) bool       // 检查指定名称的标志是否存在(支持长/短名称)
+	AddNote(note string)               // 添加一个注意事项
+	GetNotes() []string                // 获取所有备注信息
+	AddExample(e ExampleInfo)          // 添加一个示例信息
+	GetExamples() []ExampleInfo        // 获取示例信息列表
+	SetVersion(version string)         // 设置版本信息
+	GetVersion() string                // 获取版本信息
+	SetLogoText(logoText string)       // 设置logo文本
+	GetLogoText() string               // 获取logo文本
+	SetModuleHelps(moduleHelps string) // 设置自定义模块帮助信息
+	GetModuleHelps() string            // 获取自定义模块帮助信息
+
+	// 添加标志方法
+	String(longName, shortName, defValue, usage string) *StringFlag                                // 添加字符串类型标志
+	Int(longName, shortName string, defValue int, usage string) *IntFlag                           // 添加整数类型标志
+	Bool(longName, shortName string, defValue bool, usage string) *BoolFlag                        // 添加布尔类型标志
+	Float(longName, shortName string, defValue float64, usage string) *FloatFlag                   // 添加浮点数类型标志
+	Duration(longName, shortName string, defValue time.Duration, usage string) *DurationFlag       // 添加时间间隔类型标志
+	Enum(longName, shortName string, defValue string, usage string, enumValues []string) *EnumFlag // 添加枚举类型标志
+	Slice(longName, shortName string, defValue []string, usage string) *SliceFlag                  // 添加字符串切片类型标志
+
+	// 绑定变量方法
 	StringVar(f *StringFlag, longName, shortName, defValue, usage string)                                // 绑定字符串标志到指定变量
 	IntVar(f *IntFlag, longName, shortName string, defValue int, usage string)                           // 绑定整数标志到指定变量
 	BoolVar(f *BoolFlag, longName, shortName string, defValue bool, usage string)                        // 绑定布尔标志到指定变量
 	FloatVar(f *FloatFlag, longName, shortName string, defValue float64, usage string)                   // 绑定浮点数标志到指定变量
 	DurationVar(f *DurationFlag, longName, shortName string, defValue time.Duration, usage string)       // 绑定时间间隔类型标志到指定变量
 	EnumVar(f *EnumFlag, longName, shortName string, defValue string, usage string, enumValues []string) // 绑定枚举标志到指定变量
-	SetLogoText(logoText string)                                                                         // 设置logo文本
-	GetLogoText() string                                                                                 // 获取logo文本
-	SetModuleHelps(moduleHelps string)                                                                   // 设置自定义模块帮助信息
-	GetModuleHelps() string                                                                              // 获取自定义模块帮助信息
+	SliceVar(f *SliceFlag, longName, shortName string, defValue []string, usage string)                  // 绑定字符串切片标志到指定变量
 }
 
 // 在包初始化时创建全局默认Cmd实例
 func init() {
 	// 处理可能的空os.Args情况
 	if len(os.Args) == 0 {
-		// 如果os.Args为空,则创建一个新的Cmd对象,命令行参数为"app",短名字为"a",错误处理方式为ExitOnError
-		QCommandLine = NewCmd("app", "a", flag.ExitOnError)
+		// 如果os.Args为空,则创建一个新的Cmd对象,命令行参数为"myapp",短名字为"a",错误处理方式为ExitOnError
+		QCommandLine = NewCmd("myapp", "", flag.ExitOnError)
 	} else {
-		// 如果os.Args不为空,则创建一个新的Cmd对象,命令行参数为filepath.Base(os.Args[0]),短名字为第一个字符,错误处理方式为ExitOnError
-		longName := filepath.Base(os.Args[0])
-		shortName := string(longName[0]) // 获取第一个字符作为短名称
-		QCommandLine = NewCmd(longName, shortName, flag.ExitOnError)
+		// 如果os.Args不为空,则创建一个新的Cmd对象,命令行参数为filepath.Base(os.Args[0]),错误处理方式为ExitOnError
+		QCommandLine = NewCmd(filepath.Base(os.Args[0]), "", flag.ExitOnError)
 	}
 }
 
@@ -193,6 +198,88 @@ func BoolVar(f *BoolFlag, longName, shortName string, defValue bool, usage strin
 // - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户，用于解释该标志的用途。
 func FloatVar(f *FloatFlag, longName, shortName string, defValue float64, usage string) {
 	QCommandLine.FloatVar(f, longName, shortName, defValue, usage)
+}
+
+// Enum 为全局默认命令定义一个枚举类型的命令行标志。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Enum` 方法，为命令行添加支持长短标志的枚举类型参数，
+// 参数说明：
+// - name: 标志的长名称，在命令行中以 `--name` 的形式使用。
+// - shortName: 标志的短名称，在命令行中以 `-shortName` 的形式使用。
+// - defValue: 标志的默认值，当命令行未指定该标志时使用。
+// - usage: 标志的帮助说明信息，用于在显示帮助信息时展示。
+// - enumValues: 枚举值的集合，用于指定标志可接受的取值范围。
+//
+// 返回值：
+// - *EnumFlag: 指向新创建的枚举类型标志对象的指针。
+func Enum(longName, shortName string, defValue string, usage string, enumValues []string) *EnumFlag {
+	return QCommandLine.Enum(longName, shortName, defValue, usage, enumValues)
+}
+
+// EnumVar 为全局默认命令将一个枚举类型的命令行标志绑定到指定的 `EnumFlag` 指针。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `EnumVar` 方法，为命令行添加支持长短标志的枚举类型参数，
+// 参数说明：
+//   - f: 指向 `EnumFlag` 类型的指针，此指针用于存储和管理枚举类型命令行标志的各类信息，
+//     如当前标志的值、默认值等。
+//   - name: 命令行标志的长名称，在命令行中使用时需遵循 `--name` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+//   - enumValues: 枚举值的集合，用于指定标志可接受的取值范围。
+func EnumVar(f *EnumFlag, longName, shortName string, defValue string, usage string, enumValues []string) {
+	QCommandLine.EnumVar(f, longName, shortName, defValue, usage, enumValues)
+}
+
+// Duration 为全局默认命令定义一个时间间隔类型的命令行标志。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Duration` 方法，为命令行添加支持长短标志的时间间隔类型参数，
+// 参数说明：
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+//
+// 返回值：
+//   - *DurationFlag: 指向新创建的时间间隔类型标志对象的指针。
+func Duration(longName, shortName string, defValue time.Duration, usage string) *DurationFlag {
+	return QCommandLine.Duration(longName, shortName, defValue, usage)
+}
+
+// DurationVar 为全局默认命令将一个时间间隔类型的命令行标志绑定到指定的 `DurationFlag` 指针。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `DurationVar` 方法，为命令行添加支持长短标志的时间间隔类型参数，
+// 参数说明：
+//   - f: 指向 `DurationFlag` 类型的指针，此指针用于存储和管理时间间隔类型命令行标志的各类信息，
+//     如当前标志的值、默认值等。
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+func DurationVar(f *DurationFlag, longName, shortName string, defValue time.Duration, usage string) {
+	QCommandLine.DurationVar(f, longName, shortName, defValue, usage)
+}
+
+// Slice 为全局默认命令定义一个字符串切片类型的命令行标志。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Slice` 方法，为命令行添加支持长短标志的字符串切片类型参数，
+// 参数说明：
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+//
+// 返回值：
+//   - *SliceFlag: 指向新创建的字符串切片类型标志对象的指针。
+func Slice(longName, shortName string, defValue []string, usage string) *SliceFlag {
+	return QCommandLine.Slice(longName, shortName, defValue, usage)
+}
+
+// SliceVar 为全局默认命令将一个字符串切片类型的命令行标志绑定到指定的 `SliceFlag` 指针。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `SliceVar` 方法，为命令行添加支持长短标志的字符串切片类型参数，
+// 参数说明：
+//   - f: 指向要绑定的 `SliceFlag` 对象的指针。
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+func SliceVar(f *SliceFlag, longName, shortName string, defValue []string, usage string) {
+	QCommandLine.SliceVar(f, longName, shortName, defValue, usage)
 }
 
 // Parse 完整解析命令行参数（含子命令处理）
@@ -329,62 +416,6 @@ func GetNotes() []string {
 // SubCmds 获取所有已注册的子命令列表
 func SubCmds() []*Cmd {
 	return QCommandLine.SubCmds()
-}
-
-// Enum 为全局默认命令定义一个枚举类型的命令行标志。
-// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Enum` 方法，为命令行添加支持长短标志的枚举类型参数，
-// 参数说明：
-// - name: 标志的长名称，在命令行中以 `--name` 的形式使用。
-// - shortName: 标志的短名称，在命令行中以 `-shortName` 的形式使用。
-// - defValue: 标志的默认值，当命令行未指定该标志时使用。
-// - usage: 标志的帮助说明信息，用于在显示帮助信息时展示。
-// - enumValues: 枚举值的集合，用于指定标志可接受的取值范围。
-//
-// 返回值：
-// - *EnumFlag: 指向新创建的枚举类型标志对象的指针。
-func Enum(longName, shortName string, defValue string, usage string, enumValues []string) *EnumFlag {
-	return QCommandLine.Enum(longName, shortName, defValue, usage, enumValues)
-}
-
-// EnumVar 为全局默认命令将一个枚举类型的命令行标志绑定到指定的 `EnumFlag` 指针。
-// 该函数会调用全局默认命令实例 `QCommandLine` 的 `EnumVar` 方法，为命令行添加支持长短标志的枚举类型参数，
-// 参数说明：
-//   - f: 指向 `EnumFlag` 类型的指针，此指针用于存储和管理枚举类型命令行标志的各类信息，
-//     如当前标志的值、默认值等。
-//   - name: 命令行标志的长名称，在命令行中使用时需遵循 `--name` 的格式。
-//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
-//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
-//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
-//   - enumValues: 枚举值的集合，用于指定标志可接受的取值范围。
-func EnumVar(f *EnumFlag, longName, shortName string, defValue string, usage string, enumValues []string) {
-	QCommandLine.EnumVar(f, longName, shortName, defValue, usage, enumValues)
-}
-
-// Duration 为全局默认命令定义一个时间间隔类型的命令行标志。
-// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Duration` 方法，为命令行添加支持长短标志的时间间隔类型参数，
-// 参数说明：
-//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
-//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
-//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
-//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
-//
-// 返回值：
-//   - *DurationFlag: 指向新创建的时间间隔类型标志对象的指针。
-func Duration(longName, shortName string, defValue time.Duration, usage string) *DurationFlag {
-	return QCommandLine.Duration(longName, shortName, defValue, usage)
-}
-
-// DurationVar 为全局默认命令将一个时间间隔类型的命令行标志绑定到指定的 `DurationFlag` 指针。
-// 该函数会调用全局默认命令实例 `QCommandLine` 的 `DurationVar` 方法，为命令行添加支持长短标志的时间间隔类型参数，
-// 参数说明：
-//   - f: 指向 `DurationFlag` 类型的指针，此指针用于存储和管理时间间隔类型命令行标志的各类信息，
-//     如当前标志的值、默认值等。
-//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
-//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
-//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
-//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
-func DurationVar(f *DurationFlag, longName, shortName string, defValue time.Duration, usage string) {
-	QCommandLine.DurationVar(f, longName, shortName, defValue, usage)
 }
 
 // GetUseChinese 获取是否使用中文

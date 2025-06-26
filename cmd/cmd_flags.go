@@ -39,7 +39,7 @@ var (
 	findCmd              *qflag.Cmd
 	findCmdName          *qflag.StringFlag // name 标志
 	findCmdPath          *qflag.StringFlag // path 标志
-	findCmdExt           *qflag.StringFlag // ext 标志
+	findCmdExt           *qflag.SliceFlag  // ext 标志
 	findCmdMaxDepth      *qflag.IntFlag    // max-depth 标志
 	findCmdSize          *qflag.StringFlag // size 标志
 	findCmdModTime       *qflag.StringFlag // mod-time 标志
@@ -171,7 +171,7 @@ func init() {
 	findCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " find [options] <path>\n\n")) // 设置自定义使用说明
 	findCmdName = findCmd.String("name", "n", "", "指定要查找的文件或目录名")
 	findCmdPath = findCmd.String("path", "p", "", "指定要查找的路径")
-	findCmdExt = findCmd.String("ext", "e", "", "按文件扩展名查找(支持多个扩展名，如 .txt .go)")
+	findCmdExt = findCmd.Slice("ext", "e", []string{}, "按文件扩展名查找(支持多个扩展名，如 '.txt,.go', '.txt|.go', '.txt;.go')")
 	findCmdMaxDepth = findCmd.Int("max-depth", "m", -1, "指定查找的最大深度, -1 表示不限制")
 	findCmdSize = findCmd.String("size", "s", "", "按文件大小过滤, 格式如+5M(大于5M)或-5M(小于5M), 支持单位B/K/M/G")
 	findCmdModTime = findCmd.String("mtime", "mt", "", "按修改时间过滤, 默认格式如+5(5天前)或-5(5天内)")

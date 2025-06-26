@@ -20,14 +20,6 @@ type ExampleInfo struct {
 	Usage       string // 示例使用方式
 }
 
-// Validator 验证器接口，所有自定义验证器需实现此接口
-type Validator interface {
-	// Validate 验证参数值是否合法
-	// value: 待验证的参数值
-	// 返回值: 验证通过返回nil, 否则返回错误信息
-	Validate(value any) error
-}
-
 // 标志类型
 type FlagType int
 
@@ -38,6 +30,8 @@ const (
 	FlagTypeFloat                        // 浮点数类型
 	FlagTypeEnum                         // 枚举类型
 	FlagTypeDuration                     // 时间间隔类型
+	FlagTypeSlice                        // 切片类型
+	FlagTypeMap                          // 映射类型
 )
 
 // 内置标志名称
@@ -119,4 +113,21 @@ var ChineseTemplate = HelpTemplate{
 	DefaultNote:           "当长选项和短选项同时使用时，最后指定的选项将优先生效。", //默认注意事项
 	ExamplesHeader:        "\n示例:\n",                     // 示例信息头部模板
 	ExampleItem:           "  %d、%s\n     %s\n",          // 序号、描述、用法
+}
+
+// 定义标志的分隔符常量
+const (
+	FlagSplitComma     = "," // 逗号
+	FlagSplitSemicolon = ";" // 分号
+	FlagSplitPipe      = "|" // 竖线
+	FlagKVColon        = ":" // 冒号
+	FlagKVEqual        = "=" // 等号
+)
+
+// Flag支持的标志分隔符切片
+var FlagSplitSlice = []string{
+	FlagSplitComma,     // 逗号
+	FlagSplitSemicolon, // 分号
+	FlagSplitPipe,      // 竖线
+	FlagKVColon,        // 冒号
 }

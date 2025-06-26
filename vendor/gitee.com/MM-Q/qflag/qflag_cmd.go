@@ -78,48 +78,55 @@ type Cmd struct {
 // cmd.SetDescription("示例应用程序")
 // cmd.String("config", "c", "配置文件路径", "/etc/app.conf")
 type CmdInterface interface {
-	LongName() string                                                                                 // 获取命令名称(长名称)，如"app"
-	ShortName() string                                                                                // 获取命令短名称，如"a"
-	GetDescription() string                                                                           // 获取命令描述信息
-	SetDescription(desc string)                                                                       // 设置命令描述信息，用于帮助输出
-	GetHelp() string                                                                                  // 获取自定义帮助信息
-	SetHelp(help string)                                                                              // 设置自定义帮助信息，覆盖自动生成内容
-	SetUsageSyntax(usageSyntax string)                                                                // 设置自定义用法说明，覆盖自动生成内容
-	GetUsageSyntax() string                                                                           // 获取自定义用法说明
-	GetUseChinese() bool                                                                              // 获取是否使用中文帮助信息
-	SetUseChinese(useChinese bool)                                                                    // 设置是否使用中文帮助信息
-	AddSubCmd(subCmd *Cmd)                                                                            // 添加子命令，子命令会继承父命令的上下文
-	SubCmds() []*Cmd                                                                                  // 获取所有已注册的子命令列表
-	Parse(args []string) error                                                                        // 解析命令行参数，自动处理标志和子命令
-	ParseFlagsOnly(args []string) (err error)                                                         // 仅解析标志参数，不处理子命令
-	Args() []string                                                                                   // 获取所有非标志参数(未绑定到任何标志的参数)
-	Arg(i int) string                                                                                 // 获取指定索引的非标志参数，索引越界返回空字符串
-	NArg() int                                                                                        // 获取非标志参数的数量
-	NFlag() int                                                                                       // 获取已解析的标志数量
-	FlagExists(name string) bool                                                                      // 检查指定名称的标志是否存在(支持长/短名称)
-	PrintHelp()                                                                                       // 打印命令帮助信息
-	AddNote(note string)                                                                              // 添加备注信息
-	GetNotes() []string                                                                               // 获取所有备注信息
-	AddExample(e ExampleInfo)                                                                         // 添加示例信息
-	GetExamples() []ExampleInfo                                                                       // 获取所有示例信息
-	SetVersion(version string)                                                                        // 设置版本信息
-	GetVersion() string                                                                               // 获取版本信息
-	String(longName, shortName, usage, defValue string) *StringFlag                                   // 添加字符串类型标志
-	Int(longName, shortName, usage string, defValue int) *IntFlag                                     // 添加整数类型标志
-	Bool(longName, shortName, usage string, defValue bool) *BoolFlag                                  // 添加布尔类型标志
-	Float(longName, shortName, usage string, defValue float64) *FloatFlag                             // 添加浮点数类型标志
-	Duration(longName, shortName, usage string, defValue time.Duration) *DurationFlag                 // 添加时间间隔类型标志
-	Enum(longName, shortName string, defValue string, usage string, options []string) *EnumFlag       // 添加枚举类型标志
+	// 元数据操作方法
+	LongName() string                         // 获取命令名称(长名称)，如"app"
+	ShortName() string                        // 获取命令短名称，如"a"
+	GetDescription() string                   // 获取命令描述信息
+	SetDescription(desc string)               // 设置命令描述信息，用于帮助输出
+	GetHelp() string                          // 获取自定义帮助信息
+	SetHelp(help string)                      // 设置自定义帮助信息，覆盖自动生成内容
+	SetUsageSyntax(usageSyntax string)        // 设置自定义用法说明，覆盖自动生成内容
+	GetUsageSyntax() string                   // 获取自定义用法说明
+	GetUseChinese() bool                      // 获取是否使用中文帮助信息
+	SetUseChinese(useChinese bool)            // 设置是否使用中文帮助信息
+	AddSubCmd(subCmd *Cmd)                    // 添加子命令，子命令会继承父命令的上下文
+	SubCmds() []*Cmd                          // 获取所有已注册的子命令列表
+	Parse(args []string) error                // 解析命令行参数，自动处理标志和子命令
+	ParseFlagsOnly(args []string) (err error) // 仅解析标志参数，不处理子命令
+	Args() []string                           // 获取所有非标志参数(未绑定到任何标志的参数)
+	Arg(i int) string                         // 获取指定索引的非标志参数，索引越界返回空字符串
+	NArg() int                                // 获取非标志参数的数量
+	NFlag() int                               // 获取已解析的标志数量
+	FlagExists(name string) bool              // 检查指定名称的标志是否存在(支持长/短名称)
+	PrintHelp()                               // 打印命令帮助信息
+	AddNote(note string)                      // 添加备注信息
+	GetNotes() []string                       // 获取所有备注信息
+	AddExample(e ExampleInfo)                 // 添加示例信息
+	GetExamples() []ExampleInfo               // 获取所有示例信息
+	SetVersion(version string)                // 设置版本信息
+	GetVersion() string                       // 获取版本信息
+	SetLogoText(logoText string)              // 设置logo文本
+	GetLogoText() string                      // 获取logo文本
+	SetModuleHelps(moduleHelps string)        // 设置自定义模块帮助信息
+	GetModuleHelps() string                   // 获取自定义模块帮助信息
+
+	// 添加标志方法
+	String(longName, shortName, usage, defValue string) *StringFlag                             // 添加字符串类型标志
+	Int(longName, shortName, usage string, defValue int) *IntFlag                               // 添加整数类型标志
+	Bool(longName, shortName, usage string, defValue bool) *BoolFlag                            // 添加布尔类型标志
+	Float(longName, shortName, usage string, defValue float64) *FloatFlag                       // 添加浮点数类型标志
+	Duration(longName, shortName, usage string, defValue time.Duration) *DurationFlag           // 添加时间间隔类型标志
+	Enum(longName, shortName string, defValue string, usage string, options []string) *EnumFlag // 添加枚举类型标志
+	Slice(longName, shortName string, defValue []string, usage string) *SliceFlag               // 添加字符串切片类型标志
+
+	// 绑定标志方法
 	StringVar(f *StringFlag, longName, shortName, defValue, usage string)                             // 绑定字符串标志到指定变量
 	IntVar(f *IntFlag, longName, shortName string, defValue int, usage string)                        // 绑定整数标志到指定变量
 	BoolVar(f *BoolFlag, longName, shortName string, defValue bool, usage string)                     // 绑定布尔标志到指定变量
 	FloatVar(f *FloatFlag, longName, shortName string, defValue float64, usage string)                // 绑定浮点数标志到指定变量
 	DurationVar(f *DurationFlag, longName, shortName string, defValue time.Duration, usage string)    // 绑定时间间隔类型标志到指定变量
 	EnumVar(f *EnumFlag, longName, shortName string, defValue string, usage string, options []string) // 绑定枚举标志到指定变量
-	SetLogoText(logoText string)                                                                      // 设置logo文本
-	GetLogoText() string                                                                              // 获取logo文本
-	SetModuleHelps(moduleHelps string)                                                                // 设置自定义模块帮助信息
-	GetModuleHelps() string                                                                           // 获取自定义模块帮助信息
+	SliceVar(f *SliceFlag, longName, shortName string, defValue []string, usage string)               // 绑定字符串切片标志到指定变量
 }
 
 // SetVersion 设置版本信息
@@ -829,7 +836,8 @@ func (c *Cmd) StringVar(f *StringFlag, longName, shortName, defValue, usage stri
 	}
 
 	// 显式初始化当前值的默认值
-	currentStr := defValue
+	currentStr := new(string)
+	*currentStr = defValue
 
 	// 修改传入的标志对象
 	f.cmd = c               // 修改标志对象 - 命令对象
@@ -837,7 +845,7 @@ func (c *Cmd) StringVar(f *StringFlag, longName, shortName, defValue, usage stri
 	f.shortName = shortName // 修改标志对象 - 短标志名
 	f.defValue = defValue   // 修改标志对象 - 默认值
 	f.usage = usage         // 修改标志对象 - 帮助说明
-	f.value = &currentStr   // 修改标志对象 - 当前值
+	f.value = currentStr    // 修改标志对象 - 当前值
 
 	// 创建FlagMeta对象
 	meta := &FlagMeta{
@@ -846,12 +854,12 @@ func (c *Cmd) StringVar(f *StringFlag, longName, shortName, defValue, usage stri
 
 	// 绑定短标志
 	if shortName != "" {
-		c.fs.StringVar(&currentStr, shortName, defValue, usage)
+		c.fs.StringVar(currentStr, shortName, defValue, usage)
 	}
 
 	// 绑定长标志
 	if longName != "" {
-		c.fs.StringVar(&currentStr, longName, defValue, usage)
+		c.fs.StringVar(currentStr, longName, defValue, usage)
 	}
 
 	// 注册Flag对象
@@ -875,7 +883,8 @@ func (c *Cmd) IntVar(f *IntFlag, longName, shortName string, defValue int, usage
 	}
 
 	// 初始化默认值
-	currentInt := defValue
+	currentInt := new(int)
+	*currentInt = defValue
 
 	// 修改传入的标志对象
 	f.cmd = c               // 修改标志对象 - 命令对象
@@ -883,7 +892,7 @@ func (c *Cmd) IntVar(f *IntFlag, longName, shortName string, defValue int, usage
 	f.shortName = shortName // 修改标志对象 - 短标志名
 	f.defValue = defValue   // 修改标志对象 - 默认值
 	f.usage = usage         // 修改标志对象 - 帮助说明
-	f.value = &currentInt   // 修改标志对象 - 当前值
+	f.value = currentInt    // 修改标志对象 - 当前值
 
 	// 创建FlagMeta对象
 	meta := &FlagMeta{
@@ -892,12 +901,12 @@ func (c *Cmd) IntVar(f *IntFlag, longName, shortName string, defValue int, usage
 
 	// 绑定短标志
 	if shortName != "" {
-		c.fs.IntVar(&currentInt, shortName, defValue, usage)
+		c.fs.IntVar(currentInt, shortName, defValue, usage)
 	}
 
 	// 绑定长标志
 	if longName != "" {
-		c.fs.IntVar(&currentInt, longName, defValue, usage)
+		c.fs.IntVar(currentInt, longName, defValue, usage)
 	}
 
 	// 注册Flag对象
@@ -930,14 +939,17 @@ func (c *Cmd) BoolVar(f *BoolFlag, longName, shortName string, defValue bool, us
 		panic(validateErr)
 	}
 
+	// 显式初始化
+	currentBool := new(bool) // 创建当前值指针
+	*currentBool = defValue
+
 	// 修改传入的标志对象
 	f.cmd = c               // 修改标志对象 - 命令对象
 	f.longName = longName   // 修改标志对象 - 长标志名
 	f.shortName = shortName // 修改标志对象 - 短标志名
 	f.defValue = defValue   // 修改标志对象 - 默认值
 	f.usage = usage         // 修改标志对象 - 帮助说明
-	f.value = new(bool)     // 创建当前值指针
-	*f.value = defValue
+	f.value = currentBool   // 修改标志对象 - 当前值
 
 	// 创建FlagMeta对象
 	meta := &FlagMeta{
@@ -1043,7 +1055,7 @@ func (c *Cmd) DurationVar(f *DurationFlag, longName, shortName string, defValue 
 		panic(validateErr)
 	}
 
-	// 初始化默认值
+	// 初始化默认值(值类型)
 	currentDuration := new(time.Duration)
 	*currentDuration = defValue
 
@@ -1155,6 +1167,64 @@ func (c *Cmd) EnumVar(f *EnumFlag, longName, shortName string, defValue string, 
 	// 绑定长标志
 	if longName != "" {
 		c.fs.StringVar(&currentStr, longName, defValue, usage)
+	}
+
+	// 注册Flag对象
+	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
+		panic(registerErr)
+	}
+}
+
+// Slice 绑定字符串切片类型标志并内部注册Flag对象
+//
+// 参数依次为: 长标志名、短标志、默认值、帮助说明
+//
+// 返回值: 字符串切片标志对象指针
+func (c *Cmd) Slice(longName, shortName string, defValue []string, usage string) *SliceFlag {
+	f := &SliceFlag{}
+	c.SliceVar(f, longName, shortName, defValue, usage)
+	return f
+}
+
+// SliceVar 绑定字符串切片类型标志到指针并内部注册Flag对象
+//
+// 参数依次为: 字符串切片标志指针、长标志名、短标志、默认值、帮助说明
+func (c *Cmd) SliceVar(f *SliceFlag, longName, shortName string, defValue []string, usage string) {
+	// 检查指针是否为空
+	if f == nil {
+		panic("SliceFlag pointer cannot be nil")
+	}
+
+	// 参数校验（复用公共函数）
+	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
+		panic(validateErr)
+	}
+
+	// 初始化
+	currentSlice := &defValue
+
+	// 修改传入的标志对象
+	f.cmd = c                     // 修改标志对象 - 命令对象
+	f.longName = longName         // 修改标志对象 - 长标志名
+	f.shortName = shortName       // 修改标志对象 - 短标志名
+	f.defValue = defValue         // 修改标志对象 - 默认值
+	f.usage = usage               // 修改标志对象 - 帮助说明
+	f.value = currentSlice        // 修改标志对象 - 当前值
+	f.delimiters = FlagSplitSlice // 修改标志对象 - 分隔符切片
+
+	// 创建FlagMeta对象
+	meta := &FlagMeta{
+		flag: f, // 添加标志对象 - Flag对象
+	}
+
+	// 绑定短标志
+	if shortName != "" {
+		c.fs.Var(f, shortName, usage)
+	}
+
+	// 绑定长标志
+	if longName != "" {
+		c.fs.Var(f, longName, usage)
 	}
 
 	// 注册Flag对象

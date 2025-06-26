@@ -116,6 +116,23 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 		ExPathPattern: findCmdExcludePath.Get(), // 排除路径模式
 	}
 
+	// 检查是否指定了ext参数, 如果指定则存储到config.FindExtSliceMap中
+	if len(findCmdExt.Get()) > 0 {
+		// 遍历ext切片
+		for _, ext := range findCmdExt.Get() {
+			// 检查扩展名是否包含常见危险字符（空格、换行符、制表符、特殊路径分隔符等）
+			if strings.ContainsAny(ext, " \t\n\r\\/:*?\"<>|") {
+				return fmt.Errorf("扩展名包含非法字符: %s", ext)
+			}
+			// 如果扩展名不包含"."则添加"."
+			if !strings.HasPrefix(ext, ".") {
+				ext = fmt.Sprint(".", ext)
+			}
+			// 存储ext标志
+			config.FindExtSliceMap.Store(ext, true)
+		}
+	}
+
 	// 检查是否启用并发模式
 	if findCmdX.Get() {
 		// 启用并发模式
@@ -319,17 +336,18 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		}
 	case globals.FindTypeSymlink, globals.FindTypeSymlinkShort:
 		// 如果只查找软链接，跳过非软链接
+
 		// Windows系统特殊处理
 		if runtime.GOOS == "windows" {
-			// 如果不是不是.lnk文件，跳过
-			if !strings.HasSuffix(entry.Name(), ".lnk") || !strings.HasSuffix(entry.Name(), ".url") {
+			// 如果不是.lnk或.url文件, 跳过
+			if !globals.WindowsSymlinkExts[filepath.Ext(entry.Name())] {
 				return nil
 			}
-		}
-
-		// 统一检查符号链接标志
-		if entry.Type()&os.ModeSymlink == 0 {
-			return nil // 不是符号链接, 跳过
+		} else {
+			// 非Windows系统检查符号链接
+			if entry.Type()&os.ModeSymlink == 0 {
+				return nil // 不是符号链接, 跳过
+			}
 		}
 
 	case globals.FindTypeHidden, globals.FindTypeHiddenShort:
@@ -466,19 +484,9 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		}
 	}
 
-	// 扩展名检查
-	if findCmdExt.Get() != "" {
-		ext := filepath.Ext(entry.Name())            // 获取文件扩展名
-		exts := strings.Split(findCmdExt.Get(), ",") // 分割多个扩展名
-		match := false                               // 标记是否匹配
-		for _, e := range exts {                     // 遍历所有扩展名
-			if ext == strings.TrimSpace(e) { // 检查当前扩展名是否匹配
-				match = true // 匹配成功
-				break
-			}
-		}
-		// 如果没有匹配到任何扩展名, 跳过
-		if !match {
+	// 如果指定了文件扩展名, 跳过不符合条件的文件
+	if len(findCmdExt.Get()) > 0 {
+		if _, ok := config.FindExtSliceMap.Load(filepath.Ext(entry.Name())); !ok {
 			return nil
 		}
 	}
@@ -686,20 +694,6 @@ func checkFindCmdArgs(findPath string) error {
 
 		// 其他错误, 返回错误信息
 		return fmt.Errorf("检查路径时出错: %s: %v", findPath, err)
-	}
-
-	// 添加扩展名参数验证
-	if findCmdExt.Get() != "" {
-		exts := strings.Split(findCmdExt.Get(), ",")
-		for _, ext := range exts {
-			ext = strings.TrimSpace(ext)
-			if strings.ContainsAny(ext, "\\/:") {
-				return fmt.Errorf("扩展名包含非法字符: %s", ext)
-			}
-			if !strings.HasPrefix(ext, ".") {
-				return fmt.Errorf("扩展名应以点开头: %s (建议使用 .%s)", ext, ext)
-			}
-		}
 	}
 
 	// 检查软连接最大解析深度是否小于 1

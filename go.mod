@@ -5,7 +5,7 @@ go 1.24.4
 require gitee.com/MM-Q/colorlib v1.2.3
 
 require (
-	gitee.com/MM-Q/qflag v0.0.35
+	gitee.com/MM-Q/qflag v0.0.38
 	gitee.com/MM-Q/verman v0.0.14
 	github.com/jedib0t/go-pretty/v6 v6.6.7
 	golang.org/x/sync v0.15.0

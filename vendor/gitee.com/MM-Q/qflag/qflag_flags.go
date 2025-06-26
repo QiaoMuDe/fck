@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+// Validator 验证器接口，所有自定义验证器需实现此接口
+type Validator interface {
+	// Validate 验证参数值是否合法
+	// value: 待验证的参数值
+	// 返回值: 验证通过返回nil, 否则返回错误信息
+	Validate(value any) error
+}
+
 // Flag 所有标志类型的通用接口,定义了标志的元数据访问方法
 type Flag interface {
 	LongName() string   // 获取标志的长名称
@@ -101,8 +109,11 @@ func (f *BaseFlag[T]) Set(value T) error {
 }
 
 // SetValidator 设置标志的验证器
+//
 // 参数: validator 验证器接口
 func (f *BaseFlag[T]) SetValidator(validator Validator) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.validator = validator
 }
 
@@ -115,12 +126,6 @@ type IntFlag struct {
 // Type 返回标志类型
 func (f *IntFlag) Type() FlagType { return FlagTypeInt }
 
-// SetValidator 设置标志的验证器
-// 参数: validator 验证器接口
-func (f *IntFlag) SetValidator(validator Validator) {
-	f.validator = validator
-}
-
 // StringFlag 字符串类型标志结构体
 // 继承BaseFlag[string]泛型结构体,实现Flag接口
 type StringFlag struct {
@@ -129,12 +134,6 @@ type StringFlag struct {
 
 // Type 返回标志类型
 func (f *StringFlag) Type() FlagType { return FlagTypeString }
-
-// SetValidator 设置标志的验证器
-// 参数: validator 验证器接口
-func (f *StringFlag) SetValidator(validator Validator) {
-	f.validator = validator
-}
 
 // BoolFlag 布尔类型标志结构体
 // 继承BaseFlag[bool]泛型结构体,实现Flag接口
@@ -145,12 +144,6 @@ type BoolFlag struct {
 // Type 返回标志类型
 func (f *BoolFlag) Type() FlagType { return FlagTypeBool }
 
-// SetValidator 设置标志的验证器
-// 参数: validator 验证器接口
-func (f *BoolFlag) SetValidator(validator Validator) {
-	f.validator = validator
-}
-
 // FloatFlag 浮点型标志结构体
 // 继承BaseFlag[float64]泛型结构体,实现Flag接口
 type FloatFlag struct {
@@ -160,12 +153,6 @@ type FloatFlag struct {
 // Type 返回标志类型
 func (f *FloatFlag) Type() FlagType { return FlagTypeFloat }
 
-// SetValidator 设置标志的验证器
-// 参数: validator 验证器接口
-func (f *FloatFlag) SetValidator(validator Validator) {
-	f.validator = validator
-}
-
 // DurationFlag 时间间隔类型标志结构体
 // 继承BaseFlag[time.Duration]泛型结构体,实现Flag接口
 type DurationFlag struct {
@@ -174,12 +161,6 @@ type DurationFlag struct {
 
 // Type 返回标志类型
 func (f *DurationFlag) Type() FlagType { return FlagTypeDuration }
-
-// SetValidator 设置标志的验证器
-// 参数: validator 验证器接口
-func (f *DurationFlag) SetValidator(validator Validator) {
-	f.validator = validator
-}
 
 // Set 实现flag.Value接口, 解析并设置时间间隔值
 func (f *DurationFlag) Set(value string) error {
@@ -257,8 +238,111 @@ func (f *EnumFlag) Set(value string) error {
 // String 实现flag.Value接口, 返回当前值的字符串表示
 func (f *EnumFlag) String() string { return f.Get() }
 
-// SetValidator 设置标志的验证器
-// 参数: validator 验证器接口
-func (f *EnumFlag) SetValidator(validator Validator) {
-	f.validator = validator
+// SliceFlag 切片类型标志结构体
+// 继承BaseFlag[[]string]泛型结构体,实现Flag接口
+type SliceFlag struct {
+	BaseFlag[[]string]            // 基类
+	delimiters         []string   // 分隔符
+	mu                 sync.Mutex // 锁
+	SkipEmpty          bool       // 是否跳过空元素
+}
+
+// Type 返回标志类型
+func (f *SliceFlag) Type() FlagType { return FlagTypeSlice }
+
+// String 实现flag.Value接口, 返回当前值的字符串表示
+func (f *SliceFlag) String() string {
+	return strings.Join(f.Get(), ",")
+}
+
+// Set 实现flag.Value接口, 解析并设置切片值
+//
+// 参数: value 待解析的切片值
+//
+// 注意: 如果切片中包含分隔符,则根据分隔符进行分割，否则将整个值作为单个元素
+// 例如: "a,b,c" -> ["a", "b", "c"]
+func (f *SliceFlag) Set(value string) error {
+	// 检查空值
+	if value == "" {
+		return fmt.Errorf("slice cannot be empty")
+	}
+
+	// 获取当前切片值
+	current := f.Get()
+	var elements []string // 存储分割后的元素
+
+	// 加锁保护分隔符切片访问
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// 检查是否包含分隔符切片中的任何分隔符
+	found := false
+	for _, delimiter := range f.delimiters {
+		if strings.Contains(value, delimiter) {
+			// 根据分隔符分割字符串
+			elements = strings.Split(value, delimiter)
+			// 去除每个元素的首尾空白字符
+			for i, e := range elements {
+				elements[i] = strings.TrimSpace(e)
+			}
+			found = true
+			break // 找到第一个匹配的分隔符后停止
+		}
+	}
+
+	// 如果没有找到分隔符,将整个值作为单个元素
+	if !found {
+		elements = []string{strings.TrimSpace(value)}
+	}
+
+	// 过滤空元素（如果启用）
+	if f.SkipEmpty {
+		filtered := make([]string, 0, len(elements))
+		for _, e := range elements {
+			if e != "" {
+				filtered = append(filtered, e)
+			}
+		}
+		elements = filtered
+	}
+
+	// 预分配切片容量以减少内存分配
+	newValues := make([]string, 0, len(current)+len(elements))
+
+	// 将当前值和新增的值添加到新的切片中
+	newValues = append(newValues, current...)
+	newValues = append(newValues, elements...)
+
+	// 调用基类方法设置值
+	return f.BaseFlag.Set(newValues)
+}
+
+// SetDelimiters 设置切片解析的分隔符列表
+//
+// 参数: delimiters 分隔符列表
+//
+// 线程安全的分隔符更新
+func (f *SliceFlag) SetDelimiters(delimiters []string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.delimiters = delimiters
+}
+
+// GetDelimiters 获取当前分隔符列表
+func (f *SliceFlag) GetDelimiters() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	// 返回拷贝避免外部修改内部切片
+	res := make([]string, len(f.delimiters))
+	copy(res, f.delimiters)
+	return res
+}
+
+// SetSkipEmpty 设置是否跳过空元素
+//
+// 参数: skip - 为true时跳过空元素，为false时保留空元素
+func (f *SliceFlag) SetSkipEmpty(skip bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.SkipEmpty = skip
 }

@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -77,36 +78,6 @@ var (
 		"../../*":         true,
 	}
 )
-
-// // hash 子命令帮助信息
-// //
-// //go:embed help/help_hash.txt
-// var HashHelp string
-
-// // size 子命令帮助信息
-// //
-// //go:embed help/help_size.txt
-// var SizeHelp string
-
-// // check 子命令帮助信息
-// //
-// //go:embed help/help_diff.txt
-// var DiffHelp string
-
-// // find 子命令帮助信息
-// //
-// //go:embed help/help_find.txt
-// var FindHelp string
-
-// // fck 主命令帮助信息
-// //
-// //go:embed help/help.txt
-// var FckHelp string
-
-// // list 子命令帮助信息
-// //
-// //go:embed help/help_list.txt
-// var ListHelp string
 
 // list子命令用于存储文件信息的结构体
 type ListInfo struct {
@@ -427,17 +398,18 @@ var FckHelpLogo = `    ________      ________          ___  __
 // FindConfig 用于封装find命令的配置参数和共享资源
 // 避免函数参数过多难以管理
 type FindConfig struct {
-	Cl            *colorlib.ColorLib // 颜色库实例
-	NameRegex     *regexp.Regexp     // 文件名匹配正则
-	ExNameRegex   *regexp.Regexp     // 排除文件名正则
-	PathRegex     *regexp.Regexp     // 路径匹配正则
-	ExPathRegex   *regexp.Regexp     // 排除路径正则
-	IsRegex       bool               // 是否启用正则匹配
-	WholeWord     bool               // 是否全词匹配
-	CaseSensitive bool               // 是否区分大小写
-	MatchCount    *atomic.Int64      // 匹配计数原子变量
-	NamePattern   string             // 文件名匹配模式
-	PathPattern   string             // 路径匹配模式
-	ExNamePattern string             // 排除文件名匹配模式
-	ExPathPattern string             // 排除路径匹配模式
+	Cl              *colorlib.ColorLib // 颜色库实例
+	NameRegex       *regexp.Regexp     // 文件名匹配正则
+	ExNameRegex     *regexp.Regexp     // 排除文件名正则
+	PathRegex       *regexp.Regexp     // 路径匹配正则
+	ExPathRegex     *regexp.Regexp     // 排除路径正则
+	IsRegex         bool               // 是否启用正则匹配
+	WholeWord       bool               // 是否全词匹配
+	CaseSensitive   bool               // 是否区分大小写
+	MatchCount      *atomic.Int64      // 匹配计数原子变量
+	NamePattern     string             // 文件名匹配模式
+	PathPattern     string             // 路径匹配模式
+	ExNamePattern   string             // 排除文件名匹配模式
+	ExPathPattern   string             // 排除路径匹配模式
+	FindExtSliceMap sync.Map           // ext切片标志的映射
 }
