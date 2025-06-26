@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -168,13 +169,13 @@ func processWalkDir(config *globals.FindConfig, findPath string) error {
 		if err != nil {
 			// 忽略不存在的报错
 			if os.IsNotExist(err) {
-				// 路径不存在，跳过
+				// 路径不存在, 跳过
 				return nil
 			}
 
 			// 检查是否为权限不足的报错
 			if os.IsPermission(err) {
-				config.Cl.PrintErrf("权限不足，无法访问某些目录: %s\n", path)
+				config.Cl.PrintErrf("权限不足, 无法访问某些目录: %s\n", path)
 				return nil
 			}
 
@@ -210,7 +211,7 @@ func processWalkDir(config *globals.FindConfig, findPath string) error {
 	// 检查遍历过程中是否遇到错误
 	if walkDirErr != nil {
 		if os.IsPermission(walkDirErr) {
-			return fmt.Errorf("权限不足，无法访问某些目录: %v", walkDirErr)
+			return fmt.Errorf("权限不足, 无法访问某些目录: %v", walkDirErr)
 		} else if os.IsNotExist(walkDirErr) {
 			return fmt.Errorf("路径不存在: %v", walkDirErr)
 		}
@@ -291,12 +292,12 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 	// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
 	if !findCmdHidden.Get() {
 		if isHidden(path) {
-			// 如果是隐藏目录，跳过整个目录
+			// 如果是隐藏目录, 跳过整个目录
 			if entry.IsDir() {
 				return filepath.SkipDir
 			}
 
-			// 如果是隐藏文件，跳过单个文件
+			// 如果是隐藏文件, 跳过单个文件
 			return nil
 		}
 	}
@@ -322,25 +323,40 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		}
 	}
 
+	// 仅在需要文件元信息时才获取（空文件检查/修改时间/文件大小）
+	var cacheInfo fs.FileInfo
+	var cacheErr error
+
+	// 判断是否需要获取文件信息：空文件检查、修改时间筛选或大小筛选
+	if (findCmdType.Get() == globals.FindTypeEmpty || findCmdType.Get() == globals.FindTypeEmptyShort) || findCmdModTime.Get() != "" || findCmdSize.Get() != "" {
+		cacheInfo, cacheErr = entry.Info()
+		if cacheErr != nil {
+			return nil
+		}
+	}
+
+	// 预计算文件扩展名并缓存, 避免多次调用filepath.Ext()
+	entryExt := filepath.Ext(entry.Name())
+
 	// 根据findCmdType的值, 跳过不符合要求的文件或目录
 	switch findCmdType.Get() {
 	case globals.FindTypeFile, globals.FindTypeFileShort:
-		// 如果只查找文件，跳过目录
+		// 如果只查找文件, 跳过目录
 		if entry.IsDir() {
 			return nil
 		}
 	case globals.FindTypeDir, globals.FindTypeDirShort:
-		// 如果只查找目录，跳过文件
+		// 如果只查找目录, 跳过文件
 		if !entry.IsDir() {
 			return nil
 		}
 	case globals.FindTypeSymlink, globals.FindTypeSymlinkShort:
-		// 如果只查找软链接，跳过非软链接
+		// 如果只查找软链接, 跳过非软链接
 
 		// Windows系统特殊处理
 		if runtime.GOOS == "windows" {
 			// 如果不是.lnk或.url文件, 跳过
-			if !globals.WindowsSymlinkExts[filepath.Ext(entry.Name())] {
+			if !globals.WindowsSymlinkExts[entryExt] {
 				return nil
 			}
 		} else {
@@ -370,8 +386,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			}
 		} else {
 			// 如果是文件, 检查文件是否为空
-			fileInfo, sizeErr := entry.Info()
-			if sizeErr != nil || fileInfo.Size() > 0 {
+			if cacheInfo.Size() > 0 {
 				return nil
 			}
 		}
@@ -379,7 +394,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		// 如果只查找可执行文件或目录
 		if runtime.GOOS == "windows" {
 			// Windows系统检查文件扩展名
-			ext := strings.ToLower(filepath.Ext(entry.Name()))
+			ext := strings.ToLower(entryExt)
 			if !globals.WindowsExecutableExts[ext] {
 				return nil
 			}
@@ -390,7 +405,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			}
 		}
 	case globals.FindTypeSocket, globals.FindTypeSocketShort:
-		// Windows不支持Unix domain socket，直接返回nil
+		// Windows不支持Unix domain socket, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
 		}
@@ -400,7 +415,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			return nil
 		}
 	case globals.FindTypePipe, globals.FindTypePipeShort:
-		// Windows不支持Unix命名管道，直接返回nil
+		// Windows不支持Unix命名管道, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
 		}
@@ -410,7 +425,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			return nil
 		}
 	case globals.FindTypeBlock, globals.FindTypeBlockShort:
-		// Windows不支持Unix块设备文件，直接返回nil
+		// Windows不支持Unix块设备文件, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
 		}
@@ -420,7 +435,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			return nil
 		}
 	case globals.FindTypeChar, globals.FindTypeCharShort:
-		// Windows不支持Unix字符设备文件，直接返回nil
+		// Windows不支持Unix字符设备文件, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
 		}
@@ -430,7 +445,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			return nil
 		}
 	case globals.FindTypeAppend, globals.FindTypeAppendShort:
-		// Windows文件系统不支持Unix追加模式标志，直接返回nil
+		// Windows文件系统不支持Unix追加模式标志, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
 		}
@@ -440,7 +455,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			return nil
 		}
 	case globals.FindTypeNonAppend, globals.FindTypeNonAppendShort:
-		// Windows文件系统不支持Unix追加模式标志，直接返回nil
+		// Windows文件系统不支持Unix追加模式标志, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
 		}
@@ -450,7 +465,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			return nil
 		}
 	case globals.FindTypeExclusive, globals.FindTypeExclusiveShort:
-		// Windows文件系统不支持Unix独占模式标志，直接返回nil
+		// Windows文件系统不支持Unix独占模式标志, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
 		}
@@ -463,30 +478,22 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 
 	// 如果指定了文件大小, 跳过不符合条件的文件
 	if findCmdSize.Get() != "" {
-		fileInfo, sizeErr := entry.Info()
-		if sizeErr != nil {
-			return nil
-		}
-		if !matchFileSize(fileInfo.Size(), findCmdSize.Get()) {
+		if !matchFileSize(cacheInfo.Size(), findCmdSize.Get()) {
 			return nil
 		}
 	}
 
 	// 如果指定了修改时间, 跳过不符合条件的文件
 	if findCmdModTime.Get() != "" {
-		fileInfo, mtimeErr := entry.Info()
-		if mtimeErr != nil {
-			return nil
-		}
 		// 检查文件时间是否符合要求
-		if !matchFileTime(fileInfo.ModTime(), findCmdModTime.Get()) {
+		if !matchFileTime(cacheInfo.ModTime(), findCmdModTime.Get()) {
 			return nil
 		}
 	}
 
 	// 如果指定了文件扩展名, 跳过不符合条件的文件
 	if len(findCmdExt.Get()) > 0 {
-		if _, ok := config.FindExtSliceMap.Load(filepath.Ext(entry.Name())); !ok {
+		if _, ok := config.FindExtSliceMap.Load(entryExt); !ok {
 			return nil
 		}
 	}
@@ -684,7 +691,7 @@ func checkFindCmdArgs(findPath string) error {
 	if _, err := os.Lstat(findPath); err != nil {
 		// 检查是否是权限不足的错误
 		if os.IsPermission(err) {
-			return fmt.Errorf("权限不足，无法访问某些目录: %s", findPath)
+			return fmt.Errorf("权限不足, 无法访问某些目录: %s", findPath)
 		}
 
 		// 如果是不存在错误, 则返回路径不存在
@@ -797,7 +804,7 @@ func matchFileTime(fileTime time.Time, timeCondition string) bool {
 	}
 }
 
-// runCommand 执行单个命令， 支持跨平台并检查shell是否存在
+// runCommand 执行单个命令,  支持跨平台并检查shell是否存在
 // 参数:
 //
 //	cmdStr: 要执行的命令字符串
@@ -832,7 +839,7 @@ func runCommand(cmdStr string, cl *colorlib.ColorLib, p string) error {
 		return fmt.Errorf("无法访问文件/目录: %s", p)
 	}
 
-	// 替换{}为实际的文件路径，并根据系统类型选择引用方式
+	// 替换{}为实际的文件路径, 并根据系统类型选择引用方式
 	if runtime.GOOS == "windows" {
 		cmdStr = strings.Replace(findCmdExec.Get(), "{}", fmt.Sprintf("\"%s\"", p), -1) // Windows使用双引号
 	} else {
@@ -852,7 +859,7 @@ func runCommand(cmdStr string, cl *colorlib.ColorLib, p string) error {
 			shell = "powershell"
 			args = []string{"-Command", cmdStr}
 		} else {
-			// 如果 PowerShell 不存在，使用 cmd
+			// 如果 PowerShell 不存在, 使用 cmd
 			shell = "cmd"
 			args = []string{"/C", cmdStr}
 		}
@@ -996,7 +1003,7 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 
 	// 检查目标文件是否已存在
 	if _, err := os.Stat(absTargetPath); err == nil {
-		// 如果是移动操作，直接跳过而不是报错
+		// 如果是移动操作, 直接跳过而不是报错
 		if findCmdMove.Get() != "" {
 			return nil
 		}
@@ -1014,7 +1021,7 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 			return fmt.Errorf("目标文件已存在: %s -> %s", absSearchPath, absTargetPath)
 		}
 		if os.IsPermission(err) {
-			return fmt.Errorf("权限不足，无法移动文件: %v", err)
+			return fmt.Errorf("权限不足, 无法移动文件: %v", err)
 		}
 
 		return fmt.Errorf("移动失败: %s -> %s: %v", absSearchPath, absTargetPath, err)
@@ -1030,7 +1037,7 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 //
 // 返回值:
 //
-//	bool: true表示存在循环，false表示无循环
+//	bool: true表示存在循环, false表示无循环
 func isSymlinkLoop(path string) bool {
 	maxDepth := findCmdMaxDepthLimit.Get() // 最大解析深度限制
 	visited := make(map[string]bool)       // 已访问路径记录
@@ -1113,12 +1120,12 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 				processErr := processFindCmd(config, dirEntry, path)
 				if processErr != nil {
 					if processErr == filepath.SkipDir {
-						// 如果是 SkipDir，跳过该目录即可
+						// 如果是 SkipDir, 跳过该目录即可
 						continue
 					}
 
 					if errors.Is(processErr, os.ErrPermission) {
-						config.Cl.PrintErrf("路径 %s 权限不足，已跳过\n", path)
+						config.Cl.PrintErrf("路径 %s 权限不足, 已跳过\n", path)
 						// 跳过该路径
 						continue
 					}
@@ -1163,12 +1170,12 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 		// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
 		if !findCmdHidden.Get() {
 			if isHidden(p) {
-				// 如果是隐藏目录，跳过整个目录
+				// 如果是隐藏目录, 跳过整个目录
 				if d.IsDir() {
 					return filepath.SkipDir
 				}
 
-				// 如果是隐藏文件，跳过单个文件
+				// 如果是隐藏文件, 跳过单个文件
 				return nil
 			}
 		}
@@ -1186,7 +1193,7 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 		return nil
 	})
 
-	// 遍历完成，关闭路径通道
+	// 遍历完成, 关闭路径通道
 	close(pathChan)
 
 	// 等待所有 worker 完成
@@ -1198,7 +1205,7 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 	// 优先检查遍历过程中是否遇到错误
 	if walkDirErr != nil {
 		if os.IsPermission(walkDirErr) {
-			return fmt.Errorf("权限不足，无法访问某些目录:  %v", walkDirErr)
+			return fmt.Errorf("权限不足, 无法访问某些目录:  %v", walkDirErr)
 		} else if os.IsNotExist(walkDirErr) {
 			return fmt.Errorf("路径不存在: %v", walkDirErr)
 		}
@@ -1231,7 +1238,7 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 	return nil
 }
 
-// matchPattern 通用匹配函数，检查输入字符串是否匹配模式
+// matchPattern 通用匹配函数, 检查输入字符串是否匹配模式
 // 参数:
 //
 //	input: 输入字符串(文件名或路径)
@@ -1243,12 +1250,12 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 //
 //	bool: 是否匹配
 func matchPattern(input, pattern string, regex *regexp.Regexp, config *globals.FindConfig) bool {
-	// 如果模式为空，则不匹配
+	// 如果模式为空, 则不匹配
 	if pattern == "" {
 		return false
 	}
 
-	// 如果启用正则匹配，使用正则表达式匹配
+	// 如果启用正则匹配, 使用正则表达式匹配
 	if config.IsRegex {
 		if regex == nil {
 			return false
