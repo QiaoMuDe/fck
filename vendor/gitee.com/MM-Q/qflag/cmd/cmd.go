@@ -1,13 +1,32 @@
-package qflag
+package cmd
 
 import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"gitee.com/MM-Q/qflag/flags"
+	"gitee.com/MM-Q/qflag/qerr"
 )
+
+// QCommandLine 全局默认Command实例
+var QCommandLine *Cmd
+
+// 在包初始化时创建全局默认Cmd实例
+func init() {
+	// 处理可能的空os.Args情况
+	if len(os.Args) == 0 {
+		// 如果os.Args为空,则创建一个新的Cmd对象,命令行参数为"myapp",短名字为"",错误处理方式为ExitOnError
+		QCommandLine = NewCommand("myapp", "", flag.ExitOnError)
+	} else {
+		// 如果os.Args不为空,则创建一个新的Cmd对象,命令行参数为filepath.Base(os.Args[0]),错误处理方式为ExitOnError
+		QCommandLine = NewCommand(filepath.Base(os.Args[0]), "", flag.ExitOnError)
+	}
+}
 
 // UserInfo 存储用户自定义信息的嵌套结构体
 type UserInfo struct {
@@ -40,7 +59,7 @@ type Cmd struct {
 	// 底层flag集合, 处理参数解析
 	fs *flag.FlagSet
 	// 标志注册表, 统一管理标志的元数据
-	flagRegistry *FlagRegistry
+	flagRegistry *flags.FlagRegistry
 	// 标记内置标志是否已绑定
 	initFlagBound bool
 	// 用于确保内置标志只被绑定一次
@@ -62,11 +81,11 @@ type Cmd struct {
 	// 用户自定义信息
 	userInfo UserInfo
 	// 帮助标志指针,用于绑定和检查
-	helpFlag *BoolFlag
+	helpFlag *flags.BoolFlag
 	// 安装路径标志指针,用于绑定和检查
-	showInstallPathFlag *BoolFlag
+	showInstallPathFlag *flags.BoolFlag
 	// 版本标志指针,用于绑定和检查
-	versionFlag *BoolFlag
+	versionFlag *flags.BoolFlag
 }
 
 // CmdInterface 命令接口定义，封装命令行程序的核心功能
@@ -74,7 +93,7 @@ type Cmd struct {
 // 实现类需保证线程安全，所有方法应支持并发调用
 //
 // 示例用法:
-// cmd := NewCmd("app", "a", flag.ContinueOnError)
+// cmd := NewCommand("app", "a", flag.ContinueOnError)
 // cmd.SetDescription("示例应用程序")
 // cmd.String("config", "c", "配置文件路径", "/etc/app.conf")
 type CmdInterface interface {
@@ -85,6 +104,7 @@ type CmdInterface interface {
 	SetDescription(desc string)               // 设置命令描述信息，用于帮助输出
 	GetHelp() string                          // 获取自定义帮助信息
 	SetHelp(help string)                      // 设置自定义帮助信息，覆盖自动生成内容
+	LoadHelp(filePath string) error           // 加载自定义帮助信息，从文件中读取
 	SetUsageSyntax(usageSyntax string)        // 设置自定义用法说明，覆盖自动生成内容
 	GetUsageSyntax() string                   // 获取自定义用法说明
 	GetUseChinese() bool                      // 获取是否使用中文帮助信息
@@ -111,22 +131,80 @@ type CmdInterface interface {
 	GetModuleHelps() string                   // 获取自定义模块帮助信息
 
 	// 添加标志方法
-	String(longName, shortName, usage, defValue string) *StringFlag                             // 添加字符串类型标志
-	Int(longName, shortName, usage string, defValue int) *IntFlag                               // 添加整数类型标志
-	Bool(longName, shortName, usage string, defValue bool) *BoolFlag                            // 添加布尔类型标志
-	Float(longName, shortName, usage string, defValue float64) *FloatFlag                       // 添加浮点数类型标志
-	Duration(longName, shortName, usage string, defValue time.Duration) *DurationFlag           // 添加时间间隔类型标志
-	Enum(longName, shortName string, defValue string, usage string, options []string) *EnumFlag // 添加枚举类型标志
-	Slice(longName, shortName string, defValue []string, usage string) *SliceFlag               // 添加字符串切片类型标志
+	String(longName, shortName, usage, defValue string) *flags.StringFlag                             // 添加字符串类型标志
+	Int(longName, shortName, usage string, defValue int) *flags.IntFlag                               // 添加整数类型标志
+	Int64(longName, shortName, usage string, defValue int64) *flags.Int64Flag                         // 添加64位整数类型标志
+	Bool(longName, shortName, usage string, defValue bool) *flags.BoolFlag                            // 添加布尔类型标志
+	Float64(longName, shortName, usage string, defValue float64) *flags.Float64Flag                   // 添加浮点数类型标志
+	Duration(longName, shortName, usage string, defValue time.Duration) *flags.DurationFlag           // 添加时间间隔类型标志
+	Enum(longName, shortName string, defValue string, usage string, options []string) *flags.EnumFlag // 添加枚举类型标志
+	Slice(longName, shortName string, defValue []string, usage string) *flags.SliceFlag               // 添加字符串切片类型标志
+	uint16(longName, shortName string, defValue uint16, usage string) *flags.Uint16Flag               // 添加无符号16位整型标志
+	Time(longName, shortName string, defValue time.Time, usage string) *flags.TimeFlag                // 添加时间类型标志
+	Map(longName, shortName string, defValue map[string]string, usage string) *flags.MapFlag          // 添加Map标志
+	Path(longName, shortName string, defValue string, usage string) *flags.PathFlag                   // 添加路径标志
 
 	// 绑定标志方法
-	StringVar(f *StringFlag, longName, shortName, defValue, usage string)                             // 绑定字符串标志到指定变量
-	IntVar(f *IntFlag, longName, shortName string, defValue int, usage string)                        // 绑定整数标志到指定变量
-	BoolVar(f *BoolFlag, longName, shortName string, defValue bool, usage string)                     // 绑定布尔标志到指定变量
-	FloatVar(f *FloatFlag, longName, shortName string, defValue float64, usage string)                // 绑定浮点数标志到指定变量
-	DurationVar(f *DurationFlag, longName, shortName string, defValue time.Duration, usage string)    // 绑定时间间隔类型标志到指定变量
-	EnumVar(f *EnumFlag, longName, shortName string, defValue string, usage string, options []string) // 绑定枚举标志到指定变量
-	SliceVar(f *SliceFlag, longName, shortName string, defValue []string, usage string)               // 绑定字符串切片标志到指定变量
+	StringVar(f *flags.StringFlag, longName, shortName, defValue, usage string)                             // 绑定字符串标志到指定变量
+	IntVar(f *flags.IntFlag, longName, shortName string, defValue int, usage string)                        // 绑定整数标志到指定变量
+	Int64Var(f *flags.Int64Flag, longName, shortName string, defValue int64, usage string)                  // 绑定64位整数标志到指定变量
+	BoolVar(f *flags.BoolFlag, longName, shortName string, defValue bool, usage string)                     // 绑定布尔标志到指定变量
+	Float64Var(f *flags.Float64Flag, longName, shortName string, defValue float64, usage string)            // 绑定浮点数标志到指定变量
+	DurationVar(f *flags.DurationFlag, longName, shortName string, defValue time.Duration, usage string)    // 绑定时间间隔类型标志到指定变量
+	EnumVar(f *flags.EnumFlag, longName, shortName string, defValue string, usage string, options []string) // 绑定枚举标志到指定变量
+	SliceVar(f *flags.SliceFlag, longName, shortName string, defValue []string, usage string)               // 绑定字符串切片标志到指定变量
+	Uint16Var(f *flags.Uint16Flag, longName, shortName string, defValue uint16, usage string)               // 绑定无符号16位整型标志到指定变量
+	TimeVar(f *flags.TimeFlag, longName, shortName string, defValue time.Time, usage string)                // 绑定时间类型标志到指定变量
+	MapVar(f *flags.MapFlag, longName, shortName string, defValue map[string]string, usage string)          // 绑定字符串映射标志到指定变量
+	PathVar(f *flags.PathFlag, longName, shortName string, defValue string, usage string)                   // 绑定路径标志到指定变量
+}
+
+// 保持兼容API
+// 支持 NewCmd 别名
+var NewCmd = NewCommand
+
+// NewCommand 创建新的命令实例
+// 参数:
+// longName: 命令长名称
+// shortName: 命令短名称
+// errorHandling: 错误处理方式
+// 返回值: *Cmd命令实例指针
+// errorHandling可选值: flag.ContinueOnError、flag.ExitOnError、flag.PanicOnError
+func NewCommand(longName string, shortName string, errorHandling flag.ErrorHandling) *Cmd {
+	// 检查命令名称是否同时为空
+	if longName == "" && shortName == "" {
+		panic("cmd long name and short name cannot both be empty")
+	}
+
+	// 设置默认的错误处理方式为ContinueOnError, 避免测试时意外退出
+	if errorHandling == 0 {
+		errorHandling = flag.ContinueOnError
+	}
+
+	// 创建标志注册表
+	flagRegistry := flags.NewFlagRegistry()
+
+	// 确定命令名称：优先使用长名称，如果长名称为空则使用短名称
+	cmdName := longName
+	if cmdName == "" {
+		cmdName = shortName
+	}
+
+	// 创建新的Cmd实例
+	cmd := &Cmd{
+		fs:                  flag.NewFlagSet(cmdName, errorHandling), // 创建新的flag集
+		args:                []string{},                              // 命令行参数
+		flagRegistry:        flagRegistry,                            // 初始化标志注册表
+		helpFlag:            &flags.BoolFlag{},                       // 初始化帮助标志
+		showInstallPathFlag: &flags.BoolFlag{},                       // 初始化显示安装路径标志
+		versionFlag:         &flags.BoolFlag{},                       // 初始化版本信息标志
+		userInfo: UserInfo{
+			longName:  longName,  // 命令长名称
+			shortName: shortName, // 命令短名称
+		},
+	}
+
+	return cmd
 }
 
 // SetVersion 设置版本信息
@@ -242,6 +320,34 @@ func (c *Cmd) SetHelp(help string) {
 	c.userInfo.help = help
 }
 
+// LoadHelp 从指定文件加载帮助信息
+//
+// 参数:
+// filePath: 帮助信息文件路径
+//
+// 返回值:
+// error: 如果文件不存在或读取文件失败，则返回错误信息
+func (c *Cmd) LoadHelp(filePath string) error {
+	// 检查是否为空
+	if filePath == "" {
+		return fmt.Errorf("file path cannot be empty")
+	}
+
+	// 直接读取文件内容并处理可能的错误（包括文件不存在的情况）
+	// 移除了单独的os.Stat检查以避免竞态条件
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("File %s does not exist", filePath)
+		}
+		return fmt.Errorf("Failed to read file %s: %w", filePath, err)
+	}
+
+	// 设置帮助信息
+	c.SetHelp(string(content))
+	return nil
+}
+
 // SubCmds 返回子命令列表
 func (c *Cmd) SubCmds() []*Cmd {
 	c.addMu.Lock()
@@ -327,17 +433,12 @@ func (c *Cmd) initBuiltinFlags() {
 		// 新增: 确保flagRegistry已初始化
 		if c.flagRegistry == nil {
 			// 为空时自动初始化
-			c.flagRegistry = &FlagRegistry{
-				mu:       sync.RWMutex{},
-				byLong:   make(map[string]*FlagMeta),
-				byShort:  make(map[string]*FlagMeta),
-				allFlags: []*FlagMeta{},
-			}
+			c.flagRegistry = flags.NewFlagRegistry()
 		}
 
 		if c.helpFlag == nil {
 			// 为空时自动初始化
-			c.helpFlag = &BoolFlag{}
+			c.helpFlag = &flags.BoolFlag{}
 		}
 
 		// 绑定帮助标志
@@ -345,17 +446,17 @@ func (c *Cmd) initBuiltinFlags() {
 		if c.GetUseChinese() {
 			helpUsage = "显示帮助信息"
 		}
-		c.BoolVar(c.helpFlag, helpFlagName, helpFlagShortName, false, helpUsage)
+		c.BoolVar(c.helpFlag, flags.HelpFlagName, flags.HelpFlagShortName, false, helpUsage)
 
 		// 添加内置标志到检测映射
-		c.builtinFlagNameMap.Store(helpFlagName, true)
-		c.builtinFlagNameMap.Store(helpFlagShortName, true)
+		c.builtinFlagNameMap.Store(flags.HelpFlagName, true)
+		c.builtinFlagNameMap.Store(flags.HelpFlagShortName, true)
 
 		// 只有在根命令上绑定显示程序安装路径标志
 		if c.parentCmd == nil {
 			// 初始化显示安装路径标志
 			if c.showInstallPathFlag == nil {
-				c.showInstallPathFlag = &BoolFlag{}
+				c.showInstallPathFlag = &flags.BoolFlag{}
 			}
 
 			// 定义显示安装路径标志提示
@@ -365,14 +466,14 @@ func (c *Cmd) initBuiltinFlags() {
 			}
 
 			// 绑定显示安装路径标志
-			c.BoolVar(c.showInstallPathFlag, "", showInstallPathFlagName, false, installPathUsage)
+			c.BoolVar(c.showInstallPathFlag, "", flags.ShowInstallPathFlagName, false, installPathUsage)
 
 			// 添加内置标志到检测映射
-			c.builtinFlagNameMap.Store(showInstallPathFlagName, true)
+			c.builtinFlagNameMap.Store(flags.ShowInstallPathFlagName, true)
 
 			// 绑定版本信息标志
 			if c.versionFlag == nil {
-				c.versionFlag = &BoolFlag{}
+				c.versionFlag = &flags.BoolFlag{}
 			}
 
 			// 只有在设置了版本信息时才绑定版本信息标志
@@ -384,11 +485,11 @@ func (c *Cmd) initBuiltinFlags() {
 				}
 
 				// 绑定版本信息标志
-				c.BoolVar(c.versionFlag, versionFlagLongName, versionFlagShortName, false, versionUsage)
+				c.BoolVar(c.versionFlag, flags.VersionFlagLongName, flags.VersionFlagShortName, false, versionUsage)
 
 				// 添加内置标志到检测映射
-				c.builtinFlagNameMap.Store(versionFlagLongName, true)
-				c.builtinFlagNameMap.Store(versionFlagShortName, true)
+				c.builtinFlagNameMap.Store(flags.VersionFlagLongName, true)
+				c.builtinFlagNameMap.Store(flags.VersionFlagShortName, true)
 			}
 		}
 
@@ -419,7 +520,7 @@ func (c *Cmd) validateFlag(longName, shortName string) error {
 	// 检查长标志相关逻辑
 	if longName != "" {
 		// 检查长名称是否包含非法字符
-		if strings.ContainsAny(longName, invalidFlagChars) {
+		if strings.ContainsAny(longName, flags.InvalidFlagChars) {
 			return fmt.Errorf("The flag long name '%s' contains illegal characters", longName)
 		}
 
@@ -437,7 +538,7 @@ func (c *Cmd) validateFlag(longName, shortName string) error {
 	// 检查短标志相关逻辑
 	if shortName != "" {
 		// 检查短名称是否包含非法字符
-		if strings.ContainsAny(shortName, invalidFlagChars) {
+		if strings.ContainsAny(shortName, flags.InvalidFlagChars) {
 			return fmt.Errorf("The flag short name '%s' contains illegal characters", shortName)
 		}
 
@@ -453,55 +554,6 @@ func (c *Cmd) validateFlag(longName, shortName string) error {
 	}
 
 	return nil
-}
-
-// NewCmd 创建新的命令实例
-// 参数:
-// longName: 命令长名称
-// shortName: 命令短名称
-// errorHandling: 错误处理方式
-// 返回值: *Cmd命令实例指针
-// errorHandling可选值: flag.ContinueOnError、flag.ExitOnError、flag.PanicOnError
-func NewCmd(longName string, shortName string, errorHandling flag.ErrorHandling) *Cmd {
-	// 检查命令名称是否同时为空
-	if longName == "" && shortName == "" {
-		panic("cmd long name and short name cannot both be empty")
-	}
-
-	// 设置默认的错误处理方式为ContinueOnError, 避免测试时意外退出
-	if errorHandling == 0 {
-		errorHandling = flag.ContinueOnError
-	}
-
-	// 创建标志注册表
-	flagRegistry := &FlagRegistry{
-		mu:       sync.RWMutex{},             // 并发读写锁
-		byLong:   make(map[string]*FlagMeta), // 存储长标志的映射
-		byShort:  make(map[string]*FlagMeta), // 存储短标志的映射
-		allFlags: []*FlagMeta{},              // 存储所有标志的切片
-	}
-
-	// 确定命令名称：优先使用长名称，如果长名称为空则使用短名称
-	cmdName := longName
-	if cmdName == "" {
-		cmdName = shortName
-	}
-
-	// 创建新的Cmd实例
-	cmd := &Cmd{
-		fs:                  flag.NewFlagSet(cmdName, errorHandling), // 创建新的flag集
-		args:                []string{},                              // 命令行参数
-		flagRegistry:        flagRegistry,                            // 初始化标志注册表
-		helpFlag:            &BoolFlag{},                             // 初始化帮助标志
-		showInstallPathFlag: &BoolFlag{},                             // 初始化显示安装路径标志
-		versionFlag:         &BoolFlag{},                             // 初始化版本信息标志
-		userInfo: UserInfo{
-			longName:  longName,  // 命令长名称
-			shortName: shortName, // 命令短名称
-		},
-	}
-
-	return cmd
 }
 
 // AddSubCmd 关联一个或多个子命令到当前命令
@@ -550,7 +602,7 @@ func (c *Cmd) AddSubCmd(subCmds ...*Cmd) error {
 		}
 
 		// 检测循环引用
-		if hasCycle(c, cmd) {
+		if c.hasCycle(cmd) {
 			errors = append(errors, fmt.Errorf("Cyclic reference detected: Command %s already exists in the command chain", cmd.LongName()))
 			continue
 		}
@@ -577,7 +629,7 @@ func (c *Cmd) AddSubCmd(subCmds ...*Cmd) error {
 
 	// 如果有验证错误，返回所有错误信息
 	if len(errors) > 0 {
-		return fmt.Errorf("Failed to add subcommands: %w", joinErrors(errors))
+		return fmt.Errorf("Failed to add subcommands: %w", qerr.JoinErrors(errors))
 	}
 
 	// 第二阶段：批量添加子命令
@@ -612,7 +664,7 @@ func (c *Cmd) Parse(args []string) (err error) {
 		// 添加panic捕获
 		if r := recover(); r != nil {
 			// 使用预定义的恐慌错误常量
-			err = fmt.Errorf("%s: %v", ErrPanicRecovered, r)
+			err = fmt.Errorf("%s: %v", qerr.ErrPanicRecovered, r)
 		}
 	}()
 
@@ -633,7 +685,7 @@ func (c *Cmd) Parse(args []string) (err error) {
 
 		// 调用flag库解析参数
 		if parseErr := c.fs.Parse(args); parseErr != nil {
-			err = fmt.Errorf("%s: %w", ErrFlagParseFailed, parseErr)
+			err = fmt.Errorf("%s: %w", qerr.ErrFlagParseFailed, parseErr)
 			return
 		}
 
@@ -680,7 +732,7 @@ func (c *Cmd) Parse(args []string) (err error) {
 				if c.args[0] == subCmd.LongName() || c.args[0] == subCmd.ShortName() {
 					// 将剩余参数传递给子命令解析
 					if parseErr := subCmd.Parse(c.args[1:]); parseErr != nil {
-						err = fmt.Errorf("%s: %w", ErrSubCommandParseFailed, parseErr)
+						err = fmt.Errorf("%s: %w", qerr.ErrSubCommandParseFailed, parseErr)
 					}
 					return
 				}
@@ -689,8 +741,8 @@ func (c *Cmd) Parse(args []string) (err error) {
 
 		// 检查枚举类型标志是否有效
 		for _, meta := range c.flagRegistry.GetAllFlags() {
-			if meta.GetFlagType() == FlagTypeEnum {
-				if enumFlag, ok := meta.flag.(*EnumFlag); ok {
+			if meta.GetFlagType() == flags.FlagTypeEnum {
+				if enumFlag, ok := meta.GetFlag().(*flags.EnumFlag); ok {
 					// 调用IsCheck方法进行验证
 					if checkErr := enumFlag.IsCheck(enumFlag.Get()); checkErr != nil {
 						// 如果验证失败，则返回错误信息，错误信息： 无效的枚举值, 可选值: [a, b, c]
@@ -732,7 +784,7 @@ func (c *Cmd) ParseFlagsOnly(args []string) (err error) {
 		// 添加panic捕获
 		if r := recover(); r != nil {
 			// 使用预定义的恐慌错误常量
-			err = fmt.Errorf("%s: %v", ErrPanicRecovered, r)
+			err = fmt.Errorf("%s: %v", qerr.ErrPanicRecovered, r)
 		}
 	}()
 
@@ -748,7 +800,7 @@ func (c *Cmd) ParseFlagsOnly(args []string) (err error) {
 
 		// 调用flag库解析参数
 		if parseErr := c.fs.Parse(args); parseErr != nil {
-			err = fmt.Errorf("%s: %w", ErrFlagParseFailed, parseErr)
+			err = fmt.Errorf("%s: %w", qerr.ErrFlagParseFailed, parseErr)
 			return
 		}
 
@@ -790,8 +842,8 @@ func (c *Cmd) ParseFlagsOnly(args []string) (err error) {
 
 		// 检查枚举类型标志是否有效
 		for _, meta := range c.flagRegistry.GetAllFlags() {
-			if meta.GetFlagType() == FlagTypeEnum {
-				if enumFlag, ok := meta.flag.(*EnumFlag); ok {
+			if meta.GetFlagType() == flags.FlagTypeEnum {
+				if enumFlag, ok := meta.GetFlag().(*flags.EnumFlag); ok {
 					// 调用IsCheck方法进行验证
 					if checkErr := enumFlag.IsCheck(enumFlag.Get()); checkErr != nil {
 						// 如果验证失败，则返回错误信息，错误信息： 无效的枚举值, 可选值: [a, b, c]
@@ -810,425 +862,78 @@ func (c *Cmd) ParseFlagsOnly(args []string) (err error) {
 	return nil
 }
 
-// String 添加字符串类型标志, 返回标志对象指针
+// hasCycle 检测当前命令与待添加子命令间是否存在循环引用
+// 循环引用场景包括：
+// 1. 子命令直接或间接引用当前命令
+// 2. 子命令的父命令链中包含当前命令
+// 参数:
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
+//	child: 待添加的子命令实例
 //
-// 返回值: 字符串标志对象指针
-func (c *Cmd) String(longName, shortName, defValue, usage string) *StringFlag {
-	f := &StringFlag{}
-	c.StringVar(f, longName, shortName, defValue, usage)
-	return f
+// 返回值:
+//
+//	存在循环引用返回true，否则返回false
+func (c *Cmd) hasCycle(child *Cmd) bool {
+	if c == nil || child == nil {
+		return false
+	}
+
+	visited := make(map[*Cmd]bool)
+	return c.dfs(child, visited)
 }
 
-// StringVar 绑定字符串类型标志到指针并内部注册Flag对象
+// dfs 深度优先搜索检测循环引用
+// 递归检查当前节点及其子命令、父命令链中是否包含目标节点(q)
+// 参数:
 //
-// 参数依次为: 字符串标志指针、长标志名、短标志、默认值、帮助说明
-func (c *Cmd) StringVar(f *StringFlag, longName, shortName, defValue, usage string) {
-	// 检查指针是否为nil
-	if f == nil {
-		panic("StringFlag pointer cannot be nil")
-	}
-
-	// 参数校验（复用公共函数）
-	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
-		panic(validateErr)
-	}
-
-	// 显式初始化当前值的默认值
-	currentStr := new(string)
-	*currentStr = defValue
-
-	// 修改传入的标志对象
-	f.cmd = c               // 修改标志对象 - 命令对象
-	f.longName = longName   // 修改标志对象 - 长标志名
-	f.shortName = shortName // 修改标志对象 - 短标志名
-	f.defValue = defValue   // 修改标志对象 - 默认值
-	f.usage = usage         // 修改标志对象 - 帮助说明
-	f.value = currentStr    // 修改标志对象 - 当前值
-
-	// 创建FlagMeta对象
-	meta := &FlagMeta{
-		flag: f, // 添加标志对象 - Flag对象
-	}
-
-	// 绑定短标志
-	if shortName != "" {
-		c.fs.StringVar(currentStr, shortName, defValue, usage)
-	}
-
-	// 绑定长标志
-	if longName != "" {
-		c.fs.StringVar(currentStr, longName, defValue, usage)
-	}
-
-	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
-		panic(registerErr)
-	}
-}
-
-// IntVar 绑定整数类型标志到指针并内部注册Flag对象
+//	current: 当前遍历的命令节点
+//	visited: 已访问节点集合，防止重复遍历
 //
-// 参数依次为: 整数标志指针、长标志名、短标志、默认值、帮助说明
-func (c *Cmd) IntVar(f *IntFlag, longName, shortName string, defValue int, usage string) {
-	// 检查指针是否为nil
-	if f == nil {
-		panic("IntFlag pointer cannot be nil")
-	}
-
-	// 参数校验（复用公共函数）
-	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
-		panic(validateErr)
-	}
-
-	// 初始化默认值
-	currentInt := new(int)
-	*currentInt = defValue
-
-	// 修改传入的标志对象
-	f.cmd = c               // 修改标志对象 - 命令对象
-	f.longName = longName   // 修改标志对象 - 长标志名
-	f.shortName = shortName // 修改标志对象 - 短标志名
-	f.defValue = defValue   // 修改标志对象 - 默认值
-	f.usage = usage         // 修改标志对象 - 帮助说明
-	f.value = currentInt    // 修改标志对象 - 当前值
-
-	// 创建FlagMeta对象
-	meta := &FlagMeta{
-		flag: f, // 添加标志对象 - Flag对象
-	}
-
-	// 绑定短标志
-	if shortName != "" {
-		c.fs.IntVar(currentInt, shortName, defValue, usage)
-	}
-
-	// 绑定长标志
-	if longName != "" {
-		c.fs.IntVar(currentInt, longName, defValue, usage)
-	}
-
-	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
-		panic(registerErr)
-	}
-}
-
-// Int 添加整数类型标志, 返回标志对象指针
+// 返回值:
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-// 返回值: 整数标志对象指针
-func (c *Cmd) Int(longName, shortName string, defValue int, usage string) *IntFlag {
-	f := &IntFlag{}
-	c.IntVar(f, longName, shortName, defValue, usage)
-	return f
-}
+//	找到目标节点返回true，否则返回false
+func (c *Cmd) dfs(current *Cmd, visited map[*Cmd]bool) bool {
+	// 已访问过当前节点，直接返回避免无限循环
+	if visited[current] {
+		return false
+	}
+	visited[current] = true
 
-// BoolVar 绑定布尔类型标志到指针并内部注册Flag对象
-//
-// 参数依次为: 布尔标志指针、长标志名、短标志、默认值、帮助说明
-func (c *Cmd) BoolVar(f *BoolFlag, longName, shortName string, defValue bool, usage string) {
-	// 检查指针是否为nil
-	if f == nil {
-		panic("BoolFlag pointer cannot be nil")
+	// 找到目标节点，存在循环引用
+	if current == c {
+		return true
 	}
 
-	// 参数校验（复用公共函数）
-	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
-		panic(validateErr)
-	}
-
-	// 显式初始化
-	currentBool := new(bool) // 创建当前值指针
-	*currentBool = defValue
-
-	// 修改传入的标志对象
-	f.cmd = c               // 修改标志对象 - 命令对象
-	f.longName = longName   // 修改标志对象 - 长标志名
-	f.shortName = shortName // 修改标志对象 - 短标志名
-	f.defValue = defValue   // 修改标志对象 - 默认值
-	f.usage = usage         // 修改标志对象 - 帮助说明
-	f.value = currentBool   // 修改标志对象 - 当前值
-
-	// 创建FlagMeta对象
-	meta := &FlagMeta{
-		flag: f, // 添加标志对象 - Flag对象
-	}
-
-	// 绑定短标志
-	if shortName != "" {
-		c.fs.BoolVar(f.value, shortName, defValue, usage)
-	}
-
-	// 绑定长标志
-	if longName != "" {
-		c.fs.BoolVar(f.value, longName, defValue, usage)
-	}
-
-	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
-		panic(registerErr)
-	}
-}
-
-// Bool 添加布尔类型标志, 返回标志对象指针
-//
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-//
-// 返回值: 布尔标志对象指针
-func (c *Cmd) Bool(longName, shortName string, defValue bool, usage string) *BoolFlag {
-	f := &BoolFlag{}
-	c.BoolVar(f, longName, shortName, defValue, usage)
-	return f
-}
-
-// Float 添加浮点型标志, 返回标志对象指针
-//
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-//
-// 返回值: 浮点型标志对象指针
-func (c *Cmd) Float(longName, shortName string, defValue float64, usage string) *FloatFlag {
-	f := &FloatFlag{}
-	c.FloatVar(f, longName, shortName, defValue, usage)
-	return f
-}
-
-// FloatVar 绑定浮点型标志到指针并内部注册Flag对象
-//
-// 参数依次为: 浮点数标志指针、长标志名、短标志、默认值、帮助说明
-func (c *Cmd) FloatVar(f *FloatFlag, longName, shortName string, defValue float64, usage string) {
-	// 检查指针是否为空
-	if f == nil {
-		panic("FloatFlag pointer cannot be nil")
-	}
-
-	// 参数校验（复用公共函数）
-	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
-		panic(validateErr)
-	}
-
-	// 显式初始化默认值
-	currentFloat := new(float64) // 显式堆分配
-	*currentFloat = defValue
-
-	// 修改传入的标志对象
-	f.cmd = c               // 修改标志对象 - 命令对象
-	f.longName = longName   // 修改标志对象 - 长标志名
-	f.shortName = shortName // 修改标志对象 - 短标志名
-	f.defValue = defValue   // 修改标志对象 - 默认值
-	f.usage = usage         // 修改标志对象 - 帮助说明
-	f.value = currentFloat  // 修改标志对象 - 当前值
-
-	// 创建FlagMeta对象
-	meta := &FlagMeta{
-		flag: f, // 添加标志对象 - Flag对象
-	}
-
-	// 绑定短标志
-	if shortName != "" {
-		c.fs.Float64Var(currentFloat, shortName, defValue, usage)
-	}
-
-	// 绑定长标志
-	if longName != "" {
-		c.fs.Float64Var(currentFloat, longName, defValue, usage)
-	}
-
-	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
-		panic(registerErr)
-	}
-}
-
-// DurationVar 绑定时间间隔类型标志到指针并内部注册Flag对象
-//
-// 参数依次为: 时间间隔标志指针、长标志名、短标志、默认值、帮助说明
-func (c *Cmd) DurationVar(f *DurationFlag, longName, shortName string, defValue time.Duration, usage string) {
-	// 检查指针是否为空
-	if f == nil {
-		panic("DurationFlag pointer cannot be nil")
-	}
-
-	// 参数校验
-	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
-		panic(validateErr)
-	}
-
-	// 初始化默认值(值类型)
-	currentDuration := new(time.Duration)
-	*currentDuration = defValue
-
-	// 设置标志属性
-	f.cmd = c
-	f.longName = longName
-	f.shortName = shortName
-	f.defValue = defValue
-	f.usage = usage
-	f.value = currentDuration
-
-	// 绑定短标志
-	if shortName != "" {
-		c.fs.DurationVar(currentDuration, shortName, defValue, usage)
-	}
-
-	// 绑定长标志
-	if longName != "" {
-		c.fs.DurationVar(currentDuration, longName, defValue, usage)
-	}
-
-	// 创建并注册标志元数据
-	meta := &FlagMeta{
-		flag: f, // 添加标志对象 - Flag对象
-	}
-
-	// 注册标志元数据
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
-		panic(registerErr)
-	}
-}
-
-// Duration 添加时间间隔类型标志, 返回标志对象指针
-//
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-//
-// 返回值: 时间间隔标志对象指针
-func (c *Cmd) Duration(longName, shortName string, defValue time.Duration, usage string) *DurationFlag {
-	f := &DurationFlag{}
-	c.DurationVar(f, longName, shortName, defValue, usage)
-	return f
-}
-
-// Enum 添加枚举类型标志, 返回标志对象指针
-//
-// 参数依次为: 长标志名、短标志、默认值、帮助说明、限制该标志取值的枚举值切片
-//
-// 返回值: 枚举标志对象指针
-func (c *Cmd) Enum(longName, shortName string, defValue string, usage string, options []string) *EnumFlag {
-	f := &EnumFlag{}
-	c.EnumVar(f, longName, shortName, defValue, usage, options)
-	return f
-}
-
-// EnumVar 绑定枚举类型标志到指针并内部注册Flag对象
-//
-// 参数依次为: 枚举标志指针、长标志名、短标志、默认值、帮助说明、限制该标志取值的枚举值切片
-func (c *Cmd) EnumVar(f *EnumFlag, longName, shortName string, defValue string, usage string, options []string) {
-	// 检查指针是否为空
-	if f == nil {
-		panic("EnumFlag pointer cannot be nil")
-	}
-
-	// 参数校验（复用公共函数）
-	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
-		panic(validateErr)
-	}
-
-	// 初始化枚举值
-	if options == nil {
-		options = make([]string, 0)
-	}
-
-	// 默认值小写处理
-	defValue = strings.ToLower(defValue)
-
-	// 显式初始化当前值的默认值
-	currentStr := defValue
-
-	// 创建枚举map
-	optionMap := make(map[string]bool)
-	if len(options) > 0 {
-		for _, v := range options {
-			// 转换为小写
-			v = strings.ToLower(v)
-			optionMap[v] = true
+	// 递归检查所有子命令
+	for _, subCmd := range current.subCmds {
+		if c.dfs(subCmd, visited) {
+			return true
 		}
 	}
 
-	// 修改传入的标志对象
-	f.cmd = c               // 修改标志对象 - 命令对象
-	f.longName = longName   // 修改标志对象 - 长标志名
-	f.shortName = shortName // 修改标志对象 - 短标志名
-	f.defValue = defValue   // 修改标志对象 - 默认值
-	f.usage = usage         // 修改标志对象 - 帮助说明
-	f.value = &currentStr   // 修改标志对象 - 当前值
-	f.optionMap = optionMap // 修改标志对象 - 枚举值map
-
-	// 创建FlagMeta对象
-	meta := &FlagMeta{
-		flag: f, // 添加标志对象 - Flag对象
+	// 检查父命令链
+	if current.parentCmd != nil {
+		return c.dfs(current.parentCmd, visited)
 	}
 
-	// 绑定短标志
-	if shortName != "" {
-		c.fs.StringVar(&currentStr, shortName, defValue, usage)
-	}
-
-	// 绑定长标志
-	if longName != "" {
-		c.fs.StringVar(&currentStr, longName, defValue, usage)
-	}
-
-	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
-		panic(registerErr)
-	}
+	return false
 }
 
-// Slice 绑定字符串切片类型标志并内部注册Flag对象
-//
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-//
-// 返回值: 字符串切片标志对象指针
-func (c *Cmd) Slice(longName, shortName string, defValue []string, usage string) *SliceFlag {
-	f := &SliceFlag{}
-	c.SliceVar(f, longName, shortName, defValue, usage)
-	return f
-}
-
-// SliceVar 绑定字符串切片类型标志到指针并内部注册Flag对象
-//
-// 参数依次为: 字符串切片标志指针、长标志名、短标志、默认值、帮助说明
-func (c *Cmd) SliceVar(f *SliceFlag, longName, shortName string, defValue []string, usage string) {
-	// 检查指针是否为空
-	if f == nil {
-		panic("SliceFlag pointer cannot be nil")
+// GetExecutablePath 获取程序的绝对安装路径
+// 如果无法通过 os.Executable 获取路径,则使用 os.Args[0] 作为替代
+// 返回：程序的绝对路径字符串
+func GetExecutablePath() string {
+	// 尝试使用 os.Executable 获取可执行文件的绝对路径
+	exePath, err := os.Executable()
+	if err != nil {
+		// 如果 os.Executable 报错,使用 os.Args[0] 作为替代
+		exePath = os.Args[0]
 	}
-
-	// 参数校验（复用公共函数）
-	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
-		panic(validateErr)
+	// 使用 filepath.Abs 确保路径是绝对路径
+	absPath, err := filepath.Abs(exePath)
+	if err != nil {
+		// 如果 filepath.Abs 报错,直接返回原始路径
+		return exePath
 	}
-
-	// 初始化
-	currentSlice := &defValue
-
-	// 修改传入的标志对象
-	f.cmd = c                     // 修改标志对象 - 命令对象
-	f.longName = longName         // 修改标志对象 - 长标志名
-	f.shortName = shortName       // 修改标志对象 - 短标志名
-	f.defValue = defValue         // 修改标志对象 - 默认值
-	f.usage = usage               // 修改标志对象 - 帮助说明
-	f.value = currentSlice        // 修改标志对象 - 当前值
-	f.delimiters = FlagSplitSlice // 修改标志对象 - 分隔符切片
-
-	// 创建FlagMeta对象
-	meta := &FlagMeta{
-		flag: f, // 添加标志对象 - Flag对象
-	}
-
-	// 绑定短标志
-	if shortName != "" {
-		c.fs.Var(f, shortName, usage)
-	}
-
-	// 绑定长标志
-	if longName != "" {
-		c.fs.Var(f, longName, usage)
-	}
-
-	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
-		panic(registerErr)
-	}
+	return absPath
 }

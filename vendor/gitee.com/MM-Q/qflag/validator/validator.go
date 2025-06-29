@@ -1,10 +1,12 @@
-// qflag_validator.go
+// validator.go
 // 提供常用的参数验证器实现
-package qflag
+package validator
 
 import (
 	"errors"
 	"fmt"
+	"math"
+	"os"
 	"reflect"
 	"regexp"
 	"time"
@@ -66,13 +68,168 @@ func (v *StringRegexValidator) Validate(value any) error {
 }
 
 // IntRangeValidator 验证整数是否在指定范围内
+//
+// 验证逻辑：检查整数是否在[Min, Max]闭区间范围内
+// 支持所有整数类型（int、int8、int16、int32、uint等）的验证
+// 实现了Validator接口
+// IntRangeValidator 验证整数是否在指定范围内
+//
+// 注意：此版本使用int类型而非int64，适用于32位整数场景
+// 如需64位整数验证，请使用Int64RangeValidator
+//
+// 实现了Validator接口
 type IntRangeValidator struct {
+	Min int // 最小值, 包含在内
+	Max int // 最大值, 包含在内
+}
+
+// IntRangeValidator 验证整数是否在指定的 int 范围内
+// 注意：
+// 1. 支持多种整数类型转换（int/int8/uint等），但最终会转换为int处理
+// 2. 从宽类型（如uint64）转换为int可能导致溢出
+// 3. 如需严格类型检查，请使用自定义验证器
+func (v *IntRangeValidator) Validate(value any) error {
+	var num int
+
+	// 处理不同整数类型的转换
+	switch val := value.(type) {
+	case int:
+		num = val
+	case int8:
+		num = int(val)
+	case int16:
+		num = int(val)
+	case int32:
+		num = int(val)
+	case int64:
+		if val > math.MaxInt32 || val < math.MinInt32 {
+			return fmt.Errorf("int64 value %d exceeds int range [%d, %d]", val, math.MinInt32, math.MaxInt32)
+		}
+		num = int(val)
+	case uint:
+		num = int(val)
+	case uint8:
+		num = int(val)
+	case uint16:
+		num = int(val)
+	case uint32:
+		num = int(val)
+	case uint64:
+		if val > uint64(math.MaxInt32) {
+			return fmt.Errorf("uint64 value %d exceeds int max value %d", val, math.MaxInt32)
+		}
+		num = int(val)
+	default:
+		return errors.New("value is not an integer type")
+	}
+
+	if num < v.Min {
+		return fmt.Errorf("value must be at least %d", v.Min)
+	}
+
+	if num > v.Max {
+		return fmt.Errorf("value must be at most %d", v.Max)
+	}
+
+	return nil
+}
+
+// IntRangeValidator64 验证整数是否在指定范围内
+type IntRangeValidator64 struct {
 	Min int64 // 最小值, 包含在内
 	Max int64 // 最大值, 包含在内
 }
 
 // Validate 实现Validator接口, 检查整数是否在[Min, Max]范围内
-func (v *IntRangeValidator) Validate(value any) error {
+func (v *IntRangeValidator64) Validate(value any) error {
+	var num int64
+
+	// 处理不同整数类型的转换
+	switch val := value.(type) {
+	case int:
+		num = int64(val)
+	case int8:
+		num = int64(val)
+	case int16:
+		num = int64(val)
+	case int32:
+		num = int64(val)
+	case int64:
+		num = val
+	case uint:
+		num = int64(val)
+	case uint8:
+		num = int64(val)
+	case uint16:
+		num = int64(val)
+	case uint32:
+		num = int64(val)
+	case uint64:
+		// 增加uint64转换的显式溢出检查
+		if val > math.MaxInt64 {
+			return fmt.Errorf("uint64 value %d exceeds int64 max value %d", val, math.MaxInt64)
+		}
+		num = int64(val)
+	default:
+		return errors.New("value is not an int64-compatible integer type")
+	}
+
+	if num < v.Min {
+		return fmt.Errorf("value must be at least %d", v.Min)
+	}
+
+	if num > v.Max {
+		return fmt.Errorf("value must be at most %d", v.Max)
+	}
+
+	return nil
+}
+
+// IntValueValidator 验证整数是否为指定值之一
+//
+// 支持验证整数是否匹配预定义的允许值列表中的任何一个值
+// 适用于需要严格限制输入为特定离散值的场景
+//
+// 使用示例:
+// validator := &IntValueValidator{AllowedValues: []int{1, 3, 5}}
+// flag.SetValidator(validator)
+// 这将只允许值为1、3或5的整数通过验证
+//
+// 注意: 空的允许值列表将导致所有值都验证失败
+//
+// 实现了Validator接口
+// IntValueValidator 验证整数是否为指定值之一
+//
+// 验证逻辑: 检查输入整数是否在允许值列表中
+//
+// 参数:
+//
+//	value: 待验证的整数
+//
+// 返回值:
+//
+//	验证通过返回nil，否则返回错误信息
+//
+// 支持的整数类型: int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64
+//
+// 示例:
+//
+//	validator := &IntValueValidator{AllowedValues: []int{1, 3, 5}}
+//	err := validator.Validate(3) // 返回nil
+//	err := validator.Validate(2) // 返回错误
+//
+// 注意: 允许值列表为空时，所有值都将验证失败
+type IntValueValidator struct {
+	AllowedValues []int // 允许的整数值列表
+}
+
+// Validate 实现Validator接口，验证值是否为允许的整数之一
+func (v *IntValueValidator) Validate(value any) error {
+	// 检查允许值列表是否为空
+	if len(v.AllowedValues) == 0 {
+		return errors.New("no allowed values specified")
+	}
+
 	var num int64
 
 	// 处理不同整数类型的转换
@@ -101,12 +258,17 @@ func (v *IntRangeValidator) Validate(value any) error {
 		return errors.New("value is not an integer type")
 	}
 
-	if num < v.Min {
-		return fmt.Errorf("value must be at least %d", v.Min)
+	// 检查值是否在允许值列表中
+	found := false
+	for _, allowed := range v.AllowedValues {
+		if int64(allowed) == num {
+			found = true
+			break
+		}
 	}
 
-	if num > v.Max {
-		return fmt.Errorf("value must be at most %d", v.Max)
+	if !found {
+		return fmt.Errorf("value %d is not in allowed values %v", num, v.AllowedValues)
 	}
 
 	return nil
@@ -233,4 +395,29 @@ func (v *EnumValidator) Validate(value any) error {
 	}
 
 	return fmt.Errorf("value %v is not in allowed values list", value)
+}
+
+// PathValidator 路径验证器
+// 实现Validator接口,用于验证路径是否存在且规范化
+type PathValidator struct{}
+
+// Validate 验证路径是否存在且规范化
+func (v *PathValidator) Validate(value any) error {
+	path, ok := value.(string)
+	if !ok {
+		return fmt.Errorf("path must be a string")
+	}
+
+	if path == "" {
+		return fmt.Errorf("path cannot be empty")
+	}
+
+	// 检查路径是否存在
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return fmt.Errorf("path does not exist: %s", path)
+	} else if err != nil {
+		return fmt.Errorf("failed to check path: %v", err)
+	}
+
+	return nil
 }

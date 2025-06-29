@@ -1,14 +1,102 @@
-package qflag
+package cmd
 
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sort"
-	"strings"
 	"time"
+
+	"gitee.com/MM-Q/qflag/flags"
 )
+
+// flagInfo 标志信息结构体
+// 用于存储命令行标志的元数据，包括长名称、短名称、用法说明和默认值
+type flagInfo struct {
+	longFlag  string // 长标志名称
+	shortFlag string // 短标志名称
+	usage     string // 用法说明
+	defValue  string // 默认值
+	typeStr   string // 参数类型字符串
+}
+
+// ExampleInfo 示例信息结构体
+// 用于存储命令的使用示例，包括描述和示例内容
+type ExampleInfo struct {
+	Description string // 示例描述
+	Usage       string // 示例使用方式
+}
+
+// HelpTemplate 帮助信息模板结构体
+type HelpTemplate struct {
+	CmdName              string // 命令名称模板
+	CmdNameWithShort     string // 命令名称带短名称模板
+	CmdDescription       string // 命令描述模板
+	UsagePrefix          string // 用法说明前缀模板
+	UsageSubCmd          string // 用法说明子命令模板
+	UsageInfoWithOptions string // 带选项的用法说明信息模板
+	UsageGlobalOptions   string // 全局选项部分
+	OptionsHeader        string // 选项头部模板
+	Option1              string // 选项模板(带短选项)
+	Option2              string // 选项模板(无短选项)
+	Option3              string // 选项模板(无长选项)
+	OptionDefault        string // 选项模板的默认值
+	SubCmdsHeader        string // 子命令头部模板
+	SubCmd               string // 子命令模板
+	SubCmdWithShort      string // 子命令带短名称模板
+	NotesHeader          string // 注意事项头部模板
+	NoteItem             string // 注意事项项模板
+	DefaultNote          string // 默认注意事项
+	ExamplesHeader       string // 示例信息头部模板
+	ExampleItem          string // 示例信息项模板
+}
+
+// 英文模板实例
+var EnglishTemplate = HelpTemplate{
+	CmdName:              "Name: %s\n\n",
+	UsagePrefix:          "Usage: ",                                                                                                                             // 命令名称模板
+	UsageSubCmd:          " [subcmd]",                                                                                                                           // 命令名称模板
+	UsageInfoWithOptions: " [options]\n\n",                                                                                                                      // 带选项的用法说明信息模板
+	UsageGlobalOptions:   " [global options]",                                                                                                                   // 全局选项部分
+	CmdNameWithShort:     "Name: %s, %s\n\n",                                                                                                                    // 命令名称带短名称模板
+	CmdDescription:       "Desc: %s\n\n",                                                                                                                        // 命令描述模板
+	OptionsHeader:        "Options:\n",                                                                                                                          // 选项头部模板
+	Option1:              "  --%s, -%s %s",                                                                                                                      // 选项模板(带短选项)
+	Option2:              "  --%s %s",                                                                                                                           // 选项模板(无短选项)
+	Option3:              "  -%s %s",                                                                                                                            // 新增：仅短选项的模板
+	OptionDefault:        "%s%*s%s (default: %s)\n",                                                                                                             // 选项模板默认值
+	SubCmdsHeader:        "\nSubCmds:\n",                                                                                                                        // 子命令头部模板
+	SubCmd:               "  %s\t%s\n",                                                                                                                          // 子命令模板
+	SubCmdWithShort:      "  %s, %s\t%s\n",                                                                                                                      // 子命令模板(带短选项)
+	NotesHeader:          "\nNotes:\n",                                                                                                                          // 注意事项头部模板
+	NoteItem:             "  %d. %s\n",                                                                                                                          // 注意事项模板
+	DefaultNote:          "In the case where both long options and short options are used at the same time,\n the option specified last shall take precedence.", // 默认注意事项
+	ExamplesHeader:       "\nExamples:\n",                                                                                                                       // 示例信息头部模板
+	ExampleItem:          "  %d. %s\n     %s\n",                                                                                                                 // 序号、描述、用法
+}
+
+// 中文模板实例
+var ChineseTemplate = HelpTemplate{
+	CmdName:              "名称: %s\n\n",                  // 命令名称模板
+	UsagePrefix:          "用法: ",                        // 用法说明前缀模板
+	UsageSubCmd:          " [子命令]",                      // 用法说明子命令模板
+	UsageInfoWithOptions: " [选项]\n\n",                   // 带选项的用法说明信息模板
+	UsageGlobalOptions:   " [全局选项]",                     // 全局选项部分
+	CmdNameWithShort:     "名称: %s, %s\n\n",              // 命令名称带短名称模板
+	CmdDescription:       "描述: %s\n\n",                  // 命令描述模板
+	OptionsHeader:        "选项:\n",                       // 选项头部模板
+	Option1:              "  --%s, -%s %s",              // 选项模板(带短选项)
+	Option2:              "  --%s %s",                   // 选项模板(无短选项)
+	Option3:              "  -%s %s",                    // 新增：仅短选项的模板
+	OptionDefault:        "%s%*s%s (默认值: %s)\n",         // 选项模板默认值
+	SubCmdsHeader:        "\n子命令:\n",                    // 子命令头部模板
+	SubCmd:               "  %s\t%s\n",                  // 子命令模板
+	SubCmdWithShort:      "  %s, %s\t%s\n",              // 子命令模板(带短选项)
+	NotesHeader:          "\n注意事项:\n",                   //注意事项头部模板
+	NoteItem:             "  %d、%s\n",                   //注意事项模板
+	DefaultNote:          "当长选项和短选项同时使用时，最后指定的选项将优先生效。", //默认注意事项
+	ExamplesHeader:       "\n示例:\n",                     // 示例信息头部模板
+	ExampleItem:          "  %d、%s\n     %s\n",          // 序号、描述、用法
+}
 
 // generateHelpInfo 生成命令帮助信息
 // cmd: 当前命令
@@ -129,12 +217,12 @@ func writeUsageLine(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 		if cmd.parentCmd == nil {
 			// 添加子命令部分
 			if len(cmd.subCmds) > 0 {
-				usageLine += tpl.UseageGlobalOptions
+				usageLine += tpl.UsageGlobalOptions
 				usageLine += tpl.UsageSubCmd
 			}
 
 			// 添加选项部分
-			usageLine += tpl.UseageInfoWithOptions
+			usageLine += tpl.UsageInfoWithOptions
 
 		} else {
 			// 子命令，使用子命令选项模板
@@ -144,7 +232,7 @@ func writeUsageLine(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 			}
 
 			// 添加选项部分
-			usageLine += tpl.UseageInfoWithOptions
+			usageLine += tpl.UsageInfoWithOptions
 		}
 	}
 
@@ -203,38 +291,38 @@ func writeOptions(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 }
 
 // collectFlags 收集所有标志信息
-func collectFlags(cmd *Cmd) []FlagInfo {
-	var flags []FlagInfo
+func collectFlags(cmd *Cmd) []flagInfo {
+	var flagInfos []flagInfo
 
 	// 遍历所有标志, 收集标志信息
-	for _, f := range cmd.flagRegistry.allFlags {
+	for _, f := range cmd.flagRegistry.GetAllFlags() {
 		flag := f // 获取标志类型
 
 		// 收集默认值
 		defValue := fmt.Sprintf("%v", flag.GetDefault())
 
 		// 对Duration类型进行特殊格式化
-		if flag.GetFlagType() == FlagTypeDuration {
+		if flag.GetFlagType() == flags.FlagTypeDuration {
 			if duration, ok := flag.GetDefault().(time.Duration); ok {
 				defValue = duration.String() // 获取时间间隔标志的默认值的字符串表示
 			}
 		}
 
 		// 创建标志元数据
-		flags = append(flags, FlagInfo{
-			longFlag:  flag.GetLongName(),                   // 长标志名
-			shortFlag: flag.GetShortName(),                  // 短标志
-			usage:     flag.GetUsage(),                      // 使用说明
-			defValue:  defValue,                             // 默认值
-			typeStr:   flagTypeToString(flag.GetFlagType()), // 标志类型字符串
+		flagInfos = append(flagInfos, flagInfo{
+			longFlag:  flag.GetLongName(),                         // 长标志名
+			shortFlag: flag.GetShortName(),                        // 短标志
+			usage:     flag.GetUsage(),                            // 使用说明
+			defValue:  defValue,                                   // 默认值
+			typeStr:   flags.FlagTypeToString(flag.GetFlagType()), // 标志类型字符串
 		})
 	}
 
-	return flags
+	return flagInfos
 }
 
 // sortFlags 按短标志字母顺序排序，有短标志的选项优先
-func sortFlags(flags []FlagInfo) {
+func sortFlags(flags []flagInfo) {
 	sort.Slice(flags, func(i, j int) bool {
 		a, b := flags[i], flags[j]
 		return sortWithShortNamePriority(
@@ -346,7 +434,7 @@ func writeSubCmds(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 }
 
 // calculateMaxWidth 计算最大标志名称宽度用于对齐
-func calculateMaxWidth(flags []FlagInfo) (int, error) {
+func calculateMaxWidth(flags []flagInfo) (int, error) {
 	// 如果没有标志，则返回0
 	if len(flags) == 0 {
 		return 0, nil
@@ -418,128 +506,10 @@ func writeNotes(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 	}
 }
 
-// hasCycle 检测命令间是否存在循环引用
-// 采用深度优先搜索(DFS)算法，通过访问标记避免重复检测
-// 参数:
-//
-//	parent: 当前命令
-//	child: 待添加的子命令
-//
-// 返回值:
-//
-//	如果存在循环引用则返回true
-func hasCycle(parent, child *Cmd) bool {
-	if parent == nil || child == nil {
-		return false
-	}
-
-	visited := make(map[*Cmd]bool)
-	return dfs(parent, child, visited)
-}
-
-// dfs 深度优先搜索检测循环引用
-func dfs(target, current *Cmd, visited map[*Cmd]bool) bool {
-	// 如果已访问过当前节点，直接返回避免无限循环
-	if visited[current] {
-		return false
-	}
-	visited[current] = true
-
-	// 找到目标节点，存在循环引用
-	if current == target {
-		return true
-	}
-
-	// 递归检查所有子命令
-	for _, subCmd := range current.subCmds {
-		if dfs(target, subCmd, visited) {
-			return true
-		}
-	}
-
-	// 检查父命令链
-	if current.parentCmd != nil {
-		return dfs(target, current.parentCmd, visited)
-	}
-
-	return false
-}
-
-// joinErrors 将错误切片合并为单个错误，并去除重复错误
-func joinErrors(errors []error) error {
-	if len(errors) == 0 {
-		return nil
-	}
-	if len(errors) == 1 {
-		return errors[0]
-	}
-
-	// 使用map去重
-	uniqueErrors := make(map[string]error)
-	for _, err := range errors {
-		errStr := err.Error()
-		if _, exists := uniqueErrors[errStr]; !exists {
-			uniqueErrors[errStr] = err
-		}
-	}
-
-	// 构建错误信息
-	var b strings.Builder
-	b.WriteString(fmt.Sprintf("A total of %d unique errors:\n", len(uniqueErrors)))
-	i := 1
-	for _, err := range uniqueErrors {
-		b.WriteString(fmt.Sprintf("  %d. %v\n", i, err))
-		i++
-	}
-
-	// 使用常量格式字符串，将错误信息作为参数传入
-	return fmt.Errorf("Merged error message:\n%s", b.String())
-}
-
 // getFullCommandPath 递归构建完整的命令路径，从根命令到当前命令
 func getFullCommandPath(cmd *Cmd) string {
 	if cmd.parentCmd == nil {
 		return cmd.fs.Name()
 	}
 	return getFullCommandPath(cmd.parentCmd) + " " + cmd.fs.Name()
-}
-
-// GetExecutablePath 获取程序的绝对安装路径
-// 如果无法通过 os.Executable 获取路径,则使用 os.Args[0] 作为替代
-// 返回：程序的绝对路径字符串
-func GetExecutablePath() string {
-	// 尝试使用 os.Executable 获取可执行文件的绝对路径
-	exePath, err := os.Executable()
-	if err != nil {
-		// 如果 os.Executable 报错,使用 os.Args[0] 作为替代
-		exePath = os.Args[0]
-	}
-	// 使用 filepath.Abs 确保路径是绝对路径
-	absPath, err := filepath.Abs(exePath)
-	if err != nil {
-		// 如果 filepath.Abs 报错,直接返回原始路径
-		return exePath
-	}
-	return absPath
-}
-
-// flagTypeToString 将FlagType转换为字符串
-func flagTypeToString(flagType FlagType) string {
-	switch flagType {
-	case FlagTypeInt:
-		return "<int>"
-	case FlagTypeString:
-		return "<string>"
-	case FlagTypeBool:
-		// 布尔类型没有参数类型字符串
-		return ""
-	case FlagTypeFloat:
-		return "<float>"
-	case FlagTypeEnum:
-		return "<enum>"
-	case FlagTypeDuration:
-		return "<duration>"
-	default:
-		return "<unknown>"
-	}
 }

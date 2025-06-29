@@ -1,4 +1,4 @@
-package qflag
+package flags
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 // FlagMeta 统一存储标志的完整元数据
 type FlagMeta struct {
-	flag Flag // 标志对象
+	Flag Flag // 标志对象
 }
 
 // FlagMetaInterface 标志元数据接口, 定义了标志元数据的获取方法
@@ -22,19 +22,22 @@ type FlagMetaInterface interface {
 }
 
 // GetLongName 获取标志的长名称
-func (m *FlagMeta) GetLongName() string { return m.flag.LongName() }
+func (m *FlagMeta) GetLongName() string { return m.Flag.LongName() }
 
 // GetShortName 获取标志的短名称
-func (m *FlagMeta) GetShortName() string { return m.flag.ShortName() }
+func (m *FlagMeta) GetShortName() string { return m.Flag.ShortName() }
 
 // GetUsage 获取标志的用法描述
-func (m *FlagMeta) GetUsage() string { return m.flag.Usage() }
+func (m *FlagMeta) GetUsage() string { return m.Flag.Usage() }
 
 // GetFlagType 获取标志的类型
-func (m *FlagMeta) GetFlagType() FlagType { return m.flag.Type() }
+func (m *FlagMeta) GetFlagType() FlagType { return m.Flag.Type() }
 
 // GetDefault 获取标志的默认值
-func (m *FlagMeta) GetDefault() any { return m.flag.GetDefaultAny() }
+func (m *FlagMeta) GetDefault() any { return m.Flag.GetDefaultAny() }
+
+// GetFlag 获取标志对象
+func (m *FlagMeta) GetFlag() Flag { return m.Flag }
 
 // FlagRegistry 集中管理所有标志元数据及索引
 type FlagRegistry struct {
@@ -53,6 +56,16 @@ type FlagRegistryInterface interface {
 	GetByLong(longName string) (*FlagMeta, bool)   // 通过长标志名称查找对应的标志元数据
 	GetByShort(shortName string) (*FlagMeta, bool) // 通过短标志名称查找对应的标志元数据
 	GetByName(name string) (*FlagMeta, bool)       // 通过标志名称查找标志元数据
+}
+
+// 创建一个空的标志注册表
+func NewFlagRegistry() *FlagRegistry {
+	return &FlagRegistry{
+		mu:       sync.RWMutex{},
+		byLong:   make(map[string]*FlagMeta),
+		byShort:  make(map[string]*FlagMeta),
+		allFlags: make([]*FlagMeta, 0),
+	}
 }
 
 // RegisterFlag 注册一个新的标志元数据到注册表中
