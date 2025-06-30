@@ -37,6 +37,15 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 		}
 	}
 
+	// 检查是否包含通配符路径
+	var hasWildcard bool
+	for _, path := range paths {
+		if strings.ContainsAny(path, "*?") {
+			hasWildcard = true
+			break
+		}
+	}
+
 	// 检查list命令的参数是否合法
 	if err := checkListCmdArgs(); err != nil {
 		return err
@@ -108,8 +117,8 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 			// 根据命令行参数排序目录中的文件信息
 			sortFileInfos(infos, listCmdSortByTime.Get(), listCmdSortBySize.Get(), listCmdSortByName.Get(), listCmdReverseSort.Get())
 
-			// 只在处理多个项目时打印目录路径
-			if len(uniquePaths) > 1 {
+			// 只在处理通配符路径时打印目录路径
+			if hasWildcard {
 				if listCmdLongFormat.Get() {
 					// 获取绝对路径
 					absPath, absErr := filepath.Abs(path)
@@ -147,12 +156,14 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 
 	// 处理所有文件
 	if len(fileInfos) > 0 {
-		// 打印文件组标题（当前目录）
-		currentDir, err := os.Getwd()
-		if err != nil {
-			currentDir = "."
+		// 只在处理通配符路径时打印文件组标题（当前目录）
+		if hasWildcard {
+			currentDir, err := os.Getwd()
+			if err != nil {
+				currentDir = "."
+			}
+			cl.Bluef("%s: \n", currentDir)
 		}
-		cl.Bluef("%s: \n", currentDir)
 
 		// 根据命令行参数排序文件信息切片
 		sortFileInfos(fileInfos, listCmdSortByTime.Get(), listCmdSortBySize.Get(), listCmdSortByName.Get(), listCmdReverseSort.Get())
