@@ -17,6 +17,9 @@ func (c *Cmd) Float64(longName, shortName string, defValue float64, usage string
 //
 // 参数依次为: 浮点数标志指针、长标志名、短标志、默认值、帮助说明
 func (c *Cmd) Float64Var(f *flags.Float64Flag, longName, shortName string, defValue float64, usage string) {
+	c.rwMu.Lock()
+	defer c.rwMu.Unlock()
+
 	// 检查指针是否为空
 	if f == nil {
 		panic("FloatFlag pointer cannot be nil")

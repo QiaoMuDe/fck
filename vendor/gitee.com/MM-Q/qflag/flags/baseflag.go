@@ -7,15 +7,15 @@ import (
 
 // BaseFlag 泛型基础标志结构体,封装所有标志的通用字段和方法
 type BaseFlag[T any] struct {
-	longName    string     // 长标志名称
-	shortName   string     // 短标志字符
-	defValue    T          // 默认值
-	usage       string     // 帮助说明
-	value       *T         // 标志值指针
-	mu          sync.Mutex // 并发访问锁
-	validator   Validator  // 验证器接口
-	initialized bool       // 标志是否已初始化
-	isSet       bool       // 标志是否已被设置值
+	longName    string       // 长标志名称
+	shortName   string       // 短标志字符
+	defValue    T            // 默认值
+	usage       string       // 帮助说明
+	value       *T           // 标志值指针
+	baseMu      sync.RWMutex // 基类读写锁
+	validator   Validator    // 验证器接口
+	initialized bool         // 标志是否已初始化
+	isSet       bool         // 标志是否已被设置值
 }
 
 // Init 初始化标志的元数据和值指针, 无需显式调用, 仅在创建标志对象时自动调用
@@ -30,8 +30,8 @@ type BaseFlag[T any] struct {
 // 返回值:
 //   - error: 初始化错误信息
 func (f *BaseFlag[T]) Init(longName, shortName string, defValue T, usage string, value *T) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.baseMu.Lock()
+	defer f.baseMu.Unlock()
 
 	// 检查是否已初始化
 	if f.initialized {
@@ -77,8 +77,8 @@ func (f *BaseFlag[T]) GetDefaultAny() any { return f.defValue }
 //
 // 返回值: true表示已设置值, false表示未设置
 func (f *BaseFlag[T]) IsSet() bool {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.baseMu.RLock()
+	defer f.baseMu.RUnlock()
 	return f.isSet
 }
 
@@ -86,8 +86,8 @@ func (f *BaseFlag[T]) IsSet() bool {
 // 优先级：已设置的值 > 默认值
 // 线程安全：使用互斥锁保证并发访问安全
 func (f *BaseFlag[T]) Get() T {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.baseMu.RLock()
+	defer f.baseMu.RUnlock()
 
 	// 如果标志值不为空,则返回标志值
 	if f.value != nil {
@@ -104,8 +104,8 @@ func (f *BaseFlag[T]) Get() T {
 //  1. 获取指针过程受锁保护, 但直接修改指针指向的值仍会绕过验证机制
 //  2. 多线程环境下修改时需额外同步措施, 建议优先使用Set()方法
 func (f *BaseFlag[T]) GetPointer() *T {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.baseMu.RLock()
+	defer f.baseMu.RUnlock()
 	return f.value
 }
 
@@ -115,8 +115,8 @@ func (f *BaseFlag[T]) GetPointer() *T {
 //
 // 返回: 错误信息
 func (f *BaseFlag[T]) Set(value T) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.baseMu.Lock()
+	defer f.baseMu.Unlock()
 
 	// 创建一个副本
 	v := value
@@ -141,8 +141,8 @@ func (f *BaseFlag[T]) Set(value T) error {
 //
 // 参数: validator 验证器接口
 func (f *BaseFlag[T]) SetValidator(validator Validator) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.baseMu.Lock()
+	defer f.baseMu.Unlock()
 	f.validator = validator
 }
 
@@ -154,8 +154,8 @@ func (f *BaseFlag[T]) String() string {
 // Reset 将标志值重置为默认值
 // 线程安全：使用互斥锁保证并发安全
 func (f *BaseFlag[T]) Reset() {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.baseMu.Lock()
+	defer f.baseMu.Unlock()
 	f.value = nil   // 重置为未设置状态,下次Get()会返回默认值
 	f.isSet = false // 重置设置状态
 }

@@ -17,6 +17,9 @@ func (c *Cmd) Enum(longName, shortName string, defValue string, usage string, op
 //
 // 参数依次为: 枚举标志指针、长标志名、短标志、默认值、帮助说明、限制该标志取值的枚举值切片
 func (c *Cmd) EnumVar(f *flags.EnumFlag, longName, shortName string, defValue string, usage string, options []string) {
+	c.rwMu.Lock()
+	defer c.rwMu.Unlock()
+
 	// 检查指针是否为空
 	if f == nil {
 		panic("EnumFlag pointer cannot be nil")

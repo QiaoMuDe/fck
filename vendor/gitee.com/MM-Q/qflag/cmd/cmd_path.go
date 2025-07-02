@@ -6,6 +6,9 @@ import "gitee.com/MM-Q/qflag/flags"
 //
 // 参数依次为: 路径标志指针、长标志名、短标志、默认值、帮助说明
 func (c *Cmd) PathVar(f *flags.PathFlag, longName, shortName string, defValue string, usage string) {
+	c.rwMu.Lock()
+	defer c.rwMu.Unlock()
+
 	// 检查指针是否为nil
 	if f == nil {
 		panic("PathFlag pointer cannot be nil")

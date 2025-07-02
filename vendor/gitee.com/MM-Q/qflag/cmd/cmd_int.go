@@ -6,6 +6,9 @@ import "gitee.com/MM-Q/qflag/flags"
 //
 // 参数依次为: 整数标志指针、长标志名、短标志、默认值、帮助说明
 func (c *Cmd) IntVar(f *flags.IntFlag, longName, shortName string, defValue int, usage string) {
+	c.rwMu.Lock()
+	defer c.rwMu.Unlock()
+
 	// 检查指针是否为nil
 	if f == nil {
 		panic("IntFlag pointer cannot be nil")

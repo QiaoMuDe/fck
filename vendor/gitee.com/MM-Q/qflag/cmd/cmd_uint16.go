@@ -6,6 +6,9 @@ import "gitee.com/MM-Q/qflag/flags"
 //
 // 参数依次为: 16位无符号整数标志指针、长标志名、短标志、默认值、帮助说明
 func (c *Cmd) Uint16Var(f *flags.Uint16Flag, longName, shortName string, defValue uint16, usage string) {
+	c.rwMu.Lock()
+	defer c.rwMu.Unlock()
+
 	if f == nil {
 		panic("Uint16Flag pointer cannot be nil")
 	}

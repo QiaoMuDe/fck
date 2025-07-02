@@ -41,7 +41,7 @@ func (m *FlagMeta) GetFlag() Flag { return m.Flag }
 
 // FlagRegistry 集中管理所有标志元数据及索引
 type FlagRegistry struct {
-	mu       sync.RWMutex         // 并发访问锁
+	mu       sync.RWMutex         // 并发访问锁（读写锁）
 	byLong   map[string]*FlagMeta // 按长名称索引
 	byShort  map[string]*FlagMeta // 按短名称索引
 	allFlags []*FlagMeta          // 所有标志元数据列表
@@ -76,8 +76,8 @@ func NewFlagRegistry() *FlagRegistry {
 // 4. 将标志添加到所有标志列表
 // 注意: 该方法线程安全, 但发现重复标志时会panic
 func (r *FlagRegistry) RegisterFlag(meta *FlagMeta) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.mu.Lock()         // 获取写锁, 保证并发安全
+	defer r.mu.Unlock() // 函数返回时释放写锁
 
 	// 检查长短标志是否都为空
 	if meta.GetLongName() == "" && meta.GetShortName() == "" {

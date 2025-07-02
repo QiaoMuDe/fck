@@ -19,6 +19,9 @@ func (c *Cmd) String(longName, shortName, defValue, usage string) *flags.StringF
 //
 // 参数依次为: 字符串标志指针、长标志名、短标志、默认值、帮助说明
 func (c *Cmd) StringVar(f *flags.StringFlag, longName, shortName, defValue, usage string) {
+	c.rwMu.Lock()
+	defer c.rwMu.Unlock()
+
 	// 检查指针是否为nil
 	if f == nil {
 		panic("StringFlag pointer cannot be nil")

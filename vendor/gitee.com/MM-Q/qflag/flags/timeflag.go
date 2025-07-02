@@ -2,6 +2,7 @@ package flags
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -30,7 +31,8 @@ var supportedTimeFormats = []string{
 // 继承BaseFlag[time.Time]泛型结构体,实现Flag接口
 type TimeFlag struct {
 	BaseFlag[time.Time]
-	outputFormat string // 自定义输出格式
+	outputFormat string     // 自定义输出格式
+	mu           sync.Mutex // 保护outputFormat和value的并发访问
 }
 
 // Type 返回标志类型
@@ -38,6 +40,9 @@ func (f *TimeFlag) Type() FlagType { return FlagTypeTime }
 
 // Set 实现flag.Value接口, 解析并设置时间值
 func (f *TimeFlag) Set(value string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	var t time.Time
 	var err error
 
@@ -48,11 +53,11 @@ func (f *TimeFlag) Set(value string) error {
 			break
 		}
 	}
-
 	if err != nil {
 		return fmt.Errorf("invalid time format: %v (supported formats include %v)", err, supportedTimeFormats)
 	}
 
+	// 调用基类设置值
 	return f.BaseFlag.Set(t)
 }
 
@@ -61,8 +66,12 @@ func (f *TimeFlag) Set(value string) error {
 func (f *TimeFlag) String() string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	value := f.value
+
+	// 获取当前值和输出格式
+	value := f.Get()
 	format := f.outputFormat
+
+	// 如果设置了输出格式, 则使用该格式
 	if format != "" {
 		return value.Format(format)
 	}

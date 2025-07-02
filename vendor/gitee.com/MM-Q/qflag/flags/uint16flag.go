@@ -3,12 +3,14 @@ package flags
 import (
 	"fmt"
 	"strconv"
+	"sync"
 )
 
 // Uint16Flag 16位无符号整数类型标志结构体
 // 继承BaseFlag[uint16]泛型结构体,实现Flag接口
 type Uint16Flag struct {
-	BaseFlag[uint16]
+	BaseFlag[uint16]            // 基类
+	mu               sync.Mutex // 互斥锁
 }
 
 // Type 返回标志类型
@@ -30,13 +32,18 @@ func (f *Uint16Flag) String() string {
 //
 //	error: 错误信息
 func (f *Uint16Flag) Set(value string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	// 解析字符串为uint64
 	num, err := strconv.ParseUint(value, 10, 16)
 	if err != nil {
 		return fmt.Errorf("invalid uint16 value: %v", err)
 	}
+
 	// 转换为uint16
 	val := uint16(num)
+
 	// 调用基类方法设置值
 	return f.BaseFlag.Set(val)
 }

@@ -13,7 +13,7 @@ type MapFlag struct {
 	keyDelimiter   string     // 键值对之间的分隔符
 	valueDelimiter string     // 键和值之间的分隔符
 	mu             sync.Mutex // 互斥锁
-	IgnoreCase     bool       // 是否忽略键的大小写
+	ignoreCase     bool       // 是否忽略键的大小写
 }
 
 // SetIgnoreCase 设置是否忽略键的大小写
@@ -21,7 +21,7 @@ type MapFlag struct {
 func (f *MapFlag) SetIgnoreCase(enable bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.IgnoreCase = enable
+	f.ignoreCase = enable
 }
 
 // Type 返回标志类型
@@ -71,7 +71,7 @@ func (f *MapFlag) Set(value string) error {
 		val := strings.TrimSpace(kv[1])
 
 		// 如果需要忽略大小写,则将键转换为小写
-		if f.IgnoreCase {
+		if f.ignoreCase {
 			key = strings.ToLower(key)
 		}
 

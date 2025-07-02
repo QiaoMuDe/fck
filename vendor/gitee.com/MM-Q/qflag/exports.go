@@ -30,9 +30,6 @@ type ExampleInfo = cmd.ExampleInfo
 // Flag 导出flag包中的Flag结构体
 type Flag = flags.Flag
 
-// BaseFlag 导出flag包中的BaseFlag结构体
-type BaseFlag = flags.BaseFlag[any]
-
 // StringFlag 导出flag包中的StringFlag结构体
 type StringFlag = flags.StringFlag
 
