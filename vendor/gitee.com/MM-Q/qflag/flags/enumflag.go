@@ -3,6 +3,7 @@ package flags
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 // EnumFlag 枚举类型标志结构体
@@ -10,6 +11,7 @@ import (
 type EnumFlag struct {
 	BaseFlag[string]
 	optionMap map[string]bool // 枚举值映射
+	mu        sync.RWMutex    // 读写锁
 }
 
 // 实现Flag接口
@@ -18,6 +20,9 @@ func (f *EnumFlag) Type() FlagType { return FlagTypeEnum }
 // IsCheck 检查枚举值是否有效
 // 返回值: 为nil, 说明值有效,否则返回错误信息
 func (f *EnumFlag) IsCheck(value string) error {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
 	// 如果枚举map为空,则不需要检查
 	if len(f.optionMap) == 0 {
 		return nil
@@ -63,6 +68,9 @@ func (f *EnumFlag) String() string { return f.Get() }
 // 返回值:
 //   - error: 初始化错误信息
 func (f *EnumFlag) Init(longName, shortName string, defValue string, usage string, options []string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	// 初始化枚举值
 	if options == nil {
 		options = make([]string, 0)
@@ -75,7 +83,7 @@ func (f *EnumFlag) Init(longName, shortName string, defValue string, usage strin
 	*valuePtr = strings.ToLower(defValue)
 
 	// 调用基类方法初始化字段
-	if err := f.BaseFlag.Init(longName, shortName, defValue, usage, valuePtr); err != nil {
+	if err := f.BaseFlag.Init(longName, shortName, usage, valuePtr); err != nil {
 		return err
 	}
 

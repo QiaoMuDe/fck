@@ -9,34 +9,35 @@ func (c *Cmd) Uint16Var(f *flags.Uint16Flag, longName, shortName string, defValu
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
 
+	// 参数校验
 	if f == nil {
 		panic("Uint16Flag pointer cannot be nil")
 	}
 
+	// 通用校验
 	if validateErr := c.validateFlag(longName, shortName); validateErr != nil {
 		panic(validateErr)
 	}
 
+	// 显式初始化
 	currentUint16 := new(uint16)
 	*currentUint16 = defValue
 
-	if initErr := f.Init(longName, shortName, defValue, usage, currentUint16); initErr != nil {
+	// 初始化Flag对象
+	if initErr := f.Init(longName, shortName, usage, currentUint16); initErr != nil {
 		panic(initErr)
 	}
 
-	meta := &flags.FlagMeta{
-		Flag: f,
-	}
-
+	// 注册到flagSet
 	if shortName != "" {
 		c.fs.Var(f, shortName, usage)
 	}
-
 	if longName != "" {
 		c.fs.Var(f, longName, usage)
 	}
 
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
+	// 注册到flagRegistry
+	if registerErr := c.flagRegistry.RegisterFlag(&flags.FlagMeta{Flag: f}); registerErr != nil {
 		panic(registerErr)
 	}
 }

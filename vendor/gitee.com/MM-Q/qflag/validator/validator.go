@@ -399,9 +399,12 @@ func (v *EnumValidator) Validate(value any) error {
 
 // PathValidator 路径验证器
 // 实现Validator接口,用于验证路径是否存在且规范化
-type PathValidator struct{}
+type PathValidator struct {
+	MustExist   bool // 是否必须存在，默认为true
+	IsDirectory bool // 是否必须是目录，默认为false
+}
 
-// Validate 验证路径是否存在且规范化
+// Validate 验证路径是否符合指定规则
 func (v *PathValidator) Validate(value any) error {
 	path, ok := value.(string)
 	if !ok {
@@ -412,11 +415,25 @@ func (v *PathValidator) Validate(value any) error {
 		return fmt.Errorf("path cannot be empty")
 	}
 
-	// 检查路径是否存在
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return fmt.Errorf("path does not exist: %s", path)
-	} else if err != nil {
-		return fmt.Errorf("failed to check path: %v", err)
+	// 检查路径是否存在（如果需要）
+	var fi os.FileInfo
+	var err error
+	if v.MustExist || v.IsDirectory {
+		fi, err = os.Stat(path)
+		if os.IsNotExist(err) {
+			return fmt.Errorf("path does not exist: %s", path)
+		} else if err != nil {
+			return fmt.Errorf("failed to check path: %v", err)
+		}
+	}
+
+	// 检查是否为目录（独立于存在性检查）
+	if v.IsDirectory {
+		if fi == nil {
+			return fmt.Errorf("cannot verify directory type for non-existent path")
+		} else if !fi.IsDir() {
+			return fmt.Errorf("path is not a directory: %s", path)
+		}
 	}
 
 	return nil

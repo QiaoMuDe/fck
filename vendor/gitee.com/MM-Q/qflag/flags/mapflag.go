@@ -10,10 +10,10 @@ import (
 // 继承BaseFlag[map[string]string]泛型结构体,实现Flag接口
 type MapFlag struct {
 	BaseFlag[map[string]string]
-	keyDelimiter   string     // 键值对之间的分隔符
-	valueDelimiter string     // 键和值之间的分隔符
-	mu             sync.Mutex // 互斥锁
-	ignoreCase     bool       // 是否忽略键的大小写
+	keyDelimiter   string       // 键值对之间的分隔符
+	valueDelimiter string       // 键和值之间的分隔符
+	mu             sync.RWMutex // 读写锁,保护并发访问
+	ignoreCase     bool         // 是否忽略键的大小写
 }
 
 // SetIgnoreCase 设置是否忽略键的大小写
@@ -29,6 +29,8 @@ func (f *MapFlag) Type() FlagType { return FlagTypeMap }
 
 // String 实现flag.Value接口,返回当前值的字符串表示
 func (f *MapFlag) String() string {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 	m := f.Get()
 	if m == nil {
 		return ""
@@ -42,6 +44,9 @@ func (f *MapFlag) String() string {
 
 // Set 实现flag.Value接口,解析并设置键值对
 func (f *MapFlag) Set(value string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	if value == "" {
 		return fmt.Errorf("map value cannot be empty")
 	}
@@ -51,9 +56,6 @@ func (f *MapFlag) Set(value string) error {
 	if current == nil {
 		current = make(map[string]string)
 	}
-
-	f.mu.Lock()
-	defer f.mu.Unlock()
 
 	// 使用键分隔符分割多个键值对
 	pairs := strings.Split(value, f.keyDelimiter)

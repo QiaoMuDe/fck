@@ -28,27 +28,20 @@ func (c *Cmd) DurationVar(f *flags.DurationFlag, longName, shortName string, def
 	*currentDuration = defValue
 
 	// 初始化Flag对象
-	if initErr := f.Init(longName, shortName, defValue, usage, currentDuration); initErr != nil {
+	if initErr := f.Init(longName, shortName, usage, currentDuration); initErr != nil {
 		panic(initErr)
 	}
 
-	// 绑定短标志
+	// 绑定长短标志
 	if shortName != "" {
-		c.fs.DurationVar(f.GetPointer(), shortName, defValue, usage)
+		c.fs.Var(f, shortName, usage)
 	}
-
-	// 绑定长标志
 	if longName != "" {
-		c.fs.DurationVar(f.GetPointer(), longName, defValue, usage)
-	}
-
-	// 创建并注册标志元数据
-	meta := &flags.FlagMeta{
-		Flag: f, // 添加标志对象 - Flag对象
+		c.fs.Var(f, longName, usage)
 	}
 
 	// 注册标志元数据
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
+	if registerErr := c.flagRegistry.RegisterFlag(&flags.FlagMeta{Flag: f}); registerErr != nil {
 		panic(registerErr)
 	}
 }

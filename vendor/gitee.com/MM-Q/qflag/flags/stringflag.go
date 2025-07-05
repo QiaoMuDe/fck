@@ -44,3 +44,9 @@ func (f *StringFlag) ToLower() string {
 func (f *StringFlag) Contains(substr string) bool {
 	return strings.Contains(f.Get(), substr)
 }
+
+// Set 实现flag.Value接口的Set方法
+// 将字符串值解析并设置到标志中
+func (f *StringFlag) Set(value string) error {
+	return f.BaseFlag.Set(value)
+}

@@ -3,6 +3,7 @@ package flags
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -10,6 +11,7 @@ import (
 // 继承BaseFlag[time.Duration]泛型结构体,实现Flag接口
 type DurationFlag struct {
 	BaseFlag[time.Duration]
+	mu sync.Mutex // 互斥锁, 用于保护并发访问
 }
 
 // Type 返回标志类型
@@ -17,6 +19,9 @@ func (f *DurationFlag) Type() FlagType { return FlagTypeDuration }
 
 // Set 实现flag.Value接口, 解析并设置时间间隔值
 func (f *DurationFlag) Set(value string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	// 检查空值
 	if value == "" {
 		return fmt.Errorf("duration cannot be empty")

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sync"
+
 	"gitee.com/MM-Q/qflag/validator"
 )
 
@@ -11,6 +13,7 @@ import (
 // 继承BaseFlag[string]泛型结构体,实现Flag接口
 type PathFlag struct {
 	BaseFlag[string]
+	mu sync.Mutex // 保护validator并发访问
 }
 
 // Type 返回标志类型
@@ -21,6 +24,9 @@ func (f *PathFlag) String() string { return f.Get() }
 
 // Set 实现flag.Value接口,解析并验证路径
 func (f *PathFlag) Set(value string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	if value == "" {
 		return fmt.Errorf("path cannot be empty")
 	}
@@ -37,6 +43,9 @@ func (f *PathFlag) Set(value string) error {
 
 // Init 初始化路径标志
 func (f *PathFlag) Init(longName, shortName string, defValue string, usage string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	// 初始化路径标志值指针
 	valuePtr := new(string)
 
@@ -50,11 +59,39 @@ func (f *PathFlag) Init(longName, shortName string, defValue string, usage strin
 	*valuePtr = absDefValue
 
 	// 调用基类方法初始化
-	if err := f.BaseFlag.Init(longName, shortName, defValue, usage, valuePtr); err != nil {
+	if err := f.BaseFlag.Init(longName, shortName, usage, valuePtr); err != nil {
 		return err
 	}
 
 	// 设置路径验证器
-	f.SetValidator(&validator.PathValidator{})
+	f.SetValidator(&validator.PathValidator{
+		MustExist: true, // 默认必须存在
+	})
 	return nil
+}
+
+// MustExist 设置路径是否必须存在
+//
+// 示例:
+// cmd.Path("output", "o", "/tmp/output", "输出目录").MustExist(false)
+func (f *PathFlag) MustExist(mustExist bool) *PathFlag {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if v, ok := f.validator.(*validator.PathValidator); ok {
+		v.MustExist = mustExist
+	}
+	return f
+}
+
+// IsDirectory 设置路径是否必须是目录
+//
+// 示例:
+// cmd.Path("log-dir", "l", "/var/log/app", "日志目录").IsDirectory(true)
+func (f *PathFlag) IsDirectory(isDir bool) *PathFlag {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if v, ok := f.validator.(*validator.PathValidator); ok {
+		v.IsDirectory = isDir
+	}
+	return f
 }

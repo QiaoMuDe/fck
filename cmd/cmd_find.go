@@ -599,7 +599,7 @@ func checkFindCmdArgs(findPath string) error {
 	// 检查是否同时指定了-or
 	if findCmdOr.Get() {
 		// 如果使用-or, 则不能同时使用-and
-		if setErr := findCmdAnd.Set(false); setErr != nil {
+		if setErr := findCmdAnd.Set("false"); setErr != nil {
 			return fmt.Errorf("设置 -and 失败: %v", setErr)
 		}
 	}

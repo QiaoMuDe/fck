@@ -19,8 +19,8 @@ var QCommandLine = cmd.QCommandLine
 // cmd 导出cmd包中的Cmd结构体
 type Cmd = cmd.Cmd
 
-// NewCmd 导出cmd包中的NewCommand函数
-var NewCmd = cmd.NewCommand
+// NewCmd 导出cmd包中的NewCmd函数
+var NewCmd = cmd.NewCmd
 
 // ExampleInfo 导出cmd包中的ExampleInfo结构体
 type ExampleInfo = cmd.ExampleInfo
@@ -65,3 +65,18 @@ type PathFlag = flags.PathFlag
 
 // Uint16Flag 导出flag包中的UintFlag结构体
 type Uint16Flag = flags.Uint16Flag
+
+// Uint32Flag 导出flag包中的Uint32Flag结构体
+type Uint32Flag = flags.Uint32Flag
+
+// Uint64Flag 导出flag包中的Uint64Flag结构体
+type Uint64Flag = flags.Uint64Flag
+
+// IP4Flag 导出flag包中的Ip4Flag结构体
+type IP4Flag = flags.IP4Flag
+
+// IP6Flag 导出flag包中的Ip6Flag结构体
+type IP6Flag = flags.IP6Flag
+
+// URLFlag 导出flag包中的URLFlag结构体
+type URLFlag = flags.URLFlag

@@ -11,6 +11,8 @@ const (
 	FlagTypeInt      FlagType = iota + 1 // 整数类型
 	FlagTypeInt64                        // 64位整数类型
 	FlagTypeUint16                       // 16位无符号整数类型
+	FlagTypeUint32                       // 32位无符号整数类型
+	FlagTypeUint64                       // 64位无符号整数类型
 	FlagTypeString                       // 字符串类型
 	FlagTypeBool                         // 布尔类型
 	FlagTypeFloat64                      // 64位浮点数类型
@@ -20,6 +22,9 @@ const (
 	FlagTypeTime                         // 时间类型
 	FlagTypeMap                          // 映射类型
 	FlagTypePath                         // 路径类型
+	FlagTypeIP4                          // IPv4地址类型
+	FlagTypeIP6                          // IPv6地址类型
+	FlagTypeURL                          // URL类型
 )
 
 // 内置标志名称
@@ -29,6 +34,16 @@ var (
 	ShowInstallPathFlagName = "sip"     // 显示安装路径标志名称
 	VersionFlagLongName     = "version" // 版本标志名称
 	VersionFlagShortName    = "v"       // 版本标志短名称
+)
+
+// 内置标志使用说明
+var (
+	HelpFlagUsageEn            = "Show help information"                     // 帮助标志英文使用说明
+	HelpFlagUsageZh            = "显示帮助信息"                                    // 帮助标志中文使用说明
+	ShowInstallPathFlagUsageEn = "Show the installation path of the program" // 安装路径标志英文使用说明
+	ShowInstallPathFlagUsageZh = "显示程序的安装路径"                                 // 安装路径标志中文使用说明
+	VersionFlagUsageEn         = "Show the version of the program"           // 版本标志英文使用说明
+	VersionFlagUsageZh         = "显示程序的版本信息"                                 // 版本标志中文使用说明
 )
 
 // 定义标志的分隔符常量
@@ -87,6 +102,10 @@ func FlagTypeToString(flagType FlagType) string {
 		return "<int64>"
 	case FlagTypeUint16:
 		return "<uint16>"
+	case FlagTypeUint32:
+		return "<uint32>"
+	case FlagTypeUint64:
+		return "<uint64>"
 	case FlagTypeString:
 		return "<string>"
 	case FlagTypeBool:
@@ -104,6 +123,12 @@ func FlagTypeToString(flagType FlagType) string {
 		return "<map>"
 	case FlagTypePath:
 		return "<path>"
+	case FlagTypeIP4:
+		return "<ipv4>"
+	case FlagTypeIP6:
+		return "<ipv6>"
+	case FlagTypeURL:
+		return "<url>"
 	default:
 		return "<unknown>"
 	}

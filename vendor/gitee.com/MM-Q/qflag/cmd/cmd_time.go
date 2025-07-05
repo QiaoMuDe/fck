@@ -39,13 +39,8 @@ func (c *Cmd) TimeVar(f *flags.TimeFlag, longName, shortName string, defValue ti
 	*currentTime = defValue
 
 	// 初始化Flag对象
-	if initErr := f.Init(longName, shortName, defValue, usage, currentTime); initErr != nil {
+	if initErr := f.Init(longName, shortName, usage, currentTime); initErr != nil {
 		panic(initErr)
-	}
-
-	// 创建FlagMeta对象
-	meta := &flags.FlagMeta{
-		Flag: f, // 添加标志对象 - Flag对象
 	}
 
 	// 绑定短标志
@@ -59,7 +54,7 @@ func (c *Cmd) TimeVar(f *flags.TimeFlag, longName, shortName string, defValue ti
 	}
 
 	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
+	if registerErr := c.flagRegistry.RegisterFlag(&flags.FlagMeta{Flag: f}); registerErr != nil {
 		panic(registerErr)
 	}
 }

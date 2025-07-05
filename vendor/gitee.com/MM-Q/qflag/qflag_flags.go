@@ -329,3 +329,137 @@ func Path(longName, shortName string, defValue string, usage string) *flags.Path
 func PathVar(f *flags.PathFlag, longName, shortName string, defValue string, usage string) {
 	QCommandLine.PathVar(f, longName, shortName, defValue, usage)
 }
+
+// Uint32 为全局默认命令创建一个无符号32位整数类型的命令行标志。
+// 该函数会调用全局默认命令实例的 Uint32 方法，为命令行添加一个支持长短标志的无符号32位整数类型参数。
+// 参数说明：
+//   - longName: 标志的长名称，在命令行中以 --longName 的形式使用。
+//   - shortName: 标志的短名称，在命令行中以 -shortName 的形式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值。
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+//
+// 返回值：
+//   - *flags.Uint32Flag: 指向新创建的无符号32位整数标志对象的指针。
+func Uint32(longName, shortName string, defValue uint32, usage string) *flags.Uint32Flag {
+	return QCommandLine.Uint32(longName, shortName, defValue, usage)
+}
+
+// Uint32Var 创建并绑定一个无符号32位整数标志。
+//
+// 参数：
+//   - f: 指向要绑定的标志对象的指针。
+//   - longName: 标志的完整名称，在命令行中以 --longName 的形式使用。
+//   - shortName: 标志的短名称，在命令行中以 -shortName 的形式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+func Uint32Var(f *flags.Uint32Flag, longName, shortName string, defValue uint32, usage string) {
+	QCommandLine.Uint32Var(f, longName, shortName, defValue, usage)
+}
+
+// Uint64 为全局默认命令创建一个无符号64位整数类型的命令行标志。
+// 该函数会调用全局默认命令实例的 Uint64 方法，为命令行添加一个支持长短标志的无符号64位整数类型参数。
+// 参数说明：
+//   - longName: 标志的长名称，在命令行中以 --longName 的形式使用。
+//   - shortName: 标志的短名称，在命令行中以 -s 的形式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+//
+// 返回值：
+//   - *flags.Uint64Flag: 指向新创建的无符号64位整数标志对象的指针。
+func Uint64(longName, shortName string, defValue uint64, usage string) *flags.Uint64Flag {
+	return QCommandLine.Uint64(longName, shortName, defValue, usage)
+}
+
+// Uint64Var 为全局默认命令将一个无符号64位整数类型的命令行标志绑定到指定的 Uint64Flag 指针。
+// 该函数会调用全局默认命令实例的 Uint64Var 方法，为命令行添加支持长短标志的无符号64位整数类型参数，
+// 并将参数值绑定到指定的 Uint64Flag 指针变量中。
+// 参数说明：
+//   - f: 指向 Uint64Flag 的指针，用于存储和管理该无符号64位整数类型命令行标志的相关信息。
+//   - longName: 命令行标志的长名称，在命令行中需以 --longName 的格式使用。
+//   - shortName: 命令行标志的短名称，在命令行中需以 -shortName 的格式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值。
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+func Uint64Var(f *flags.Uint64Flag, longName, shortName string, defValue uint64, usage string) {
+	QCommandLine.Uint64Var(f, longName, shortName, defValue, usage)
+}
+
+// IP4 为全局默认命令创建一个 IPv4 地址类型的命令行标志。
+// 该函数会调用全局默认命令实例的 IP4 方法，为命令行添加一个支持长短标志的 IPv4 地址类型参数。
+// 参数说明：
+//   - longName: 标志的长名称，在命令行中以 --longName 的形式使用。
+//   - shortName: 标志的短名称，在命令行中以 -shortName 的形式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+//
+// 返回值：
+//   - *flags.IP4Flag: 指向新创建的 IPv4 地址标志对象的指针。
+func IP4(longName, shortName string, defValue string, usage string) *flags.IP4Flag {
+	return QCommandLine.IP4(longName, shortName, defValue, usage)
+}
+
+// IP4Var 为全局默认命令将一个 IPv4 地址类型的命令行标志绑定到指定的 IP4Flag 指针。
+// 该函数会调用全局默认命令实例的 IP4Var 方法，为命令行添加支持长短标志的 IPv4 地址类型参数，
+// 并将参数值绑定到指定的 IP4Flag 指针变量中。
+// 参数说明：
+//   - f: 指向 IP4Flag 的指针，用于存储和管理该 IPv4 地址类型命令行标志的相关信息。
+//   - longName: 命令行标志的长名称，在命令行中需以 --longName 的格式使用。
+//   - shortName: 命令行标志的短名称，在命令行中需以 -shortName 的格式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值。
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+func IP4Var(f *flags.IP4Flag, longName, shortName string, defValue string, usage string) {
+	QCommandLine.IP4Var(f, longName, shortName, defValue, usage)
+}
+
+// IP6 为全局默认命令创建一个 IPv6 地址类型的命令行标志。
+// 该函数会调用全局默认命令实例的 IP6 方法，为命令行添加一个支持长短标志的 IPv6 地址类型参数。
+// 参数说明：
+//   - longName: 标志的长名称，在命令行中以 --longName 的形式使用。
+//   - shortName: 标志的短名称，在命令行中以 -shortName 的形式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+//
+// 返回值：
+// - *flags.IP6Flag: 指向新创建的 IPv6 地址标志对象的指针。
+func IP6(longName, shortName string, defValue string, usage string) *flags.IP6Flag {
+	return QCommandLine.IP6(longName, shortName, defValue, usage)
+}
+
+// IP6Var 为全局默认命令将一个 IPv6 地址类型的命令行标志绑定到指定的 IP6Flag 指针。
+// 该函数会调用全局默认命令实例的 IP6Var 方法，为命令行添加支持长短标志的 IPv6 地址类型参数，
+// 并将参数值绑定到指定的 IP6Flag 指针变量中。
+// 参数说明：
+//   - f: 指向 IP6Flag 的指针，用于存储和管理该 IPv6 地址类型命令行标志的相关信息。
+//   - longName: 命令行标志的长名称，在命令行中需以 --longName 的格式使用。
+//   - shortName: 命令行标志的短名称，在命令行中需以 -shortName 的格式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值。
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+func IP6Var(f *flags.IP6Flag, longName, shortName string, defValue string, usage string) {
+	QCommandLine.IP6Var(f, longName, shortName, defValue, usage)
+}
+
+// URL 为全局默认命令创建一个 URL 地址类型的命令行标志。
+// 该函数会调用全局默认命令实例的 URL 方法，为命令行添加一个支持长短标志的 URL 地址类型参数。
+// 参数说明：
+//   - longName: 标志的长名称，在命令行中以 --longName 的形式使用。
+//   - shortName: 标志的短名称，在命令行中以 -shortName 的形式使用。
+//   - defValue: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
+//
+// 返回值：
+//   - *flags.URLFlag: 指向新创建的 URL 地址标志对象的指针。
+func URL(longName, shortName string, defValue string, usage string) *flags.URLFlag {
+	return QCommandLine.URL(longName, shortName, defValue, usage)
+}
+
+// URLVar 为全局默认命令将一个 URL 地址类型的命令行标志绑定到指定的 URLFlag 指针。
+// 该函数会调用全局默认命令实例的 URLVar 方法，为命令行添加支持长短标志的 URL 地址类型参数，
+// 并将参数值绑定到指定的 URLFlag 指针变量中。
+// 参数说明：
+//   - f: 指向 URLFlag 的指针，用于存储和管理该 URL 地址类型命令行标志的相关信息。
+//   - longName: 命令行标志的长名称，在命令行中需以 --longName 的格式使用
+//   - shortName: 命令行标志的短名称，在命令行中需以 -shortName 的格式使用
+//   - defValue: 命令行标志的默认值
+//   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户
+func URLVar(f *flags.URLFlag, longName, shortName string, defValue string, usage string) {
+	QCommandLine.URLVar(f, longName, shortName, defValue, usage)
+}

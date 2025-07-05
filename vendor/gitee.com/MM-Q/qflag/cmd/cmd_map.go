@@ -24,17 +24,12 @@ func (c *Cmd) MapVar(f *flags.MapFlag, longName, shortName string, defValue map[
 	*currentMap = defValue
 
 	// 初始化Flag对象
-	if initErr := f.Init(longName, shortName, defValue, usage, currentMap); initErr != nil {
+	if initErr := f.Init(longName, shortName, usage, currentMap); initErr != nil {
 		panic(initErr)
 	}
 
 	// 设置默认分隔符
 	f.SetDelimiters(flags.FlagSplitComma, flags.FlagKVEqual)
-
-	// 创建FlagMeta对象
-	meta := &flags.FlagMeta{
-		Flag: f, // 添加标志对象 - Flag对象
-	}
 
 	// 绑定短标志
 	if shortName != "" {
@@ -47,7 +42,7 @@ func (c *Cmd) MapVar(f *flags.MapFlag, longName, shortName string, defValue map[
 	}
 
 	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
+	if registerErr := c.flagRegistry.RegisterFlag(&flags.FlagMeta{Flag: f}); registerErr != nil {
 		panic(registerErr)
 	}
 }

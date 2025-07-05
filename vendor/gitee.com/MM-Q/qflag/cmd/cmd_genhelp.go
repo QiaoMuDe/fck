@@ -107,9 +107,6 @@ func generateHelpInfo(cmd *Cmd) string {
 		return ""
 	}
 
-	// 确保内置标志已初始化
-	cmd.initBuiltinFlags()
-
 	// 如果用户指定了自定义帮助信息则优先返回
 	if cmd.userInfo.help != "" {
 		return cmd.userInfo.help
@@ -207,7 +204,7 @@ func writeUsageLine(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 
 	// 优先使用用户自定义用法
 	if cmd.userInfo.usageSyntax != "" {
-		usageLine = usageLinePrefix + cmd.userInfo.usageSyntax
+		usageLine = usageLinePrefix + cmd.userInfo.usageSyntax + "\n"
 	} else {
 		// 获取命令的完整路径
 		fullCmdPath := getFullCommandPath(cmd)
@@ -262,6 +259,7 @@ func writeOptions(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 	}
 	descStartPos := maxWidth + 5 // 增加5个空格作为间距
 
+	// 遍历所有标志
 	for _, flag := range flags {
 		// 格式化选项部分
 		optPart := ""
@@ -376,10 +374,9 @@ func writeSubCmds(cmd *Cmd, tpl HelpTemplate, buf *bytes.Buffer) {
 	// 1. 按长命令名首字母排序
 	// 2. 有短命令名的优先
 	// 3. 只有长命令名的排最后
-	sortedSubCmds := make([]*Cmd, len(cmd.subCmds))
 
-	// 拷贝子命令到临时切片
-	copy(sortedSubCmds, cmd.subCmds)
+	// 获取子命令列表
+	sortedSubCmds := cmd.SubCmds()
 
 	// 排序子命令
 	sort.Slice(sortedSubCmds, func(i, j int) bool {

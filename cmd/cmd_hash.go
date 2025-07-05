@@ -45,19 +45,19 @@ func hashCmdMain(cl *colorlib.ColorLib) error {
 	// 设置并发任务数
 	if hashCmdJob.Get() == -1 {
 		// 使用CPU核数*2
-		if setErr := hashCmdJob.Set(runtime.NumCPU() * 2); setErr != nil {
+		if setErr := hashCmdJob.Set(fmt.Sprint(runtime.NumCPU() * 2)); setErr != nil {
 			return fmt.Errorf("设置并发任务数失败: %v", setErr)
 		}
 	}
 	if hashCmdJob.Get() <= 0 {
 		// 最小并发数为1
-		if setErr := hashCmdJob.Set(1); setErr != nil {
+		if setErr := hashCmdJob.Set(fmt.Sprint(1)); setErr != nil {
 			return fmt.Errorf("设置并发任务数失败: %v", setErr)
 		}
 	}
 	if hashCmdJob.Get() > 20 {
 		// 最大并发数为20
-		if setErr := hashCmdJob.Set(20); setErr != nil {
+		if setErr := hashCmdJob.Set(fmt.Sprint(20)); setErr != nil {
 			return fmt.Errorf("设置并发任务数失败: %v", setErr)
 		}
 	}

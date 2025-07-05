@@ -35,6 +35,11 @@ func (f *Uint16Flag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
+	// 检查是否为空
+	if value == "" {
+		return fmt.Errorf("empty value")
+	}
+
 	// 解析字符串为uint64
 	num, err := strconv.ParseUint(value, 10, 16)
 	if err != nil {

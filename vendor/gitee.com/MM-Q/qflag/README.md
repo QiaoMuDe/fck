@@ -21,7 +21,7 @@ go get -u gitee.com/MM-Q/qflag
 
 ## 特性
 
-- 支持多种类型的标志：字符串、整数、布尔值、64位浮点数、枚举、切片、时间间隔、64位整数、无符号16位整数、映射、路径和时间。
+- 支持多种类型的标志：字符串、整数、布尔值、64位浮点数、枚举、切片、时间间隔、64位整数、无符号16位整数、映射、路径、时间、IPv4地址、IPv6地址和URL。
 - 支持子命令。
 - 提供内置的帮助信息和安装路径显示功能。
 - 支持自定义帮助信息。
@@ -29,6 +29,7 @@ go get -u gitee.com/MM-Q/qflag
 - 循环引用检测。
 - 动态帮助信息生成。
 - 标志命名规则。
+- 内置参数验证器，支持路径存在性、数值范围等验证。
 
 ## 标志类型
 
@@ -48,6 +49,9 @@ go get -u gitee.com/MM-Q/qflag
 | Time | 时间类型标志 | `--start-time "2024-01-01T00:00:00"` |
 | Map | 映射类型标志 | `--config key=value` |
 | Path | 路径类型标志 | `--log-path "./logs"` |
+| IP4 | IPv4地址类型标志 | `--server-ip 192.168.1.1` |
+| IP6 | IPv6地址类型标志 | `--server-ipv6 ::1` |
+| URL | URL类型标志 | `--api-url https://api.example.com` |
 
 ## 使用示例
 
@@ -139,7 +143,15 @@ func main() {
 
 ## API文档
 
-详细的 API 文档请参阅 [APIDOC.md](APIDOC.md)。
+qflag提供了完善的API文档，按模块组织如下：
+
+- **全局命令处理**: [qflag包文档](./APIDOC.md) - 包含全局命令创建、参数解析和子命令管理相关API
+- **核心命令处理**: [cmd包文档](./cmd/APIDOC.md) - 包含命令创建、参数解析和子命令管理相关API
+- **标志类型定义**: [flags包文档](./flags/APIDOC.md) - 包含所有标志类型的详细定义和使用方法
+- **错误处理**: [qerr包文档](./qerr/APIDOC.md) - 包含错误类型和处理相关API
+- **参数验证**: [validator包文档](./validator/APIDOC.md) - 包含参数验证器接口和实现
+
+完整的API文档可通过访问各模块对应的APIDOC.md文件查看。
 
 ## 许可证
 

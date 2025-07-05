@@ -24,27 +24,20 @@ func (c *Cmd) IntVar(f *flags.IntFlag, longName, shortName string, defValue int,
 	*currentInt = defValue
 
 	// 初始化Flag对象
-	if initErr := f.Init(longName, shortName, defValue, usage, currentInt); initErr != nil {
+	if initErr := f.Init(longName, shortName, usage, currentInt); initErr != nil {
 		panic(initErr)
 	}
 
-	// 创建FlagMeta对象
-	meta := &flags.FlagMeta{
-		Flag: f, // 添加标志对象 - Flag对象
-	}
-
-	// 绑定短标志
+	// 绑定长短标志
 	if shortName != "" {
-		c.fs.IntVar(f.GetPointer(), shortName, defValue, usage)
+		c.fs.Var(f, shortName, usage)
 	}
-
-	// 绑定长标志
 	if longName != "" {
-		c.fs.IntVar(f.GetPointer(), longName, defValue, usage)
+		c.fs.Var(f, longName, usage)
 	}
 
 	// 注册Flag对象
-	if registerErr := c.flagRegistry.RegisterFlag(meta); registerErr != nil {
+	if registerErr := c.flagRegistry.RegisterFlag(&flags.FlagMeta{Flag: f}); registerErr != nil {
 		panic(registerErr)
 	}
 }

@@ -12,7 +12,7 @@ import (
 type SliceFlag struct {
 	BaseFlag[[]string]              // 基类
 	delimiters         []string     // 分隔符
-	rwMu               sync.RWMutex // 读写锁
+	mu                 sync.RWMutex // 读写锁
 	skipEmpty          bool         // 是否跳过空元素
 }
 
@@ -31,6 +31,10 @@ func (f *SliceFlag) String() string {
 // 注意: 如果切片中包含分隔符,则根据分隔符进行分割, 否则将整个值作为单个元素
 // 例如: "a,b,c" -> ["a", "b", "c"]
 func (f *SliceFlag) Set(value string) error {
+	// 加读锁保护分隔符切片访问
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	// 检查空值
 	if value == "" {
 		return fmt.Errorf("slice cannot be empty")
@@ -38,10 +42,6 @@ func (f *SliceFlag) Set(value string) error {
 
 	// 存储分割后的元素
 	var elements []string
-
-	// 加读锁保护分隔符切片访问
-	f.rwMu.RLock()
-	defer f.rwMu.RUnlock()
 
 	// 检查是否包含分隔符切片中的任何分隔符
 	found := false
@@ -74,18 +74,8 @@ func (f *SliceFlag) Set(value string) error {
 		elements = filtered
 	}
 
-	// 获取当前切片值
-	current := f.Get()
-
-	// 预分配切片容量以减少内存分配
-	newValues := make([]string, 0, len(current)+len(elements))
-
-	// 将当前值和新增的值添加到新的切片中
-	newValues = append(newValues, current...)
-	newValues = append(newValues, elements...)
-
 	// 调用基类方法设置值
-	return f.BaseFlag.Set(newValues)
+	return f.BaseFlag.Set(elements)
 }
 
 // SetDelimiters 设置切片解析的分隔符列表
@@ -94,8 +84,8 @@ func (f *SliceFlag) Set(value string) error {
 //
 // 线程安全的分隔符更新
 func (f *SliceFlag) SetDelimiters(delimiters []string) {
-	f.rwMu.Lock()
-	defer f.rwMu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	// 检查分隔符是否为空
 	if len(delimiters) == 0 {
@@ -109,8 +99,8 @@ func (f *SliceFlag) SetDelimiters(delimiters []string) {
 
 // GetDelimiters 获取当前分隔符列表
 func (f *SliceFlag) GetDelimiters() []string {
-	f.rwMu.RLock()
-	defer f.rwMu.RUnlock()
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 	// 返回拷贝避免外部修改内部切片
 	res := make([]string, len(f.delimiters))
 	copy(res, f.delimiters)
@@ -121,8 +111,8 @@ func (f *SliceFlag) GetDelimiters() []string {
 //
 // 参数: skip - 为true时跳过空元素, 为false时保留空元素
 func (f *SliceFlag) SetSkipEmpty(skip bool) {
-	f.rwMu.Lock()
-	defer f.rwMu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.skipEmpty = skip
 }
 
@@ -141,8 +131,8 @@ func (f *SliceFlag) Contains(element string) bool {
 	current := f.Get()
 
 	// 加读锁保护分隔符切片访问
-	f.rwMu.RLock()
-	defer f.rwMu.RUnlock()
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 
 	// 直接遍历当前值(已确保非nil)
 	for _, item := range current {
@@ -173,8 +163,8 @@ func (f *SliceFlag) Remove(element string) error {
 	current := f.Get()
 
 	// 加写锁保护切片访问
-	f.rwMu.Lock()
-	defer f.rwMu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	// 遍历当前切片，移除指定元素
 	newSlice := []string{}
@@ -227,11 +217,11 @@ func (f *SliceFlag) Init(longName, shortName string, defValue []string, usage st
 	valuePtr := &valueCopy
 
 	// 2. 调用基类初始化通用字段
-	if err := f.BaseFlag.Init(longName, shortName, defValue, usage, valuePtr); err != nil {
+	if err := f.BaseFlag.Init(longName, shortName, usage, valuePtr); err != nil {
 		return err
 	}
 
-	// 3. 初始化切片特有字段（线程安全）
+	// 3. 初始化切片特有字段(通过SetDelimiters保证线程安全)
 	f.SetDelimiters(FlagSplitSlice)
 
 	return nil
