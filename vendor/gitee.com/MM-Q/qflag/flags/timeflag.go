@@ -1,9 +1,10 @@
 package flags
 
 import (
-	"fmt"
 	"sync"
 	"time"
+
+	"gitee.com/MM-Q/qflag/qerr"
 )
 
 // 支持的时间格式列表
@@ -54,7 +55,7 @@ func (f *TimeFlag) Set(value string) error {
 		}
 	}
 	if err != nil {
-		return fmt.Errorf("invalid time format: %v (supported formats include %v)", err, supportedTimeFormats)
+		return qerr.NewValidationErrorf("invalid time format: %v (supported formats include %v)", err, supportedTimeFormats)
 	}
 
 	// 调用基类设置值

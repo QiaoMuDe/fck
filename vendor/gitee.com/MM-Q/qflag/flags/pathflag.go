@@ -1,11 +1,11 @@
 package flags
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"sync"
 
+	"gitee.com/MM-Q/qflag/qerr"
 	"gitee.com/MM-Q/qflag/validator"
 )
 
@@ -28,13 +28,13 @@ func (f *PathFlag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return fmt.Errorf("path cannot be empty")
+		return qerr.NewValidationError("path cannot be empty")
 	}
 
 	// 规范化路径为绝对路径
 	absPath, err := filepath.Abs(value)
 	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %v", err)
+		return qerr.NewValidationErrorf("failed to get absolute path: %v", err)
 	}
 
 	// 调用基类方法设置值(会触发验证器验证)
@@ -52,7 +52,7 @@ func (f *PathFlag) Init(longName, shortName string, defValue string, usage strin
 	// 规范化默认路径为绝对路径
 	absDefValue, err := filepath.Abs(defValue)
 	if err != nil {
-		return fmt.Errorf("failed to normalize default path: %v", err)
+		return qerr.NewValidationErrorf("failed to normalize default path: %v", err)
 	}
 
 	// 设置默认值

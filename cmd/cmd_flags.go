@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	"gitee.com/MM-Q/fck/globals"
 	"gitee.com/MM-Q/qflag"
@@ -89,8 +90,17 @@ var (
 func init() {
 	defer func() {
 		if err := recover(); err != nil {
-			// 打印错误信息并退出
-			fmt.Printf("err: %v\n", err)
+			// 打印错误信息和堆栈并退出
+			buf := make([]byte, 1024)
+			for {
+				n := runtime.Stack(buf, false)
+				if n < len(buf) {
+					buf = buf[:n]
+					break
+				}
+				buf = make([]byte, 2*len(buf))
+			}
+			fmt.Printf("err: %v\nstack: %s\n", err, buf)
 			os.Exit(1)
 		}
 	}()
@@ -103,6 +113,7 @@ func init() {
 	qflag.AddNote("各子命令有独立帮助文档，可通过-h参数查看, 例如 'fck <子命令> -h' 查看各子命令详细帮助")
 	qflag.AddNote("所有路径参数支持Windows和Unix风格")
 	qflag.SetLogoText(globals.FckHelpLogo) // 设置命令行logo
+	qflag.SetEnableCompletion(true)        // 启用自动补全
 
 	// fck hash 子命令
 	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError)

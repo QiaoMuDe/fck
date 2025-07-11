@@ -1,8 +1,9 @@
 package flags
 
 import (
-	"fmt"
 	"sync"
+
+	"gitee.com/MM-Q/qflag/qerr"
 )
 
 // FlagMeta 统一存储标志的完整元数据
@@ -52,17 +53,21 @@ func (m *FlagMeta) GetFlag() Flag { return m.Flag }
 
 // FlagRegistry 集中管理所有标志元数据及索引
 type FlagRegistry struct {
-	mu       sync.RWMutex         // 并发访问锁（读写锁）
-	byLong   map[string]*FlagMeta // 按长名称索引
-	byShort  map[string]*FlagMeta // 按短名称索引
-	allFlags []*FlagMeta          // 所有标志元数据列表
+	mu           sync.RWMutex         // 并发访问锁（读写锁）
+	byLong       map[string]*FlagMeta // 按长名称索引
+	byShort      map[string]*FlagMeta // 按短名称索引
+	allFlagMetas []*FlagMeta          // 所有标志元数据切片
 }
 
 // FlagRegistryInterface 标志注册表接口, 定义了标志元数据的增删改查操作
 type FlagRegistryInterface interface {
-	GetAllFlags() []*FlagMeta                      // 获取所有标志元数据列表
+	GetAllFlagMetas() []*FlagMeta                  // 获取所有标志元数据列表
 	GetLongFlags() map[string]*FlagMeta            // 获取长标志映射
 	GetShortFlags() map[string]*FlagMeta           // 获取短标志映射
+	GetAllFlags() map[string]*FlagMeta             // 获取所有标志映射(长+短)
+	GetLongFlagsCount() int                        // 获取长标志数量
+	GetShortFlagsCount() int                       // 获取短标志数量
+	GetALLFlagsCount() int                         // 获取所有标志数量(长+短)
 	RegisterFlag(meta *FlagMeta) error             // 注册一个新的标志元数据到注册表中
 	GetByLong(longName string) (*FlagMeta, bool)   // 通过长标志名称查找对应的标志元数据
 	GetByShort(shortName string) (*FlagMeta, bool) // 通过短标志名称查找对应的标志元数据
@@ -72,10 +77,10 @@ type FlagRegistryInterface interface {
 // 创建一个空的标志注册表
 func NewFlagRegistry() *FlagRegistry {
 	return &FlagRegistry{
-		mu:       sync.RWMutex{},
-		byLong:   make(map[string]*FlagMeta),
-		byShort:  make(map[string]*FlagMeta),
-		allFlags: make([]*FlagMeta, 0),
+		mu:           sync.RWMutex{},
+		byLong:       map[string]*FlagMeta{},
+		byShort:      map[string]*FlagMeta{},
+		allFlagMetas: []*FlagMeta{},
 	}
 }
 
@@ -98,13 +103,13 @@ func (r *FlagRegistry) RegisterFlag(meta *FlagMeta) error {
 
 	// 检查长短标志是否都为空
 	if meta.GetLongName() == "" && meta.GetShortName() == "" {
-		return fmt.Errorf("flag must have at least one name")
+		return qerr.NewValidationError("flag must have at least one name")
 	}
 
 	// 检查长标志是否已存在
 	if meta.GetLongName() != "" {
 		if _, exists := r.byLong[meta.GetLongName()]; exists {
-			return fmt.Errorf("long flag %s already exists", meta.GetLongName())
+			return qerr.NewValidationErrorf("long flag %s already exists", meta.GetLongName())
 		}
 	}
 
@@ -112,7 +117,7 @@ func (r *FlagRegistry) RegisterFlag(meta *FlagMeta) error {
 	// 只在短标志不为空时检查重复
 	if meta.GetShortName() != "" {
 		if _, exists := r.byShort[meta.GetShortName()]; exists {
-			return fmt.Errorf("short flag %s already exists", meta.GetShortName())
+			return qerr.NewValidationErrorf("short flag %s already exists", meta.GetShortName())
 		}
 	}
 
@@ -126,8 +131,8 @@ func (r *FlagRegistry) RegisterFlag(meta *FlagMeta) error {
 		r.byShort[meta.GetShortName()] = meta
 	}
 
-	// 添加到所有标志列表
-	r.allFlags = append(r.allFlags, meta)
+	// 添加到所有标志元数据切片
+	r.allFlagMetas = append(r.allFlagMetas, meta)
 
 	return nil
 }
@@ -185,14 +190,14 @@ func (r *FlagRegistry) GetByName(name string) (*FlagMeta, bool) {
 	return nil, false
 }
 
-// GetAllFlags 获取所有标志元数据列表
+// GetAllFlagMetas 获取所有标志元数据列表
 //
 // 返回值:
 //   - []*FlagMeta: 所有标志元数据的切片
-func (r *FlagRegistry) GetAllFlags() []*FlagMeta {
+func (r *FlagRegistry) GetAllFlagMetas() []*FlagMeta {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.allFlags
+	return r.allFlagMetas
 }
 
 // GetLongFlags 获取长标志映射
@@ -202,7 +207,15 @@ func (r *FlagRegistry) GetAllFlags() []*FlagMeta {
 func (r *FlagRegistry) GetLongFlags() map[string]*FlagMeta {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.byLong
+
+	// 拷贝一份长标志映射
+	byLong := make(map[string]*FlagMeta, len(r.byLong))
+	for k, v := range r.byLong {
+		byLong[k] = v
+	}
+
+	// 返回拷贝后的长标志映射
+	return byLong
 }
 
 // GetShortFlags 获取短标志映射
@@ -212,5 +225,68 @@ func (r *FlagRegistry) GetLongFlags() map[string]*FlagMeta {
 func (r *FlagRegistry) GetShortFlags() map[string]*FlagMeta {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.byShort
+
+	// 拷贝一份短标志映射
+	byShort := make(map[string]*FlagMeta, len(r.byShort))
+	for k, v := range r.byShort {
+		byShort[k] = v
+	}
+
+	// 返回拷贝后的短标志映射
+	return byShort
+}
+
+// GetALLFlags 获取所有标志映射(长标志+短标志)
+//
+// 返回值:
+//   - map[string]*FlagMeta: 长短标志名称到标志元数据的映射
+func (r *FlagRegistry) GetAllFlags() map[string]*FlagMeta {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	// 创建一个空的标志映射
+	allFlags := make(map[string]*FlagMeta, len(r.byLong)+len(r.byShort))
+
+	// 拷贝一份长标志映射
+	for k, v := range r.byLong {
+		allFlags[k] = v
+	}
+
+	// 拷贝一份短标志映射
+	for k, v := range r.byShort {
+		allFlags[k] = v
+	}
+
+	// 返回拷贝后的所有标志映射
+	return allFlags
+}
+
+// GetLongFlagsCount 获取长标志数量
+//
+// 返回值:
+//   - int: 长标志的数量
+func (r *FlagRegistry) GetLongFlagsCount() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.byLong)
+}
+
+// GetShortFlagsCount 获取短标志数量
+//
+// 返回值:
+//   - int: 短标志的数量
+func (r *FlagRegistry) GetShortFlagsCount() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.byShort)
+}
+
+// GetALLFlagsCount 获取所有标志数量(长标志+短标志)
+//
+// 返回值:
+//   - int: 所有标志的数量
+func (r *FlagRegistry) GetALLFlagsCount() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.byLong) + len(r.byShort)
 }

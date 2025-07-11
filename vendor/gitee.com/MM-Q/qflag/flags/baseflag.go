@@ -3,6 +3,8 @@ package flags
 import (
 	"fmt"
 	"sync"
+
+	"gitee.com/MM-Q/qflag/qerr"
 )
 
 // BaseFlag 泛型基础标志结构体,封装所有标志的通用字段和方法
@@ -16,6 +18,28 @@ type BaseFlag[T any] struct {
 	validator    Validator    // 验证器接口
 	initialized  bool         // 标志是否已初始化
 	isSet        bool         // 标志是否已被设置值
+	envVar       string       // 存储标志关联的环境变量名称
+}
+
+// BindEnv 绑定环境变量到标志
+//
+// 参数:
+//   - envName 环境变量名
+//
+// 返回:
+//   - 标志对象本身,支持链式调用
+func (f *BaseFlag[T]) BindEnv(envName string) *BaseFlag[T] {
+	f.baseMu.Lock()
+	defer f.baseMu.Unlock()
+	f.envVar = envName
+	return f
+}
+
+// GetEnvVar 获取绑定的环境变量名
+func (f *BaseFlag[T]) GetEnvVar() string {
+	f.baseMu.RLock()
+	defer f.baseMu.RUnlock()
+	return f.envVar
 }
 
 // Init 初始化标志的元数据和值指针, 无需显式调用, 仅在创建标志对象时自动调用
@@ -34,17 +58,17 @@ func (f *BaseFlag[T]) Init(longName, shortName string, usage string, value *T) e
 
 	// 检查是否已初始化
 	if f.initialized {
-		return fmt.Errorf("flag %s/%s already initialized", f.shortName, f.longName)
+		return qerr.NewValidationErrorf("flag %s/%s already initialized", f.shortName, f.longName)
 	}
 
 	// 检查长短标志是否同时为空
 	if longName == "" && shortName == "" {
-		return fmt.Errorf("longName and shortName cannot both be empty")
+		return qerr.NewValidationError("longName and shortName cannot both be empty")
 	}
 
 	// 验证值指针（避免后续空指针异常）
 	if value == nil {
-		return fmt.Errorf("value pointer cannot be nil")
+		return qerr.NewValidationError("value pointer cannot be nil")
 	}
 
 	f.longName = longName   // 初始化长标志名
@@ -121,7 +145,7 @@ func (f *BaseFlag[T]) Set(value T) error {
 	// 设置标志值前先进行验证
 	if f.validator != nil {
 		if err := f.validator.Validate(v); err != nil {
-			return fmt.Errorf("invalid value for %s: %w", f.longName, err)
+			return qerr.NewValidationErrorf("invalid value for %s: %v", f.longName, err)
 		}
 	}
 

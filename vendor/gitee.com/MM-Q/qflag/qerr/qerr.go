@@ -8,10 +8,12 @@ import (
 
 // 命令行解析相关错误变量
 var (
-	ErrFlagParseFailed       = errors.New("Parameter parsing error")  // 全局实例标志解析错误
-	ErrSubCommandParseFailed = errors.New("Subcommand parsing error") // 子命令标志解析错误
-	ErrPanicRecovered        = errors.New("panic recovered")          // 恐慌捕获错误
-	ErrValidationFailed      = errors.New("Validation failed")        // 参数验证失败错误
+	ErrFlagParseFailed       = errors.New("Parameter parsing error")             // 全局实例标志解析错误
+	ErrSubCommandParseFailed = errors.New("Subcommand parsing error")            // 子命令标志解析错误
+	ErrPanicRecovered        = errors.New("panic recovered")                     // 恐慌捕获错误
+	ErrValidationFailed      = errors.New("Validation failed")                   // 参数验证失败错误
+	ErrEnvLoadFailed         = errors.New("Environment variable loading failed") // 环境变量加载失败错误
+	ErrAddSubCommandFailed   = errors.New("Add subcommand failed")               // 添加子命令失败错误
 )
 
 // NewValidationError 创建一个新的验证错误
@@ -29,14 +31,24 @@ func JoinErrors(errors []error) error {
 	if len(errors) == 0 {
 		return nil
 	}
-	if len(errors) == 1 {
-		return errors[0]
+	// 过滤nil错误
+	nonNilErrors := make([]error, 0, len(errors))
+	for _, err := range errors {
+		if err != nil {
+			nonNilErrors = append(nonNilErrors, err)
+		}
+	}
+	if len(nonNilErrors) == 0 {
+		return nil
+	}
+	if len(nonNilErrors) == 1 {
+		return nonNilErrors[0]
 	}
 
 	// 使用切片和map保持插入顺序并去重
 	seen := make(map[string]bool)
-	uniqueErrors := make([]error, 0, len(errors))
-	for _, err := range errors {
+	uniqueErrors := make([]error, 0, len(nonNilErrors))
+	for _, err := range nonNilErrors {
 		errStr := err.Error()
 		if !seen[errStr] {
 			seen[errStr] = true

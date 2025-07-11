@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"gitee.com/MM-Q/qflag/qerr"
 )
 
 // MapFlag 键值对类型标志结构体
@@ -48,7 +50,7 @@ func (f *MapFlag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return fmt.Errorf("map value cannot be empty")
+		return qerr.NewValidationError("map value cannot be empty")
 	}
 
 	// 获取当前值
@@ -65,7 +67,7 @@ func (f *MapFlag) Set(value string) error {
 
 		// 检查键值对是否包含两个部分
 		if len(kv) != 2 {
-			return fmt.Errorf("invalid key-value pair format: %s", pair)
+			return qerr.NewValidationErrorf("invalid key-value pair format: %s", pair)
 		}
 
 		// 去除键和值的前后空格
@@ -79,10 +81,10 @@ func (f *MapFlag) Set(value string) error {
 
 		// 检查键和值是否为空
 		if key == "" {
-			return fmt.Errorf("empty key in key-value pair: %s", pair)
+			return qerr.NewValidationErrorf("empty key in key-value pair: %s", pair)
 		}
 		if val == "" {
-			return fmt.Errorf("empty value in key-value pair: %s", pair)
+			return qerr.NewValidationErrorf("empty value in key-value pair: %s", pair)
 		}
 
 		// 更新当前值

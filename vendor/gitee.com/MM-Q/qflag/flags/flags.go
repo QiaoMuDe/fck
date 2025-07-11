@@ -29,21 +29,36 @@ const (
 
 // 内置标志名称
 var (
-	HelpFlagName            = "help"    // 帮助标志名称
-	HelpFlagShortName       = "h"       // 帮助标志短名称
-	ShowInstallPathFlagName = "sip"     // 显示安装路径标志名称
-	VersionFlagLongName     = "version" // 版本标志名称
-	VersionFlagShortName    = "v"       // 版本标志短名称
+	HelpFlagName                 = "help"                      // 帮助标志名称
+	HelpFlagShortName            = "h"                         // 帮助标志短名称
+	VersionFlagLongName          = "version"                   // 版本标志名称
+	VersionFlagShortName         = "v"                         // 版本标志短名称
+	CompletionShellFlagLongName  = "generate-shell-completion" // 生成shell补全标志长名称
+	CompletionShellFlagShortName = "gsc"                       // 生成shell补全标志短名称
+)
+
+// 定义中英文的补全标志的使用说明
+const (
+	CompletionShellDescCN = "生成指定的 Shell 补全脚本, 可选类型: %v"
+	CompletionShellDescEN = "Generate the specified Shell completion script, optional types: %v"
+)
+
+// 支持的Shell类型切片
+var ShellSlice = []string{ShellNone, ShellBash, ShellPowershell, ShellPwsh}
+
+// 支持的Shell类型
+const (
+	ShellBash       = "bash"       // bash shell
+	ShellPowershell = "powershell" // powershell shell
+	ShellPwsh       = "pwsh"       // pwsh shell
+	ShellNone       = "none"       // 无shell
 )
 
 // 内置标志使用说明
 var (
-	HelpFlagUsageEn            = "Show help information"                     // 帮助标志英文使用说明
-	HelpFlagUsageZh            = "显示帮助信息"                                    // 帮助标志中文使用说明
-	ShowInstallPathFlagUsageEn = "Show the installation path of the program" // 安装路径标志英文使用说明
-	ShowInstallPathFlagUsageZh = "显示程序的安装路径"                                 // 安装路径标志中文使用说明
-	VersionFlagUsageEn         = "Show the version of the program"           // 版本标志英文使用说明
-	VersionFlagUsageZh         = "显示程序的版本信息"                                 // 版本标志中文使用说明
+	HelpFlagUsageEn    = "Show help"                       // 帮助标志英文使用说明
+	VersionFlagUsageEn = "Show the version of the program" // 版本标志英文使用说明
+	VersionFlagUsageZh = "显示程序的版本信息"                       // 版本标志中文使用说明
 )
 
 // 定义标志的分隔符常量
@@ -81,16 +96,18 @@ type Flag interface {
 	String() string     // 获取标志的字符串表示
 	IsSet() bool        // 判断标志是否已设置值
 	Reset()             // 重置标志值为默认值
+	GetEnvVar() string  // 获取标志绑定的环境变量名称
 }
 
 // TypedFlag 所有标志类型的通用接口,定义了标志的元数据访问方法和默认值访问方法
 type TypedFlag[T any] interface {
-	Flag                    // 继承标志接口
-	GetDefault() T          // 获取标志的具体类型默认值
-	Get() T                 // 获取标志的具体类型值
-	GetPointer() *T         // 获取标志值的指针
-	Set(T) error            // 设置标志的具体类型值
-	SetValidator(Validator) // 设置标志的验证器
+	Flag                                 // 继承标志接口
+	GetDefault() T                       // 获取标志的具体类型默认值
+	Get() T                              // 获取标志的具体类型值
+	GetPointer() *T                      // 获取标志值的指针
+	Set(T) error                         // 设置标志的具体类型值
+	SetValidator(Validator)              // 设置标志的验证器
+	BindEnv(envName string) *BaseFlag[T] // 绑定环境变量
 }
 
 // FlagTypeToString 将FlagType转换为字符串

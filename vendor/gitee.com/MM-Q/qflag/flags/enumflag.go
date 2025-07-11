@@ -1,21 +1,63 @@
 package flags
 
 import (
-	"fmt"
 	"strings"
 	"sync"
+
+	"gitee.com/MM-Q/qflag/qerr"
 )
 
 // EnumFlag 枚举类型标志结构体
 // 继承BaseFlag[string]泛型结构体,增加枚举特有的选项验证
 type EnumFlag struct {
 	BaseFlag[string]
-	optionMap map[string]bool // 枚举值映射
-	mu        sync.RWMutex    // 读写锁
+	optionMap       map[string]bool // 枚举值映射
+	originalOptions []string        // 原始选项(未处理)
+	caseSensitive   bool            // 是否区分大小写
+	mu              sync.RWMutex    // 读写锁
 }
 
 // 实现Flag接口
 func (f *EnumFlag) Type() FlagType { return FlagTypeEnum }
+
+// SetCaseSensitive 设置枚举值是否区分大小写
+//
+// 参数:
+//   - sensitive - true表示区分大小写，false表示不区分（默认）
+//
+// 返回值:
+//   - *EnumFlag - 返回自身以支持链式调用
+func (f *EnumFlag) SetCaseSensitive(sensitive bool) *EnumFlag {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// 仅当设置值改变时才重建映射
+	if f.caseSensitive == sensitive {
+		return f
+	}
+
+	// 更新大小写敏感设置
+	f.caseSensitive = sensitive
+
+	// 根据新的大小写设置重建选项映射
+	f.optionMap = make(map[string]bool, len(f.originalOptions))
+
+	// 添加枚举值到选项映射
+	for _, opt := range f.originalOptions {
+		if opt == "" {
+			continue
+		}
+
+		key := opt
+		// 如果不区分大小写，则将枚举值转换为小写
+		if !f.caseSensitive {
+			key = strings.ToLower(opt)
+		}
+		f.optionMap[key] = true
+	}
+
+	return f
+}
 
 // IsCheck 检查枚举值是否有效
 // 返回值: 为nil, 说明值有效,否则返回错误信息
@@ -28,17 +70,15 @@ func (f *EnumFlag) IsCheck(value string) error {
 		return nil
 	}
 
-	// 转换为小写
-	value = strings.ToLower(value)
+	// 根据大小写敏感设置处理值
+	checkValue := value
+	if !f.caseSensitive {
+		checkValue = strings.ToLower(checkValue)
+	}
 
 	// 检查值是否在枚举map中
-	if _, valid := f.optionMap[value]; !valid {
-		var options []string
-		for k := range f.optionMap {
-			// 添加枚举值
-			options = append(options, k)
-		}
-		return fmt.Errorf("invalid enum value '%s', options are %v", value, options)
+	if _, valid := f.optionMap[checkValue]; !valid {
+		return qerr.NewValidationErrorf("invalid enum value '%s', options are %v", value, f.originalOptions)
 	}
 	return nil
 }
@@ -47,7 +87,7 @@ func (f *EnumFlag) IsCheck(value string) error {
 func (f *EnumFlag) Set(value string) error {
 	// 先验证值是否有效
 	if err := f.IsCheck(value); err != nil {
-		return err
+		return qerr.NewValidationErrorf("failed to set enum value: %v", err)
 	}
 	// 调用基类方法设置值
 	return f.BaseFlag.Set(value)
@@ -79,8 +119,12 @@ func (f *EnumFlag) Init(longName, shortName string, defValue string, usage strin
 	// 1. 初始化基类字段
 	valuePtr := new(string)
 
-	// 默认值小写处理
-	*valuePtr = strings.ToLower(defValue)
+	// 根据大小写敏感设置处理默认值
+	if !f.caseSensitive {
+		*valuePtr = strings.ToLower(defValue)
+	} else {
+		*valuePtr = defValue
+	}
 
 	// 调用基类方法初始化字段
 	if err := f.BaseFlag.Init(longName, shortName, usage, valuePtr); err != nil {
@@ -89,17 +133,29 @@ func (f *EnumFlag) Init(longName, shortName string, defValue string, usage strin
 
 	// 2. 初始化枚举optionMap（仅在Init阶段修改，无需额外锁）
 	// 注意：无需额外锁，因BaseFlag.Init已保证单例初始化
-	f.optionMap = make(map[string]bool)
+	f.optionMap = make(map[string]bool)                 // 枚举值映射
+	f.originalOptions = make([]string, 0, len(options)) // 原始选项切片
 	for _, opt := range options {
 		if opt == "" {
-			return fmt.Errorf("enum option cannot be empty")
+			return qerr.NewValidationError("enum option cannot be empty")
 		}
-		f.optionMap[strings.ToLower(opt)] = true
+		f.originalOptions = append(f.originalOptions, opt) // 保存原始选项
+
+		// 如果不区分大小写，则将枚举值转换为小写
+		key := opt
+		if !f.caseSensitive {
+			key = strings.ToLower(opt)
+		}
+		f.optionMap[key] = true
 	}
 
 	// 3. 验证默认值有效性
-	if len(options) > 0 && !f.optionMap[strings.ToLower(defValue)] {
-		return fmt.Errorf("default value '%s' not in enum options %v", defValue, options)
+	checkValue := defValue // 根据大小写敏感设置处理默认值
+	if !f.caseSensitive {
+		checkValue = strings.ToLower(checkValue)
+	}
+	if len(options) > 0 && !f.optionMap[checkValue] {
+		return qerr.NewValidationErrorf("default value '%s' not in enum options %v", defValue, options)
 	}
 
 	return nil

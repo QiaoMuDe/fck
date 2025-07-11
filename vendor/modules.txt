@@ -1,7 +1,7 @@
 # gitee.com/MM-Q/colorlib v1.2.4
 ## explicit; go 1.23.4
 gitee.com/MM-Q/colorlib
-# gitee.com/MM-Q/qflag v0.1.6
+# gitee.com/MM-Q/qflag v0.1.26
 ## explicit; go 1.24.4
 gitee.com/MM-Q/qflag
 gitee.com/MM-Q/qflag/cmd

@@ -1,3 +1,4 @@
+// cmd_genhelp 命令行帮助信息生成器
 package cmd
 
 import (
@@ -98,9 +99,13 @@ var ChineseTemplate = HelpTemplate{
 	ExampleItem:          "  %d、%s\n     %s\n",          // 序号、描述、用法
 }
 
-// generateHelpInfo 生成命令帮助信息
-// cmd: 当前命令
-// 返回值: 命令帮助信息
+// generateHelpInfo 生成帮助信息
+//
+// 参数:
+//   - cmd: 当前命令
+//
+// 返回值:
+//   - string: 帮助信息
 func generateHelpInfo(cmd *Cmd) string {
 	// 处理根命令
 	if cmd == nil {
@@ -293,7 +298,7 @@ func collectFlags(cmd *Cmd) []flagInfo {
 	var flagInfos []flagInfo
 
 	// 遍历所有标志, 收集标志信息
-	for _, f := range cmd.flagRegistry.GetAllFlags() {
+	for _, f := range cmd.flagRegistry.GetAllFlagMetas() {
 		flag := f // 获取标志类型
 
 		// 收集默认值

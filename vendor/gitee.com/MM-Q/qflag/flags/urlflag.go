@@ -1,9 +1,10 @@
 package flags
 
 import (
-	"fmt"
 	"net/url"
 	"sync"
+
+	"gitee.com/MM-Q/qflag/qerr"
 )
 
 // URLFlag URL类型标志结构体
@@ -25,18 +26,18 @@ func (f *URLFlag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return fmt.Errorf("url cannot be empty")
+		return qerr.NewValidationError("url cannot be empty")
 	}
 
 	// 解析URL
 	parsedURL, err := url.ParseRequestURI(value)
 	if err != nil {
-		return fmt.Errorf("invalid url format: %v", err)
+		return qerr.NewValidationErrorf("invalid url format: %v", err)
 	}
 
 	// 检查URL是否包含有效的方案
 	if parsedURL.Scheme == "" {
-		return fmt.Errorf("url must include scheme (http/https)")
+		return qerr.NewValidationError("url must include scheme (http/https)")
 	}
 
 	return f.BaseFlag.Set(parsedURL.String())

@@ -4,7 +4,6 @@ package qflag
 
 import (
 	"os"
-	"time"
 
 	"gitee.com/MM-Q/qflag/cmd"
 	"gitee.com/MM-Q/qflag/flags"
@@ -13,88 +12,6 @@ import (
 /*
 项目地址: https://gitee.com/MM-Q/qflag
 */
-
-// QCommandLineInterface 定义了全局默认命令行接口，提供统一的命令行参数管理功能
-// 该接口封装了命令行程序的常用操作，包括标志添加、参数解析和帮助信息展示
-type QCommandLineInterface interface {
-	// 元数据操作方法
-	Name() string                             // 获取命令名称
-	LongName() string                         // 获取命令长名称
-	ShortName() string                        // 获取命令短名称
-	GetDescription() string                   // 获取命令描述信息
-	SetDescription(desc string)               // 设置命令描述信息
-	GetHelp() string                          // 获取命令帮助信息
-	SetHelp(help string)                      // 设置命令帮助信息
-	LoadHelp(filepath string) error           // 从指定文件加载帮助信息
-	SetUsageSyntax(usageSyntax string)        // 设置命令用法格式
-	GetUsageSyntax() string                   // 获取命令用法格式
-	GetUseChinese() bool                      // 获取是否使用中文帮助信息
-	SetUseChinese(useChinese bool)            // 设置是否使用中文帮助信息
-	AddSubCmd(subCmd *cmd.Cmd)                // 添加子命令，子命令会继承父命令的上下文
-	SubCmds() []*cmd.Cmd                      // 获取所有已注册的子命令列表
-	Args() []string                           // 获取所有非标志参数(未绑定到任何标志的参数)
-	Arg(i int) string                         // 获取指定索引的非标志参数，索引越界返回空字符串
-	NArg() int                                // 获取非标志参数的数量
-	NFlag() int                               // 获取已解析的标志数量
-	PrintHelp()                               // 打印命令帮助信息
-	FlagExists(name string) bool              // 检查指定名称的标志是否存在(支持长/短名称)
-	AddNote(note string)                      // 添加一个注意事项
-	GetNotes() []string                       // 获取所有备注信息
-	AddExample(e cmd.ExampleInfo)             // 添加一个示例信息
-	GetExamples() []cmd.ExampleInfo           // 获取示例信息列表
-	SetVersion(version string)                // 设置版本信息
-	GetVersion() string                       // 获取版本信息
-	SetLogoText(logoText string)              // 设置logo文本
-	GetLogoText() string                      // 获取logo文本
-	SetModuleHelps(moduleHelps string)        // 设置自定义模块帮助信息
-	GetModuleHelps() string                   // 获取自定义模块帮助信息
-	SetExitOnBuiltinFlags(exit bool) *cmd.Cmd // 设置是否在处理内置标志时退出
-	SetDisableBuiltinFlags(disable bool) *Cmd // 设置是否禁用内置标志注册
-	CmdExists(cmdName string) bool            // 检查指定名称的命令是否存在
-
-	// 标志解析方法
-	Parse() error          // 解析命令行参数，自动处理标志和子命令
-	ParseFlagsOnly() error // 解析命令行参数，仅处理标志，不处理子命令
-	IsParsed() bool        // 检查是否已解析命令行参数
-
-	// 添加标志方法
-	String(longName, shortName, defValue, usage string) *flags.StringFlag                                // 添加字符串类型标志
-	Int(longName, shortName string, defValue int, usage string) *flags.IntFlag                           // 添加整数类型标志
-	Bool(longName, shortName string, defValue bool, usage string) *flags.BoolFlag                        // 添加布尔类型标志
-	Float64(longName, shortName string, defValue float64, usage string) *flags.Float64Flag               // 添加浮点数类型标志
-	Duration(longName, shortName string, defValue time.Duration, usage string) *flags.DurationFlag       // 添加时间间隔类型标志
-	Enum(longName, shortName string, defValue string, usage string, enumValues []string) *flags.EnumFlag // 添加枚举类型标志
-	Slice(longName, shortName string, defValue []string, usage string) *flags.SliceFlag                  // 添加字符串切片类型标志
-	Int64(longName, shortName string, defValue int64, usage string) *flags.Int64Flag                     // 添加64位整型类型标志
-	Uint16(longName, shortName string, defValue uint16, usage string) *flags.Uint16Flag                  // 添加无符号16位整型类型标志
-	Time(longName, shortName string, defValue time.Time, usage string) *flags.TimeFlag                   // 添加时间类型标志
-	Map(longName, shortName string, defValue map[string]string, usage string) *flags.MapFlag             // 添加Map标志
-	Path(longName, shortName string, defValue string, usage string) *flags.PathFlag                      // 添加路径标志
-	Uint32(longName, shortName string, defValue uint32, usage string) *flags.Uint32Flag                  // 添加无符号32位整型类型标志
-	Uint64(longName, shortName string, defValue uint64, usage string) *flags.Uint64Flag                  // 添加无符号64位整型类型标志
-	IP4(longName, shortName string, defValue string, usage string) *flags.IP4Flag                        // 添加IPv4地址标志
-	IP6(longName, shortName string, defValue string, usage string) *flags.IP6Flag                        // 添加IPv6地址标志
-	URL(longName, shortName string, defValue string, usage string) *flags.URLFlag                        // 添加URL标志
-
-	// 绑定变量方法
-	StringVar(f *flags.StringFlag, longName, shortName, defValue, usage string)                                // 绑定字符串标志到指定变量
-	IntVar(f *flags.IntFlag, longName, shortName string, defValue int, usage string)                           // 绑定整数标志到指定变量
-	BoolVar(f *flags.BoolFlag, longName, shortName string, defValue bool, usage string)                        // 绑定布尔标志到指定变量
-	Float64Var(f *flags.Float64Flag, longName, shortName string, defValue float64, usage string)               // 绑定浮点数标志到指定变量
-	DurationVar(f *flags.DurationFlag, longName, shortName string, defValue time.Duration, usage string)       // 绑定时间间隔类型标志到指定变量
-	EnumVar(f *flags.EnumFlag, longName, shortName string, defValue string, usage string, enumValues []string) // 绑定枚举标志到指定变量
-	SliceVar(f *flags.SliceFlag, longName, shortName string, defValue []string, usage string)                  // 绑定字符串切片标志到指定变量
-	Int64Var(f *flags.Int64Flag, longName, shortName string, defValue int64, usage string)                     // 绑定64位整型标志到指定变量
-	Uint16Var(f *flags.Uint16Flag, longName, shortName string, defValue uint16, usage string)                  // 绑定16位无符号整型标志到指定变量
-	TimeVar(f *flags.TimeFlag, longName, shortName string, defValue time.Time, usage string)                   // 绑定时间类型标志到指定变量
-	MapVar(f *flags.MapFlag, longName, shortName string, defValue map[string]string, usage string)             // 绑定字符串映射标志到指定变量
-	PathVar(f *flags.PathFlag, longName, shortName string, defValue string, usage string)                      // 绑定路径标志到指定变量
-	Uint32Var(f *flags.Uint32Flag, longName, shortName string, defValue uint32, usage string)                  // 绑定无符号32位整型标志到指定变量
-	Uint64Var(f *flags.Uint64Flag, longName, shortName string, defValue uint64, usage string)                  // 绑定无符号64位整型标志到指定变量
-	IP4Var(f *flags.IP4Flag, longName, shortName string, defValue string, usage string)                        // 绑定IPv4地址标志到指定变量
-	IP6Var(f *flags.IP6Flag, longName, shortName string, defValue string, usage string)                        // 绑定IPv6地址标志到指定变量
-	URLVar(f *flags.URLFlag, longName, shortName string, defValue string, usage string)                        // 绑定URL标志到指定变量
-}
 
 // SetVersion 为全局默认命令设置版本信息
 //
@@ -400,25 +317,8 @@ func GetModuleHelps() string {
 //
 // 参数:
 //   - exit: 是否退出
-//
-// 返回值:
-//   - *cmd.Cmd: 当前命令对象
-func SetExitOnBuiltinFlags(exit bool) *cmd.Cmd {
+func SetExitOnBuiltinFlags(exit bool) {
 	QCommandLine.SetExitOnBuiltinFlags(exit)
-	return QCommandLine
-}
-
-// SetDisableBuiltinFlags 设置是否禁用内置参数
-// 默认情况下为false，当设置为true时，QFlag将忽略内置参数
-//
-// 参数:
-//   - disable: 是否禁用
-//
-// 返回值:
-//   - *cmd.Cmd: 当前命令对象
-func SetDisableBuiltinFlags(disable bool) *cmd.Cmd {
-	QCommandLine.SetDisableBuiltinFlags(disable)
-	return QCommandLine
 }
 
 // CmdExists 检查子命令是否存在
@@ -438,4 +338,20 @@ func CmdExists(cmdName string) bool {
 //   - bool: 是否已解析
 func IsParsed() bool {
 	return QCommandLine.IsParsed()
+}
+
+// FlagRegistry 获取标志注册表
+//
+// 返回值:
+//   - *flags.FlagRegistry: 标志注册表
+func FlagRegistry() *flags.FlagRegistry {
+	return QCommandLine.FlagRegistry()
+}
+
+// SetEnableCompletion 设置是否启用自动完成功能
+//
+// 参数:
+//   - enable: 是否启用自动完成功能
+func SetEnableCompletion(enable bool) {
+	QCommandLine.SetEnableCompletion(enable)
 }

@@ -1,10 +1,11 @@
 package flags
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	"gitee.com/MM-Q/qflag/qerr"
 )
 
 // DurationFlag 时间间隔类型标志结构体
@@ -24,7 +25,7 @@ func (f *DurationFlag) Set(value string) error {
 
 	// 检查空值
 	if value == "" {
-		return fmt.Errorf("duration cannot be empty")
+		return qerr.NewValidationError("duration cannot be empty")
 	}
 
 	// 将单位转换为小写, 确保解析的准确性
@@ -33,12 +34,12 @@ func (f *DurationFlag) Set(value string) error {
 	// 解析时间间隔字符串
 	duration, err := time.ParseDuration(lowercaseValue)
 	if err != nil {
-		return fmt.Errorf("invalid duration format: %v (valid units: ns/us/ms/s/m/h)", err)
+		return qerr.NewValidationErrorf("invalid duration format: %v (valid units: ns/us/ms/s/m/h)", err)
 	}
 
 	// 检查负值（可选）
 	if duration < 0 {
-		return fmt.Errorf("negative duration not allowed")
+		return qerr.NewValidationError("negative duration not allowed")
 	}
 
 	// 调用基类方法设置值

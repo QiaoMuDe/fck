@@ -3,6 +3,8 @@ package flags
 import (
 	"strconv"
 	"sync"
+
+	"gitee.com/MM-Q/qflag/qerr"
 )
 
 // Float64Flag 浮点型标志结构体
@@ -21,7 +23,7 @@ func (f *Float64Flag) Set(value string) error {
 	defer f.mu.Unlock()
 	floatVal, err := strconv.ParseFloat(value, 64)
 	if err != nil {
-		return err
+		return qerr.NewValidationErrorf("failed to parse float64 value: %v", err)
 	}
 	return f.BaseFlag.Set(floatVal)
 }
