@@ -208,7 +208,30 @@ var TableStyleMap = map[string]table.Style{
 	"crw":     table.StyleColoredRedWhiteOnBlack,     // 红色背景白色字体样式
 	"cyw":     table.StyleColoredYellowWhiteOnBlack,  // 黄色背景白色字体样式
 	"none":    StyleNone,                             // 禁用样式
+}
 
+// Table样式切片
+var TableStyles = []string{
+	"default", // 默认样式
+	"l",       // 浅色样式
+	"r",       // 圆角样式
+	"bd",      // 粗体样式
+	"cb",      // 彩色亮色样式
+	"cd",      // 彩色暗色样式
+	"db",      // 双线样式
+	"cbb",     // 黑色背景蓝色字体样式
+	"cbc",     // 青色背景蓝色字体样式
+	"cbg",     // 绿色背景蓝色字体样式
+	"cbm",     // 紫色背景蓝色字体样式
+	"cby",     // 黄色背景蓝色字体样式
+	"cbr",     // 红色背景蓝色字体样式
+	"cwb",     // 蓝色背景白色字体样式
+	"ccw",     // 青色背景白色字体样式
+	"cgw",     // 绿色背景白色字体样式
+	"cmw",     // 紫色背景白色字体样式
+	"crw",     // 红色背景白色字体样式
+	"cyw",     // 黄色背景白色字体样式
+	"none",    // 禁用样式
 }
 
 // 定义禁用样式
@@ -312,6 +335,82 @@ const (
 	// 只查找为独占模式的文件-短参数
 	FindTypeExclusiveShort = "u"
 )
+
+// 限制查找的参数切片
+var TypeLimits = []string{
+	// 查找所有类型
+	FindTypeAll,
+
+	// 只查找文件
+	FindTypeFile,
+	// 只查找文件-短参数
+	FindTypeFileShort,
+
+	// 只查找目录
+	FindTypeDir,
+	// 只查找目录-短参数
+	FindTypeDirShort,
+
+	// 只查找软链接
+	FindTypeSymlink,
+	// 只查找软链接-短参数
+	FindTypeSymlinkShort,
+
+	// 只查找只读文件
+	FindTypeReadonly,
+	// 只查找只读文件-短参数
+	FindTypeReadonlyShort,
+
+	// 只查找隐藏文件或目录
+	FindTypeHidden,
+	// 只查找隐藏文件或目录-短参数
+	FindTypeHiddenShort,
+
+	// // 只查找空文件或目录
+	// FindTypeEmpty,
+	// // 只查找空文件或目录-短参数
+	// FindTypeEmptyShort,
+
+	// // 只查找可执行文件
+	// FindTypeExecutable,
+	// // 只查找可执行文件-短参数
+	// FindTypeExecutableShort,
+
+	// // 只查找socket文件(套接字)
+	// FindTypeSocket,
+	// // 只查找socket文件-短参数
+	// FindTypeSocketShort,
+
+	// // 只查找管道文件
+	// FindTypePipe,
+	// // 只查找管道文件-短参数
+	// FindTypePipeShort,
+
+	// // 只查找块设备文件
+	// FindTypeBlock,
+	// // 只查找块设备文件-短参数
+	// FindTypeBlockShort,
+
+	// // 只查找字符设备文件
+	// FindTypeChar,
+	// // 只查找字符设备文件-短参数
+	// FindTypeCharShort,
+
+	// // 只查找追加模式的文件
+	// FindTypeAppend,
+	// // 只查找追加模式的文件-短参数
+	// FindTypeAppendShort,
+
+	// // 只查找非追加模式的文件
+	// FindTypeNonAppend,
+	// // 只查找非追加模式的文件-短参数
+	// FindTypeNonAppendShort,
+
+	// // 只查找为独占模式的文件
+	// FindTypeExclusive,
+	// // 只查找为独占模式的文件-短参数
+	// FindTypeExclusiveShort,
+}
 
 // 定义find子命令限制查找的参数
 var FindLimits = map[string]bool{

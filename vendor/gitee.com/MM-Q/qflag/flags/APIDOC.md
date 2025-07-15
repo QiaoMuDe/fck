@@ -258,6 +258,16 @@ func (f *BaseFlag[T]) SetValidator(validator Validator)
 - 参数：
   - `validator Validator`: 验证器接口。
 
+#### Name
+```go
+func (f *BaseFlag[T]) Name() string
+```
+
+获取标志的名称。
+
+- 返回值：
+  - `string`: 标志名称, 优先返回长名称, 如果长名称为空则返回短名称
+
 #### ShortName
 
 ```go

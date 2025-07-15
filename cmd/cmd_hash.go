@@ -162,7 +162,11 @@ func hashRunTasks(ctx context.Context, files []string, hashType func() hash.Hash
 			errors <- fmt.Errorf("打开文件 %s 失败: %v", globals.OutputFileName, err)
 			return []error{fmt.Errorf("打开文件 %s 失败: %v", globals.OutputFileName, err)}
 		}
-		defer fileWrite.Close()
+		defer func() {
+			if err := fileWrite.Close(); err != nil {
+				errors <- fmt.Errorf("close file failed: %v", err)
+			}
+		}()
 
 		// 写入文件头
 		if err := writeFileHeader(fileWrite, hashCmdType.Get(), globals.TimestampFormat); err != nil {
@@ -270,7 +274,7 @@ func hashTask(ctx context.Context, filePath string, hashType func() hash.Hash, f
 	if hashCmdWrite.Get() {
 		// 写入到 globals.OutputFileName 文件
 		if fileWrite != nil {
-			_, err := fileWrite.WriteString(fmt.Sprintf("%s\t%q\n", hashValue, filePath))
+			_, err := fmt.Fprintf(fileWrite, "%s\t%q\n", hashValue, filePath)
 			if err != nil {
 				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, err)
 			}
@@ -283,6 +287,14 @@ func hashTask(ctx context.Context, filePath string, hashType func() hash.Hash, f
 }
 
 // 计算文件哈希值的函数
+//
+// 参数值:
+//   - filePath: 文件路径
+//   - hashFunc: 哈希函数
+//
+// 返回值:
+//   - hashValue: 哈希值
+//   - err: 错误信息
 func checksum(filePath string, hashFunc func() hash.Hash) (string, error) {
 	// 检查文件是否存在
 	fileInfo, err := os.Stat(filePath)
@@ -295,7 +307,11 @@ func checksum(filePath string, hashFunc func() hash.Hash) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("无法打开文件: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Printf("close file failed: %v\n", err)
+		}
+	}()
 
 	// 创建哈希对象
 	hash := hashFunc()

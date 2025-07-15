@@ -143,7 +143,11 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 		if err != nil {
 			return fmt.Errorf("打开文件 %s 失败: %v", globals.OutputCheckFileName, err)
 		}
-		defer fileWrite.Close()
+		defer func() {
+			if err := fileWrite.Close(); err != nil {
+				cl.PrintErrf("colse file failed: %v\n", err)
+			}
+		}()
 
 		// 写入文件头
 		if err := writeFileHeader(fileWrite, hashCmdType.Get(), globals.TimestampFormat); err != nil {
@@ -179,7 +183,11 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 	if openErr != nil {
 		return nil, nil, fmt.Errorf("无法打开校验文件: %v", openErr)
 	}
-	defer checkFileRead.Close()
+	defer func() {
+		if err := checkFileRead.Close(); err != nil {
+			fmt.Printf("close file failed: %v\n", err)
+		}
+	}()
 
 	// 解析校验文件内容
 	scanner := bufio.NewScanner(checkFileRead)
@@ -570,7 +578,7 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 		} else {
 			if sameCount > 0 {
 				if diffCmdWrite.Get() {
-					if _, writeErr := fileWrite.WriteString(fmt.Sprintf("找到 %d 个相同文件\n", sameCount)); writeErr != nil {
+					if _, writeErr := fmt.Fprintf(fileWrite, "找到 %d 个相同文件\n", sameCount); writeErr != nil {
 						return fmt.Errorf("写入文件时出错: %v", writeErr)
 					}
 				} else {
@@ -579,7 +587,7 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 			}
 			if diffCount > 0 {
 				if diffCmdWrite.Get() {
-					if _, writeErr := fileWrite.WriteString(fmt.Sprintf("找到 %d 个不同文件\n", diffCount)); writeErr != nil {
+					if _, writeErr := fmt.Fprintf(fileWrite, "找到 %d 个不同文件\n", diffCount); writeErr != nil {
 						return fmt.Errorf("写入文件时出错: %v", writeErr)
 					}
 				} else {
@@ -745,7 +753,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 		} else {
 			if sameCount > 0 {
 				if diffCmdWrite.Get() {
-					if _, writeErr := fileWrite.WriteString(fmt.Sprintf("找到 %d 个相同文件\n", sameCount)); writeErr != nil {
+					if _, writeErr := fmt.Fprintf(fileWrite, "找到 %d 个相同文件\n", sameCount); writeErr != nil {
 						return fmt.Errorf("写入文件时出错: %v", writeErr)
 					}
 				} else {
@@ -754,7 +762,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 			}
 			if diffCount > 0 {
 				if diffCmdWrite.Get() {
-					if _, writeErr := fileWrite.WriteString(fmt.Sprintf("找到 %d 个不同文件\n", diffCount)); writeErr != nil {
+					if _, writeErr := fmt.Fprintf(fileWrite, "找到 %d 个不同文件\n", diffCount); writeErr != nil {
 						return fmt.Errorf("写入文件时出错: %v", writeErr)
 					}
 				} else {
@@ -909,7 +917,11 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 		if err != nil {
 			return fmt.Errorf("打开文件 %s 失败: %v", globals.OutputCheckFileName, err)
 		}
-		defer fileWrite.Close()
+		defer func() {
+			if err := fileWrite.Close(); err != nil {
+				cl.PrintErrf("close file failed: %v\n", err)
+			}
+		}()
 
 		// 写入文件头
 		if err := writeFileHeader(fileWrite, hashCmdType.Get(), globals.TimestampFormat); err != nil {

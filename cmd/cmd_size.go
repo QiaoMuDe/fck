@@ -34,13 +34,6 @@ func sizeCmdMain(cl *colorlib.ColorLib) error {
 		return fmt.Errorf("请指定要计算大小路径")
 	}
 
-	// 检查表格的样式是否有效
-	if sizeCmdTableStyle.Get() != "" {
-		if _, ok := globals.TableStyleMap[sizeCmdTableStyle.Get()]; !ok {
-			return fmt.Errorf("无效的表格样式: %s", sizeCmdTableStyle.Get())
-		}
-	}
-
 	// 根据sizeCmdColor设置颜色模式
 	if sizeCmdColor.Get() {
 		cl.NoColor.Store(false)
@@ -84,24 +77,16 @@ func sizeCmdMain(cl *colorlib.ColorLib) error {
 					cl.PrintErrf("计算大小时出现错误: %s\n", err)
 				}
 
-				// 如果没启用表格输出, 则直接打印结果
-				if sizeCmdTableStyle.Get() == "" {
-					printSizeColor(filePath, size, cl)
-					continue
-				} else {
-					// 添加到 items 数组中
-					itemList = append(itemList, item{
-						Name: filePath,
-						Size: humanReadableSize(size, 2),
-					})
-					continue
-				}
+				// 添加到 items 数组中
+				itemList = append(itemList, item{
+					Name: filePath,
+					Size: humanReadableSize(size, 2),
+				})
+				continue
 			}
 
 			// 打印输出
-			if sizeCmdTableStyle.Get() != "" {
-				printSizeTable(itemList, cl)
-			}
+			printSizeTable(itemList, cl)
 			return nil
 		}
 
@@ -121,20 +106,13 @@ func sizeCmdMain(cl *colorlib.ColorLib) error {
 
 		// 如果是文件, 则直接计算大小
 		if !info.IsDir() {
-			// 如果没启用表格输出, 则直接打印结果
-			if sizeCmdTableStyle.Get() == "" {
-				// 根据是否启用颜色打印结果
-				printSizeColor(targetPath, info.Size(), cl)
-				continue
-			} else {
-				// 添加到 items 数组中
-				itemList = append(itemList, item{
-					Name: targetPath,
-					Size: humanReadableSize(info.Size(), 2),
-				})
-				// 打印输出
-				printSizeTable(itemList, cl)
-			}
+			// 添加到 items 数组中
+			itemList = append(itemList, item{
+				Name: targetPath,
+				Size: humanReadableSize(info.Size(), 2),
+			})
+			// 打印输出
+			printSizeTable(itemList, cl)
 			continue
 		}
 
@@ -145,21 +123,15 @@ func sizeCmdMain(cl *colorlib.ColorLib) error {
 			continue
 		}
 
-		// 如果没启用表格输出, 则直接打印结果
-		if sizeCmdTableStyle.Get() == "" {
-			printSizeColor(targetPath, size, cl)
-			continue
-		} else {
-			// 添加到 items 数组中
-			itemList = append(itemList, item{
-				Name: targetPath,
-				Size: humanReadableSize(size, 2),
-			})
+		// 添加到 items 数组中
+		itemList = append(itemList, item{
+			Name: targetPath,
+			Size: humanReadableSize(size, 2),
+		})
 
-			// 打印输出
-			printSizeTable(itemList, cl)
-			continue
-		}
+		// 打印输出
+		printSizeTable(itemList, cl)
+		continue
 	}
 
 	return nil
@@ -410,7 +382,7 @@ func printSizeTable(its items, cl *colorlib.ColorLib) {
 	t.SetOutputMirror(os.Stdout)
 
 	// 设置表头, 只有在-ts为none时才设置表头
-	if sizeCmdTableStyle.Get() != "" && sizeCmdTableStyle.Get() != "none" {
+	if sizeCmdTableStyle.Get() != "none" {
 		t.AppendHeader(table.Row{"Size", "Name"})
 	}
 
@@ -438,12 +410,9 @@ func printSizeTable(its items, cl *colorlib.ColorLib) {
 		{Name: "Name", Align: text.AlignLeft},  // 文件名 - 左对齐
 	})
 
-	// 设置表格样式
-	if sizeCmdTableStyle.Get() != "" {
-		// 根据-ts的值设置表格样式
-		if style, ok := globals.TableStyleMap[sizeCmdTableStyle.Get()]; ok {
-			t.SetStyle(style)
-		}
+	// 根据-ts的值设置表格样式
+	if style, ok := globals.TableStyleMap[sizeCmdTableStyle.Get()]; ok {
+		t.SetStyle(style)
 	}
 
 	// 输出表格

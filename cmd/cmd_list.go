@@ -199,21 +199,9 @@ func checkListCmdArgs() error {
 		return errors.New("不能同时指定 -t 和 -n 选项")
 	}
 
-	// 检查是否同时指定了 -f 和 -d 选项
-	if listCmdFileOnly.Get() && listCmdDirOnly.Get() {
-		return errors.New("不能同时指定 -f 和 -d 选项")
-	}
-
 	// 如果指定了-ho检查是否指定-a
-	if listCmdHiddenOnly.Get() && !listCmdAll.Get() {
-		return errors.New("必须指定 -a 选项才能使用 -ho 选项")
-	}
-
-	// 检查是否-ts的表格样式是否为合法值
-	if listCmdTableStyle.Get() != "" {
-		if _, ok := globals.TableStyleMap[listCmdTableStyle.Get()]; !ok {
-			return fmt.Errorf("无效的表格样式: %s", listCmdTableStyle.Get())
-		}
+	if (listCmdType.Get() == globals.FindTypeHiddenShort || listCmdType.Get() == globals.FindTypeHidden) && !listCmdAll.Get() {
+		return fmt.Errorf("必须指定 %s 选项才能使用 %s 选项", listCmdAll.Name(), listCmdType.Name())
 	}
 
 	// 检查是否同时指定了 -c 和 --dev-color
@@ -383,7 +371,7 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 	// 根据是否为目录进行处理
 	if pathInfo.IsDir() {
 		// 如果设置了 -D 标志，只列出目录本身
-		if listCmdDirOnly.Get() {
+		if listCmdDirItself.Get() {
 			if isSystemFileOrDir(filepath.Base(absPath)) {
 				return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
 			}
@@ -581,57 +569,46 @@ func getEntryType(fileInfo os.FileInfo) string {
 }
 
 // shouldSkipFile 函数用于依据命令行参数和文件属性，判断是否需要跳过指定的文件或目录。
-// 该函数会综合考虑多个命令行选项，如显示所有文件（-a）、仅显示隐藏文件（-ho）、
-// 仅显示文件（-f）和仅显示目录（-d）等，结合文件或目录的名称及类型，做出跳过与否的决策。
+//
 // 参数:
-// - p: 表示文件或目录的名称，用于判断是否为隐藏文件。
-// - isDir: 布尔值，用于标识当前条目是否为目录。
-// - fileInfo: os.FileInfo 类型，包含文件或目录的详细信息，如权限、大小等。
-// - main: 布尔值，用于标识当前是否为处理目录本身，而非其子目录。
+//   - p: 表示文件或目录的名称，用于判断是否为隐藏文件。
+//   - isDir: 布尔值，用于标识当前条目是否为目录。
+//   - fileInfo: os.FileInfo 类型，包含文件或目录的详细信息，如权限、大小等。
+//   - main: 布尔值，用于标识当前是否为处理目录本身，而非其子目录。
+//
 // 返回值:
-// - 布尔类型，若满足跳过条件则返回 true，否则返回 false。
+//   - 布尔类型，若满足跳过条件则返回 true，否则返回 false。
 func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool {
+	// 提前获取命令行参数值，避免频繁调用Get()
+	allFlag := listCmdAll.Get()
+	typeFlag := listCmdType.Get()
+
 	// 场景 1: 未启用 -a 选项，且当前文件或目录为隐藏文件时，应跳过该条目
-	// -a 选项用于显示所有文件，若未启用该选项，隐藏文件默认不显示
-	if !listCmdAll.Get() && isHidden(p) {
+	if !allFlag && isHidden(p) {
 		return true
 	}
 
-	// 场景 2: 同时启用 -a 和 -ho 选项，但当前文件或目录并非隐藏文件时，应跳过该条目
-	// -a 选项用于显示所有文件，-ho 选项用于仅显示隐藏文件，两者同时启用时，非隐藏文件需跳过
-	if listCmdAll.Get() && listCmdHiddenOnly.Get() && !isHidden(p) {
+	// 场景 2: 同时启用 -a 和隐藏文件筛选，但当前文件或目录并非隐藏文件时，应跳过该条目
+	if allFlag && (typeFlag == globals.FindTypeHiddenShort || typeFlag == globals.FindTypeHidden) && !isHidden(p) {
 		return true
 	}
 
-	// 场景 3: 启用 -f 选项，且当前条目为目录时，应跳过该条目
-	// -f 选项用于仅显示文件，若当前条目为目录，则不符合要求，需跳过
+	// 只有不是在处理目录本身时，才进行类型筛选
 	if !main {
-		if listCmdFileOnly.Get() && isDir {
-			return true
-		}
-	}
-
-	// 场景 4: 启用 -d 选项，且当前条目不是目录时，应跳过该条目
-	// -d 选项用于仅显示目录，若当前条目不是目录，则不符合要求，需跳过
-	if !main {
-		if listCmdDir.Get() && !isDir {
-			return true
-		}
-	}
-
-	// 场景 5: 启用 -L 选项，且当前条目不是软链接时，应跳过该条目
-	// 如果设置了-L标志且当前不是软链接, 则跳过
-	if !main {
-		if listCmdSymlink.Get() && (fileInfo.Mode()&os.ModeSymlink == 0) {
-			return true
-		}
-	}
-
-	// 场景 6: 启用 -ro 选项，且当前文件不是只读时，应跳过该条目
-	// 如果设置了-ro标志且当前文件不是只读, 则跳过
-	if !main {
-		if listCmdReadOnly.Get() && !isReadOnly(p) {
-			return true
+		// 使用 switch 优化多种类型筛选条件的判断
+		switch typeFlag {
+		case globals.FindTypeFileShort, globals.FindTypeFile:
+			// 仅文件: 如果是目录则跳过
+			return isDir
+		case globals.FindTypeDirShort, globals.FindTypeDir:
+			// 仅目录: 如果不是目录则跳过
+			return !isDir
+		case globals.FindTypeSymlinkShort, globals.FindTypeSymlink:
+			// 仅软链接: 如果不是软链接则跳过
+			return fileInfo.Mode()&os.ModeSymlink == 0
+		case globals.FindTypeReadonly, globals.FindTypeReadonlyShort:
+			// 仅只读文件: 如果不是只读则跳过
+			return !isReadOnly(p)
 		}
 	}
 

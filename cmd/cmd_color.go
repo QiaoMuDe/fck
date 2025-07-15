@@ -377,61 +377,61 @@ func splitPathColor(p string, cl *colorlib.ColorLib, dirCode int, fileCode int) 
 	return fmt.Sprint(cl.SColor(dirCode, dir), cl.SColor(fileCode, file))
 }
 
-// printSizeColor 根据路径类型以不同颜色输出字符串
-// 参数:
-//
-//	path: 路径或文件名
-//	s: 文件大小
-//	cl: colorlib.ColorLib实例, 用于彩色输出
-func printSizeColor(p string, s int64, cl *colorlib.ColorLib) {
-	// 第一列固定为白色显示大小
-	sizeStr := cl.Swhite(humanReadableSize(s, 2))
+// // printSizeColor 根据路径类型以不同颜色输出字符串
+// // 参数:
+// //
+// //	path: 路径或文件名
+// //	s: 文件大小
+// //	cl: colorlib.ColorLib实例, 用于彩色输出
+// func printSizeColor(p string, s int64, cl *colorlib.ColorLib) {
+// 	// 第一列固定为白色显示大小
+// 	sizeStr := cl.Swhite(humanReadableSize(s, 2))
 
-	// 获取路径信息
-	pathInfo, statErr := os.Lstat(p)
-	if statErr != nil {
-		if sizeCmdColor.Get() {
-			fmt.Printf("%-25s\t%s\n", sizeStr, cl.Sred(p))
-		} else {
-			fmt.Printf("%-15s\t%s\n", sizeStr, p)
-		}
-		return
-	}
+// 	// 获取路径信息
+// 	pathInfo, statErr := os.Lstat(p)
+// 	if statErr != nil {
+// 		if sizeCmdColor.Get() {
+// 			fmt.Printf("%-25s\t%s\n", sizeStr, cl.Sred(p))
+// 		} else {
+// 			fmt.Printf("%-15s\t%s\n", sizeStr, p)
+// 		}
+// 		return
+// 	}
 
-	// 根据路径类型设置第二列颜色
-	var pathStr string
-	switch mode := pathInfo.Mode(); {
-	case mode&os.ModeSymlink != 0: // 符号链接 - 青色
-		pathStr = cl.Scyan(p)
-	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsSymlinkExts[filepath.Ext(p)]: // Windows快捷方式 - 青色
-		pathStr = cl.Scyan(p)
-	case mode.IsDir(): // 目录 - 蓝色
-		pathStr = cl.Sblue(p)
-	case mode&os.ModeDevice != 0: // 设备文件 - 黄色
-		pathStr = cl.Syellow(p)
-	case mode&os.ModeNamedPipe != 0: // 命名管道 - 黄色
-		pathStr = cl.Syellow(p)
-	case mode&os.ModeSocket != 0: // 套接字 - 黄色
-		pathStr = cl.Syellow(p)
-	case mode&os.ModeType == 0 && mode&os.ModeCharDevice != 0: // 字符设备 - 黄色
-		pathStr = cl.Syellow(p)
-	case mode.IsRegular() && pathInfo.Size() == 0: // 空文件 - 灰色
-		pathStr = cl.Sgray(p)
-	case mode.IsRegular() && mode&0111 != 0: // 可执行文件 - 绿色
-		pathStr = cl.Sgreen(p)
-	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsExecutableExts[filepath.Ext(p)]: // Windows可执行文件 - 绿色
-		pathStr = cl.Sgreen(p)
-	default: // 其他文件 - 白色
-		pathStr = cl.Swhite(p)
-	}
+// 	// 根据路径类型设置第二列颜色
+// 	var pathStr string
+// 	switch mode := pathInfo.Mode(); {
+// 	case mode&os.ModeSymlink != 0: // 符号链接 - 青色
+// 		pathStr = cl.Scyan(p)
+// 	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsSymlinkExts[filepath.Ext(p)]: // Windows快捷方式 - 青色
+// 		pathStr = cl.Scyan(p)
+// 	case mode.IsDir(): // 目录 - 蓝色
+// 		pathStr = cl.Sblue(p)
+// 	case mode&os.ModeDevice != 0: // 设备文件 - 黄色
+// 		pathStr = cl.Syellow(p)
+// 	case mode&os.ModeNamedPipe != 0: // 命名管道 - 黄色
+// 		pathStr = cl.Syellow(p)
+// 	case mode&os.ModeSocket != 0: // 套接字 - 黄色
+// 		pathStr = cl.Syellow(p)
+// 	case mode&os.ModeType == 0 && mode&os.ModeCharDevice != 0: // 字符设备 - 黄色
+// 		pathStr = cl.Syellow(p)
+// 	case mode.IsRegular() && pathInfo.Size() == 0: // 空文件 - 灰色
+// 		pathStr = cl.Sgray(p)
+// 	case mode.IsRegular() && mode&0111 != 0: // 可执行文件 - 绿色
+// 		pathStr = cl.Sgreen(p)
+// 	case runtime.GOOS == "windows" && mode.IsRegular() && globals.WindowsExecutableExts[filepath.Ext(p)]: // Windows可执行文件 - 绿色
+// 		pathStr = cl.Sgreen(p)
+// 	default: // 其他文件 - 白色
+// 		pathStr = cl.Swhite(p)
+// 	}
 
-	// 格式化输出
-	if sizeCmdColor.Get() {
-		fmt.Printf("%-25s\t%s\n", sizeStr, pathStr)
-	} else {
-		fmt.Printf("%-15s\t%s\n", sizeStr, p)
-	}
-}
+// 	// 格式化输出
+// 	if sizeCmdColor.Get() {
+// 		fmt.Printf("%-25s\t%s\n", sizeStr, pathStr)
+// 	} else {
+// 		fmt.Printf("%-15s\t%s\n", sizeStr, p)
+// 	}
+// }
 
 // SPrintStringColor 根据路径类型以不同颜色输出字符串
 // 参数:

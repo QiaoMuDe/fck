@@ -84,6 +84,17 @@ func (f *BaseFlag[T]) Init(longName, shortName string, usage string, value *T) e
 	return nil
 }
 
+// Name 获取标志的名称
+//
+// 返回值:
+//   - string: 标志名称, 优先返回长名称, 如果长名称为空则返回短名称
+func (f *BaseFlag[T]) Name() string {
+	if f.longName != "" {
+		return f.longName
+	}
+	return f.shortName
+}
+
 // LongName 获取标志的长名称
 //
 // 返回值:

@@ -841,9 +841,9 @@ func runCommand(cmdStr string, cl *colorlib.ColorLib, p string) error {
 
 	// 替换{}为实际的文件路径, 并根据系统类型选择引用方式
 	if runtime.GOOS == "windows" {
-		cmdStr = strings.Replace(findCmdExec.Get(), "{}", fmt.Sprintf("\"%s\"", p), -1) // Windows使用双引号
+		cmdStr = strings.ReplaceAll(findCmdExec.Get(), "{}", fmt.Sprintf("\"%s\"", p)) // Windows使用双引号
 	} else {
-		cmdStr = strings.Replace(findCmdExec.Get(), "{}", fmt.Sprintf("'%s'", p), -1) // Linux使用单引号
+		cmdStr = strings.ReplaceAll(findCmdExec.Get(), "{}", fmt.Sprintf("'%s'", p)) // Linux使用单引号
 	}
 
 	// 根据操作系统选择shell
@@ -999,7 +999,9 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 	if err := os.WriteFile(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp"), []byte{}, 0644); err != nil {
 		return fmt.Errorf("目标目录无写入权限: %v", err)
 	}
-	os.Remove(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp"))
+	if err := os.Remove(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp")); err != nil {
+		cl.PrintErrf("delete tmp file error: %v\n", err)
+	}
 
 	// 检查目标文件是否已存在
 	if _, err := os.Stat(absTargetPath); err == nil {

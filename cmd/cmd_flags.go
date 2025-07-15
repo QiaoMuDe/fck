@@ -22,10 +22,10 @@ var (
 
 	// fck size 子命令
 	sizeCmd           *qflag.Cmd
-	sizeCmdColor      *qflag.BoolFlag   // color 标志
-	sizeCmdJob        *qflag.IntFlag    // job 标志
-	sizeCmdTableStyle *qflag.StringFlag // ts 标志
-	sizeCmdHidden     *qflag.BoolFlag   // hidden 标志
+	sizeCmdColor      *qflag.BoolFlag // color 标志
+	sizeCmdJob        *qflag.IntFlag  // job 标志
+	sizeCmdTableStyle *qflag.EnumFlag // ts 标志
+	sizeCmdHidden     *qflag.BoolFlag // hidden 标志
 
 	// fck diff 子命令
 	diffCmd      *qflag.Cmd
@@ -67,24 +67,27 @@ var (
 
 	// fck list 子命令
 	listCmd              *qflag.Cmd
-	listCmdAll           *qflag.BoolFlag   // all 标志
-	listCmdColor         *qflag.BoolFlag   // color 标志
-	listCmdSortByName    *qflag.BoolFlag   // sort-by-name 标志
-	listCmdSortBySize    *qflag.BoolFlag   // sort-by-size 标志
-	listCmdSortByTime    *qflag.BoolFlag   // sort-by-time 标志
-	listCmdDir           *qflag.BoolFlag   // d 标志
-	listCmdFileOnly      *qflag.BoolFlag   // f 标志
-	listCmdDirOnly       *qflag.BoolFlag   // D 标志
-	listCmdSymlink       *qflag.BoolFlag   // l 标志
-	listCmdReadOnly      *qflag.BoolFlag   // ro 标志
-	listCmdHiddenOnly    *qflag.BoolFlag   // ho 标志
-	listCmdLongFormat    *qflag.BoolFlag   // l 标志
-	listCmdReverseSort   *qflag.BoolFlag   // r 标志
-	listCmdQuoteNames    *qflag.BoolFlag   // q 标志
-	listCmdRecursion     *qflag.BoolFlag   // R 标志
-	listCmdShowUserGroup *qflag.BoolFlag   // u 标志
-	listCmdTableStyle    *qflag.StringFlag // ts 标志
-	listCmdDevColor      *qflag.BoolFlag   // dev-color 标志
+	listCmdAll           *qflag.BoolFlag // all 标志
+	listCmdColor         *qflag.BoolFlag // color 标志
+	listCmdSortByName    *qflag.BoolFlag // sort-by-name 标志
+	listCmdSortBySize    *qflag.BoolFlag // sort-by-size 标志
+	listCmdSortByTime    *qflag.BoolFlag // sort-by-time 标志
+	listCmdDirItself     *qflag.BoolFlag // D 标志
+	listCmdLongFormat    *qflag.BoolFlag // l 标志
+	listCmdReverseSort   *qflag.BoolFlag // r 标志
+	listCmdQuoteNames    *qflag.BoolFlag // q 标志
+	listCmdRecursion     *qflag.BoolFlag // R 标志
+	listCmdShowUserGroup *qflag.BoolFlag // u 标志
+	listCmdTableStyle    *qflag.EnumFlag // ts 标志
+	listCmdDevColor      *qflag.BoolFlag // dev-color 标志
+
+	// listCmdSymlink    *qflag.BoolFlag // l 标志
+	// listCmdDir        *qflag.BoolFlag // d 标志
+	// listCmdFileOnly   *qflag.BoolFlag // f 标志
+	// listCmdReadOnly   *qflag.BoolFlag // ro 标志
+	// listCmdHiddenOnly *qflag.BoolFlag // ho 标志
+
+	listCmdType *qflag.EnumFlag // type 标志
 )
 
 func init() {
@@ -135,7 +138,7 @@ func init() {
 	sizeCmdColor = sizeCmd.Bool("color", "c", false, "启用颜色输出")
 	sizeCmdJob = sizeCmd.Int("job", "j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
 	sizeCmdHidden = sizeCmd.Bool("hidden", "H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
-	sizeCmdTableStyle = sizeCmd.String("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
+	sizeCmdTableStyle = sizeCmd.Enum("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\t\t[default] - 默认样式\n"+
 		"\t\t\t\t\t[l  ]     - 浅色样式\n"+
 		"\t\t\t\t\t[r  ]     - 圆角样式\n"+
@@ -155,7 +158,7 @@ func init() {
 		"\t\t\t\t\t[cmw]     - 紫色背景白色字体\n"+
 		"\t\t\t\t\t[crw]     - 红色背景白色字体\n"+
 		"\t\t\t\t\t[cyw]     - 黄色背景白色字体\n"+
-		"\t\t\t\t\t[none]    - 禁用表格样式")
+		"\t\t\t\t\t[none]    - 禁用表格样式", globals.TableStyles)
 
 	// fck diff 子命令
 	diffCmd = qflag.NewCmd("diff", "d", flag.ExitOnError)
@@ -233,18 +236,20 @@ func init() {
 	listCmdSortByTime = listCmd.Bool("time", "t", false, "按修改时间排序")
 	listCmdSortBySize = listCmd.Bool("size", "s", false, "按文件大小排序")
 	listCmdSortByName = listCmd.Bool("name", "n", false, "按文件名排序")
-	listCmdDirOnly = listCmd.Bool("directory", "D", false, "列出目录本身，而不是文件")
-	listCmdFileOnly = listCmd.Bool("file", "f", false, "只列出文件，不列出目录")
-	listCmdDir = listCmd.Bool("dir", "d", false, "只列出目录，不列出文件")
-	listCmdSymlink = listCmd.Bool("symlink", "L", false, "只列出软链接，不列出其他类型的文件")
-	listCmdReadOnly = listCmd.Bool("readonly", "ro", false, "只列出只读文件")
-	listCmdHiddenOnly = listCmd.Bool("hidden", "ho", false, "只列出隐藏文件或目录")
+	listCmdDirItself = listCmd.Bool("dir-itself", "D", false, "列出目录本身，而不是文件")
+	listCmdType = listCmd.Enum("type", "ty", globals.FindTypeAll, "指定要查找的类型，支持以下选项: \n"+
+		"\t\t\t\t\t[f | file]       - 只查找文件\n"+
+		"\t\t\t\t\t[d | dir]        - 只查找目录\n"+
+		"\t\t\t\t\t[l | symlink]    - 只查找软链接\n"+
+		"\t\t\t\t\t[r | readonly]   - 只查找只读文件\n"+
+		"\t\t\t\t\t[h | hidden]     - 只显示隐藏文件或目录\n", globals.TypeLimits)
 	listCmdLongFormat = listCmd.Bool("long", "l", false, "使用长格式显示文件信息，包括权限、所有者、大小等")
 	listCmdReverseSort = listCmd.Bool("reverse", "r", false, "反向排序")
 	listCmdQuoteNames = listCmd.Bool("quote-names", "q", false, "在输出时用双引号包裹条目")
 	listCmdRecursion = listCmd.Bool("recursion", "R", false, "递归列出目录及其子目录的内容")
 	listCmdShowUserGroup = listCmd.Bool("user-group", "u", false, "显示文件的用户和组信息")
-	listCmdTableStyle = listCmd.String("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
+	listCmdDevColor = listCmd.Bool("dev-color", "dc", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
+	listCmdTableStyle = listCmd.Enum("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\t\t[default] - 默认样式\n"+
 		"\t\t\t\t\t[l  ]     - 浅色样式\n"+
 		"\t\t\t\t\t[r  ]     - 圆角样式\n"+
@@ -264,8 +269,7 @@ func init() {
 		"\t\t\t\t\t[cmw]     - 紫色背景白色字体\n"+
 		"\t\t\t\t\t[crw]     - 红色背景白色字体\n"+
 		"\t\t\t\t\t[cyw]     - 黄色背景白色字体\n"+
-		"\t\t\t\t\t[none]    - 禁用边框样式")
-	listCmdDevColor = listCmd.Bool("dev-color", "dc", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
+		"\t\t\t\t\t[none]    - 禁用边框样式", globals.TableStyles)
 
 	// 添加子命令
 	if addErr := qflag.AddSubCmd(hashCmd, sizeCmd, diffCmd, findCmd, listCmd); addErr != nil {
