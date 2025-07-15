@@ -75,6 +75,9 @@ type FlagRegistryInterface interface {
 }
 
 // 创建一个空的标志注册表
+//
+// 返回值:
+//   - *FlagRegistry: 创建的标志注册表指针
 func NewFlagRegistry() *FlagRegistry {
 	return &FlagRegistry{
 		mu:           sync.RWMutex{},
@@ -90,13 +93,13 @@ func NewFlagRegistry() *FlagRegistry {
 //   - meta: 要注册的标志元数据
 //
 // 该方法会执行以下操作:
+//   - 1.检查长名称和短名称是否已存在
+//   - 2.将标志添加到长名称索引
+//   - 3.将标志添加到短名称索引
+//   - 4.将标志添加到所有标志列表
 //
-//	1.检查长名称和短名称是否已存在
-//	2.将标志添加到长名称索引
-//	3.将标志添加到短名称索引
-//	4.将标志添加到所有标志列表
-//
-// 注意: 该方法线程安全, 但发现重复标志时会panic
+// 注意:
+//   - 该方法线程安全, 但发现重复标志时会panic
 func (r *FlagRegistry) RegisterFlag(meta *FlagMeta) error {
 	r.mu.Lock()         // 获取写锁, 保证并发安全
 	defer r.mu.Unlock() // 函数返回时释放写锁

@@ -8,9 +8,14 @@ import (
 
 // Time 添加时间类型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 //
-// 返回值: 时间标志对象指针
+// 返回值:
+//   - *flags.TimeFlag: 时间标志对象指针
 func (c *Cmd) Time(longName, shortName string, defValue time.Time, usage string) *flags.TimeFlag {
 	f := &flags.TimeFlag{}
 	c.TimeVar(f, longName, shortName, defValue, usage)
@@ -19,7 +24,12 @@ func (c *Cmd) Time(longName, shortName string, defValue time.Time, usage string)
 
 // TimeVar 绑定时间类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 时间标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: 时间标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) TimeVar(f *flags.TimeFlag, longName, shortName string, defValue time.Time, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()

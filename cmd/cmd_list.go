@@ -383,7 +383,7 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 	// 根据是否为目录进行处理
 	if pathInfo.IsDir() {
 		// 如果设置了 -D 标志，只列出目录本身
-		if listCmdDirEctory.Get() {
+		if listCmdDirOnly.Get() {
 			if isSystemFileOrDir(filepath.Base(absPath)) {
 				return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
 			}
@@ -603,18 +603,18 @@ func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool 
 		return true
 	}
 
-	// 场景 3: 启用 -f 选项，且当前条目为目录时，且未启用仅显示目录选项，应跳过该条目
+	// 场景 3: 启用 -f 选项，且当前条目为目录时，应跳过该条目
 	// -f 选项用于仅显示文件，若当前条目为目录，则不符合要求，需跳过
 	if !main {
-		if listCmdFileOnly.Get() && isDir && !listCmdDirEctory.Get() {
+		if listCmdFileOnly.Get() && isDir {
 			return true
 		}
 	}
 
-	// 场景 4: 启用 -d 选项，且当前条目不是目录时，且未启用仅显示文件选项，应跳过该条目
+	// 场景 4: 启用 -d 选项，且当前条目不是目录时，应跳过该条目
 	// -d 选项用于仅显示目录，若当前条目不是目录，则不符合要求，需跳过
 	if !main {
-		if listCmdDirOnly.Get() && !isDir && !listCmdDirOnly.Get() {
+		if listCmdDir.Get() && !isDir {
 			return true
 		}
 	}

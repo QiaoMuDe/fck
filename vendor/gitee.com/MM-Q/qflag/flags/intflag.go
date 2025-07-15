@@ -16,12 +16,16 @@ type IntFlag struct {
 }
 
 // Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *IntFlag) Type() FlagType { return FlagTypeInt }
 
 // SetRange 设置整数的有效范围
 //
-// min: 最小值
-// max: 最大值
+// 参数:
+//   - min: 最小值
+//   - max: 最大值
 func (f *IntFlag) SetRange(min, max int) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -30,6 +34,12 @@ func (f *IntFlag) SetRange(min, max int) {
 }
 
 // Set 实现flag.Value接口,解析并验证整数值
+//
+// 参数:
+//   - value: 待解析的整数值
+//
+// 返回值:
+//   - error: 解析错误或验证错误
 func (f *IntFlag) Set(value string) error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -41,6 +51,9 @@ func (f *IntFlag) Set(value string) error {
 }
 
 // String 实现flag.Value接口,返回当前整数值的字符串表示
+//
+// 返回值:
+//   - string: 当前整数值的字符串表示
 func (f *IntFlag) String() string {
 	return f.BaseFlag.String()
 }
@@ -53,12 +66,16 @@ type Int64Flag struct {
 }
 
 // Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *Int64Flag) Type() FlagType { return FlagTypeInt64 }
 
 // SetRange 设置64位整数的有效范围
 //
-// min: 最小值
-// max: 最大值
+// 参数:
+//   - min: 最小值
+//   - max: 最大值
 func (f *Int64Flag) SetRange(min, max int64) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -67,6 +84,12 @@ func (f *Int64Flag) SetRange(min, max int64) {
 }
 
 // Set 实现flag.Value接口,解析并设置64位整数值
+//
+// 参数:
+//   - value: 待解析的64位整数值
+//
+// 返回值:
+//   - error: 解析错误或验证错误
 func (f *Int64Flag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

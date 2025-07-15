@@ -15,9 +15,18 @@ type Float64Flag struct {
 }
 
 // Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *Float64Flag) Type() FlagType { return FlagTypeFloat64 }
 
 // Set 实现flag.Value接口,解析并设置浮点值
+//
+// 参数:
+//   - value: 待解析的浮点值
+//
+// 返回值:
+//   - error: 解析错误或验证错误
 func (f *Float64Flag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

@@ -17,7 +17,10 @@ type EnumFlag struct {
 	mu              sync.RWMutex    // 读写锁
 }
 
-// 实现Flag接口
+// Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *EnumFlag) Type() FlagType { return FlagTypeEnum }
 
 // SetCaseSensitive 设置枚举值是否区分大小写
@@ -60,7 +63,12 @@ func (f *EnumFlag) SetCaseSensitive(sensitive bool) *EnumFlag {
 }
 
 // IsCheck 检查枚举值是否有效
-// 返回值: 为nil, 说明值有效,否则返回错误信息
+//
+// 参数:
+//   - value: 待检查的枚举值
+//
+// 返回值:
+//   - error: 为nil, 说明值有效,否则返回错误信息
 func (f *EnumFlag) IsCheck(value string) error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -84,6 +92,12 @@ func (f *EnumFlag) IsCheck(value string) error {
 }
 
 // Set 实现flag.Value接口, 解析并设置枚举值
+//
+// 参数:
+//   - value: 待设置的值
+//
+// 返回值:
+//   - error: 解析或验证失败时返回错误信息
 func (f *EnumFlag) Set(value string) error {
 	// 先验证值是否有效
 	if err := f.IsCheck(value); err != nil {
@@ -94,6 +108,9 @@ func (f *EnumFlag) Set(value string) error {
 }
 
 // String 实现flag.Value接口, 返回当前值的字符串表示
+//
+// 返回值:
+//   - string: 当前值的字符串表示
 func (f *EnumFlag) String() string { return f.Get() }
 
 // Init 初始化枚举类型标志, 无需显式调用, 仅在创建标志对象时自动调用
@@ -159,4 +176,17 @@ func (f *EnumFlag) Init(longName, shortName string, defValue string, usage strin
 	}
 
 	return nil
+}
+
+// GetOptions 返回枚举的所有可选值
+//
+// 返回值:
+//   - []string: 枚举的所有可选值
+func (f *EnumFlag) GetOptions() []string {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	// 返回副本以避免外部修改
+	options := make([]string, len(f.originalOptions))
+	copy(options, f.originalOptions)
+	return options
 }

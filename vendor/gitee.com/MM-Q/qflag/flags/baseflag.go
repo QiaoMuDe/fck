@@ -36,6 +36,9 @@ func (f *BaseFlag[T]) BindEnv(envName string) *BaseFlag[T] {
 }
 
 // GetEnvVar 获取绑定的环境变量名
+//
+// 返回值:
+//   - string: 环境变量名
 func (f *BaseFlag[T]) GetEnvVar() string {
 	f.baseMu.RLock()
 	defer f.baseMu.RUnlock()
@@ -82,30 +85,49 @@ func (f *BaseFlag[T]) Init(longName, shortName string, usage string, value *T) e
 }
 
 // LongName 获取标志的长名称
+//
+// 返回值:
+//   - string: 长标志名称
 func (f *BaseFlag[T]) LongName() string { return f.longName }
 
 // ShortName 获取标志的短名称
+//
+// 返回值:
+//   - string: 短标志字符
 func (f *BaseFlag[T]) ShortName() string { return f.shortName }
 
 // Usage 获取标志的用法说明
+//
+// 返回值:
+//   - string: 用法说明
 func (f *BaseFlag[T]) Usage() string { return f.usage }
 
-// GetDefault 获取标志的初始默认值
+// GetDefault 获取标志的初始默认值(泛型类型)
+//
+// 返回值:
+//   - T: 初始默认值
 func (f *BaseFlag[T]) GetDefault() T { return f.initialValue }
 
 // GetDefaultAny 获取标志的初始默认值(any类型)
+//
+// 返回值:
+//   - any: 初始默认值
 func (f *BaseFlag[T]) GetDefaultAny() any { return f.initialValue }
 
 // IsSet 判断标志是否已被设置值
 //
-// 返回值: true表示已设置值, false表示未设置
+// 返回值:
+//   - bool: true表示已设置值, false表示未设置
 func (f *BaseFlag[T]) IsSet() bool {
 	f.baseMu.RLock()
 	defer f.baseMu.RUnlock()
 	return f.isSet
 }
 
-// Get 获取标志的实际值
+// Get 获取标志的实际值(泛型类型)
+//
+// 返回值:
+//   - T: 标志值
 func (f *BaseFlag[T]) Get() T {
 	f.baseMu.RLock()
 	defer f.baseMu.RUnlock()
@@ -119,7 +141,10 @@ func (f *BaseFlag[T]) Get() T {
 	return *f.value
 }
 
-// GetPointer 返回标志值的指针
+// GetPointer 返回标志值的指针(泛型类型)
+//
+// 返回值:
+//   - *T: 标志值的指针
 //
 // 注意:
 //  1. 获取指针过程受锁保护, 但直接修改指针指向的值仍会绕过验证机制
@@ -130,11 +155,13 @@ func (f *BaseFlag[T]) GetPointer() *T {
 	return f.value
 }
 
-// Set 设置标志的值
+// Set 设置标志的值(泛型类型)
 //
-// 参数: value 标志值
+// 参数:
+//   - value T: 标志值
 //
-// 返回: 错误信息
+// 返回:
+//   - error: 错误信息
 func (f *BaseFlag[T]) Set(value T) error {
 	f.baseMu.Lock()
 	defer f.baseMu.Unlock()
@@ -158,9 +185,10 @@ func (f *BaseFlag[T]) Set(value T) error {
 	return nil
 }
 
-// SetValidator 设置标志的验证器
+// SetValidator 设置标志的验证器(泛型类型)
 //
-// 参数: validator 验证器接口
+// 参数:
+//   - validator Validator: 验证器接口
 func (f *BaseFlag[T]) SetValidator(validator Validator) {
 	f.baseMu.Lock()
 	defer f.baseMu.Unlock()
@@ -181,8 +209,10 @@ func (f *BaseFlag[T]) String() string {
 	return fmt.Sprint(f.Get())
 }
 
-// Type 返回标志类型
-// 注意：具体标志类型需要重写此方法返回正确的FlagType
+// Type 返回标志类型, 默认实现返回0, 需要子类重写
+//
+// 注意：
+//   - 具体标志类型需要重写此方法返回正确的FlagType
 func (f *BaseFlag[T]) Type() FlagType {
 	return 0 // 默认实现，需要被子类重写
 }

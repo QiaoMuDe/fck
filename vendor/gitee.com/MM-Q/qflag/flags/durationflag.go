@@ -16,9 +16,18 @@ type DurationFlag struct {
 }
 
 // Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *DurationFlag) Type() FlagType { return FlagTypeDuration }
 
 // Set 实现flag.Value接口, 解析并设置时间间隔值
+//
+// 参数:
+//   - value: 待设置的值
+//
+// 返回值:
+//   - error: 解析或验证失败时返回错误信息
 func (f *DurationFlag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -47,6 +56,9 @@ func (f *DurationFlag) Set(value string) error {
 }
 
 // String 实现flag.Value接口, 返回当前值的字符串表示
+//
+// 返回值:
+//   - string: 当前值的字符串表示
 func (f *DurationFlag) String() string {
 	return f.Get().String()
 }

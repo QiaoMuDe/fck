@@ -313,11 +313,11 @@ func collectFlags(cmd *Cmd) []flagInfo {
 
 		// 创建标志元数据
 		flagInfos = append(flagInfos, flagInfo{
-			longFlag:  flag.GetLongName(),                         // 长标志名
-			shortFlag: flag.GetShortName(),                        // 短标志
-			usage:     flag.GetUsage(),                            // 使用说明
-			defValue:  defValue,                                   // 默认值
-			typeStr:   flags.FlagTypeToString(flag.GetFlagType()), // 标志类型字符串
+			longFlag:  flag.GetLongName(),                               // 长标志名
+			shortFlag: flag.GetShortName(),                              // 短标志
+			usage:     flag.GetUsage(),                                  // 使用说明
+			defValue:  defValue,                                         // 默认值
+			typeStr:   flags.FlagTypeToString(flag.GetFlagType(), true), // 标志类型字符串
 		})
 	}
 

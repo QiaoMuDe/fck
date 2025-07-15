@@ -136,7 +136,6 @@ type Cmd struct {
 //   - *Cmd: 新的命令实例指针
 //
 // errorHandling可选值:
-//
 //   - flag.ContinueOnError: 解析标志时遇到错误继续解析, 并返回错误信息
 //   - flag.ExitOnError: 解析标志时遇到错误立即退出程序, 并返回错误信息
 //   - flag.PanicOnError: 解析标志时遇到错误立即触发panic
@@ -186,6 +185,9 @@ func NewCmd(longName string, shortName string, errorHandling flag.ErrorHandling)
 }
 
 // SubCmdMap 返回子命令映射表
+//
+// 返回值:
+//   - map[string]*Cmd: 子命令映射表
 func (c *Cmd) SubCmdMap() map[string]*Cmd {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -201,6 +203,9 @@ func (c *Cmd) SubCmdMap() map[string]*Cmd {
 }
 
 // SubCmds 返回子命令切片
+//
+// 返回值:
+//   - []*Cmd: 子命令切片
 func (c *Cmd) SubCmds() []*Cmd {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -377,6 +382,9 @@ func (c *Cmd) FlagRegistry() *flags.FlagRegistry {
 }
 
 // SetVersion 设置版本信息
+//
+// 参数:
+//   - version: 版本信息
 func (c *Cmd) SetVersion(version string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -384,6 +392,9 @@ func (c *Cmd) SetVersion(version string) {
 }
 
 // GetVersion 获取版本信息
+//
+// 返回值:
+// - string: 版本信息
 func (c *Cmd) GetVersion() string {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -391,6 +402,9 @@ func (c *Cmd) GetVersion() string {
 }
 
 // SetModuleHelps 设置自定义模块帮助信息
+//
+// 参数:
+//   - moduleHelps: 自定义模块帮助信息
 func (c *Cmd) SetModuleHelps(moduleHelps string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -398,6 +412,9 @@ func (c *Cmd) SetModuleHelps(moduleHelps string) {
 }
 
 // GetModuleHelps 获取自定义模块帮助信息
+//
+// 返回值:
+//   - string: 自定义模块帮助信息
 func (c *Cmd) GetModuleHelps() string {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -405,6 +422,9 @@ func (c *Cmd) GetModuleHelps() string {
 }
 
 // SetLogoText 设置logo文本
+//
+// 参数:
+//   - logoText: logo文本
 func (c *Cmd) SetLogoText(logoText string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -412,6 +432,9 @@ func (c *Cmd) SetLogoText(logoText string) {
 }
 
 // GetLogoText 获取logo文本
+//
+// 返回值:
+//   - string: logo文本
 func (c *Cmd) GetLogoText() string {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -419,6 +442,9 @@ func (c *Cmd) GetLogoText() string {
 }
 
 // GetUseChinese 获取是否使用中文帮助信息
+//
+// 返回值:
+//   - bool: 是否使用中文帮助信息
 func (c *Cmd) GetUseChinese() bool {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -426,6 +452,9 @@ func (c *Cmd) GetUseChinese() bool {
 }
 
 // SetUseChinese 设置是否使用中文帮助信息
+//
+// 参数:
+//   - useChinese: 是否使用中文帮助信息
 func (c *Cmd) SetUseChinese(useChinese bool) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -433,6 +462,9 @@ func (c *Cmd) SetUseChinese(useChinese bool) {
 }
 
 // GetNotes 获取所有备注信息
+//
+// 返回:
+//   - 备注信息列表
 func (c *Cmd) GetNotes() []string {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -455,12 +487,21 @@ func (c *Cmd) Name() string {
 }
 
 // LongName 返回命令长名称
+//
+// 返回值:
+//   - string: 命令长名称
 func (c *Cmd) LongName() string { return c.userInfo.longName }
 
 // ShortName 返回命令短名称
+//
+// 返回值:
+//   - string: 命令短名称
 func (c *Cmd) ShortName() string { return c.userInfo.shortName }
 
 // GetDescription 返回命令描述
+//
+// 返回值:
+//   - string: 命令描述
 func (c *Cmd) GetDescription() string {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -468,6 +509,9 @@ func (c *Cmd) GetDescription() string {
 }
 
 // SetDescription 设置命令描述
+//
+// 参数:
+//   - desc: 命令描述
 func (c *Cmd) SetDescription(desc string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -475,6 +519,9 @@ func (c *Cmd) SetDescription(desc string) {
 }
 
 // GetHelp 返回命令用法帮助信息
+//
+// 返回值:
+//   - string: 命令用法帮助信息
 func (c *Cmd) GetHelp() string {
 	// 获取读锁
 	c.rwMu.RLock()
@@ -485,6 +532,9 @@ func (c *Cmd) GetHelp() string {
 }
 
 // SetUsageSyntax 设置自定义命令用法
+//
+// 参数:
+//   - usageSyntax: 自定义命令用法
 func (c *Cmd) SetUsageSyntax(usageSyntax string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -492,6 +542,9 @@ func (c *Cmd) SetUsageSyntax(usageSyntax string) {
 }
 
 // GetUsageSyntax 获取自定义命令用法
+//
+// 返回值:
+//   - string: 自定义命令用法
 func (c *Cmd) GetUsageSyntax() string {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -499,6 +552,9 @@ func (c *Cmd) GetUsageSyntax() string {
 }
 
 // SetHelp 设置用户自定义命令帮助信息
+//
+// 参数:
+//   - help: 用户自定义命令帮助信息
 func (c *Cmd) SetHelp(help string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -508,10 +564,10 @@ func (c *Cmd) SetHelp(help string) {
 // LoadHelp 从指定文件加载帮助信息
 //
 // 参数:
-// filePath: 帮助信息文件路径
+//   - filePath: 帮助信息文件路径
 //
 // 返回值:
-// error: 如果文件不存在或读取文件失败，则返回错误信息
+//   - error: 如果文件不存在或读取文件失败，则返回错误信息
 func (c *Cmd) LoadHelp(filePath string) error {
 	// 检查是否为空
 	if filePath == "" {
@@ -528,9 +584,9 @@ func (c *Cmd) LoadHelp(filePath string) error {
 	content, err := os.ReadFile(cleanPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("File %s does not exist", filePath)
+			return fmt.Errorf("file %s does not exist", filePath)
 		}
-		return fmt.Errorf("Failed to read file %s: %w", filePath, err)
+		return fmt.Errorf("failed to read file %s: %w", filePath, err)
 	}
 
 	// 设置帮助信息
@@ -539,6 +595,9 @@ func (c *Cmd) LoadHelp(filePath string) error {
 }
 
 // AddNote 添加备注信息到命令
+//
+// 参数:
+//   - note: 备注信息
 func (c *Cmd) AddNote(note string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -546,8 +605,13 @@ func (c *Cmd) AddNote(note string) {
 }
 
 // AddExample 为命令添加使用示例
-// description: 示例描述
-// usage: 示例使用方式
+//
+// 参数:
+//   - e: 使用示例信息
+//
+// e:
+//   - Description: 示例描述
+//   - Usage: 示例用法
 func (c *Cmd) AddExample(e ExampleInfo) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -556,7 +620,9 @@ func (c *Cmd) AddExample(e ExampleInfo) {
 }
 
 // GetExamples 获取所有使用示例
-// 返回示例切片的副本，防止外部修改
+//
+// 返回:
+//   - 示例信息列表
 func (c *Cmd) GetExamples() []ExampleInfo {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -566,6 +632,9 @@ func (c *Cmd) GetExamples() []ExampleInfo {
 }
 
 // Args 获取非标志参数切片
+//
+// 返回值:
+//   - []string: 参数切片
 func (c *Cmd) Args() []string {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -576,6 +645,12 @@ func (c *Cmd) Args() []string {
 }
 
 // Arg 获取指定索引的非标志参数
+//
+// 参数:
+//   - i: 参数索引
+//
+// 返回值:
+//   - string: 指定索引位置的非标志参数；若索引越界，则返回空字符串
 func (c *Cmd) Arg(i int) string {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -587,6 +662,9 @@ func (c *Cmd) Arg(i int) string {
 }
 
 // NArg 获取非标志参数的数量
+//
+// 返回值:
+//   - int: 参数数量
 func (c *Cmd) NArg() int {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -594,6 +672,9 @@ func (c *Cmd) NArg() int {
 }
 
 // NFlag 获取标志的数量
+//
+// 返回值:
+//   - int: 标志数量
 func (c *Cmd) NFlag() int {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()
@@ -601,6 +682,12 @@ func (c *Cmd) NFlag() int {
 }
 
 // FlagExists 检查指定名称的标志是否存在
+//
+// 参数:
+//   - name: 标志名称
+//
+// 返回值:
+//   - bool: 标志是否存在
 func (c *Cmd) FlagExists(name string) bool {
 	c.rwMu.RLock()
 	defer c.rwMu.RUnlock()

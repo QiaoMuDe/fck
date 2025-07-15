@@ -19,7 +19,12 @@ type MapFlag struct {
 }
 
 // SetIgnoreCase 设置是否忽略键的大小写
-// enable为true时，所有键将转换为小写进行存储和比较
+//
+// 参数:
+//   - enable: 是否忽略键的大小写
+//
+// 注意:
+//   - 当enable为true时,所有键将转换为小写进行存储和比较
 func (f *MapFlag) SetIgnoreCase(enable bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -27,9 +32,15 @@ func (f *MapFlag) SetIgnoreCase(enable bool) {
 }
 
 // Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *MapFlag) Type() FlagType { return FlagTypeMap }
 
 // String 实现flag.Value接口,返回当前值的字符串表示
+//
+// 返回值:
+//   - string: 当前值的字符串表示
 func (f *MapFlag) String() string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -45,6 +56,12 @@ func (f *MapFlag) String() string {
 }
 
 // Set 实现flag.Value接口,解析并设置键值对
+//
+// 参数:
+//   - value: 待设置的值
+//
+// 返回值:
+//   - error: 解析或验证失败时返回错误信息
 func (f *MapFlag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

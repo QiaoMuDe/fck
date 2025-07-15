@@ -23,6 +23,12 @@ func (f *PathFlag) Type() FlagType { return FlagTypePath }
 func (f *PathFlag) String() string { return f.Get() }
 
 // Set 实现flag.Value接口,解析并验证路径
+//
+// 参数:
+//   - value: 待解析的路径值
+//
+// 返回值:
+//   - error: 解析错误或验证错误
 func (f *PathFlag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -42,6 +48,15 @@ func (f *PathFlag) Set(value string) error {
 }
 
 // Init 初始化路径标志
+//
+// 参数:
+//   - longName: 长名称
+//   - shortName: 短名称
+//   - defValue: 默认值
+//   - usage: 使用说明
+//
+// 返回值:
+//   - error: 初始化错误
 func (f *PathFlag) Init(longName, shortName string, defValue string, usage string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -72,6 +87,12 @@ func (f *PathFlag) Init(longName, shortName string, defValue string, usage strin
 
 // MustExist 设置路径是否必须存在
 //
+// 参数值:
+//   - mustExist: 是否必须存在
+//
+// 返回值:
+//   - *PathFlag: 当前路径标志对象
+//
 // 示例:
 // cmd.Path("output", "o", "/tmp/output", "输出目录").MustExist(false)
 func (f *PathFlag) MustExist(mustExist bool) *PathFlag {
@@ -84,6 +105,12 @@ func (f *PathFlag) MustExist(mustExist bool) *PathFlag {
 }
 
 // IsDirectory 设置路径是否必须是目录
+//
+// 参数值:
+//   - isDir: 是否必须是目录
+//
+// 返回值:
+//   - *PathFlag: 当前路径标志对象
 //
 // 示例:
 // cmd.Path("log-dir", "l", "/var/log/app", "日志目录").IsDirectory(true)

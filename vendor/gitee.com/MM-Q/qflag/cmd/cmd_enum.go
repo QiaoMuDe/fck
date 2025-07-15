@@ -4,9 +4,15 @@ import "gitee.com/MM-Q/qflag/flags"
 
 // Enum 添加枚举类型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明、限制该标志取值的枚举值切片
+// 参数值:
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志
+//   - defValue: string - 默认值
+//   - usage: string - 帮助说明
+//   - options: []string - 限制该标志取值的枚举值切片
 //
-// 返回值: 枚举标志对象指针
+// 返回值:
+//   - *flags.EnumFlag - 枚举标志对象指针
 func (c *Cmd) Enum(longName, shortName string, defValue string, usage string, options []string) *flags.EnumFlag {
 	f := &flags.EnumFlag{}
 	c.EnumVar(f, longName, shortName, defValue, usage, options)
@@ -15,7 +21,13 @@ func (c *Cmd) Enum(longName, shortName string, defValue string, usage string, op
 
 // EnumVar 绑定枚举类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 枚举标志指针、长标志名、短标志、默认值、帮助说明、限制该标志取值的枚举值切片
+// 参数值:
+//   - f: *flags.EnumFlag - 枚举标志对象指针
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志
+//   - defValue: string - 默认值
+//   - usage: string - 帮助说明
+//   - options: []string - 限制该标志取值的枚举值切片
 func (c *Cmd) EnumVar(f *flags.EnumFlag, longName, shortName string, defValue string, usage string, options []string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()

@@ -3,7 +3,13 @@ package cmd
 import "gitee.com/MM-Q/qflag/flags"
 
 // IP4Var 绑定IPv4地址类型标志到指针并内部注册Flag对象
-// 参数依次为: IPv4标志指针、长标志名、短标志、默认值、帮助说明
+//
+// 参数值:
+//   - f: IPv4标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) IP4Var(f *flags.IP4Flag, longName, shortName string, defValue string, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -42,8 +48,15 @@ func (c *Cmd) IP4Var(f *flags.IP4Flag, longName, shortName string, defValue stri
 }
 
 // IP4 添加IPv4地址类型标志, 返回标志对象指针
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-// 返回值: IPv4地址标志对象指针
+//
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+//
+// 返回值:
+//   - *flags.IP4Flag: IPv4地址标志对象指针
 func (c *Cmd) IP4(longName, shortName string, defValue string, usage string) *flags.IP4Flag {
 	f := &flags.IP4Flag{}
 	c.IP4Var(f, longName, shortName, defValue, usage)
@@ -51,7 +64,13 @@ func (c *Cmd) IP4(longName, shortName string, defValue string, usage string) *fl
 }
 
 // IP6Var 绑定IPv6地址类型标志到指针并内部注册Flag对象
-// 参数依次为: IPv6标志指针、长标志名、短标志、默认值、帮助说明
+//
+// 参数值:
+//   - f: IPv6标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) IP6Var(f *flags.IP6Flag, longName, shortName string, defValue string, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -90,8 +109,15 @@ func (c *Cmd) IP6Var(f *flags.IP6Flag, longName, shortName string, defValue stri
 }
 
 // IP6 添加IPv6地址类型标志, 返回标志对象指针
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-// 返回值: IPv6地址标志对象指针
+//
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+//
+// 返回值:
+//   - *flags.IP6Flag: IPv6地址标志对象指针
 func (c *Cmd) IP6(longName, shortName string, defValue string, usage string) *flags.IP6Flag {
 	f := &flags.IP6Flag{}
 	c.IP6Var(f, longName, shortName, defValue, usage)

@@ -16,9 +16,15 @@ type Uint16Flag struct {
 }
 
 // Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *Uint16Flag) Type() FlagType { return FlagTypeUint16 }
 
 // String 实现flag.Value接口, 返回当前值的字符串表示
+//
+// 返回值:
+//   - string: 当前值的字符串表示
 func (f *Uint16Flag) String() string {
 	return fmt.Sprint(f.Get())
 }
@@ -27,12 +33,10 @@ func (f *Uint16Flag) String() string {
 // 验证值是否在uint16范围内(0-65535)
 //
 // 参数:
-//
-//	value: 待设置的值(0-65535)
+//   - value: 待设置的值(0-65535)
 //
 // 返回值:
-//
-//	error: 错误信息
+//   - error: 解析或验证失败时返回错误信息
 func (f *Uint16Flag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -72,6 +76,12 @@ func (f *Uint32Flag) String() string {
 
 // Set 实现flag.Value接口, 解析并设置32位无符号整数值
 // 验证值是否在uint32范围内(0-4294967295)
+//
+// 参数:
+//   - value: 待设置的值(0-4294967295)
+//
+// 返回值:
+//   - error: 解析或验证失败时返回错误信息
 func (f *Uint32Flag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -108,6 +118,12 @@ func (f *Uint64Flag) String() string {
 
 // Set 实现flag.Value接口, 解析并设置64位无符号整数值
 // 验证值是否在uint64范围内(0-18446744073709551615)
+//
+// 参数:
+//   - value: 待设置的值(0-18446744073709551615)
+//
+// 返回值:
+//   - error: 解析或验证失败时返回错误信息
 func (f *Uint64Flag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

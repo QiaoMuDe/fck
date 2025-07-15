@@ -4,7 +4,12 @@ import "gitee.com/MM-Q/qflag/flags"
 
 // MapVar 绑定键值对类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 键值对标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: 键值对标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) MapVar(f *flags.MapFlag, longName, shortName string, defValue map[string]string, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -49,8 +54,14 @@ func (c *Cmd) MapVar(f *flags.MapFlag, longName, shortName string, defValue map[
 
 // Map 添加键值对类型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-// 返回值: 键值对标志对象指针
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+//
+// 返回值:
+//   - *flags.MapFlag: 键值对标志对象指针
 func (c *Cmd) Map(longName, shortName string, defValue map[string]string, usage string) *flags.MapFlag {
 	f := &flags.MapFlag{}
 	c.MapVar(f, longName, shortName, defValue, usage)

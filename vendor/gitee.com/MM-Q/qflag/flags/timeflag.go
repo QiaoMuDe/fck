@@ -37,9 +37,18 @@ type TimeFlag struct {
 }
 
 // Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *TimeFlag) Type() FlagType { return FlagTypeTime }
 
 // Set 实现flag.Value接口, 解析并设置时间值
+//
+// 参数:
+//   - value: 待解析的时间字符串
+//
+// 返回值:
+//   - error: 解析或验证失败时返回错误信息
 func (f *TimeFlag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -63,7 +72,11 @@ func (f *TimeFlag) Set(value string) error {
 }
 
 // String 实现flag.Value接口, 返回当前时间的字符串表示
-// 加锁保证outputFormat和value的并发安全访问
+//
+// 返回值:
+//   - string: 格式化后的时间字符串
+//
+// 注意: 加锁保证outputFormat和value的并发安全访问
 func (f *TimeFlag) String() string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -80,6 +93,11 @@ func (f *TimeFlag) String() string {
 }
 
 // SetOutputFormat 设置时间输出格式
+//
+// 参数:
+//   - format: 时间格式化字符串
+//
+// 注意: 此方法线程安全
 func (f *TimeFlag) SetOutputFormat(format string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

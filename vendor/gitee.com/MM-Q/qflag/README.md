@@ -285,6 +285,7 @@ qflag提供了完善的API文档，按模块组织如下：
 - **标志类型定义**: [flags包文档](./flags/APIDOC.md) - 包含所有标志类型的详细定义和使用方法
 - **错误处理**: [qerr包文档](./qerr/APIDOC.md) - 包含错误类型和处理相关API
 - **参数验证**: [validator包文档](./validator/APIDOC.md) - 包含参数验证器接口和实现
+- **工具函数**: [utils包文档](./utils/APIDOC.md) - 包含一些工具函数
 
 完整的API文档可通过访问各模块对应的APIDOC.md文件查看。
 

@@ -26,10 +26,12 @@ func (f *SliceFlag) String() string {
 
 // Set 实现flag.Value接口, 解析并设置切片值
 //
-// 参数: value 待解析的切片值
+// 参数:
+//   - value 待解析的切片值
 //
-// 注意: 如果切片中包含分隔符,则根据分隔符进行分割, 否则将整个值作为单个元素
-// 例如: "a,b,c" -> ["a", "b", "c"]
+// 注意:
+//   - 如果切片中包含分隔符,则根据分隔符进行分割, 否则将整个值作为单个元素
+//   - 例如: "a,b,c" -> ["a", "b", "c"]
 func (f *SliceFlag) Set(value string) error {
 	// 加读锁保护分隔符切片访问
 	f.mu.Lock()
@@ -80,9 +82,8 @@ func (f *SliceFlag) Set(value string) error {
 
 // SetDelimiters 设置切片解析的分隔符列表
 //
-// 参数: delimiters 分隔符列表
-//
-// 线程安全的分隔符更新
+// 参数:
+//   - delimiters 分隔符列表
 func (f *SliceFlag) SetDelimiters(delimiters []string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -109,7 +110,10 @@ func (f *SliceFlag) GetDelimiters() []string {
 
 // SetSkipEmpty 设置是否跳过空元素
 //
-// 参数: skip - 为true时跳过空元素, 为false时保留空元素
+// 参数:
+//   - skip - 为true时跳过空元素, 为false时保留空元素
+//
+// 线程安全的空元素跳过更新
 func (f *SliceFlag) SetSkipEmpty(skip bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -118,14 +122,23 @@ func (f *SliceFlag) SetSkipEmpty(skip bool) {
 
 // Len 获取切片长度
 //
-// 返回: 获取切片长度
+// 返回:
+//   - 获取切片长度
 func (f *SliceFlag) Len() int {
 	// 返回切片长度
 	return len(f.Get())
 }
 
 // Contains 检查切片是否包含指定元素
-// 当切片未设置值时,将使用默认值进行检查
+//
+// 参数:
+//   - element 待检查的元素
+//
+// 返回:
+//   - 若切片包含指定元素, 返回true, 否则返回false
+//
+// 注意:
+//   - 当切片未设置值时,将使用默认值进行检查
 func (f *SliceFlag) Contains(element string) bool {
 	// 通过Get()获取当前值(已处理nil情况和线程安全)
 	current := f.Get()
@@ -145,9 +158,11 @@ func (f *SliceFlag) Contains(element string) bool {
 
 // Clear 清空切片所有元素
 //
-// 返回值: 操作成功返回nil, 否则返回错误信息
+// 返回值:
+//   - 操作成功返回nil, 否则返回错误信息
 //
-// 注意：该方法会改变切片的指针
+// 注意：
+//   - 该方法会改变切片的指针
 func (f *SliceFlag) Clear() error {
 	// 使用BaseFlag的Set方法确保线程安全
 	return f.BaseFlag.Set([]string{})
@@ -155,9 +170,11 @@ func (f *SliceFlag) Clear() error {
 
 // Remove 从切片中移除指定元素（支持移除空字符串元素）
 //
-// 参数: element 待移除的元素（支持空字符串）
+// 参数:
+//   - element 待移除的元素（支持空字符串）
 //
-// 返回值: 操作成功返回nil, 否则返回错误信息
+// 返回值:
+//   - 操作成功返回nil, 否则返回错误信息
 func (f *SliceFlag) Remove(element string) error {
 	// 获取当前切片
 	current := f.Get()
@@ -178,17 +195,16 @@ func (f *SliceFlag) Remove(element string) error {
 }
 
 // Sort 对切片进行排序
+// 对当前切片标志的值进行原地排序，修改原切片内容
+// 采用Go标准库的sort.Strings()函数进行字典序排序(按Unicode代码点升序排列)
 //
-// 功能：对当前切片标志的值进行原地排序，修改原切片内容
-// 排序规则: 采用Go标准库的sort.Strings()函数进行字典序排序(按Unicode代码点升序排列)
-// 注意事项：
-//  1. 排序会直接修改当前标志的值，而非返回新切片
-//  2. 排序区分大小写, 遵循Unicode代码点比较规则(如'A' < 'a' < 'z')
-//  3. 若切片未设置值，将使用默认值进行排序
+// 注意：
+//   - 排序会直接修改当前标志的值，而非返回新切片
+//   - 排序区分大小写, 遵循Unicode代码点比较规则(如'A' < 'a' < 'z')
+//   - 若切片未设置值，将使用默认值进行排序
 //
 // 返回值：
-//
-//	排序成功返回nil, 若排序过程中发生错误则返回错误信息
+//   - 排序成功返回nil, 若排序过程中发生错误则返回错误信息
 func (f *SliceFlag) Sort() error {
 	current := f.Get()
 	sort.Strings(current)

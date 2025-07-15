@@ -4,7 +4,12 @@ import "gitee.com/MM-Q/qflag/flags"
 
 // IntVar 绑定整数类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 整数标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: 整数标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) IntVar(f *flags.IntFlag, longName, shortName string, defValue int, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -44,8 +49,14 @@ func (c *Cmd) IntVar(f *flags.IntFlag, longName, shortName string, defValue int,
 
 // Int 添加整数类型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-// 返回值: 整数标志对象指针
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+//
+// 返回值:
+//   - *flags.IntFlag: 整数标志对象指针
 func (c *Cmd) Int(longName, shortName string, defValue int, usage string) *flags.IntFlag {
 	f := &flags.IntFlag{}
 	c.IntVar(f, longName, shortName, defValue, usage)
@@ -54,7 +65,12 @@ func (c *Cmd) Int(longName, shortName string, defValue int, usage string) *flags
 
 // Int64Var 绑定64位整数类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 64位整数标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: 64位整数标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) Int64Var(f *flags.Int64Flag, longName, shortName string, defValue int64, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -94,9 +110,14 @@ func (c *Cmd) Int64Var(f *flags.Int64Flag, longName, shortName string, defValue 
 
 // Int64 添加64位整数类型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 //
-// 返回值: 64位整数标志对象指针
+// 返回值:
+//   - *flags.Int64Flag: 64位整数标志对象指针
 func (c *Cmd) Int64(longName, shortName string, defValue int64, usage string) *flags.Int64Flag {
 	f := &flags.Int64Flag{}
 	c.Int64Var(f, longName, shortName, defValue, usage)

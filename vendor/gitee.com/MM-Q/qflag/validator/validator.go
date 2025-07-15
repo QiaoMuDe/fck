@@ -19,6 +19,12 @@ type StringLengthValidator struct {
 }
 
 // Validate 实现Validator接口, 检查字符串长度是否在[Min, Max]范围内
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *StringLengthValidator) Validate(value any) error {
 	s, ok := value.(string)
 	if !ok {
@@ -43,6 +49,12 @@ type StringRegexValidator struct {
 }
 
 // Validate 实现Validator接口, 检查字符串是否匹配正则表达式
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *StringRegexValidator) Validate(value any) error {
 	s, ok := value.(string)
 	if !ok {
@@ -83,11 +95,13 @@ type IntRangeValidator struct {
 	Max int // 最大值, 包含在内
 }
 
-// IntRangeValidator 验证整数是否在指定的 int 范围内
-// 注意：
-// 1. 支持多种整数类型转换（int/int8/uint等），但最终会转换为int处理
-// 2. 从宽类型（如uint64）转换为int可能导致溢出
-// 3. 如需严格类型检查，请使用自定义验证器
+// Validate 实现Validator接口, 检查整数是否在指定的 int 范围内
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *IntRangeValidator) Validate(value any) error {
 	var num int
 
@@ -141,6 +155,12 @@ type IntRangeValidator64 struct {
 }
 
 // Validate 实现Validator接口, 检查整数是否在[Min, Max]范围内
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *IntRangeValidator64) Validate(value any) error {
 	var num int64
 
@@ -223,7 +243,13 @@ type IntValueValidator struct {
 	AllowedValues []int // 允许的整数值列表
 }
 
-// Validate 实现Validator接口，验证值是否为允许的整数之一
+// Validate 实现Validator接口, 验证值是否为允许的整数之一
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *IntValueValidator) Validate(value any) error {
 	// 检查允许值列表是否为空
 	if len(v.AllowedValues) == 0 {
@@ -281,6 +307,12 @@ type FloatRangeValidator struct {
 }
 
 // Validate 实现Validator接口, 检查浮点数是否在[Min, Max]范围内
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *FloatRangeValidator) Validate(value any) error {
 	var num float64
 
@@ -309,6 +341,12 @@ func (v *FloatRangeValidator) Validate(value any) error {
 type BoolValidator struct{}
 
 // Validate 实现Validator接口, 检查值是否为布尔类型
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *BoolValidator) Validate(value any) error {
 	_, ok := value.(bool)
 	if !ok {
@@ -324,6 +362,12 @@ type DurationValidator struct {
 }
 
 // Validate 实现Validator接口, 检查时间间隔是否有效且在指定范围内
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *DurationValidator) Validate(value any) error {
 	// 支持字符串类型的时间间隔（如"5m"）和time.Duration类型
 	var d time.Duration
@@ -359,6 +403,12 @@ type SliceLengthValidator struct {
 }
 
 // Validate 实现Validator接口, 检查切片长度是否在[Min, Max]范围内
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *SliceLengthValidator) Validate(value any) error {
 	val := reflect.ValueOf(value)
 	if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
@@ -383,6 +433,12 @@ type EnumValidator struct {
 }
 
 // Validate 实现Validator接口, 检查值是否在允许的枚举列表中
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *EnumValidator) Validate(value any) error {
 	if len(v.AllowedValues) == 0 {
 		return errors.New("no allowed values specified")
@@ -405,6 +461,12 @@ type PathValidator struct {
 }
 
 // Validate 验证路径是否符合指定规则
+//
+// 参数值:
+//   - value any: 待验证的值
+//
+// 返回值:
+//   - error: 验证错误, 如果验证通过则返回nil
 func (v *PathValidator) Validate(value any) error {
 	path, ok := value.(string)
 	if !ok {

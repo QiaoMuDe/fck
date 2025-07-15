@@ -4,7 +4,12 @@ import "gitee.com/MM-Q/qflag/flags"
 
 // BoolVar 绑定布尔类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 布尔标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: *flags.BoolFlag - 布尔标志对象指针
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志
+//   - defValue: bool - 默认值
+//   - usage: string - 帮助说明
 func (c *Cmd) BoolVar(f *flags.BoolFlag, longName, shortName string, defValue bool, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -44,9 +49,14 @@ func (c *Cmd) BoolVar(f *flags.BoolFlag, longName, shortName string, defValue bo
 
 // Bool 添加布尔类型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志
+//   - defValue: bool - 默认值
+//   - usage: string - 帮助说明
 //
-// 返回值: 布尔标志对象指针
+// 返回值:
+//   - *flags.BoolFlag - 布尔标志对象指针
 func (c *Cmd) Bool(longName, shortName string, defValue bool, usage string) *flags.BoolFlag {
 	f := &flags.BoolFlag{}
 	c.BoolVar(f, longName, shortName, defValue, usage)

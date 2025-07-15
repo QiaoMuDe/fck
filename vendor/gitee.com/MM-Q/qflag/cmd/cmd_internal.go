@@ -290,20 +290,12 @@ func (c *Cmd) handleBuiltinFlags() (bool, error) {
 		if shell != flags.ShellNone {
 			// 生成对应shell的补全脚本
 			switch shell {
-			case flags.ShellBash: // 生成Bash补全脚本
-				bashCompletion, err := c.generateBashCompletion()
+			case flags.ShellBash, flags.ShellPowershell, flags.ShellPwsh: // 受支持的shell类型
+				shellCompletion, err := c.generateShellCompletion(shell)
 				if err != nil {
 					return false, err
 				}
-				fmt.Println(bashCompletion)
-			case flags.ShellPowershell, flags.ShellPwsh: // 兼容Powershell和Pwsh
-				pwshCompletion, err := c.generatePwshCompletion()
-				if err != nil {
-					return false, err
-				}
-				fmt.Println(pwshCompletion)
-			// case flags.ShellNone: // 默认不生成补全脚本
-			// 	// 无需处理
+				fmt.Println(shellCompletion)
 			default:
 				return false, fmt.Errorf("unsupported shell: %s. Supported shells are: %v", shell, flags.ShellSlice)
 			}
@@ -493,24 +485,24 @@ func getCmdIdentifier(cmd *Cmd) string {
 func (c *Cmd) validateFlag(longName, shortName string) error {
 	// 检查标志名称和短名称是否同时为空
 	if longName == "" && shortName == "" {
-		return fmt.Errorf("Flag long name and short name cannot both be empty")
+		return fmt.Errorf("flag long name and short name cannot both be empty")
 	}
 
 	// 检查长标志相关逻辑
 	if longName != "" {
 		// 检查长名称是否包含非法字符
 		if strings.ContainsAny(longName, flags.InvalidFlagChars) {
-			return fmt.Errorf("The flag long name '%s' contains illegal characters", longName)
+			return fmt.Errorf("the flag long name '%s' contains illegal characters", longName)
 		}
 
 		// 检查长标志是否已存在
 		if _, exists := c.flagRegistry.GetByName(longName); exists {
-			return fmt.Errorf("Flag long name %s already exists", longName)
+			return fmt.Errorf("flag long name %s already exists", longName)
 		}
 
 		// 检查长标志是否为内置标志
 		if _, ok := c.builtinFlagNameMap.Load(longName); ok {
-			return fmt.Errorf("Flag long name %s is reserved", longName)
+			return fmt.Errorf("flag long name %s is reserved", longName)
 		}
 	}
 
@@ -518,17 +510,17 @@ func (c *Cmd) validateFlag(longName, shortName string) error {
 	if shortName != "" {
 		// 检查短名称是否包含非法字符
 		if strings.ContainsAny(shortName, flags.InvalidFlagChars) {
-			return fmt.Errorf("The flag short name '%s' contains illegal characters", shortName)
+			return fmt.Errorf("the flag short name '%s' contains illegal characters", shortName)
 		}
 
 		// 检查短标志是否已存在
 		if _, exists := c.flagRegistry.GetByName(shortName); exists {
-			return fmt.Errorf("Flag short name %s already exists", shortName)
+			return fmt.Errorf("flag short name %s already exists", shortName)
 		}
 
 		// 检查短标志是否为内置标志
 		if _, ok := c.builtinFlagNameMap.Load(shortName); ok {
-			return fmt.Errorf("Flag short name %s is reserved", shortName)
+			return fmt.Errorf("flag short name %s is reserved", shortName)
 		}
 	}
 

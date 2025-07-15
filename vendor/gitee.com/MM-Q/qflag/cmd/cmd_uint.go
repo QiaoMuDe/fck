@@ -4,7 +4,12 @@ import "gitee.com/MM-Q/qflag/flags"
 
 // Uint16Var 绑定16位无符号整数类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 16位无符号整数标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: 16位无符号整数标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) Uint16Var(f *flags.Uint16Flag, longName, shortName string, defValue uint16, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -44,9 +49,14 @@ func (c *Cmd) Uint16Var(f *flags.Uint16Flag, longName, shortName string, defValu
 
 // Uint16 添加16位无符号整数类型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 //
-// 返回值: 16位无符号整数标志对象指针
+// 返回值:
+//   - *flags.Uint16Flag: 16位无符号整数标志对象指针
 func (c *Cmd) Uint16(longName, shortName string, defValue uint16, usage string) *flags.Uint16Flag {
 	f := &flags.Uint16Flag{}
 	c.Uint16Var(f, longName, shortName, defValue, usage)
@@ -54,7 +64,13 @@ func (c *Cmd) Uint16(longName, shortName string, defValue uint16, usage string) 
 }
 
 // Uint32Var 绑定32位无符号整数类型标志到指针并内部注册Flag对象
-// 参数依次为: 32位无符号整数标志指针、长标志名、短标志、默认值、帮助说明
+//
+// 参数值:
+//   - f: 32位无符号整数标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) Uint32Var(f *flags.Uint32Flag, longName, shortName string, defValue uint32, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -92,8 +108,15 @@ func (c *Cmd) Uint32Var(f *flags.Uint32Flag, longName, shortName string, defValu
 }
 
 // Uint32 添加32位无符号整数类型标志, 返回标志对象指针
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-// 返回值: 32位无符号整数标志对象指针
+//
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+//
+// 返回值:
+//   - *flags.Uint32Flag: 32位无符号整数标志对象指针
 func (c *Cmd) Uint32(longName, shortName string, defValue uint32, usage string) *flags.Uint32Flag {
 	f := &flags.Uint32Flag{}
 	c.Uint32Var(f, longName, shortName, defValue, usage)
@@ -101,7 +124,13 @@ func (c *Cmd) Uint32(longName, shortName string, defValue uint32, usage string) 
 }
 
 // Uint64Var 绑定64位无符号整数类型标志到指针并内部注册Flag对象
-// 参数依次为: 64位无符号整数标志指针、长标志名、短标志、默认值、帮助说明
+//
+// 参数值:
+//   - f: 64位无符号整数标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) Uint64Var(f *flags.Uint64Flag, longName, shortName string, defValue uint64, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -140,8 +169,15 @@ func (c *Cmd) Uint64Var(f *flags.Uint64Flag, longName, shortName string, defValu
 }
 
 // Uint64 添加64位无符号整数类型标志, 返回标志对象指针
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
-// 返回值: 64位无符号整数标志对象指针
+//
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+//
+// 返回值:
+//   - *flags.Uint64Flag: 64位无符号整数标志对象指针
 func (c *Cmd) Uint64(longName, shortName string, defValue uint64, usage string) *flags.Uint64Flag {
 	f := &flags.Uint64Flag{}
 	c.Uint64Var(f, longName, shortName, defValue, usage)

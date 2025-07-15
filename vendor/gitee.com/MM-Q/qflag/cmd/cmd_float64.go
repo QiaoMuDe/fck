@@ -4,9 +4,14 @@ import "gitee.com/MM-Q/qflag/flags"
 
 // Float64 添加浮点型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - longName - 长标志名
+//   - shortName - 短标志
+//   - defValue - 默认值
+//   - usage - 帮助说明
 //
-// 返回值: 浮点型标志对象指针
+// 返回值:
+//   - *flags.Float64Flag - 浮点型标志对象指针
 func (c *Cmd) Float64(longName, shortName string, defValue float64, usage string) *flags.Float64Flag {
 	f := &flags.Float64Flag{}
 	c.Float64Var(f, longName, shortName, defValue, usage)
@@ -15,7 +20,12 @@ func (c *Cmd) Float64(longName, shortName string, defValue float64, usage string
 
 // Float64Var 绑定浮点型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 浮点数标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: *flags.Float64Flag - 浮点型标志对象指针
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志
+//   - defValue: float64 - 默认值
+//   - usage: string - 帮助说明
 func (c *Cmd) Float64Var(f *flags.Float64Flag, longName, shortName string, defValue float64, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()

@@ -15,12 +15,24 @@ type URLFlag struct {
 }
 
 // Type 返回标志类型
+//
+// 返回值:
+//   - FlagType: 标志类型枚举值
 func (f *URLFlag) Type() FlagType { return FlagTypeURL }
 
 // String 实现flag.Value接口,返回当前值的字符串表示
+//
+// 返回值:
+//   - string: 当前URL值的字符串表示
 func (f *URLFlag) String() string { return f.Get() }
 
 // Set 实现flag.Value接口,解析并验证URL格式
+//
+// 参数:
+//   - value: 待解析的URL字符串
+//
+// 返回值:
+//   - error: 解析或验证失败时返回错误信息
 func (f *URLFlag) Set(value string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

@@ -8,23 +8,24 @@ const InvalidFlagChars = " !@#$%^&*(){}[]|\\;:'\"<>,.?/"
 type FlagType int
 
 const (
-	FlagTypeInt      FlagType = iota + 1 // 整数类型
-	FlagTypeInt64                        // 64位整数类型
-	FlagTypeUint16                       // 16位无符号整数类型
-	FlagTypeUint32                       // 32位无符号整数类型
-	FlagTypeUint64                       // 64位无符号整数类型
-	FlagTypeString                       // 字符串类型
-	FlagTypeBool                         // 布尔类型
-	FlagTypeFloat64                      // 64位浮点数类型
-	FlagTypeEnum                         // 枚举类型
-	FlagTypeDuration                     // 时间间隔类型
-	FlagTypeSlice                        // 切片类型
-	FlagTypeTime                         // 时间类型
-	FlagTypeMap                          // 映射类型
-	FlagTypePath                         // 路径类型
-	FlagTypeIP4                          // IPv4地址类型
-	FlagTypeIP6                          // IPv6地址类型
-	FlagTypeURL                          // URL类型
+	FlagTypeUnknown  FlagType = iota // 未知类型
+	FlagTypeInt                      // 整数类型
+	FlagTypeInt64                    // 64位整数类型
+	FlagTypeUint16                   // 16位无符号整数类型
+	FlagTypeUint32                   // 32位无符号整数类型
+	FlagTypeUint64                   // 64位无符号整数类型
+	FlagTypeString                   // 字符串类型
+	FlagTypeBool                     // 布尔类型
+	FlagTypeFloat64                  // 64位浮点数类型
+	FlagTypeEnum                     // 枚举类型
+	FlagTypeDuration                 // 时间间隔类型
+	FlagTypeSlice                    // 切片类型
+	FlagTypeTime                     // 时间类型
+	FlagTypeMap                      // 映射类型
+	FlagTypePath                     // 路径类型
+	FlagTypeIP4                      // IPv4地址类型
+	FlagTypeIP6                      // IPv6地址类型
+	FlagTypeURL                      // URL类型
 )
 
 // 内置标志名称
@@ -111,42 +112,62 @@ type TypedFlag[T any] interface {
 }
 
 // FlagTypeToString 将FlagType转换为字符串
-func FlagTypeToString(flagType FlagType) string {
+//
+// 参数:
+//   - flagType: 需要转换的FlagType枚举值
+//   - withBrackets: 是否在返回的字符串中包含尖括号
+//     如果为true且flagType为bool时返回空字符串
+//
+// 返回值:
+//   - 对应的类型字符串，如果类型未知则返回"unknown"或"<unknown>"
+func FlagTypeToString(flagType FlagType, withBrackets bool) string {
+	var result string
+
 	switch flagType {
 	case FlagTypeInt:
-		return "<int>"
+		result = "int"
 	case FlagTypeInt64:
-		return "<int64>"
+		result = "int64"
 	case FlagTypeUint16:
-		return "<uint16>"
+		result = "uint16"
 	case FlagTypeUint32:
-		return "<uint32>"
+		result = "uint32"
 	case FlagTypeUint64:
-		return "<uint64>"
+		result = "uint64"
 	case FlagTypeString:
-		return "<string>"
+		result = "string"
 	case FlagTypeBool:
-		// 布尔类型没有参数类型字符串
-		return ""
+		// 布尔类型特殊处理
+		if withBrackets {
+			return ""
+		}
+		return "bool"
 	case FlagTypeFloat64:
-		return "<float64>"
+		result = "float64"
 	case FlagTypeEnum:
-		return "<enum>"
+		result = "enum"
 	case FlagTypeDuration:
-		return "<duration>"
+		result = "duration"
 	case FlagTypeTime:
-		return "<time>"
+		result = "time"
 	case FlagTypeMap:
-		return "<map>"
+		result = "map"
 	case FlagTypePath:
-		return "<path>"
+		result = "path"
+	case FlagTypeSlice:
+		result = "slice"
 	case FlagTypeIP4:
-		return "<ipv4>"
+		result = "ip4"
 	case FlagTypeIP6:
-		return "<ipv6>"
+		result = "ip6"
 	case FlagTypeURL:
-		return "<url>"
+		result = "url"
 	default:
-		return "<unknown>"
+		result = "unknown"
 	}
+
+	if withBrackets {
+		return "<" + result + ">"
+	}
+	return result
 }

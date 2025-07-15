@@ -4,9 +4,14 @@ import "gitee.com/MM-Q/qflag/flags"
 
 // Slice 绑定字符串切片类型标志并内部注册Flag对象
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 //
-// 返回值: 字符串切片标志对象指针
+// 返回值:
+//   - *flags.SliceFlag: 字符串切片标志对象指针
 func (c *Cmd) Slice(longName, shortName string, defValue []string, usage string) *flags.SliceFlag {
 	f := &flags.SliceFlag{}
 	c.SliceVar(f, longName, shortName, defValue, usage)
@@ -15,7 +20,12 @@ func (c *Cmd) Slice(longName, shortName string, defValue []string, usage string)
 
 // SliceVar 绑定字符串切片类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 字符串切片标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: 字符串切片标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
 func (c *Cmd) SliceVar(f *flags.SliceFlag, longName, shortName string, defValue []string, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()

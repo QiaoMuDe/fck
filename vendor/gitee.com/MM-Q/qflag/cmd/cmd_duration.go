@@ -8,7 +8,12 @@ import (
 
 // DurationVar 绑定时间间隔类型标志到指针并内部注册Flag对象
 //
-// 参数依次为: 时间间隔标志指针、长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - f: *flags.DurationFlag - 时间间隔标志对象指针
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志
+//   - defValue: time.Duration - 默认值
+//   - usage: string - 帮助说明
 func (c *Cmd) DurationVar(f *flags.DurationFlag, longName, shortName string, defValue time.Duration, usage string) {
 	c.rwMu.Lock()
 	defer c.rwMu.Unlock()
@@ -48,9 +53,14 @@ func (c *Cmd) DurationVar(f *flags.DurationFlag, longName, shortName string, def
 
 // Duration 添加时间间隔类型标志, 返回标志对象指针
 //
-// 参数依次为: 长标志名、短标志、默认值、帮助说明
+// 参数值:
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志
+//   - defValue: time.Duration - 默认值
+//   - usage: string - 帮助说明
 //
-// 返回值: 时间间隔标志对象指针
+// 返回值:
+//   - *flags.DurationFlag - 时间间隔标志对象指针
 func (c *Cmd) Duration(longName, shortName string, defValue time.Duration, usage string) *flags.DurationFlag {
 	f := &flags.DurationFlag{}
 	c.DurationVar(f, longName, shortName, defValue, usage)

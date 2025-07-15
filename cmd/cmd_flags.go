@@ -72,9 +72,9 @@ var (
 	listCmdSortByName    *qflag.BoolFlag   // sort-by-name 标志
 	listCmdSortBySize    *qflag.BoolFlag   // sort-by-size 标志
 	listCmdSortByTime    *qflag.BoolFlag   // sort-by-time 标志
-	listCmdDirEctory     *qflag.BoolFlag   // D 标志
+	listCmdDir           *qflag.BoolFlag   // d 标志
 	listCmdFileOnly      *qflag.BoolFlag   // f 标志
-	listCmdDirOnly       *qflag.BoolFlag   // d 标志
+	listCmdDirOnly       *qflag.BoolFlag   // D 标志
 	listCmdSymlink       *qflag.BoolFlag   // l 标志
 	listCmdReadOnly      *qflag.BoolFlag   // ro 标志
 	listCmdHiddenOnly    *qflag.BoolFlag   // ho 标志
@@ -233,9 +233,9 @@ func init() {
 	listCmdSortByTime = listCmd.Bool("time", "t", false, "按修改时间排序")
 	listCmdSortBySize = listCmd.Bool("size", "s", false, "按文件大小排序")
 	listCmdSortByName = listCmd.Bool("name", "n", false, "按文件名排序")
-	listCmdDirEctory = listCmd.Bool("directory", "D", false, "列出目录本身，而不是文件")
+	listCmdDirOnly = listCmd.Bool("directory", "D", false, "列出目录本身，而不是文件")
 	listCmdFileOnly = listCmd.Bool("file", "f", false, "只列出文件，不列出目录")
-	listCmdDirOnly = listCmd.Bool("dir", "d", false, "只列出目录，不列出文件")
+	listCmdDir = listCmd.Bool("dir", "d", false, "只列出目录，不列出文件")
 	listCmdSymlink = listCmd.Bool("symlink", "L", false, "只列出软链接，不列出其他类型的文件")
 	listCmdReadOnly = listCmd.Bool("readonly", "ro", false, "只列出只读文件")
 	listCmdHiddenOnly = listCmd.Bool("hidden", "ho", false, "只列出隐藏文件或目录")
