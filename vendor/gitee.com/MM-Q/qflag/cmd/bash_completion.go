@@ -170,7 +170,7 @@ _%s() {
 	# Flag parameter completion
 	COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
 
-	return $?
+	return 0
 	}
 
 complete -F _%s %s

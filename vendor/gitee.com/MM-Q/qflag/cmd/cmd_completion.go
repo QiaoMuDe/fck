@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"bytes"
+	"container/list"
 	"fmt"
 	"os"
 	"path"
@@ -97,113 +98,94 @@ func getParamTypeByFlagType(flagType flags.FlagType) string {
 	return "required"
 }
 
-// traverseCommandTree 通用的命令树遍历函数
+// traverseCommandTree 遍历命令树
 //
 // 参数:
-//   - cmdTreeEntries - 用于存储命令树条目的缓冲区
-//   - parentPath - 父命令路径
-//   - cmds - 子命令列表
-//   - shellType - shell类型 ("bash", "pwsh", "powershell")
-func traverseCommandTree(cmdTreeEntries *bytes.Buffer, parentPath string, cmds []*Cmd, shellType string) {
-	// 使用队列实现广度优先遍历
-	type cmdNode struct {
-		cmd        *Cmd
+//   - buf: 缓冲区
+//   - rootPath: 根路径
+//   - cmds: 命令列表
+//   - shellType: 目标 shell 类型
+func traverseCommandTree(buf *bytes.Buffer, rootPath string, cmds []*Cmd, shellType string) {
+	// node 代表一个即将写入的“树条目”
+	type node struct {
+		name       string // 真正写入的名字（长名或短名）
 		parentPath string
+		cmd        *Cmd // 为了拿到下一级 subCmds
 	}
-	queue := make([]cmdNode, 0, len(cmds))
 
-	// 初始化队列并计算总节点数
-	totalNodes := new(int)
-	*totalNodes = 0
-	for _, cmd := range cmds {
-		if cmd != nil {
-			// 为长名称和短名称分别计数
-			if cmd.LongName() != "" {
-				*totalNodes++
-			}
-			if cmd.ShortName() != "" {
-				*totalNodes++
-			}
-			queue = append(queue, cmdNode{cmd: cmd, parentPath: parentPath})
+	if len(cmds) == 0 {
+		return
+	}
+
+	// 初始化队列：把第一层命令按长短名拆开入队
+	q := list.New()
+	for _, c := range cmds {
+		if c == nil {
+			continue
+		}
+
+		// 长名入队
+		if n := c.LongName(); n != "" {
+			q.PushBack(node{name: n, parentPath: rootPath, cmd: c})
+		}
+
+		// 短名入队
+		if n := c.ShortName(); n != "" {
+			q.PushBack(node{name: n, parentPath: rootPath, cmd: c})
 		}
 	}
 
-	// 初始化已处理节点数
-	processedNodes := new(int)
-	*processedNodes = 0
+	// 记录已经写了多少条，最后一条不补逗号
+	var written int
 
-	// 定义处理命令名称的匿名函数
-	processCmdName := func(name string, currentParentPath string, cmd *Cmd, queue *[]cmdNode) {
-		// 检查命令名称和命令是否有效以及计数器是否有效
-		if name == "" || cmd == nil {
-			return
-		}
+	for q.Len() > 0 {
+		cur := q.Remove(q.Front()).(node)
 
-		// 获取子命令补全选项
-		cmdOpts := cmd.collectCompletionOptions()
-
-		// 构建命令路径（改进版）
-		var cmdPath string
-		if currentParentPath != "/" && currentParentPath != "" {
-			cmdPath = path.Join("/", currentParentPath, name) + "/"
-		} else if currentParentPath == "/" {
-			cmdPath = path.Join(currentParentPath, name) + "/"
+		// 计算当前节点完整路径
+		var fullPath string
+		if cur.parentPath == "/" {
+			// 根节点
+			fullPath = path.Join("/", cur.name) + "/"
 		} else {
-			cmdPath = path.Join("/", name) + "/"
+			// 子节点
+			fullPath = path.Join("/", cur.parentPath, cur.name) + "/"
 		}
 
-		// 根据shell类型调用对应的处理函数
+		// 根据 shell 写树条目
+		opts := cur.cmd.collectCompletionOptions()
 		switch shellType {
-		case flags.ShellBash: // Bash
-			// 调用generateBashCommandTreeEntry函数生成Bash自动补全条目
-			generateBashCommandTreeEntry(cmdTreeEntries, cmdPath, cmdOpts)
+		case flags.ShellBash: // Bash特定处理
+			generateBashCommandTreeEntry(buf, fullPath, opts)
+		case flags.ShellPwsh, flags.ShellPowershell: // Powershell特定处理
+			generatePwshCommandTreeEntry(buf, fullPath, opts)
+		}
 
-		case flags.ShellPwsh, flags.ShellPowershell: // Powershell和Pwsh
-			// 调用generatePwshCommandTreeEntry函数生成Powershell自动补全条目
-			generatePwshCommandTreeEntry(cmdTreeEntries, cmdPath, cmdOpts)
+		// 子节点入队（同样按长短名拆分）
+		for _, sub := range cur.cmd.subCmds {
+			if sub == nil {
+				continue
+			}
 
-			// 判断是否为最后一个节点, 如果不是最后一个条目，添加逗号
-			if *processedNodes != *totalNodes {
-				cmdTreeEntries.WriteString(",\n")
+			// 长名入队
+			if n := sub.LongName(); n != "" {
+				q.PushBack(node{name: n, parentPath: fullPath, cmd: sub})
+			}
+
+			// 短名入队
+			if n := sub.ShortName(); n != "" {
+				q.PushBack(node{name: n, parentPath: fullPath, cmd: sub})
 			}
 		}
 
-		// 将子命令加入队列
-		for _, subCmd := range cmd.subCmds {
-			if subCmd != nil {
-				// 添加命令
-				*queue = append(*queue, cmdNode{cmd: subCmd, parentPath: cmdPath})
+		// 计数器累加
+		written++
 
-				// 添加长名称
-				if subCmd.LongName() != "" {
-					*totalNodes++ // 总节点数加1
-				}
-
-				// 添加短名称
-				if subCmd.ShortName() != "" {
-					*totalNodes++ // 总节点数加1
-				}
+		// 只要不是最后一条就补逗号
+		if q.Len() > 0 {
+			// 如果是pwsh或者powershell，才处理
+			if shellType == flags.ShellPwsh || shellType == flags.ShellPowershell {
+				buf.WriteString(",\n")
 			}
-		}
-	}
-	// 处理队列中的所有命令
-	for len(queue) > 0 {
-		// 出队
-		node := queue[0]                     // 获取当前命令节点
-		queue = queue[1:]                    // 移除已处理的元素
-		cmd := node.cmd                      // 获取当前命令
-		currentParentPath := node.parentPath // 获取当前命令的父路径
-
-		// 处理长命名
-		if cmd.LongName() != "" {
-			*processedNodes++ // 已处理节点数加1
-			processCmdName(cmd.LongName(), currentParentPath, cmd, &queue)
-		}
-
-		// 处理短命名
-		if cmd.ShortName() != "" {
-			*processedNodes++ // 已处理节点数加1
-			processCmdName(cmd.ShortName(), currentParentPath, cmd, &queue)
 		}
 	}
 }
@@ -253,77 +235,85 @@ func (c *Cmd) generateShellCompletion(shellType string) (string, error) {
 }
 
 // collectFlagParameters 收集所有命令标志参数需求，返回标志名称到参数需求类型的映射
-// 参数需求类型: "required"|"optional"|"none"
+//
+// 参数需求类型:
+//   - "required"
+//   - "optional"
+//   - "none"
 func (c *Cmd) collectFlagParameters() []FlagParam {
-	// 基于命令数量和平均标志密度预分配容量 (每个命令约8个标志)
-	initialCapacity := len(c.subCmds)*8 + 16        // 额外+16应对根命令标志
-	params := make([]FlagParam, 0, initialCapacity) // 使用切片存储标志参数需求
-	seen := make(map[string]bool)                   // 使用原始标志名称作为键，区分大小写
+	// 粗略估计：整棵树的 flag 总量
+	params := make([]FlagParam, 0, 256)
+	seen := make(map[string]struct{})
 
-	// 定义匿名函数处理标志添加逻辑，包含参数类型判断和命令路径
-	addFlagParam := func(flag *flags.FlagMeta, prefix, opt string, cmdPath string) {
-		if opt == "" {
+	// 队列 BFS
+	type node struct {
+		cmd  *Cmd
+		path string // 已标准化好的路径
+	}
+	q := []node{{cmd: c, path: "/"}}
+
+	// add 添加一个标志到结果集
+	add := func(prefix, name string, cur node, meta *flags.FlagMeta) {
+		if name == "" {
 			return
 		}
 
-		// 拼接标志名称
-		flagName := prefix + opt
+		// 用“路径+flag”做唯一键
+		key := cur.path + prefix + name
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
 
-		// 只有在标志名称未被添加过时才添加
-		if !seen[flagName] {
-			seen[flagName] = true // 标记为已添加
+		// 添加标志参数
+		ft := meta.GetFlagType()
+		param := FlagParam{
+			CommandPath: cur.path,
+			Name:        prefix + name,
+			Type:        getParamTypeByFlagType(ft),
+			ValueType:   getValueTypeByFlagType(ft),
+		}
 
-			// 根据标志类型获取参数类型和值类型
-			flagType := flag.GetFlagType()
-			paramType := getParamTypeByFlagType(flagType)
-			valueType := getValueTypeByFlagType(flagType)
-			var enumOptions []string
+		// 如果是枚举标志，则获取枚举选项
+		if ft == flags.FlagTypeEnum {
+			if ef, ok := meta.GetFlag().(*flags.EnumFlag); ok {
+				param.EnumOptions = ef.GetOptions()
+			}
+		}
+		params = append(params, param)
+	}
 
-			if flagType == flags.FlagTypeEnum {
-				if enumFlag, ok := flag.GetFlag().(*flags.EnumFlag); ok {
-					enumOptions = enumFlag.GetOptions()
-				}
+	// 遍历命令节点
+	for len(q) > 0 {
+		cur := q[0] // 获取当前节点
+		q = q[1:]   // 移除当前节点
+
+		// 遍历当前命令的所有标志
+		for _, meta := range cur.cmd.flagRegistry.GetAllFlagMetas() {
+			// 如果短标志不为空，则添加短标志
+			if meta.GetShortName() != "" {
+				add("-", meta.GetShortName(), cur, meta)
 			}
 
-			// 添加标志参数需求，包含命令路径
-			params = append(params, FlagParam{CommandPath: cmdPath, Name: flagName, Type: paramType, ValueType: valueType, EnumOptions: enumOptions})
+			// 如果长标志不为空，则添加长标志
+			if meta.GetLongName() != "" {
+				add("--", meta.GetLongName(), cur, meta)
+			}
+		}
+
+		// 子命令入队
+		for _, sub := range cur.cmd.subCmds {
+			if sub == nil {
+				continue
+			}
+
+			// 子命令路径
+			subPath := path.Join(cur.path, sub.Name()) + "/"
+
+			// 入队
+			q = append(q, node{cmd: sub, path: subPath})
 		}
 	}
-
-	// 使用队列实现广度优先遍历，记录命令路径
-	type cmdNode struct {
-		cmd        *Cmd
-		parentPath string
-	}
-	queue := []cmdNode{{cmd: c, parentPath: ""}}
-
-	// 循环遍历命令树
-	for len(queue) > 0 {
-		node := queue[0]
-		queue = queue[1:]
-		cmd := node.cmd
-		currentParentPath := node.parentPath
-
-		// 构建当前命令路径，拼接父路径和当前命令名
-		cmdPath := "/"
-		if currentParentPath != "" {
-			cmdPath = currentParentPath + cmd.Name() + "/"
-		}
-
-		// 收集当前命令的标志 - 同时处理长短选项
-		for _, flag := range cmd.flagRegistry.GetAllFlagMetas() {
-			// 处理短选项
-			addFlagParam(flag, "-", flag.GetShortName(), cmdPath)
-			// 处理长选项
-			addFlagParam(flag, "--", flag.GetLongName(), cmdPath)
-		}
-
-		// 将子命令加入队列
-		for _, subCmd := range cmd.subCmds {
-			queue = append(queue, cmdNode{cmd: subCmd, parentPath: cmdPath})
-		}
-	}
-
 	return params
 }
 
@@ -335,38 +325,46 @@ func (c *Cmd) collectFlagParameters() []FlagParam {
 // 返回值：
 //   - 包含所有标志选项和子命令名称的字符串切片
 func (c *Cmd) collectCompletionOptions() []string {
-
-	// 防御性检查
 	if c == nil || c.flagRegistry == nil {
-		return []string{}
+		return nil
 	}
 
-	// 获取所有标志
-	flags := c.flagRegistry.GetAllFlagMetas()
+	// 获取所有标志数量(长标志+短标志)
+	flagCnt := len(c.flagRegistry.GetAllFlags())
 
-	// 获取所有子命令
-	subCmdMap := c.subCmdMap
+	// 计算总容量（标志数量+子命令数量*2）
+	capacity := flagCnt + len(c.subCmds)*2
 
-	// 预分配切片容量，减少动态扩容的开销
-	capacity := len(flags)*2 + len(subCmdMap) // 每个标志和子命令(子命令map已包含长短名)最多2个选项
-	opts := make([]string, 0, capacity)
+	// 创建一个用于存储标志选项和子命令名称的切片
+	seen := make(map[string]struct{}, capacity)
 
-	// 获取所有长选项和短选项(为空时不会循环)
-	for _, m := range flags {
-		if m.GetLongName() != "" {
-			opts = append(opts, "--"+m.GetLongName())
-		}
-		if m.GetShortName() != "" {
-			opts = append(opts, "-"+m.GetShortName())
+	// 定义一个添加选项的函数
+	add := func(s string) {
+		if s != "" {
+			seen[s] = struct{}{}
 		}
 	}
 
-	// 获取所有子命令(为空时不会循环)
-	for subCmd := range subCmdMap {
-		opts = append(opts, subCmd)
+	// 1. flags （同时展开长短名）
+	for _, m := range c.flagRegistry.GetAllFlagMetas() {
+		add("--" + m.GetLongName())
+		add("-" + m.GetShortName())
 	}
 
-	// 返回所有选项
+	// 2. sub-commands（同时展开长短名）
+	for _, sub := range c.subCmds {
+		if sub == nil {
+			continue
+		}
+		add(sub.LongName())
+		add(sub.ShortName())
+	}
+
+	// 3. 转回切片
+	opts := make([]string, 0, len(seen))
+	for k := range seen {
+		opts = append(opts, k)
+	}
 	return opts
 }
 
