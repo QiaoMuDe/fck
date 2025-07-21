@@ -108,7 +108,7 @@ type ListInfo struct {
 	// 扩展名 - 扩展名
 	FileExt string
 
-	// 如果是软链接，则指向的文件路径，否则为空字符串
+	// 如果是软链接，则是指向的文件路径，否则为空字符串
 	LinkTargetPath string
 }
 

@@ -150,23 +150,49 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 		infoModTime := cl.Sblue(info.ModTime.Format("2006-01-02 15:04:05"))
 		cl.NoBold.Store(false)
 
+		// 检查是否启用引号
+		formatStr := "%s"
+		if listCmdQuoteNames.Get() {
+			formatStr = "%q"
+		}
+
 		// 文件名
 		var infoName string
-		// 检查是否启用引号
-		if listCmdQuoteNames.Get() {
-			// 检查是否为软链接
-			if info.EntryType == globals.SymlinkType {
-				infoName = getColorString(info, fmt.Sprintf("%q -> %q", fileName, info.LinkTargetPath), cl)
+
+		// 检查是否为软链接
+		if info.EntryType == globals.SymlinkType {
+			//infoName = getColorString(info, fmt.Sprintf(formatStr+" -> "+formatStr, fileName, info.LinkTargetPath), cl)
+
+			// 设置箭头颜色
+			arrow := cl.Swhite(" -> ")
+
+			// 软连接路径
+			var linkPath string
+
+			// 源文件路径
+			var sourcePath string
+
+			if _, statErr := os.Stat(info.LinkTargetPath); statErr != nil {
+				// 如果源文件不存在, 则软连接为红色
+				linkPath = cl.Sred(fileName)
+
+				// 源文件为灰色
+				sourcePath = cl.Sgray(info.LinkTargetPath)
+
+				// 组装字符串
+				infoName = fmt.Sprintf(formatStr+arrow+formatStr, linkPath, sourcePath)
 			} else {
-				infoName = getColorString(info, fmt.Sprintf("%q", fileName), cl)
+				// 如果源文件存在, 则软连接为青色
+				linkPath = cl.Scyan(fileName)
+
+				// 源文件为根据类型设置颜色
+				sourcePath = getColorString(info, info.LinkTargetPath, cl)
+
+				// 组装字符串
+				infoName = fmt.Sprintf(formatStr+arrow+formatStr, linkPath, sourcePath)
 			}
 		} else {
-			// 检查是否为软链接
-			if info.EntryType == globals.SymlinkType {
-				infoName = getColorString(info, fmt.Sprintf("%s -> %s", fileName, info.LinkTargetPath), cl)
-			} else {
-				infoName = getColorString(info, fileName, cl)
-			}
+			infoName = getColorString(info, fmt.Sprintf(formatStr, fileName), cl)
 		}
 
 		// 添加行到表格
