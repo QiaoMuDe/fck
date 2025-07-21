@@ -347,8 +347,17 @@ func (c *Cmd) collectCompletionOptions() []string {
 
 	// 1. flags （同时展开长短名）
 	for _, m := range c.flagRegistry.GetAllFlagMetas() {
-		add("--" + m.GetLongName())
-		add("-" + m.GetShortName())
+		if m == nil {
+			continue
+		}
+
+		if m.GetLongName() != "" {
+			add("--" + m.GetLongName())
+		}
+
+		if m.GetShortName() != "" {
+			add("-" + m.GetShortName())
+		}
 	}
 
 	// 2. sub-commands（同时展开长短名）

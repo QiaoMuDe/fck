@@ -288,6 +288,11 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 
 		// 处理每个目录
 		for _, dir := range dirs {
+			if dir == "" {
+				continue
+			}
+
+			// 存储目录中的文件信息
 			infos := dirFiles[dir]
 
 			// 打印目录名
@@ -640,11 +645,14 @@ func handleError(path string, err error) error {
 
 // buildFileInfo 函数的作用是根据传入的文件信息和文件的绝对路径，构建一个 globals.ListInfo 结构体对象。
 // 该结构体对象包含了文件的各类详细信息，方便后续对文件信息进行统一管理和使用。
+//
 // 参数说明：
-// - fileInfo: os.FileInfo 类型，包含了文件的基本属性，如文件大小、修改时间、权限模式等。
-// - absPath: 文件的绝对路径字符串, 用于提取文件名以及获取文件所属的用户和组信息。
+//   - fileInfo: os.FileInfo 类型，包含了文件的基本属性，如文件大小、修改时间、权限模式等。
+//   - absPath: 文件的绝对路径字符串, 用于提取文件名以及获取文件所属的用户和组信息。
+//   - rootDir: 根目录字符串，用于计算文件所属的目录层级关系。
+//
 // 返回值：
-// - 返回一个 globals.ListInfo 结构体实例，该实例封装了文件的完整信息。
+//   - 返回一个 globals.ListInfo 结构体实例，该实例封装了文件的完整信息。
 func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals.ListInfo {
 	// 从文件的绝对路径中提取出文件名，作为文件的显示名称
 	var baseName string

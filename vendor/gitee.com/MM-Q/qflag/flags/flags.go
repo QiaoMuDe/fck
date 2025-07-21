@@ -64,19 +64,35 @@ var (
 
 // 定义标志的分隔符常量
 const (
-	FlagSplitComma     = "," // 逗号
-	FlagSplitSemicolon = ";" // 分号
-	FlagSplitPipe      = "|" // 竖线
-	FlagKVColon        = ":" // 冒号
-	FlagKVEqual        = "=" // 等号
+	// 逗号
+	FlagSplitComma = ","
+
+	// 分号
+	FlagSplitSemicolon = ";"
+
+	// 竖线
+	FlagSplitPipe = "|"
+
+	// 冒号
+	FlagKVColon = ":"
+
+	// 等号
+	FlagKVEqual = "="
 )
 
 // Flag支持的标志分隔符切片
 var FlagSplitSlice = []string{
-	FlagSplitComma,     // 逗号
-	FlagSplitSemicolon, // 分号
-	FlagSplitPipe,      // 竖线
-	FlagKVColon,        // 冒号
+	// 逗号
+	FlagSplitComma,
+
+	// 分号
+	FlagSplitSemicolon,
+
+	// 竖线
+	FlagSplitPipe,
+
+	// 冒号
+	FlagKVColon,
 }
 
 // Validator 验证器接口, 所有自定义验证器需实现此接口

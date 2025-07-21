@@ -1,0 +1,51 @@
+# gob 构建工具配置文件 - 此文件包含所有可用的构建配置选项，与命令行参数对应
+# 项目地址: https://gitee.com/MM-Q/gob.git
+
+[build]
+# --output, -o: 指定输出目录
+output_dir = 'output'
+# --name, -n: 指定输出文件名
+output_name = 'fck'
+# --main, -m: 指定入口文件
+main_file = 'main.go'
+# --ldflags, -l: 指定链接器标志
+ldflags = '-s -w'
+# --git-ldflags, -gl: 指定包含Git信息的链接器标志
+git_ldflags = "-X 'gitee.com/MM-Q/verman.appName={{AppName}}' -X 'gitee.com/MM-Q/verman.gitVersion={{GitVersion}}' -X 'gitee.com/MM-Q/verman.gitCommit={{GitCommit}}' -X 'gitee.com/MM-Q/verman.gitCommitTime={{GitCommitTime}}' -X 'gitee.com/MM-Q/verman.buildTime={{BuildTime}}' -X 'gitee.com/MM-Q/verman.gitTreeState={{GitTreeState}}' -s -w"
+# --use-vendor, -uv: 在编译时使用vendor目录
+use_vendor = true
+# --git, -g: 在编译时注入git信息
+inject_git_info = true
+# --simple-name, -sn: 使用简单名称（不包含平台和架构信息）
+simple_name = false
+# --proxy, -p: 设置Go代理
+proxy = 'https://goproxy.cn,https://goproxy.io,direct'
+# --enable-cgo, -ec: 启用CGO
+enable_cgo = false
+# --color, -c: 启用颜色输出
+color_output = true
+# --batch, -b: 批量编译模式
+batch_mode = true
+# --current-platform-only, -cpo: 仅编译当前平台
+current_platform_only = false
+# --zip, -z: 将输出文件打包为zip
+zip_output = false
+# 支持的目标平台列表，多个平台用逗号分隔
+platforms = ['linux', 'windows']
+# 支持的目标架构列表，多个架构用逗号分隔
+architectures = ['amd64']
+
+[install]
+# --install, -i: 安装编译后的二进制文件
+install = false
+# --install-path, -ip: 指定安装路径
+install_path = '$GOPATH/bin'
+# --force, -f: 强制安装（覆盖已存在文件）
+force = false
+
+# --env, -e: 环境变量配置
+[env]
+# 示例:
+# GOOS = "linux"
+# GOARCH = "amd64"
+# CGO_ENABLED = "1"

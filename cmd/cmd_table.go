@@ -13,34 +13,42 @@ import (
 )
 
 // prepareFileNames 准备文件名列表，处理引号和颜色
-// 参数:
 //
-//	infos - 文件信息列表
-//	quoteNames - 是否对文件名添加引号
-//	useColor - 是否启用颜色输出
-//	cl - 颜色库实例
+// 参数:
+//   - infos - 文件信息列表
+//   - quoteNames - 是否对文件名添加引号
+//   - useColor - 是否启用颜色输出
+//   - cl - 颜色库实例
 //
 // 返回:
-//
-//	格式化后的文件名列表
+//   - 格式化后的文件名列表
 func prepareFileNames(infos globals.ListInfos, quoteNames bool, useColor bool, cl *colorlib.ColorLib) []string {
+	// 创建一个文件名列表，长度与文件信息列表相同
 	fileNames := make([]string, len(infos))
+	// 遍历文件信息列表
 	for i, info := range infos {
+		// 获取文件名
 		_, file := filepath.Split(info.Name)
+		// 判断是否使用引号
 		var paddedFilename string
 		if quoteNames {
+			// 使用引号
 			paddedFilename = fmt.Sprintf("%q", file)
 		} else {
+			// 不使用引号
 			paddedFilename = file
 		}
 
 		// 检查是否启用颜色输出
 		if useColor {
+			// 获取颜色字符串
 			paddedFilename = getColorString(info, paddedFilename, cl)
 		}
 
+		// 将文件名添加到文件名列表中
 		fileNames[i] = paddedFilename
 	}
+	// 返回文件名列表
 	return fileNames
 }
 
@@ -126,6 +134,19 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 	}
 
 	// 添加文件信息行
+	showUserGroup := listCmdShowUserGroup.Get() // 检查是否显示用户组
+	quoteNames := listCmdQuoteNames.Get()       // 检查是否对文件名添加引号
+	formatStr := "%s"                           // 默认格式化字符串
+	if quoteNames {
+		formatStr = "%q" // 如果需要引号，则使用引号格式化字符串
+	}
+	arrow := " -> "                                  // 软链接箭头
+	arrowColor := cl.Swhite(arrow)                   // 软链接箭头颜色
+	linkFormat := formatStr + arrowColor + formatStr // 软链接格式化字符串
+	nameFormat := formatStr                          // 文件名格式化字符串
+	const timeFormat = "2006-01-02 15:04:05"         // 时间格式
+
+	// 遍历文件信息列表
 	for _, info := range infos {
 		// 获取文件名（仅文件名，不含路径）
 		_, fileName := filepath.Split(info.Name)
@@ -147,56 +168,36 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 		infoSizeUnit = cl.Syellow(infoSizeUnit)
 
 		// 修改时间 禁用加粗
-		infoModTime := cl.Sblue(info.ModTime.Format("2006-01-02 15:04:05"))
+		infoModTime := cl.Sblue(info.ModTime.Format(timeFormat))
 		cl.NoBold.Store(false)
-
-		// 检查是否启用引号
-		formatStr := "%s"
-		if listCmdQuoteNames.Get() {
-			formatStr = "%q"
-		}
 
 		// 文件名
 		var infoName string
 
 		// 检查是否为软链接
 		if info.EntryType == globals.SymlinkType {
-			//infoName = getColorString(info, fmt.Sprintf(formatStr+" -> "+formatStr, fileName, info.LinkTargetPath), cl)
-
-			// 设置箭头颜色
-			arrow := cl.Swhite(" -> ")
-
-			// 软连接路径
-			var linkPath string
-
-			// 源文件路径
-			var sourcePath string
-
-			if _, statErr := os.Stat(info.LinkTargetPath); statErr != nil {
+			// 根据软连接路径是否存在设置颜色
+			if _, statErr := os.Stat(info.LinkTargetPath); os.IsNotExist(statErr) {
 				// 如果源文件不存在, 则软连接为红色
-				linkPath = cl.Sred(fileName)
-
+				linkPath := cl.Sred(fileName)
 				// 源文件为灰色
-				sourcePath = cl.Sgray(info.LinkTargetPath)
-
+				sourcePath := cl.Sgray(info.LinkTargetPath)
 				// 组装字符串
-				infoName = fmt.Sprintf(formatStr+arrow+formatStr, linkPath, sourcePath)
+				infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath)
 			} else {
 				// 如果源文件存在, 则软连接为青色
-				linkPath = cl.Scyan(fileName)
-
+				linkPath := cl.Scyan(fileName)
 				// 源文件为根据类型设置颜色
-				sourcePath = getColorString(info, info.LinkTargetPath, cl)
-
+				sourcePath := SprintStringColor(info.LinkTargetPath, info.LinkTargetPath, cl)
 				// 组装字符串
-				infoName = fmt.Sprintf(formatStr+arrow+formatStr, linkPath, sourcePath)
+				infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath)
 			}
 		} else {
-			infoName = getColorString(info, fmt.Sprintf(formatStr, fileName), cl)
+			infoName = getColorString(info, fmt.Sprintf(nameFormat, fileName), cl)
 		}
 
 		// 添加行到表格
-		if listCmdShowUserGroup.Get() {
+		if showUserGroup {
 			t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName})
 		} else {
 			t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName})

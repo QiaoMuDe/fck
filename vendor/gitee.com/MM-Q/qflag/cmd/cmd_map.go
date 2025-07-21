@@ -24,7 +24,12 @@ func (c *Cmd) MapVar(f *flags.MapFlag, longName, shortName string, defValue map[
 		panic(validateErr)
 	}
 
-	// 初始化默认值
+	// 如果默认值为nil，则初始化为空map
+	if defValue == nil {
+		defValue = map[string]string{}
+	}
+
+	// 初始化值
 	currentMap := new(map[string]string)
 	*currentMap = defValue
 

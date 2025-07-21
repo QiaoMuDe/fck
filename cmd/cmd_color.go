@@ -378,11 +378,14 @@ func splitPathColor(p string, cl *colorlib.ColorLib, dirCode int, fileCode int) 
 }
 
 // SPrintStringColor 根据路径类型以不同颜色输出字符串
-// 参数:
 //
-//	p: 要检查的路径(用于获取文件类型信息)
-//	s: 返回字符串内容
-//	cl: colorlib.ColorLib实例, 用于彩色输出
+// 参数:
+//   - p: 要检查的路径(用于获取文件类型信息)
+//   - s: 返回字符串内容
+//   - cl: colorlib.ColorLib实例, 用于彩色输出
+//
+// 返回值:
+//   - string: 根据路径类型以不同颜色返回的字符串
 func SprintStringColor(p string, s string, cl *colorlib.ColorLib) string {
 	// 获取路径信息
 	pathInfo, statErr := os.Lstat(p)
@@ -487,12 +490,14 @@ func printPathColor(path string, cl *colorlib.ColorLib) {
 }
 
 // getColorString 函数的作用是根据传入的文件信息、路径字符串以及颜色库实例，返回带有相应颜色的路径字符串。
+//
 // 参数:
-// info: 包含文件类型和文件后缀名等信息的 globals.ListInfo 结构体实例。
-// pF: 要处理的路径字符串。
-// cl: 用于彩色输出的 colorlib.ColorLib 实例。
+//   - info: 包含文件类型和文件后缀名等信息的 globals.ListInfo 结构体实例。
+//   - pF: 要处理的路径字符串。
+//   - cl: 用于彩色输出的 colorlib.ColorLib 实例。
+//
 // 返回值:
-// colorString: 经过颜色处理后的路径字符串。
+//   - colorString: 经过颜色处理后的路径字符串。
 func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) string {
 	// 如果启用了开发环境模式, 则返回开发模式下的颜色处理结果
 	if listCmdDevColor.Get() {
@@ -552,12 +557,14 @@ func getColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) str
 }
 
 // getDeColorString 函数的作用是根据传入的文件信息、路径字符串以及颜色库实例，返回不带颜色的路径字符串(开发环境配色方案)
+//
 // 函数参数:
-// info: 包含文件类型和文件后缀名等信息的 globals.ListInfo 结构体实例。
-// pF: 要处理的路径字符串。
-// cl: 用于处理颜色的 colorlib.ColorLib 实例。
+//   - info: 包含文件类型和文件后缀名等信息的 globals.ListInfo 结构体实例。
+//   - pF: 要处理的路径字符串。
+//   - cl: 用于处理颜色的 colorlib.ColorLib 实例。
+//
 // 返回值:
-// decolorString: 不带颜色的路径字符串。
+//   - decolorString: 不带颜色的路径字符串。
 func getDevColorString(info globals.ListInfo, pF string, cl *colorlib.ColorLib) string {
 	// 依据文件的类型来确定输出的颜色
 	switch info.EntryType {
