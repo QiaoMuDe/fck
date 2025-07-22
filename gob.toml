@@ -17,7 +17,7 @@ use_vendor = true
 # --git, -g: 在编译时注入git信息
 inject_git_info = true
 # --simple-name, -sn: 使用简单名称（不包含平台和架构信息）
-simple_name = true
+simple_name = false
 # --proxy, -p: 设置Go代理
 proxy = 'https://goproxy.cn,https://goproxy.io,direct'
 # --enable-cgo, -ec: 启用CGO
@@ -25,23 +25,23 @@ enable_cgo = false
 # --color, -c: 启用颜色输出
 color_output = true
 # --batch, -b: 批量编译模式
-batch_mode = false
+batch_mode = true
 # --current-platform-only, -cpo: 仅编译当前平台
 current_platform_only = false
 # --zip, -z: 将输出文件打包为zip
-zip_output = false
+zip_output = true
 # 支持的目标平台列表，多个平台用逗号分隔
-platforms = ['linux', 'windows']
+platforms = ['darwin', 'linux', 'windows']
 # 支持的目标架构列表，多个架构用逗号分隔
-architectures = ['amd64']
+architectures = ['amd64', 'arm64']
 
 [install]
 # --install, -i: 安装编译后的二进制文件
-install = true
+install = false
 # --install-path, -ip: 指定安装路径
 install_path = '$GOPATH/bin'
 # --force, -f: 强制安装（覆盖已存在文件）
-force = true
+force = false
 
 # --env, -e: 环境变量配置
 [env]
