@@ -3,7 +3,8 @@ package cmd
 
 import (
 	"bytes"
-	"fmt"
+	"path/filepath"
+	"strings"
 )
 
 // formatOptions 将选项列表格式化为PowerShell数组字符串
@@ -44,8 +45,15 @@ func generatePwshCommandTreeEntry(cmdTreeEntries *bytes.Buffer, cmdPath string, 
 	// 格式化命令选项
 	formatOptions(optsBuf, cmdOpts, escapePwshString)
 
+	// 使用命名占位符替换位置参数
+	replacer := strings.NewReplacer(
+		"{{.Context}}", cmdPath,
+		"{{.Options}}", optsBuf.String(),
+	)
+
 	// 添加命令树条目
-	fmt.Fprintf(cmdTreeEntries, PwshCmdTreeItem, cmdPath, optsBuf.String())
+	cmdTreeItem := replacer.Replace(PwshCmdTreeItem)
+	cmdTreeEntries.WriteString(cmdTreeItem)
 }
 
 // generatePwshCompletion 生成PowerShell自动补全脚本
@@ -66,7 +74,6 @@ func generatePwshCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 
 	// 处理标志参数
 	for i, param := range params {
-		// 生成标志参数条目
 		// 生成带枚举选项的标志参数条目
 		enumOptions := ""
 		if param.ValueType == "enum" && len(param.EnumOptions) > 0 {
@@ -74,13 +81,16 @@ func generatePwshCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 			formatOptions(optionsBuf, param.EnumOptions, escapePwshString)
 			enumOptions = optionsBuf.String()
 		}
-		fmt.Fprintf(flagParamsBuf, PwshFlagParamItem,
-			param.CommandPath,
-			param.Name,
-			param.Type,
-			param.ValueType,
-			enumOptions,
+
+		// 使用命名占位符替换位置参数
+		flagReplacer := strings.NewReplacer(
+			"{{.Context}}", param.CommandPath,
+			"{{.Parameter}}", param.Name,
+			"{{.ParamType}}", param.Type,
+			"{{.ValueType}}", param.ValueType,
+			"{{.Options}}", enumOptions,
 		)
+		flagParamsBuf.WriteString(flagReplacer.Replace(PwshFlagParamItem))
 
 		// 条目之间添加逗号，非最后一个条目
 		if i < len(params)-1 {
@@ -88,18 +98,32 @@ func generatePwshCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 		}
 	}
 
+	// 清理程序名，去除可能的后缀
+	sanitizedProgramName := strings.TrimSuffix(programName, filepath.Ext(programName))
+
 	// 生成根命令条目
-	rootCmdEntry := fmt.Sprintf(PwshCmdTreeItem, "/", rootOptsBuf.String())
+	rootReplacer := strings.NewReplacer(
+		"{{.Context}}", "/",
+		"{{.Options}}", rootOptsBuf.String(),
+	)
+	// 生成根命令条目
+	rootCmdEntry := rootReplacer.Replace(PwshCmdTreeItem)
+
+	// 如果命令树条目不为空，则添加逗号
 	if cmdTreeEntries != "" {
 		rootCmdEntry += ",\n" + cmdTreeEntries
 	}
 
+	// 使用命名占位符替换位置参数
+	completionReplacer := strings.NewReplacer(
+		"{{.SanitizedName}}", sanitizedProgramName, // 替换程序名称
+		"{{.ProgramName}}", programName, // 替换程序名称
+		"{{.CmdTree}}", rootCmdEntry, // 替换命令树条目
+		"{{.FlagParams}}", flagParamsBuf.String(), // 替换标志参数
+	)
+
 	// 写入PowerShell自动补全脚本
-	fmt.Fprintf(buf, PwshFunctionHeader,
-		programName,
-		rootCmdEntry,
-		flagParamsBuf.String(),
-	) // 移除独立的枚举选项数组
+	_, _ = buf.WriteString(completionReplacer.Replace(PwshFunctionHeader))
 }
 
 // escapePwshString 转义PowerShell字符串中的特殊字符
@@ -123,25 +147,25 @@ func escapePwshString(s string) string {
 
 const (
 	// 标志参数条目(含枚举选项)
-	PwshFlagParamItem = "	@{ Context = \"%s\"; Parameter = \"%s\"; ParamType = \"%s\"; ValueType = \"%s\"; Options = @(%s) }"
+	PwshFlagParamItem = "	@{ Context = \"{{.Context}}\"; Parameter = \"{{.Parameter}}\"; ParamType = \"{{.ParamType}}\"; ValueType = \"{{.ValueType}}\"; Options = @({{.Options}}) }"
 	// 命令树条目
-	PwshCmdTreeItem = "	@{ Context = \"%s\"; Options = @(%s) }"
+	PwshCmdTreeItem = "	@{ Context = \"{{.Context}}\"; Options = @({{.Options}}) }"
 )
 
 const (
 	// PowerShell自动补全脚本头部
 	PwshFunctionHeader = `# -------------------------- Configuration Area (Need to be modified according to actual commands) --------------------------
 # Command Name
-$commandName = "%s"
+${{.SanitizedName}}_commandName = "{{.ProgramName}}"
 
 # 1. Command Tree
-$cmdTree = @(
-%s
+${{.SanitizedName}}_cmdTree = @(
+{{.CmdTree}}
 )
 
 # 2. Flag Parameter Definitions
-$flagParams = @(
-%s
+${{.SanitizedName}}_flagParams = @(
+{{.FlagParams}}
 )
 
 # -----------------------------------------------------------------------------------
@@ -165,7 +189,7 @@ $scriptBlock = {
         $elem = $tokens[$i]
         if ($elem -match '^-') { break }
         $nextContext = "$context$elem/"
-        $contextMatch = $cmdTree | Where-Object { $_.Context -eq $nextContext }
+        $contextMatch = ${{{.SanitizedName}}_cmdTree} | Where-Object { $_.Context -eq $nextContext }
         if ($contextMatch) {
             $context = $nextContext
         } else {
@@ -174,7 +198,7 @@ $scriptBlock = {
     }
 
     # 3. Available options in the current context
-    $currentOptions = ($cmdTree | Where-Object { $_.Context -eq $context }).Options
+    $currentOptions = (${{{.SanitizedName}}_cmdTree} | Where-Object { $_.Context -eq $context }).Options
 
     # 4. First complete all options (subcommands + flags) at the current level
     if ($currentOptions) {
@@ -190,7 +214,7 @@ $scriptBlock = {
 
     # 5. Complete flags themselves (like --ty -> --type)
     if ($wordToComplete -match '^-') {
-        $flagDefs = $flagParams | Where-Object { $_.Context -eq $context }
+        $flagDefs = ${{{.SanitizedName}}_flagParams} | Where-Object { $_.Context -eq $context }
         $flagMatches = $flagDefs | Where-Object {
             $_.Parameter -like "$wordToComplete*"
         } | ForEach-Object { $_.Parameter }
@@ -200,7 +224,7 @@ $scriptBlock = {
     # 6. Enum/Preset value completion
     # 6a Current token is empty → Complete all enum values of the previous flag
     if (-not $wordToComplete -and $prevElement -match '^-') {
-        $paramDef = $flagParams | Where-Object {
+        $paramDef = ${{{.SanitizedName}}_flagParams} | Where-Object {
             $_.Context -eq $context -and $_.Parameter -eq $prevElement
         }
         if ($paramDef) {
@@ -218,7 +242,7 @@ $scriptBlock = {
     # 6b The current token is not empty, and the previous token is a flag that requires a value → Filter with prefix
     $flagForValue = $tokens[$currentIndex - 1]
     if ($flagForValue -match '^-' -and $currentIndex -ge 1) {
-        $paramDef = $flagParams | Where-Object {
+        $paramDef = ${{{.SanitizedName}}_flagParams} | Where-Object {
             $_.Context -eq $context -and $_.Parameter -eq $flagForValue
         }
         if ($paramDef) {
@@ -240,6 +264,6 @@ $scriptBlock = {
     return @()
 }
 
-Register-ArgumentCompleter -CommandName $commandName -ScriptBlock $scriptBlock
+Register-ArgumentCompleter -CommandName ${{{.SanitizedName}}_commandName} -ScriptBlock $scriptBlock
 `
 )
