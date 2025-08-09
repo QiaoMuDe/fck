@@ -1,5 +1,6 @@
 // Package qflag 根包统一导出入口
-// 本文件用于将各子包的核心功能导出到根包，简化外部使用
+// 本文件用于将各子包的核心功能导出到根包，简化外部使用。
+// 通过类型别名和变量导出的方式，为用户提供统一的API接口。
 package qflag
 
 import (
@@ -11,19 +12,8 @@ import (
 项目地址: https://gitee.com/MM-Q/qflag
 */
 
-// 导出子包类型和函数 //
-
-// QCommandLine 导出cmd包的全局默认Command实例
-var QCommandLine = cmd.QCommandLine
-
-// cmd 导出cmd包中的Cmd结构体
-type Cmd = cmd.Cmd
-
 // NewCmd 导出cmd包中的NewCmd函数
 var NewCmd = cmd.NewCmd
-
-// ExampleInfo 导出cmd包中的ExampleInfo结构体
-type ExampleInfo = cmd.ExampleInfo
 
 // 导出标志类型 //
 
@@ -60,9 +50,6 @@ type MapFlag = flags.MapFlag
 // TimeFlag 导出flag包中的TimeFlag结构体
 type TimeFlag = flags.TimeFlag
 
-// PathFlag 导出flag包中的PathFlag结构体
-type PathFlag = flags.PathFlag
-
 // Uint16Flag 导出flag包中的UintFlag结构体
 type Uint16Flag = flags.Uint16Flag
 
@@ -71,12 +58,3 @@ type Uint32Flag = flags.Uint32Flag
 
 // Uint64Flag 导出flag包中的Uint64Flag结构体
 type Uint64Flag = flags.Uint64Flag
-
-// IP4Flag 导出flag包中的Ip4Flag结构体
-type IP4Flag = flags.IP4Flag
-
-// IP6Flag 导出flag包中的Ip6Flag结构体
-type IP6Flag = flags.IP6Flag
-
-// URLFlag 导出flag包中的URLFlag结构体
-type URLFlag = flags.URLFlag

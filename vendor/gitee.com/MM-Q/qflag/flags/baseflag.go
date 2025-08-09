@@ -1,3 +1,6 @@
+// Package flags 基础标志结构体定义
+// 本文件定义了BaseFlag泛型结构体，为所有标志类型提供通用的字段和方法实现，
+// 包括标志的初始化、值获取设置、验证器支持等核心功能。
 package flags
 
 import (
@@ -150,20 +153,6 @@ func (f *BaseFlag[T]) Get() T {
 
 	// 返回标志值
 	return *f.value
-}
-
-// GetPointer 返回标志值的指针(泛型类型)
-//
-// 返回值:
-//   - *T: 标志值的指针
-//
-// 注意:
-//  1. 获取指针过程受锁保护, 但直接修改指针指向的值仍会绕过验证机制
-//  2. 多线程环境下修改时需额外同步措施, 建议优先使用Set()方法
-func (f *BaseFlag[T]) GetPointer() *T {
-	f.baseMu.RLock()
-	defer f.baseMu.RUnlock()
-	return f.value
 }
 
 // Set 设置标志的值(泛型类型)

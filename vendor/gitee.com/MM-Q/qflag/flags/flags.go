@@ -1,4 +1,6 @@
-// flags 定义了所有标志类型的通用接口和基础标志结构体
+// Package flags 标志类型定义和接口
+// 本文件定义了所有标志类型的通用接口和基础标志结构体，包括标志类型枚举、
+// 验证器接口、标志接口等核心定义，为整个标志系统提供基础类型支持。
 package flags
 
 // 定义非法字符集常量, 防止非法的标志名称
@@ -22,10 +24,6 @@ const (
 	FlagTypeSlice                    // 切片类型
 	FlagTypeTime                     // 时间类型
 	FlagTypeMap                      // 映射类型
-	FlagTypePath                     // 路径类型
-	FlagTypeIP4                      // IPv4地址类型
-	FlagTypeIP6                      // IPv6地址类型
-	FlagTypeURL                      // URL类型
 )
 
 // 内置标志名称
@@ -57,9 +55,8 @@ const (
 
 // 内置标志使用说明
 var (
-	HelpFlagUsageEn    = "Show help"                       // 帮助标志英文使用说明
-	VersionFlagUsageEn = "Show the version of the program" // 版本标志英文使用说明
-	VersionFlagUsageZh = "显示程序的版本信息"                       // 版本标志中文使用说明
+	HelpFlagUsage    = "Show help"    // 帮助标志使用说明
+	VersionFlagUsage = "Show version" // 版本标志使用说明
 )
 
 // 定义标志的分隔符常量
@@ -127,63 +124,43 @@ type TypedFlag[T any] interface {
 	BindEnv(envName string) *BaseFlag[T] // 绑定环境变量
 }
 
-// FlagTypeToString 将FlagType转换为字符串
+// FlagTypeToString 将FlagType转换为带语义信息的字符串
 //
 // 参数:
 //   - flagType: 需要转换的FlagType枚举值
-//   - withBrackets: 是否在返回的字符串中包含尖括号
-//     如果为true且flagType为bool时返回空字符串
 //
 // 返回值:
-//   - 对应的类型字符串，如果类型未知则返回"unknown"或"<unknown>"
-func FlagTypeToString(flagType FlagType, withBrackets bool) string {
-	var result string
-
+//   - 带语义信息的类型字符串，用于命令行帮助信息显示
+func FlagTypeToString(flagType FlagType) string {
 	switch flagType {
 	case FlagTypeInt:
-		result = "int"
+		return "<int>"
 	case FlagTypeInt64:
-		result = "int64"
+		return "<int64>"
 	case FlagTypeUint16:
-		result = "uint16"
+		return "<0-65535>"
 	case FlagTypeUint32:
-		result = "uint32"
+		return "<uint32>"
 	case FlagTypeUint64:
-		result = "uint64"
+		return "<uint64>"
 	case FlagTypeString:
-		result = "string"
+		return "<string>"
 	case FlagTypeBool:
 		// 布尔类型特殊处理
-		if withBrackets {
-			return ""
-		}
-		return "bool"
+		return ""
 	case FlagTypeFloat64:
-		result = "float64"
+		return "<float64>"
 	case FlagTypeEnum:
-		result = "enum"
+		return "<enum>"
 	case FlagTypeDuration:
-		result = "duration"
+		return "<duration>"
 	case FlagTypeTime:
-		result = "time"
+		return "<time>"
 	case FlagTypeMap:
-		result = "map"
-	case FlagTypePath:
-		result = "path"
+		return "<k=v,k=v,...>"
 	case FlagTypeSlice:
-		result = "slice"
-	case FlagTypeIP4:
-		result = "ip4"
-	case FlagTypeIP6:
-		result = "ip6"
-	case FlagTypeURL:
-		result = "url"
+		return "<value,value,...>"
 	default:
-		result = "unknown"
+		return "<value>"
 	}
-
-	if withBrackets {
-		return "<" + result + ">"
-	}
-	return result
 }

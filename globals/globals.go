@@ -337,7 +337,83 @@ const (
 )
 
 // 限制查找的参数切片
-var TypeLimits = []string{
+var FindTypeLimits = []string{
+	// 查找所有类型
+	FindTypeAll,
+
+	// 只查找文件
+	FindTypeFile,
+	// 只查找文件-短参数
+	FindTypeFileShort,
+
+	// 只查找目录
+	FindTypeDir,
+	// 只查找目录-短参数
+	FindTypeDirShort,
+
+	// 只查找软链接
+	FindTypeSymlink,
+	// 只查找软链接-短参数
+	FindTypeSymlinkShort,
+
+	// 只查找只读文件
+	FindTypeReadonly,
+	// 只查找只读文件-短参数
+	FindTypeReadonlyShort,
+
+	// 只查找隐藏文件或目录
+	FindTypeHidden,
+	// 只查找隐藏文件或目录-短参数
+	FindTypeHiddenShort,
+
+	// 只查找空文件或目录
+	FindTypeEmpty,
+	// 只查找空文件或目录-短参数
+	FindTypeEmptyShort,
+
+	// 只查找可执行文件
+	FindTypeExecutable,
+	// 只查找可执行文件-短参数
+	FindTypeExecutableShort,
+
+	// 只查找socket文件(套接字)
+	FindTypeSocket,
+	// 只查找socket文件-短参数
+	FindTypeSocketShort,
+
+	// 只查找管道文件
+	FindTypePipe,
+	// 只查找管道文件-短参数
+	FindTypePipeShort,
+
+	// 只查找块设备文件
+	FindTypeBlock,
+	// 只查找块设备文件-短参数
+	FindTypeBlockShort,
+
+	// 只查找字符设备文件
+	FindTypeChar,
+	// 只查找字符设备文件-短参数
+	FindTypeCharShort,
+
+	// 只查找追加模式的文件
+	FindTypeAppend,
+	// 只查找追加模式的文件-短参数
+	FindTypeAppendShort,
+
+	// 只查找非追加模式的文件
+	FindTypeNonAppend,
+	// 只查找非追加模式的文件-短参数
+	FindTypeNonAppendShort,
+
+	// 只查找为独占模式的文件
+	FindTypeExclusive,
+	// 只查找为独占模式的文件-短参数
+	FindTypeExclusiveShort,
+}
+
+// 限制查找的参数切片
+var ListTypeLimits = []string{
 	// 查找所有类型
 	FindTypeAll,
 

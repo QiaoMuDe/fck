@@ -4,16 +4,17 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"runtime"
+	"runtime/debug"
 
 	"gitee.com/MM-Q/fck/globals"
 	"gitee.com/MM-Q/qflag"
+	"gitee.com/MM-Q/qflag/cmd"
 	"gitee.com/MM-Q/verman"
 )
 
 var (
 	// fck hash 子命令
-	hashCmd          *qflag.Cmd
+	hashCmd          *cmd.Cmd
 	hashCmdType      *qflag.EnumFlag // type 标志
 	hashCmdRecursion *qflag.BoolFlag // recursion 标志
 	hashCmdJob       *qflag.IntFlag  // job 标志
@@ -21,14 +22,14 @@ var (
 	hashCmdHidden    *qflag.BoolFlag // hidden 标志
 
 	// fck size 子命令
-	sizeCmd           *qflag.Cmd
+	sizeCmd           *cmd.Cmd
 	sizeCmdColor      *qflag.BoolFlag // color 标志
 	sizeCmdJob        *qflag.IntFlag  // job 标志
 	sizeCmdTableStyle *qflag.EnumFlag // ts 标志
 	sizeCmdHidden     *qflag.BoolFlag // hidden 标志
 
 	// fck diff 子命令
-	diffCmd      *qflag.Cmd
+	diffCmd      *cmd.Cmd
 	diffCmdFile  *qflag.StringFlag // file 标志
 	diffCmdDirs  *qflag.StringFlag // dirs 标志
 	diffCmdDirA  *qflag.StringFlag // dirA 标志
@@ -37,7 +38,7 @@ var (
 	diffCmdWrite *qflag.BoolFlag   // write 标志
 
 	// fck find 子命令
-	findCmd              *qflag.Cmd
+	findCmd              *cmd.Cmd
 	findCmdName          *qflag.StringFlag // name 标志
 	findCmdPath          *qflag.StringFlag // path 标志
 	findCmdExt           *qflag.SliceFlag  // ext 标志
@@ -62,11 +63,11 @@ var (
 	findCmdMaxDepthLimit *qflag.IntFlag    // max-depth-limit 标志
 	findCmdCount         *qflag.BoolFlag   // count 标志
 	findCmdX             *qflag.BoolFlag   // x 标志
-	findCmdType          *qflag.StringFlag // type 标志
+	findCmdType          *qflag.EnumFlag   // type 标志
 	findCmdWholeWord     *qflag.BoolFlag   // whole-word 标志
 
 	// fck list 子命令
-	listCmd              *qflag.Cmd
+	listCmd              *cmd.Cmd
 	listCmdAll           *qflag.BoolFlag // all 标志
 	listCmdColor         *qflag.BoolFlag // color 标志
 	listCmdSortByName    *qflag.BoolFlag // sort-by-name 标志
@@ -80,30 +81,13 @@ var (
 	listCmdShowUserGroup *qflag.BoolFlag // u 标志
 	listCmdTableStyle    *qflag.EnumFlag // ts 标志
 	listCmdDevColor      *qflag.BoolFlag // dev-color 标志
-
-	// listCmdSymlink    *qflag.BoolFlag // l 标志
-	// listCmdDir        *qflag.BoolFlag // d 标志
-	// listCmdFileOnly   *qflag.BoolFlag // f 标志
-	// listCmdReadOnly   *qflag.BoolFlag // ro 标志
-	// listCmdHiddenOnly *qflag.BoolFlag // ho 标志
-
-	listCmdType *qflag.EnumFlag // type 标志
+	listCmdType          *qflag.EnumFlag // type 标志
 )
 
 func init() {
 	defer func() {
 		if err := recover(); err != nil {
-			// 打印错误信息和堆栈并退出
-			buf := make([]byte, 1024)
-			for {
-				n := runtime.Stack(buf, false)
-				if n < len(buf) {
-					buf = buf[:n]
-					break
-				}
-				buf = make([]byte, 2*len(buf))
-			}
-			fmt.Printf("err: %v\nstack: %s\n", err, buf)
+			fmt.Printf("err: %v\nstack: %s\n", err, debug.Stack())
 			os.Exit(1)
 		}
 	}()
@@ -119,10 +103,10 @@ func init() {
 	qflag.SetEnableCompletion(true)        // 启用自动补全
 
 	// fck hash 子命令
-	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError)
-	hashCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " hash [options] <path>\n"))
-	hashCmd.SetUseChinese(true)                                     // 启用中文帮助信息
-	hashCmd.SetDescription("文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理") // 设置命令行描述
+	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError).
+		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " hash [options] <path>\n")).
+		WithUseChinese(true).
+		WithDescription("文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理")
 	hashCmdType = hashCmd.Enum("type", "t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512", []string{"md5", "sha1", "sha256", "sha512"})
 	hashCmdRecursion = hashCmd.Bool("recursion", "r", false, "递归处理目录")
 	hashCmdJob = hashCmd.Int("job", "j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
@@ -130,11 +114,11 @@ func init() {
 	hashCmdHidden = hashCmd.Bool("hidden", "H", false, "启用计算隐藏文件/目录的哈希值，默认跳过")
 
 	// fck size 子命令
-	sizeCmd = qflag.NewCmd("size", "s", flag.ExitOnError)
-	sizeCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " size [options] <path>\n"))
-	sizeCmd.SetUseChinese(true) // 启用中文帮助信息
-	sizeCmd.AddNote("大小单位会自动选择最合适的(B/KB/MB/GB/TB)")
-	sizeCmd.SetDescription("文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示")
+	sizeCmd = qflag.NewCmd("size", "s", flag.ExitOnError).
+		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " size [options] <path>\n")).
+		WithUseChinese(true).
+		WithNote("大小单位会自动选择最合适的(B/KB/MB/GB/TB)").
+		WithDescription("文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示")
 	sizeCmdColor = sizeCmd.Bool("color", "c", false, "启用颜色输出")
 	sizeCmdJob = sizeCmd.Int("job", "j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
 	sizeCmdHidden = sizeCmd.Bool("hidden", "H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
@@ -161,11 +145,11 @@ func init() {
 		"\t\t\t\t\t[none]    - 禁用表格样式", globals.TableStyles)
 
 	// fck diff 子命令
-	diffCmd = qflag.NewCmd("diff", "d", flag.ExitOnError)
-	diffCmd.SetUseChinese(true) // 启用中文帮助信息
-	diffCmd.AddNote("校验文件必须包含有效的头信息")
-	diffCmd.AddNote("校验时会自动跳过空行和注释行（以#开头的行）")
-	diffCmd.SetDescription("文件校验工具, 对比指定目录A和目录B的文件差异, 并支持指定校验类型")
+	diffCmd = qflag.NewCmd("diff", "d", flag.ExitOnError).
+		WithUseChinese(true).
+		WithDescription("文件校验工具, 对比指定目录A和目录B的文件差异, 并支持指定校验类型").
+		WithNote("校验文件必须包含有效的头信息").
+		WithNote("校验时会自动跳过空行和注释行(以#开头的行)")
 	diffCmdFile = diffCmd.String("file", "f", globals.OutputFileName, "指定用于校验的哈希值文件，程序将依据该文件中的哈希值进行校验操作")
 	diffCmdDirs = diffCmd.String("dir", "d", "", "指定需要根据哈希值文件进行校验的目标目录")
 	diffCmdDirA = diffCmd.String("dirA", "a", "", "指定要对比的目录A")
@@ -174,15 +158,15 @@ func init() {
 	diffCmdType = diffCmd.Enum("type", "t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512", []string{"md5", "sha1", "sha256", "sha512"})
 
 	// fck find 子命令
-	findCmd = qflag.NewCmd("find", "f", flag.ExitOnError)
+	findCmd = qflag.NewCmd("find", "f", flag.ExitOnError).
+		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " find [options] <path>\n")).
+		WithUseChinese(true).
+		WithDescription("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")
 	findCmd.AddNote("大小单位支持B/K/M/G/b/k/m/g")
 	findCmd.AddNote("时间参数以天为单位")
 	findCmd.AddNote("不能同时指定-f、-d和-l标志")
 	findCmd.AddNote("不能同时执行-exec和-delete标志")
 	findCmd.AddNote("如果不指定路径，默认为当前目录")
-	findCmd.SetUseChinese(true)                                                      // 启用中文帮助信息
-	findCmd.SetDescription("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")                     // 设置命令行描述
-	findCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " find [options] <path>\n")) // 设置自定义使用说明
 	findCmdName = findCmd.String("name", "n", "", "指定要查找的文件或目录名")
 	findCmdPath = findCmd.String("path", "p", "", "指定要查找的路径")
 	findCmdExt = findCmd.Slice("ext", "e", []string{}, "按文件扩展名查找(支持多个扩展名，如 '.txt,.go', '.txt|.go', '.txt;.go')")
@@ -207,7 +191,7 @@ func init() {
 	findCmdMaxDepthLimit = findCmd.Int("max-depth-limit", "mdl", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")
 	findCmdCount = findCmd.Bool("count", "ct", false, "仅统计匹配项的数量而不显示具体路径")
 	findCmdX = findCmd.Bool("xmode", "X", false, "启用并发模式")
-	findCmdType = findCmd.String("type", "t", "all", "指定要查找的类型，支持以下选项：\n"+
+	findCmdType = findCmd.Enum("type", "t", "all", "指定要查找的类型，支持以下选项：\n"+
 		"\t\t\t\t\t[f | file]       - 只查找文件\n"+
 		"\t\t\t\t\t[d | dir]        - 只查找目录\n"+
 		"\t\t\t\t\t[l | symlink]    - 只查找软链接\n"+
@@ -221,16 +205,16 @@ func init() {
 		"\t\t\t\t\t[c | char]       - 只查找字符设备文件\n"+
 		"\t\t\t\t\t[a | append]     - 只查找追加模式文件\n"+
 		"\t\t\t\t\t[n | nonappend]  - 只查找非追加模式文件\n"+
-		"\t\t\t\t\t[u | exclusive]  - 只查找独占模式文件")
+		"\t\t\t\t\t[u | exclusive]  - 只查找独占模式文件", globals.FindTypeLimits)
 	findCmdWholeWord = findCmd.Bool("whole-word", "W", false, "匹配完整关键字")
 
 	// fck list 子命令
-	listCmd = qflag.NewCmd("list", "ls", flag.ExitOnError)
+	listCmd = qflag.NewCmd("list", "ls", flag.ExitOnError).
+		WithDescription("文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项").
+		WithUseChinese(true).
+		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " list [options] <path>\n"))
 	listCmd.AddNote("如果不指定路径，默认为当前目录")
 	listCmd.AddNote("排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个")
-	listCmd.SetUseChinese(true)                                                      // 启用中文帮助信息
-	listCmd.SetDescription("文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项")                   // 设置命令行描述
-	listCmd.SetUsageSyntax(fmt.Sprint(qflag.LongName(), " list [options] <path>\n")) // 设置自定义使用说明
 	listCmdAll = listCmd.Bool("all", "a", false, "列出所有文件和目录，包括隐藏文件和目录")
 	listCmdColor = listCmd.Bool("color", "c", false, "启用颜色输出")
 	listCmdSortByTime = listCmd.Bool("time", "t", false, "按修改时间排序")
@@ -242,7 +226,7 @@ func init() {
 		"\t\t\t\t\t[d | dir]        - 只查找目录\n"+
 		"\t\t\t\t\t[l | symlink]    - 只查找软链接\n"+
 		"\t\t\t\t\t[r | readonly]   - 只查找只读文件\n"+
-		"\t\t\t\t\t[h | hidden]     - 只显示隐藏文件或目录\n", globals.TypeLimits)
+		"\t\t\t\t\t[h | hidden]     - 只显示隐藏文件或目录", globals.ListTypeLimits)
 	listCmdLongFormat = listCmd.Bool("long", "l", false, "使用长格式显示文件信息，包括权限、所有者、大小等")
 	listCmdReverseSort = listCmd.Bool("reverse", "r", false, "反向排序")
 	listCmdQuoteNames = listCmd.Bool("quote-names", "q", false, "在输出时用双引号包裹条目")

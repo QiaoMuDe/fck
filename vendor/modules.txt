@@ -1,11 +1,16 @@
 # gitee.com/MM-Q/colorlib v1.2.4
 ## explicit; go 1.23.4
 gitee.com/MM-Q/colorlib
-# gitee.com/MM-Q/qflag v0.1.42
+# gitee.com/MM-Q/qflag v0.2.2
 ## explicit; go 1.24.4
 gitee.com/MM-Q/qflag
 gitee.com/MM-Q/qflag/cmd
 gitee.com/MM-Q/qflag/flags
+gitee.com/MM-Q/qflag/internal/completion
+gitee.com/MM-Q/qflag/internal/help
+gitee.com/MM-Q/qflag/internal/parser
+gitee.com/MM-Q/qflag/internal/types
+gitee.com/MM-Q/qflag/internal/validator
 gitee.com/MM-Q/qflag/qerr
 gitee.com/MM-Q/qflag/validator
 # gitee.com/MM-Q/verman v0.0.14

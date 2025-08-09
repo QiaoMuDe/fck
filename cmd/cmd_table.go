@@ -138,7 +138,7 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 	quoteNames := listCmdQuoteNames.Get()       // 检查是否对文件名添加引号
 	formatStr := "%s"                           // 默认格式化字符串
 	if quoteNames {
-		formatStr = "%q" // 如果需要引号，则使用引号格式化字符串
+		formatStr = "\"%s\"" // 如果需要引号，则使用添加引号的格式(这里不能使用%q会导致样式渲染问题)
 	}
 	arrow := " -> "                                  // 软链接箭头
 	arrowColor := cl.Swhite(arrow)                   // 软链接箭头颜色
