@@ -323,70 +323,63 @@ func getPathSize(path string) (int64, error) {
 	return finalSize, nil
 }
 
+// 预定义单位和对应的阈值
+var (
+	units = []string{"B", "KB", "MB", "GB", "TB", "PB"}
+	// 预计算阈值，避免重复计算
+	thresholds = []float64{
+		1,                                // B
+		1024,                             // KB
+		1024 * 1024,                      // MB
+		1024 * 1024 * 1024,               // GB
+		1024 * 1024 * 1024 * 1024,        // TB
+		1024 * 1024 * 1024 * 1024 * 1024, // PB
+	}
+)
+
 // humanReadableSize 函数用于将字节大小转换为可读的字符串格式
-// 该函数接收一个 int64 类型的字节大小参数, 返回一个表示该大小的可读字符串
+//
+// 参数:
+//   - size: 需要转换的字节大小
+//   - fn: 保留的小数位数
+//
+// 返回:
+//   - 字节大小的文字表示
 func humanReadableSize(size int64, fn int) string {
-	// 定义存储字节单位的切片, 按照从小到大的顺序排列
-	units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
-	// 定义字节单位之间的换算基数, 这里使用 1024 作为二进制换算标准
-	base := float64(1024)
-
-	// 用于存储最终选择的合适单位
-	var unit string
-	// 将传入的 int64 类型的字节大小转换为 float64 类型, 方便后续计算
-	sizeFloat := float64(size)
-
-	// 根据字节大小选择最合适的单位
-	// 如果字节大小小于 1024B, 则直接使用 B 作为单位
-	if sizeFloat < base {
-		unit = units[0]
-		// 如果字节大小小于 1024KB, 则使用 KB 作为单位, 并将字节大小除以 1024 转换为 KB
-	} else if sizeFloat < base*base {
-		unit = units[1]
-		sizeFloat /= base
-		// 如果字节大小小于 1024MB, 则使用 MB 作为单位, 并将字节大小除以 1024*1024 转换为 MB
-	} else if sizeFloat < base*base*base {
-		unit = units[2]
-		sizeFloat /= base * base
-		// 如果字节大小小于 1024GB, 则使用 GB 作为单位, 并将字节大小除以 1024*1024*1024 转换为 GB
-	} else if sizeFloat < base*base*base*base {
-		unit = units[3]
-		sizeFloat /= base * base * base
-		// 如果字节大小小于 1024TB, 则使用 TB 作为单位, 并将字节大小除以 1024*1024*1024*1024 转换为 TB
-	} else if sizeFloat < base*base*base*base*base {
-		unit = units[4]
-		sizeFloat /= base * base * base * base
-		// 否则使用 PB 作为单位, 并将字节大小除以 1024*1024*1024*1024*1024 转换为 PB
-	} else {
-		unit = units[5]
-		sizeFloat /= base * base * base * base * base
+	// 处理0值情况 - 提前返回
+	if size == 0 {
+		return "0 B"
 	}
 
-	// 根据数值大小动态调整精度
-	var sizeF string
-	if sizeFloat < 10 {
-		// 小于10时使用指定的小数位数，但至少保留1位
+	sizeFloat := float64(size)
+
+	// 使用循环找到合适的单位，从大到小遍历
+	unitIndex := 0
+	for i := len(thresholds) - 1; i > 0; i-- {
+		if sizeFloat >= thresholds[i] {
+			unitIndex = i
+			sizeFloat /= thresholds[i]
+			break
+		}
+	}
+
+	// 统一的格式化逻辑
+	var formatted string
+	if sizeFloat < 10 && unitIndex > 0 {
+		// 小于10且不是字节时，使用指定小数位数（至少1位）
 		decimals := fn
 		if decimals < 1 {
 			decimals = 1
 		}
-		sizeF = fmt.Sprintf("%%.%df", decimals)
-		sizeF = fmt.Sprintf(sizeF, sizeFloat)
+		formatted = fmt.Sprintf("%."+fmt.Sprintf("%d", decimals)+"f", sizeFloat)
+		// 移除末尾的.0
+		formatted = strings.TrimSuffix(formatted, ".0")
 	} else {
-		// 大于等于10时使用整数格式
-		sizeF = fmt.Sprintf("%.0f", sizeFloat)
+		// 大于等于10或者是字节时，使用整数格式
+		formatted = fmt.Sprintf("%.0f", sizeFloat)
 	}
 
-	// 处理特殊情况: 10.0 -> 10
-	sizeF = strings.TrimSuffix(sizeF, ".0")
-
-	// 处理0值情况
-	if sizeF == "0" || sizeF == "0.0" {
-		return "0 B"
-	}
-
-	// 拼接最终结果
-	return fmt.Sprintf("%s %s", sizeF, unit)
+	return fmt.Sprintf("%s %s", formatted, units[unitIndex])
 }
 
 // 打印文件大小表格到控制台
