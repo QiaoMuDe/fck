@@ -57,8 +57,18 @@ func Run() {
 		os.Exit(1)
 	}
 
+	// 获取子命令名字
+	subCmdName := qflag.Arg(0)
+
+	// 如果没有指定子命令，则打印帮助信息
+	if subCmdName == "" {
+		// 打印帮助信息并退出
+		qflag.PrintHelp()
+		os.Exit(0)
+	}
+
 	// 执行子命令
-	switch qflag.Arg(0) {
+	switch subCmdName {
 	case hashCmd.LongName(), hashCmd.ShortName(): // hash 子命令
 		// 执行 hash 子命令
 		if err := hash.HashCmdMain(cmdCL); err != nil {
@@ -86,8 +96,9 @@ func Run() {
 		}
 	default:
 		// 如果是未知的子命令, 则打印帮助信息并退出
-		fmt.Printf("err: 未知的子命令 %s\n", qflag.Arg(0))
+		fmt.Printf("err: 未知的子命令 %s\n", subCmdName)
 		qflag.PrintHelp()
+		os.Exit(1)
 	}
 
 	os.Exit(0)
