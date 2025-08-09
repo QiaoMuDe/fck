@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/commands/internal/common"
@@ -176,14 +177,19 @@ func getPathSize(path string) (int64, error) {
 		return info.Size(), nil
 	}
 
-	// 定义总大小
-	var totalSize int64
+	// 定义总大小 (使用原子类型)
+	var totalSize atomic.Int64
+
+	// 文件信息结构体
+	type fileInfo struct {
+		path string
+		size int64
+	}
 
 	// 创建并发任务池
 	var wg sync.WaitGroup
-	var mu sync.Mutex
-	fileChan := make(chan string, 10000) // 缓冲区大小为10000
-	errChan := make(chan error, 100)     // 错误通道大小为100
+	fileChan := make(chan fileInfo, 10000) // 缓冲区大小为10000
+	errChan := make(chan error, 100)       // 错误通道大小为100
 
 	// 启动worker goroutines
 	workers := sizeCmdJob.Get()
@@ -204,24 +210,14 @@ func getPathSize(path string) (int64, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for filePath := range fileChan {
-				fileInfo, err := os.Lstat(filePath)
-				if err != nil {
-					if len(errChan) < cap(errChan) {
-						errChan <- fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", filePath, err)
-					}
-					continue
-				}
-
-				mu.Lock()
-				totalSize += fileInfo.Size() // 累加文件大小
-				mu.Unlock()
+			for file := range fileChan {
+				totalSize.Add(file.size) // 原子操作累加文件大小
 			}
 		}()
 	}
 
-	// 遍历目录
-	walkErr := filepath.Walk(path, func(filePath string, fileInfo fs.FileInfo, err error) error {
+	// 遍历目录 (使用更高效的 WalkDir)
+	walkErr := filepath.WalkDir(path, func(filePath string, dirEntry fs.DirEntry, err error) error {
 		// 如果遍历目录遇到权限错误, 则忽略该错误并给出更友好的提示信息
 		if err != nil {
 			// 跳过不存在的文件或目录
@@ -245,9 +241,17 @@ func getPathSize(path string) (int64, error) {
 			}
 		}
 
-		// 把文件发送到通道, 由worker处理
-		if !fileInfo.IsDir() {
-			fileChan <- filePath
+		// 把文件信息发送到通道, 由worker处理
+		if !dirEntry.IsDir() {
+			// 获取文件信息
+			info, err := dirEntry.Info()
+			if err != nil {
+				if len(errChan) < cap(errChan) {
+					errChan <- fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", filePath, err)
+				}
+				return nil
+			}
+			fileChan <- fileInfo{path: filePath, size: info.Size()}
 		}
 		return nil
 	})
@@ -307,13 +311,16 @@ func getPathSize(path string) (int64, error) {
 		walkErr = fmt.Errorf("%v (还有%d个类似错误...)", walkErr, errorCount-5)
 	}
 
+	// 获取最终的总大小
+	finalSize := totalSize.Load()
+
 	// 根据是否有错误返回不同内容
 	if walkErr != nil {
 		// 有错误时返回错误和计算得到的大小
-		return totalSize, fmt.Errorf("计算完成但遇到错误: %v (总大小: %s)", walkErr, humanReadableSize(totalSize, 2))
+		return finalSize, fmt.Errorf("计算完成但遇到错误: %v (总大小: %s)", walkErr, humanReadableSize(finalSize, 2))
 	}
 	// 无错误时只返回大小
-	return totalSize, nil
+	return finalSize, nil
 }
 
 // humanReadableSize 函数用于将字节大小转换为可读的字符串格式
