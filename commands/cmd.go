@@ -15,6 +15,7 @@ import (
 	"gitee.com/MM-Q/qflag"
 )
 
+// Run 运行命令行工具
 func Run() {
 	defer func() {
 		if err := recover(); err != nil {
