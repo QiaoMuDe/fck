@@ -1,4 +1,4 @@
-package globals
+package types
 
 import (
 	"crypto/md5"

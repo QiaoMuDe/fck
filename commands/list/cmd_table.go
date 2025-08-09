@@ -1,4 +1,4 @@
-package commands
+package list
 
 import (
 	"fmt"
@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/globals"
+	"gitee.com/MM-Q/fck/commands/internal/common"
+	"gitee.com/MM-Q/fck/commands/internal/types"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 )
@@ -15,14 +16,14 @@ import (
 // prepareFileNames 准备文件名列表，处理引号和颜色
 //
 // 参数:
-//   - infos - 文件信息列表
-//   - quoteNames - 是否对文件名添加引号
-//   - useColor - 是否启用颜色输出
-//   - cl - 颜色库实例
+//   - infos: 文件信息列表
+//   - quoteNames: 是否对文件名添加引号
+//   - useColor: 是否启用颜色输出
+//   - cl: 颜色库实例
 //
 // 返回:
-//   - 格式化后的文件名列表
-func prepareFileNames(infos globals.ListInfos, quoteNames bool, useColor bool, cl *colorlib.ColorLib) []string {
+//   - string[]: 处理后的文件名列表
+func prepareFileNames(infos types.ListInfos, quoteNames bool, useColor bool, cl *colorlib.ColorLib) []string {
 	// 创建一个文件名列表，长度与文件信息列表相同
 	fileNames := make([]string, len(infos))
 	// 遍历文件信息列表
@@ -42,7 +43,7 @@ func prepareFileNames(infos globals.ListInfos, quoteNames bool, useColor bool, c
 		// 检查是否启用颜色输出
 		if useColor {
 			// 获取颜色字符串
-			paddedFilename = getColorString(info, paddedFilename, cl)
+			paddedFilename = common.GetColorString(listCmdDevColor.Get(), info, paddedFilename, cl)
 		}
 
 		// 将文件名添加到文件名列表中
@@ -53,15 +54,14 @@ func prepareFileNames(infos globals.ListInfos, quoteNames bool, useColor bool, c
 }
 
 // renderDefaultTable 创建并渲染默认格式的多列表格
-// 参数:
 //
-//	fileNames - 文件名列表
-//	terminalWidth - 终端宽度
-//	tableStyle - 表格样式名称
+// 参数:
+//   - fileNames: 文件名列表
+//   - terminalWidth: 终端宽度
+//   - tableStyle: 表格样式名称
 //
 // 返回:
-//
-//	错误信息，如果有
+//   - error: 如果发生错误，返回错误信息，否则返回 nil
 func renderDefaultTable(fileNames []string, terminalWidth int, tableStyle string) error {
 	// 动态计算每行可以容纳的列数
 	maxWidth := text.LongestLineLen(strings.Join(fileNames, "\n"))
@@ -99,7 +99,7 @@ func renderDefaultTable(fileNames []string, terminalWidth int, tableStyle string
 	// 设置表格样式
 	if tableStyle != "" {
 		// 根据表格样式名称设置样式
-		if style, ok := globals.TableStyleMap[tableStyle]; ok {
+		if style, ok := types.TableStyleMap[tableStyle]; ok {
 			t.SetStyle(style)
 		}
 	}
@@ -111,15 +111,14 @@ func renderDefaultTable(fileNames []string, terminalWidth int, tableStyle string
 }
 
 // renderFileTable 创建并渲染文件信息表格
-// 参数:
 //
-//	cl - 颜色库实例
-//	infos - 要显示的文件信息列表
+// 参数:
+//   - cl: 颜色库实例
+//   - infos: 要显示的文件信息列表
 //
 // 返回:
-//
-//	错误信息，如果有
-func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
+//   - error: 如果发生错误，返回错误信息，否则返回 nil
+func renderFileTable(cl *colorlib.ColorLib, infos types.ListInfos) error {
 	// 创建表格
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
@@ -155,7 +154,7 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 		infoPerm := FormatPermissionString(cl, info)
 
 		// 类型
-		infoType := getColorString(info, info.EntryType, cl)
+		infoType := common.GetColorString(listCmdDevColor.Get(), info, info.EntryType, cl)
 
 		// 文件大小 和 单位
 		infoSize, infoSizeUnit := humanSize(info.Size)
@@ -175,7 +174,7 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 		var infoName string
 
 		// 检查是否为软链接
-		if info.EntryType == globals.SymlinkType {
+		if info.EntryType == types.SymlinkType {
 			// 根据软连接路径是否存在设置颜色
 			if _, statErr := os.Stat(info.LinkTargetPath); os.IsNotExist(statErr) {
 				// 如果源文件不存在, 则软连接为红色
@@ -188,12 +187,12 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 				// 如果源文件存在, 则软连接为青色
 				linkPath := cl.Scyan(fileName)
 				// 源文件为根据类型设置颜色
-				sourcePath := SprintStringColor(info.LinkTargetPath, info.LinkTargetPath, cl)
+				sourcePath := common.SprintStringColor(info.LinkTargetPath, info.LinkTargetPath, cl)
 				// 组装字符串
 				infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath)
 			}
 		} else {
-			infoName = getColorString(info, fmt.Sprintf(nameFormat, fileName), cl)
+			infoName = common.GetColorString(listCmdDevColor.Get(), info, fmt.Sprintf(nameFormat, fileName), cl)
 		}
 
 		// 添加行到表格
@@ -219,7 +218,7 @@ func renderFileTable(cl *colorlib.ColorLib, infos globals.ListInfos) error {
 	// 设置表格样式
 	if listCmdTableStyle.Get() != "" {
 		// 根据-ts的值设置表格样式
-		if style, ok := globals.TableStyleMap[listCmdTableStyle.Get()]; ok {
+		if style, ok := types.TableStyleMap[listCmdTableStyle.Get()]; ok {
 			t.SetStyle(style)
 		}
 	}

@@ -1,4 +1,4 @@
-package commands
+package size
 
 import (
 	"fmt"
@@ -10,7 +10,8 @@ import (
 	"sync"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/globals"
+	"gitee.com/MM-Q/fck/commands/internal/common"
+	"gitee.com/MM-Q/fck/commands/internal/types"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 )
@@ -24,8 +25,14 @@ type item struct {
 // 用于存储在输出时的项列表
 type items []item
 
-// sizeCmdMain 是 size 子命令的主函数
-func sizeCmdMain(cl *colorlib.ColorLib) error {
+// SizeCmdMain 是 size 子命令的主函数
+//
+// 参数:
+//   - cl: 用于打印输出的 ColorLib 对象
+//
+// 返回:
+// - error: 如果发生错误，返回错误信息，否则返回 nil
+func SizeCmdMain(cl *colorlib.ColorLib) error {
 	// 获取指定的路径
 	targetPaths := sizeCmd.Args()
 
@@ -66,7 +73,7 @@ func sizeCmdMain(cl *colorlib.ColorLib) error {
 			for _, filePath := range filePaths {
 				// 如果是隐藏文件且未启用-H选项, 则跳过
 				if !sizeCmdHidden.Get() {
-					if isHidden(filePath) {
+					if common.IsHidden(filePath) {
 						continue
 					}
 				}
@@ -92,7 +99,7 @@ func sizeCmdMain(cl *colorlib.ColorLib) error {
 
 		// 如果是隐藏文件且未启用-H选项, 则跳过
 		if !sizeCmdHidden.Get() {
-			if isHidden(targetPath) {
+			if common.IsHidden(targetPath) {
 				continue
 			}
 		}
@@ -141,7 +148,7 @@ func sizeCmdMain(cl *colorlib.ColorLib) error {
 func getPathSize(path string) (int64, error) {
 	// 如果是隐藏文件且未启用-H选项，则跳过
 	if !sizeCmdHidden.Get() {
-		if isHidden(path) {
+		if common.IsHidden(path) {
 			return 0, nil
 		}
 	}
@@ -233,7 +240,7 @@ func getPathSize(path string) (int64, error) {
 
 		// 如果是隐藏文件且未启用-H选项，则跳过
 		if !sizeCmdHidden.Get() {
-			if isHidden(filePath) {
+			if common.IsHidden(filePath) {
 				return nil
 			}
 		}
@@ -388,17 +395,11 @@ func printSizeTable(its items, cl *colorlib.ColorLib) {
 
 	// 遍历items数组, 添加行
 	for i := range its {
-		// 添加行
-		// colorSize, sizeErr := SprintStringColor(its[i].Name, its[i].Size, cl)
-		// if sizeErr != nil {
-		// 	colorSize = its[i].Size
-		// }
-
 		// 大小列使用白色
 		colorSize := cl.Swhite(its[i].Size)
 
 		// 文件名列根据类型着色
-		colorName := SprintStringColor(its[i].Name, its[i].Name, cl)
+		colorName := common.SprintStringColor(its[i].Name, its[i].Name, cl)
 
 		// 添加行
 		t.AppendRow(table.Row{colorSize, colorName})
@@ -411,7 +412,7 @@ func printSizeTable(its items, cl *colorlib.ColorLib) {
 	})
 
 	// 根据-ts的值设置表格样式
-	if style, ok := globals.TableStyleMap[sizeCmdTableStyle.Get()]; ok {
+	if style, ok := types.TableStyleMap[sizeCmdTableStyle.Get()]; ok {
 		t.SetStyle(style)
 	}
 

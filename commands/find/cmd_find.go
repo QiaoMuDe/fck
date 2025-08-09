@@ -1,4 +1,4 @@
-package commands
+package find
 
 import (
 	"errors"
@@ -16,11 +16,12 @@ import (
 	"time"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/globals"
+	"gitee.com/MM-Q/fck/commands/internal/common"
+	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
-// findCmdMain 是 find 子命令的主函数
-func findCmdMain(cl *colorlib.ColorLib) error {
+// FindCmdMain 是 find 子命令的主函数
+func FindCmdMain(cl *colorlib.ColorLib) error {
 	// 获取第一个参数作为查找路径
 	findPath := findCmd.Arg(0)
 
@@ -58,34 +59,34 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 	// 启用正则模式
 	if isRegex {
 		// 构建检索文件名的正则表达式模式
-		escapedName := RegexBuilder(findCmdName.Get(), isRegex, wholeWord, caseSensitive)
+		escapedName := common.RegexBuilder(findCmdName.Get(), isRegex, wholeWord, caseSensitive)
 
 		// 构建排除文件名的正则表达式模式
-		excludedName := RegexBuilder(findCmdExcludeName.Get(), isRegex, wholeWord, caseSensitive)
+		excludedName := common.RegexBuilder(findCmdExcludeName.Get(), isRegex, wholeWord, caseSensitive)
 
 		// 构建检索路径的正则表达式模式
-		escapedPath := RegexBuilder(findCmdPath.Get(), isRegex, wholeWord, caseSensitive)
+		escapedPath := common.RegexBuilder(findCmdPath.Get(), isRegex, wholeWord, caseSensitive)
 
 		// 构建排除路径的正则表达式模式
-		excludedPath := RegexBuilder(findCmdExcludePath.Get(), isRegex, wholeWord, caseSensitive)
+		excludedPath := common.RegexBuilder(findCmdExcludePath.Get(), isRegex, wholeWord, caseSensitive)
 
 		// 构建文件名的正则表达式
-		if nameRegex, nameErr = CompileRegex(escapedName); nameErr != nil {
+		if nameRegex, nameErr = common.CompileRegex(escapedName); nameErr != nil {
 			return fmt.Errorf("文件名正则表达式编译错误: %v", nameErr)
 		}
 
 		// 构建排除文件名的正则表达式
-		if exNameRegex, exNameErr = CompileRegex(excludedName); exNameErr != nil {
+		if exNameRegex, exNameErr = common.CompileRegex(excludedName); exNameErr != nil {
 			return fmt.Errorf("排除文件名正则表达式编译错误: %v", exNameErr)
 		}
 
 		// 构建路径的正则表达式
-		if pathRegex, pathErr = CompileRegex(escapedPath); pathErr != nil {
+		if pathRegex, pathErr = common.CompileRegex(escapedPath); pathErr != nil {
 			return fmt.Errorf("路径正则表达式编译错误: %v", pathErr)
 		}
 
 		// 构建排除路径的正则表达式
-		if exPathRegex, exPathErr = CompileRegex(excludedPath); exPathErr != nil {
+		if exPathRegex, exPathErr = common.CompileRegex(excludedPath); exPathErr != nil {
 			return fmt.Errorf("排除路径正则表达式编译错误: %v", exPathErr)
 		}
 	} else {
@@ -101,7 +102,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 	matchCount.Store(0)
 
 	// 创建FindConfig实例
-	config := &globals.FindConfig{
+	config := &types.FindConfig{
 		Cl:            cl,                       // 颜色库实例
 		NameRegex:     nameRegex,                // 文件名匹配正则
 		ExNameRegex:   exNameRegex,              // 排除文件名正则
@@ -162,7 +163,7 @@ func findCmdMain(cl *colorlib.ColorLib) error {
 // - findPath: 要查找的路径
 // 返回值:
 // - error: 错误信息
-func processWalkDir(config *globals.FindConfig, findPath string) error {
+func processWalkDir(config *types.FindConfig, findPath string) error {
 	// 使用 filepath.WalkDir 遍历目录
 	walkDirErr := filepath.WalkDir(findPath, func(path string, entry os.DirEntry, err error) error {
 		// 检查遍历过程中是否遇到错误
@@ -228,7 +229,7 @@ func processWalkDir(config *globals.FindConfig, findPath string) error {
 // - path: 文件或目录的完整路径
 // 返回值:
 // - error: 错误信息
-func processFindCmd(config *globals.FindConfig, entry os.DirEntry, path string) error {
+func processFindCmd(config *types.FindConfig, entry os.DirEntry, path string) error {
 	// 如果指定了-n和-p参数, 并且指定了-or参数, 则只检查文件名或路径是否匹配(默认为或操作)
 	if findCmdOr.Get() && config.NamePattern != "" && config.PathPattern != "" {
 		// 执行或操作
@@ -287,11 +288,11 @@ func processFindCmd(config *globals.FindConfig, entry os.DirEntry, path string) 
 // - path: 文件或目录的完整路径
 // 返回值:
 // - error: 错误信息
-func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string) error {
+func filterConditions(config *types.FindConfig, entry os.DirEntry, path string) error {
 	// 默认隐藏文件或隐藏目录不参与匹配
 	// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
 	if !findCmdHidden.Get() {
-		if isHidden(path) {
+		if common.IsHidden(path) {
 			// 如果是隐藏目录, 跳过整个目录
 			if entry.IsDir() {
 				return filepath.SkipDir
@@ -328,7 +329,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 	var cacheErr error
 
 	// 判断是否需要获取文件信息：空文件检查、修改时间筛选或大小筛选
-	if (findCmdType.Get() == globals.FindTypeEmpty || findCmdType.Get() == globals.FindTypeEmptyShort) || findCmdModTime.Get() != "" || findCmdSize.Get() != "" {
+	if (findCmdType.Get() == types.FindTypeEmpty || findCmdType.Get() == types.FindTypeEmptyShort) || findCmdModTime.Get() != "" || findCmdSize.Get() != "" {
 		cacheInfo, cacheErr = entry.Info()
 		if cacheErr != nil {
 			return nil
@@ -340,23 +341,23 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 
 	// 根据findCmdType的值, 跳过不符合要求的文件或目录
 	switch findCmdType.Get() {
-	case globals.FindTypeFile, globals.FindTypeFileShort:
+	case types.FindTypeFile, types.FindTypeFileShort:
 		// 如果只查找文件, 跳过目录
 		if entry.IsDir() {
 			return nil
 		}
-	case globals.FindTypeDir, globals.FindTypeDirShort:
+	case types.FindTypeDir, types.FindTypeDirShort:
 		// 如果只查找目录, 跳过文件
 		if !entry.IsDir() {
 			return nil
 		}
-	case globals.FindTypeSymlink, globals.FindTypeSymlinkShort:
+	case types.FindTypeSymlink, types.FindTypeSymlinkShort:
 		// 如果只查找软链接, 跳过非软链接
 
 		// Windows系统特殊处理
 		if runtime.GOOS == "windows" {
 			// 如果不是.lnk或.url文件, 跳过
-			if !globals.WindowsSymlinkExts[entryExt] {
+			if !types.WindowsSymlinkExts[entryExt] {
 				return nil
 			}
 		} else {
@@ -366,17 +367,17 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			}
 		}
 
-	case globals.FindTypeHidden, globals.FindTypeHiddenShort:
+	case types.FindTypeHidden, types.FindTypeHiddenShort:
 		// 如果只显示隐藏文件或目录, 跳过非隐藏文件或目录
-		if !isHidden(path) {
+		if !common.IsHidden(path) {
 			return nil
 		}
-	case globals.FindTypeReadonly, globals.FindTypeReadonlyShort:
+	case types.FindTypeReadonly, types.FindTypeReadonlyShort:
 		// 如果只显示只读文件或目录 跳过非只读文件或目录
-		if !isReadOnly(path) {
+		if !common.IsReadOnly(path) {
 			return nil
 		}
-	case globals.FindTypeEmpty, globals.FindTypeEmptyShort:
+	case types.FindTypeEmpty, types.FindTypeEmptyShort:
 		// 如果只查找空文件或目录
 		if entry.IsDir() {
 			// 检查目录是否为空
@@ -390,12 +391,12 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 				return nil
 			}
 		}
-	case globals.FindTypeExecutable, globals.FindTypeExecutableShort:
+	case types.FindTypeExecutable, types.FindTypeExecutableShort:
 		// 如果只查找可执行文件或目录
 		if runtime.GOOS == "windows" {
 			// Windows系统检查文件扩展名
 			ext := strings.ToLower(entryExt)
-			if !globals.WindowsExecutableExts[ext] {
+			if !types.WindowsExecutableExts[ext] {
 				return nil
 			}
 		} else {
@@ -404,7 +405,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 				return nil
 			}
 		}
-	case globals.FindTypeSocket, globals.FindTypeSocketShort:
+	case types.FindTypeSocket, types.FindTypeSocketShort:
 		// Windows不支持Unix domain socket, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
@@ -414,7 +415,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		if entry.Type()&os.ModeSocket == 0 {
 			return nil
 		}
-	case globals.FindTypePipe, globals.FindTypePipeShort:
+	case types.FindTypePipe, types.FindTypePipeShort:
 		// Windows不支持Unix命名管道, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
@@ -424,7 +425,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		if entry.Type()&os.ModeNamedPipe == 0 {
 			return nil
 		}
-	case globals.FindTypeBlock, globals.FindTypeBlockShort:
+	case types.FindTypeBlock, types.FindTypeBlockShort:
 		// Windows不支持Unix块设备文件, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
@@ -434,7 +435,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		if entry.Type()&os.ModeDevice == 0 {
 			return nil
 		}
-	case globals.FindTypeChar, globals.FindTypeCharShort:
+	case types.FindTypeChar, types.FindTypeCharShort:
 		// Windows不支持Unix字符设备文件, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
@@ -444,7 +445,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		if entry.Type()&os.ModeCharDevice == 0 {
 			return nil
 		}
-	case globals.FindTypeAppend, globals.FindTypeAppendShort:
+	case types.FindTypeAppend, types.FindTypeAppendShort:
 		// Windows文件系统不支持Unix追加模式标志, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
@@ -454,7 +455,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		if entry.Type()&os.ModeAppend == 0 {
 			return nil
 		}
-	case globals.FindTypeNonAppend, globals.FindTypeNonAppendShort:
+	case types.FindTypeNonAppend, types.FindTypeNonAppendShort:
 		// Windows文件系统不支持Unix追加模式标志, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
@@ -464,7 +465,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 		if entry.Type()&os.ModeAppend != 0 {
 			return nil
 		}
-	case globals.FindTypeExclusive, globals.FindTypeExclusiveShort:
+	case types.FindTypeExclusive, types.FindTypeExclusiveShort:
 		// Windows文件系统不支持Unix独占模式标志, 直接返回nil
 		if runtime.GOOS == "windows" {
 			return nil
@@ -555,7 +556,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 			}
 
 			// 输出完整路径
-			printPathColor(fullPath, config.Cl)
+			common.PrintPathColor(fullPath, config.Cl)
 		}
 
 		return nil
@@ -566,7 +567,7 @@ func filterConditions(config *globals.FindConfig, entry os.DirEntry, path string
 
 	// 如果没有启用count标志, 才输出匹配路径
 	if !findCmdCount.Get() {
-		printPathColor(path, config.Cl)
+		common.PrintPathColor(path, config.Cl)
 	}
 
 	return nil
@@ -587,12 +588,12 @@ func checkFindCmdArgs(findPath string) error {
 	}
 
 	// 检查是否为受支持限制查找类型
-	if !globals.IsValidFindType(findCmdType.Get()) {
-		return fmt.Errorf("无效的类型: %s, 请使用%s", findCmdType.Get(), globals.GetSupportedFindTypes()[:])
+	if !types.IsValidFindType(findCmdType.Get()) {
+		return fmt.Errorf("无效的类型: %s, 请使用%s", findCmdType.Get(), types.GetSupportedFindTypes()[:])
 	}
 
 	// 如果只显示隐藏文件或目录, 则必须指定 -H 标志
-	if !findCmdHidden.Get() && (findCmdType.Get() == globals.FindTypeHidden || findCmdType.Get() == globals.FindTypeHiddenShort) {
+	if !findCmdHidden.Get() && (findCmdType.Get() == types.FindTypeHidden || findCmdType.Get() == types.FindTypeHiddenShort) {
 		return fmt.Errorf("必须指定 -H 标志才能使用 -type hidden 或 -type h 选项")
 	}
 
@@ -922,7 +923,7 @@ func deleteMatchedItem(path string, isDir bool, cl *colorlib.ColorLib) error {
 		// 检查目录是否为空
 		dirEntries, readDirErr := os.ReadDir(path)
 		if readDirErr != nil {
-			return handleError(path, readDirErr)
+			return common.HandleError(path, readDirErr)
 		}
 
 		// 检查目录是否为空
@@ -1075,7 +1076,7 @@ func isSymlinkLoop(path string) bool {
 }
 
 // 并发版本的目录遍历函数
-func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error {
+func processWalkDirConcurrent(config *types.FindConfig, findPath string) error {
 	var wg sync.WaitGroup
 	pathChan := make(chan string, runtime.NumCPU()*2000) // 通道缓冲区
 	errorChan := make(chan error, 100)                   // 错误通道
@@ -1112,7 +1113,7 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 				}
 
 				// 构建 DirEntryWrapper
-				dirEntry := &globals.DirEntryWrapper{
+				dirEntry := &types.DirEntryWrapper{
 					NameVal:  entry.Name(),
 					IsDirVal: entry.IsDir(),
 					ModeVal:  entry.Mode(),
@@ -1171,7 +1172,7 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 		// 默认隐藏文件或隐藏目录不参与匹配
 		// 如果没有启用隐藏标志且是隐藏目录或文件, 则跳过
 		if !findCmdHidden.Get() {
-			if isHidden(p) {
+			if common.IsHidden(p) {
 				// 如果是隐藏目录, 跳过整个目录
 				if d.IsDir() {
 					return filepath.SkipDir
@@ -1251,7 +1252,7 @@ func processWalkDirConcurrent(config *globals.FindConfig, findPath string) error
 // 返回值:
 //
 //	bool: 是否匹配
-func matchPattern(input, pattern string, regex *regexp.Regexp, config *globals.FindConfig) bool {
+func matchPattern(input, pattern string, regex *regexp.Regexp, config *types.FindConfig) bool {
 	// 如果模式为空, 则不匹配
 	if pattern == "" {
 		return false

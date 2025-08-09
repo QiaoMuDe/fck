@@ -1,6 +1,6 @@
 //go:build windows
 
-package commands
+package common
 
 import (
 	"fmt"
@@ -8,15 +8,21 @@ import (
 	"syscall"
 )
 
-// isHidden 判断Windows文件或目录是否为隐藏
-func isHidden(path string) bool {
+// IsHidden 判断Windows文件或目录是否为隐藏
+//
+// 参数:
+//   - path: 文件或目录路径
+//
+// 返回:
+//   - bool: 是否为隐藏
+func IsHidden(path string) bool {
 	// 检查是否是盘符根目录(如 D: 或 D:\)
-	if isDriveRoot(path) {
+	if IsDriveRoot(path) {
 		return false
 	}
 
 	// 优先检查Windows隐藏属性
-	if isHiddenWindows(path) {
+	if IsHiddenWindows(path) {
 		return true
 	}
 
@@ -26,8 +32,14 @@ func isHidden(path string) bool {
 	return len(name) > 0 && name[0] == '.' && name != "." && name != ".."
 }
 
-// isDriveRoot 检查路径是否是盘符根目录
-func isDriveRoot(path string) bool {
+// IsDriveRoot 检查路径是否是盘符根目录
+//
+// 参数:
+//   - path: 路径
+//
+// 返回:
+//   - bool: 是否是盘符根目录
+func IsDriveRoot(path string) bool {
 	// 检查路径是否是 D: 或 D:\
 	if len(path) == 2 && path[1] == ':' {
 		return true
@@ -38,8 +50,14 @@ func isDriveRoot(path string) bool {
 	return false
 }
 
-// isHiddenWindows 检查Windows文件是否为隐藏
-func isHiddenWindows(path string) bool {
+// IsHiddenWindows 检查Windows文件是否为隐藏
+//
+// 参数:
+//   - path: 文件路径
+//
+// 返回:
+//   - bool: 是否为隐藏文件
+func IsHiddenWindows(path string) bool {
 	// 获取文件属性
 	utf16Path, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
@@ -56,8 +74,14 @@ func isHiddenWindows(path string) bool {
 	return attributes&syscall.FILE_ATTRIBUTE_HIDDEN != 0
 }
 
-// isReadOnly 判断Windows文件或目录是否为只读
-func isReadOnly(path string) bool {
+// IsReadOnly 判断Windows文件或目录是否为只读
+//
+// 参数:
+//   - path: 文件或目录的路径
+//
+// 返回:
+//   - bool: 文件或目录是否为只读
+func IsReadOnly(path string) bool {
 	utf16Path, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
 		return false
@@ -69,10 +93,18 @@ func isReadOnly(path string) bool {
 	return (attrs & syscall.FILE_ATTRIBUTE_READONLY) != 0
 }
 
-// getFileOwner 用于Windows环境下的占位函数
-// 参数: filePath - 文件路径
-// 返回: 用户和组的信息, Windows环境下返回"?"占位符
-func getFileOwner(filePath string) (string, string) {
+// GetFileOwner 用于Windows环境下的占位函数
+//
+// 参数:
+//   - filePath - 文件路径
+//
+// 返回:
+//   - string - 文件所有者的用户名
+//   - string - 文件所有者的组名
+//
+// 注意:
+//   - 该函数在Windows环境下始终返回?问号。
+func GetFileOwner(filePath string) (string, string) {
 	_ = filePath
 	// 在Windows环境下, 返回"?"占位符
 	return "?", "?"

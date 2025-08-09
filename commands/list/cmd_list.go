@@ -1,4 +1,4 @@
-package commands
+package list
 
 import (
 	"errors"
@@ -11,11 +11,12 @@ import (
 	"sync"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/globals"
+	"gitee.com/MM-Q/fck/commands/internal/common"
+	"gitee.com/MM-Q/fck/commands/internal/types"
 	"golang.org/x/term"
 )
 
-func listCmdMain(cl *colorlib.ColorLib) error {
+func ListCmdMain(cl *colorlib.ColorLib) error {
 	// 获取所有命令行参数
 	paths := listCmd.Args()
 
@@ -80,7 +81,7 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 		// 过滤掉应该跳过的文件
 		for _, match := range matches {
 			// 如果 -a=true ，则显示所有文件，包括隐藏文件, 如果 -a=false ，则仅显示非隐藏文件
-			if listCmdAll.Get() || !isHidden(match) {
+			if listCmdAll.Get() || !common.IsHidden(match) {
 				expandedPaths = append(expandedPaths, match)
 			}
 		}
@@ -97,7 +98,7 @@ func listCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 分离处理文件和目录
-	var fileInfos globals.ListInfos
+	var fileInfos types.ListInfos
 	for _, path := range uniquePaths {
 		pathInfo, statErr := os.Stat(path)
 		if statErr != nil {
@@ -200,7 +201,7 @@ func checkListCmdArgs() error {
 	}
 
 	// 如果指定了-ho检查是否指定-a
-	if (listCmdType.Get() == globals.FindTypeHiddenShort || listCmdType.Get() == globals.FindTypeHidden) && !listCmdAll.Get() {
+	if (listCmdType.Get() == types.FindTypeHiddenShort || listCmdType.Get() == types.FindTypeHidden) && !listCmdAll.Get() {
 		return fmt.Errorf("必须指定 %s 选项才能使用 %s 选项", listCmdAll.Name(), listCmdType.Name())
 	}
 
@@ -214,7 +215,7 @@ func checkListCmdArgs() error {
 
 // list命令的默认运行函数
 // listCmdDefault 函数用于以默认格式输出文件信息，支持递归目录分组显示和多列表格布局。
-func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
+func listCmdDefault(cl *colorlib.ColorLib, lfs types.ListInfos) error {
 	// 获取终端宽度
 	width, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
@@ -224,7 +225,7 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 	// 如果启用了递归，按目录分组显示
 	if listCmdRecursion.Get() {
 		// 按目录分组文件
-		dirFiles := make(map[string][]globals.ListInfo)
+		dirFiles := make(map[string][]types.ListInfo)
 		for _, info := range lfs {
 			dir, _ := filepath.Split(info.Name)
 			if dir == "" {
@@ -266,11 +267,11 @@ func listCmdDefault(cl *colorlib.ColorLib, lfs globals.ListInfos) error {
 }
 
 // listCmdLong 函数用于以长格式输出文件信息，支持递归目录分组显示。
-func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
+func listCmdLong(cl *colorlib.ColorLib, ifs types.ListInfos) error {
 	// 如果启用了递归，按目录分组显示
 	if listCmdRecursion.Get() {
 		// 按目录分组文件
-		dirFiles := make(map[string][]globals.ListInfo)
+		dirFiles := make(map[string][]types.ListInfo)
 		for _, info := range ifs {
 			dir, _ := filepath.Split(info.Name)
 			if dir == "" {
@@ -312,7 +313,7 @@ func listCmdLong(cl *colorlib.ColorLib, ifs globals.ListInfos) error {
 }
 
 // FormatPermissionString 根据颜色模式格式化权限字符串
-func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (formattedPerm string) {
+func FormatPermissionString(cl *colorlib.ColorLib, info types.ListInfo) (formattedPerm string) {
 	// 检查权限字符串长度是否有效 (至少10个字符, 如 "-rwxr-xr-x")
 	if len(info.Perm) < 10 {
 		return "???-???-???"
@@ -320,7 +321,7 @@ func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (forma
 
 	if listCmdColor.Get() {
 		for i := 1; i < len(info.Perm); i++ { // 跳过第一个字符（通常是文件类型标志）
-			colorName := PermissionColorMap[i] // 获取当前字符的颜色名称
+			colorName := common.PermissionColorMap[i] // 获取当前字符的颜色名称
 			switch colorName {
 			case "green":
 				formattedPerm += cl.Sgreen(string(info.Perm[i]))
@@ -342,10 +343,10 @@ func FormatPermissionString(cl *colorlib.ColorLib, info globals.ListInfo) (forma
 
 // getFileInfos 函数用于获取指定路径下所有文件和目录的详细信息。
 // 参数 path 表示要获取信息的目录路径。
-// 返回值为一个 globals.ListInfo 类型的切片，包含了每个文件和目录的详细信息，以及可能出现的错误。
-func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, error) {
+// 返回值为一个 types.ListInfo 类型的切片，包含了每个文件和目录的详细信息，以及可能出现的错误。
+func getFileInfos(p string, rootDir string, mu *sync.Mutex) (types.ListInfos, error) {
 	// 初始化一个用于存储文件信息的切片
-	var infos globals.ListInfos
+	var infos types.ListInfos
 
 	// 清理路径
 	p = filepath.Clean(p)
@@ -357,19 +358,19 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 	}
 
 	// 检查是否为系统文件或目录
-	if isSystemFileOrDir(filepath.Base(absPath)) {
+	if common.IsSystemFileOrDir(filepath.Base(absPath)) {
 		return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
 	}
 
 	// 获取指定路径的文件信息
 	pathInfo, statErr := os.Stat(absPath)
 	if statErr != nil {
-		return nil, handleError(absPath, statErr)
+		return nil, common.HandleError(absPath, statErr)
 	}
 
 	// 检查初始路径是否应该被跳过
 	if shouldSkipFile(absPath, pathInfo.IsDir(), pathInfo, true) {
-		infos = make(globals.ListInfos, 0)
+		infos = make(types.ListInfos, 0)
 		return infos, nil
 	}
 
@@ -377,17 +378,17 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 	if pathInfo.IsDir() {
 		// 如果设置了 -D 标志，只列出目录本身
 		if listCmdDirItself.Get() {
-			if isSystemFileOrDir(filepath.Base(absPath)) {
+			if common.IsSystemFileOrDir(filepath.Base(absPath)) {
 				return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
 			}
 
 			// 检查文件是否应该被跳过
 			if shouldSkipFile(absPath, pathInfo.IsDir(), pathInfo, false) {
-				infos = make(globals.ListInfos, 0)
+				infos = make(types.ListInfos, 0)
 				return infos, nil
 			}
 
-			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
+			// 构建一个 types.ListInfo 结构体，存储目录的详细信息
 			// 由于 buildFileInfo 函数需要三个参数，这里添加 rootDir 参数，由于当前处理的是目录本身，rootDir 可以设为 absPath
 			info := buildFileInfo(pathInfo, absPath, absPath)
 
@@ -402,7 +403,7 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 		// 读取目录下的文件
 		files, readDirErr := os.ReadDir(absPath)
 		if readDirErr != nil {
-			return nil, handleError(absPath, readDirErr)
+			return nil, common.HandleError(absPath, readDirErr)
 		}
 
 		// 遍历目录下的每个文件和目录
@@ -413,14 +414,14 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 			}
 
 			// 检查是否为系统文件或目录
-			if isSystemFileOrDir(filepath.Base(absFilePath)) {
+			if common.IsSystemFileOrDir(filepath.Base(absFilePath)) {
 				continue
 			}
 
 			// 获取文件的详细信息，如大小、修改时间等
 			fileInfo, statErr := file.Info()
 			if statErr != nil {
-				return nil, handleError(absFilePath, statErr)
+				return nil, common.HandleError(absFilePath, statErr)
 			}
 
 			// 检查文件是否应该被跳过
@@ -432,7 +433,7 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 			if listCmdRecursion.Get() && file.IsDir() {
 				// 使用带并发控制的goroutine处理子目录
 				type result struct {
-					infos globals.ListInfos
+					infos types.ListInfos
 					err   error
 				}
 				resultChan := make(chan result)
@@ -460,7 +461,7 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 				mu.Unlock()
 			}
 
-			// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
+			// 构建一个 types.ListInfo 结构体，存储目录的详细信息
 			info := buildFileInfo(fileInfo, absFilePath, rootDir)
 
 			// 将构建好的目录信息添加到切片中
@@ -468,17 +469,17 @@ func getFileInfos(p string, rootDir string, mu *sync.Mutex) (globals.ListInfos, 
 		}
 	} else {
 		// 检查是否为系统文件或目录
-		if isSystemFileOrDir(filepath.Base(absPath)) {
+		if common.IsSystemFileOrDir(filepath.Base(absPath)) {
 			return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
 		}
 
 		// 检查文件是否应该被跳过
 		if shouldSkipFile(absPath, pathInfo.IsDir(), pathInfo, false) {
-			infos = make(globals.ListInfos, 0)
+			infos = make(types.ListInfos, 0)
 			return infos, nil
 		}
 
-		// 构建一个 globals.ListInfo 结构体，存储目录的详细信息
+		// 构建一个 types.ListInfo 结构体，存储目录的详细信息
 		// 由于 buildFileInfo 函数需要三个参数，这里第三个参数使用 absPath 作为 rootDir
 		info := buildFileInfo(pathInfo, absPath, absPath)
 
@@ -514,37 +515,37 @@ func getEntryType(fileInfo os.FileInfo) string {
 
 	// 检查是否是符号链接
 	if mode&os.ModeSymlink != 0 {
-		return globals.SymlinkType
+		return types.SymlinkType
 	}
 
 	// 检查是否是目录
 	if mode.IsDir() {
-		return globals.DirType
+		return types.DirType
 	}
 
 	// 检查是否是套接字
 	if mode&os.ModeSocket != 0 {
-		return globals.SocketType
+		return types.SocketType
 	}
 
 	// 检查是否是命名管道
 	if mode&os.ModeNamedPipe != 0 {
-		return globals.PipeType
+		return types.PipeType
 	}
 
 	// 块设备和字符设备
 	if mode&os.ModeDevice != 0 {
 		if mode&os.ModeCharDevice != 0 {
-			return globals.CharDeviceType
+			return types.CharDeviceType
 		}
-		return globals.BlockDeviceType
+		return types.BlockDeviceType
 	}
 
 	// 检查是否是普通文件
 	if mode.IsRegular() {
 		// 检查是否是空文件
 		if fileInfo.Size() == 0 {
-			return globals.EmptyType
+			return types.EmptyType
 		}
 
 		// 平台特定的可执行文件判断
@@ -554,23 +555,23 @@ func getEntryType(fileInfo os.FileInfo) string {
 			ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
 			switch ext {
 			case ".exe", ".com", ".cmd", ".bat", ".ps1", ".psm1":
-				return globals.ExecutableType
+				return types.ExecutableType
 			case ".lnk", ".url":
-				return globals.SymlinkType
+				return types.SymlinkType
 			}
 		case "linux", "darwin":
 			// Unix-like系统可执行文件判断
 			if mode&0111 != 0 {
-				return globals.ExecutableType
+				return types.ExecutableType
 			}
 		}
 
 		// 默认为普通文件
-		return globals.FileType
+		return types.FileType
 	}
 
 	// 其他类型
-	return globals.UnknownType
+	return types.UnknownType
 }
 
 // shouldSkipFile 函数用于依据命令行参数和文件属性，判断是否需要跳过指定的文件或目录。
@@ -589,12 +590,12 @@ func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool 
 	typeFlag := listCmdType.Get()
 
 	// 场景 1: 未启用 -a 选项，且当前文件或目录为隐藏文件时，应跳过该条目
-	if !allFlag && isHidden(p) {
+	if !allFlag && common.IsHidden(p) {
 		return true
 	}
 
 	// 场景 2: 同时启用 -a 和隐藏文件筛选，但当前文件或目录并非隐藏文件时，应跳过该条目
-	if allFlag && (typeFlag == globals.FindTypeHiddenShort || typeFlag == globals.FindTypeHidden) && !isHidden(p) {
+	if allFlag && (typeFlag == types.FindTypeHiddenShort || typeFlag == types.FindTypeHidden) && !common.IsHidden(p) {
 		return true
 	}
 
@@ -602,18 +603,18 @@ func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool 
 	if !main {
 		// 使用 switch 优化多种类型筛选条件的判断
 		switch typeFlag {
-		case globals.FindTypeFileShort, globals.FindTypeFile:
+		case types.FindTypeFileShort, types.FindTypeFile:
 			// 仅文件: 如果是目录则跳过
 			return isDir
-		case globals.FindTypeDirShort, globals.FindTypeDir:
+		case types.FindTypeDirShort, types.FindTypeDir:
 			// 仅目录: 如果不是目录则跳过
 			return !isDir
-		case globals.FindTypeSymlinkShort, globals.FindTypeSymlink:
+		case types.FindTypeSymlinkShort, types.FindTypeSymlink:
 			// 仅软链接: 如果不是软链接则跳过
 			return fileInfo.Mode()&os.ModeSymlink == 0
-		case globals.FindTypeReadonly, globals.FindTypeReadonlyShort:
+		case types.FindTypeReadonly, types.FindTypeReadonlyShort:
 			// 仅只读文件: 如果不是只读则跳过
-			return !isReadOnly(p)
+			return !common.IsReadOnly(p)
 		}
 	}
 
@@ -621,29 +622,7 @@ func shouldSkipFile(p string, isDir bool, fileInfo os.FileInfo, main bool) bool 
 	return false
 }
 
-// handleError 函数的作用是针对检查指定路径时出现的错误进行处理，会根据不同的错误类型生成对应的错误提示信息。
-// 参数 path 代表当前正在检查的路径，该路径可以是文件路径或者目录路径。
-// 参数 err 是在检查路径过程中产生的错误对象，函数会依据这个错误对象的类型来决定返回何种错误信息。
-// 返回值为一个新的错误对象，其中包含了更具描述性的错误信息，方便调用者定位和处理问题。
-func handleError(path string, err error) error {
-	// 可以增加对os.ErrInvalid的错误处理
-	if errors.Is(err, os.ErrInvalid) {
-		return fmt.Errorf("路径 %s 包含无效字符: %v", path, err)
-	}
-
-	// 检查错误是否为权限错误(os.ErrPermission)，若是，则返回包含路径信息和原错误信息的权限错误提示。
-	if errors.Is(err, os.ErrPermission) {
-		return fmt.Errorf("检查路径 %s 时发生了权限错误: %v", path, err)
-	}
-	// 检查错误是否为路径不存在错误(os.ErrNotExist)，若是，则返回表明该目录不存在的错误提示。
-	if errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("目录 %s 不存在", path)
-	}
-	// 若错误既不是权限错误也不是路径不存在错误，返回一个通用的错误提示，包含路径信息和原错误信息。
-	return fmt.Errorf("检查路径 %s 时发生了错误: %v", path, err)
-}
-
-// buildFileInfo 函数的作用是根据传入的文件信息和文件的绝对路径，构建一个 globals.ListInfo 结构体对象。
+// buildFileInfo 函数的作用是根据传入的文件信息和文件的绝对路径，构建一个 types.ListInfo 结构体对象。
 // 该结构体对象包含了文件的各类详细信息，方便后续对文件信息进行统一管理和使用。
 //
 // 参数说明：
@@ -652,8 +631,8 @@ func handleError(path string, err error) error {
 //   - rootDir: 根目录字符串，用于计算文件所属的目录层级关系。
 //
 // 返回值：
-//   - 返回一个 globals.ListInfo 结构体实例，该实例封装了文件的完整信息。
-func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals.ListInfo {
+//   - 返回一个 types.ListInfo 结构体实例，该实例封装了文件的完整信息。
+func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) types.ListInfo {
 	// 从文件的绝对路径中提取出文件名，作为文件的显示名称
 	var baseName string
 	// 如果启用了递归显示，则使用相对路径作为文件名
@@ -681,7 +660,7 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals
 	filePermStr := fileInfo.Mode().Perm().String()
 
 	// 调用 getFileOwner 函数，根据文件的绝对路径获取文件所属的用户和组信息
-	u, g := getFileOwner(absPath)
+	u, g := common.GetFileOwner(absPath)
 
 	// 初始化文件的扩展名变量，默认为空字符串
 	var fileExt string
@@ -706,7 +685,7 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals
 	// 检查是否为符号链接，如果是，则获取符号链接指向的目标文件的信息
 	var linkTargetPath string
 	var linkGetErr error
-	if entryType == globals.SymlinkType {
+	if entryType == types.SymlinkType {
 		// 获取符号链接指向的目标文件的绝对路径
 		linkTargetPath, linkGetErr = os.Readlink(absPath)
 		if linkGetErr != nil {
@@ -714,8 +693,8 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals
 		}
 	}
 
-	// 构建并返回一个 globals.ListInfo 结构体实例，将前面获取到的文件信息填充到结构体中
-	return globals.ListInfo{
+	// 构建并返回一个 types.ListInfo 结构体实例，将前面获取到的文件信息填充到结构体中
+	return types.ListInfo{
 		// 文件的条目类型，如 'd' 表示目录，'f' 表示普通文件等
 		EntryType: entryType,
 		// 文件的显示名称
@@ -745,7 +724,7 @@ func buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) globals
 //	sortBySize - 是否按文件大小排序
 //	sortByName - 是否按文件名排序
 //	reverse - 是否反转排序顺序
-func sortFileInfos(infos globals.ListInfos, sortByTime, sortBySize, sortByName, reverse bool) {
+func sortFileInfos(infos types.ListInfos, sortByTime, sortBySize, sortByName, reverse bool) {
 	// 若同时指定按时间排序且不反转排序顺序，则按修改时间降序排序
 	if sortByTime && !reverse {
 		infos.SortByModTimeDesc()

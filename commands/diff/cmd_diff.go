@@ -1,4 +1,4 @@
-package commands
+package diff
 
 import (
 	"bufio"
@@ -12,13 +12,14 @@ import (
 	"syscall"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/globals"
+	"gitee.com/MM-Q/fck/commands/internal/common"
+	"gitee.com/MM-Q/fck/commands/internal/types"
 
 	"golang.org/x/sync/errgroup"
 )
 
-// diffCmdMain 是 check 命令的主函数
-func diffCmdMain(cl *colorlib.ColorLib) error {
+// DiffCmdMain 是 check 命令的主函数
+func DiffCmdMain(cl *colorlib.ColorLib) error {
 	// 启动一个 goroutine，在用户按下 Ctrl+C 时取消操作
 	go func() {
 		sigs := make(chan os.Signal, 1)
@@ -122,7 +123,7 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 
 	// 校验目录A 和 目录B //
 	// 检查指定的哈希算法是否有效
-	hashType, ok := globals.SupportedAlgorithms[diffCmdType.Get()]
+	hashType, ok := types.SupportedAlgorithms[diffCmdType.Get()]
 	if !ok {
 		return fmt.Errorf("在校验哈希值时，哈希算法 %s 无效", diffCmdType.Get())
 	}
@@ -139,9 +140,9 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 	if diffCmdWrite.Get() {
 		var err error
 		// 打开文件以写入
-		fileWrite, err = os.OpenFile(globals.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		fileWrite, err = os.OpenFile(types.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
-			return fmt.Errorf("打开文件 %s 失败: %v", globals.OutputCheckFileName, err)
+			return fmt.Errorf("打开文件 %s 失败: %v", types.OutputCheckFileName, err)
 		}
 		defer func() {
 			if err := fileWrite.Close(); err != nil {
@@ -150,7 +151,7 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 		}()
 
 		// 写入文件头
-		if err := writeFileHeader(fileWrite, hashCmdType.Get(), globals.TimestampFormat); err != nil {
+		if err := common.WriteFileHeader(fileWrite, diffCmdType.Get(), types.TimestampFormat); err != nil {
 			return fmt.Errorf("写入文件头失败: %v", err)
 		}
 	}
@@ -162,16 +163,16 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 
 	// 如果是写入文件模式，则打印文件路径
 	if diffCmdWrite.Get() {
-		cl.PrintOkf("比较结果已写入文件: %s\n", globals.OutputCheckFileName)
+		cl.PrintOkf("比较结果已写入文件: %s\n", types.OutputCheckFileName)
 	}
 
 	return nil
 }
 
 // readHashFileToMap 读取校验文件并加载到 map 中
-func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) (globals.VirtualHashMap, func() hash.Hash, error) {
+func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) (types.VirtualHashMap, func() hash.Hash, error) {
 	// 创建一个新的映射，用于存储替换后的路径
-	replaceMap := make(globals.VirtualHashMap)
+	replaceMap := make(types.VirtualHashMap)
 
 	// 检查校验文件是否存在
 	if _, err := os.Stat(checkFile); err != nil {
@@ -245,10 +246,10 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 			}
 
 			// 构建虚拟路径
-			virtualPath := filepath.Join(globals.VirtualRootDir, relPath)
+			virtualPath := filepath.Join(types.VirtualRootDir, relPath)
 
 			// 存储到 map 中
-			replaceMap[virtualPath] = globals.VirtualHashEntry{
+			replaceMap[virtualPath] = types.VirtualHashEntry{
 				RealPath: filePath,     // 真实路径
 				Hash:     expectedHash, // 哈希值
 			}
@@ -260,7 +261,7 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 			}
 
 			// 存储到 map 中
-			replaceMap[filePath] = globals.VirtualHashEntry{
+			replaceMap[filePath] = types.VirtualHashEntry{
 				RealPath: filePath,     // 路径
 				Hash:     expectedHash, // 哈希值
 			}
@@ -301,7 +302,7 @@ func parseHeader(scanner *bufio.Scanner) (func() hash.Hash, error) {
 	}
 
 	// 检查哈希算法是否支持
-	hashFunc, ok := globals.SupportedAlgorithms[hashType]
+	hashFunc, ok := types.SupportedAlgorithms[hashType]
 	if !ok {
 		return nil, fmt.Errorf("不支持的哈希算法: %s", hashType)
 	}
@@ -313,7 +314,7 @@ func parseHeader(scanner *bufio.Scanner) (func() hash.Hash, error) {
 func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 	// 检查校验文件是否为空
 	if diffCmdFile.Get() == "" {
-		return fmt.Errorf("在校验文件时，必须指定一个校验文件 checksum.hash")
+		return fmt.Errorf("在校验文件时，必须指定一个校验文件 common.Checksum.hash")
 	}
 
 	// 读取校验文件并加载到 map 中
@@ -340,7 +341,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 		var checksumErr error
 
 		// 计算哈希值
-		hash, checksumErr = checksum(entry.RealPath, hashFunc)
+		hash, checksumErr = common.Checksum(entry.RealPath, hashFunc)
 		if checksumErr != nil {
 			cl.PrintErrf("计算文件哈希失败: %v\n", checksumErr)
 		}
@@ -361,7 +362,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 
 		// 比较哈希值
 		if targetHash != checkEntry.Hash {
-			cl.PrintErrf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s\n", filePath, getLast8Chars(checkEntry.Hash), getLast8Chars(targetHash))
+			cl.PrintErrf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s\n", filePath, common.GetLast8Chars(checkEntry.Hash), common.GetLast8Chars(targetHash))
 			checkCount++
 		}
 	}
@@ -519,12 +520,12 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 
 				// 使用errgroup并行计算校验值
 				eg.Go(func() error {
-					hashValueA, errA = checksum(pathA, hashType)
+					hashValueA, errA = common.Checksum(pathA, hashType)
 					return errA
 				})
 
 				eg.Go(func() error {
-					hashValueB, errB = checksum(pathB, hashType)
+					hashValueB, errB = common.Checksum(pathB, hashType)
 					return errB
 				})
 
@@ -544,7 +545,7 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 					diffCount++     // 增加不同文件计数
 					sameNameCount++ // 增加同名文件计数
 					// 根据 -w 参数决定是否将结果写入文件
-					result := fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s  路径: %s\n  目录 B: %s  路径: %s", sameNameCount, relPath, diffCmdType.Get(), getLast8Chars(hashValueA), pathA, getLast8Chars(hashValueB), pathB)
+					result := fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  目录 A: %s  路径: %s\n  目录 B: %s  路径: %s", sameNameCount, relPath, diffCmdType.Get(), common.GetLast8Chars(hashValueA), pathA, common.GetLast8Chars(hashValueB), pathB)
 					if diffCmdWrite.Get() {
 						if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
 							return fmt.Errorf("写入文件时出错: %v", writeErr)
@@ -685,7 +686,7 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 }
 
 // compareDirWithCheckFile 对比校验文件与目录文件
-func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles map[string]string, hashFunc func() hash.Hash, cl *colorlib.ColorLib, fileWrite *os.File) error {
+func compareDirWithCheckFile(checkFileHashes types.VirtualHashMap, targetFiles map[string]string, hashFunc func() hash.Hash, cl *colorlib.ColorLib, fileWrite *os.File) error {
 	// 初始化统计计数器
 	sameCount := 0
 	diffCount := 0
@@ -698,7 +699,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	matchFileNameFiles := "=== 比较具有相同名称的文件 ==="
 	if diffCmdWrite.Get() {
 		if _, writeErr := fileWrite.WriteString(matchFileNameFiles + "\n"); writeErr != nil {
-			return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+			return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 		}
 	} else {
 		cl.Green(matchFileNameFiles)
@@ -711,7 +712,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 			hasCompared = true
 
 			// 如果目录中存在同名文件，计算其哈希值并比较
-			hashValue, err := checksum(targetPath, hashFunc)
+			hashValue, err := common.Checksum(targetPath, hashFunc)
 			if err != nil {
 				cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", diffCmdType.Get(), targetPath, err)
 				continue
@@ -722,10 +723,10 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 				diffCount++
 				sameNameCount++
 				// 根据 -w 参数决定是否将结果写入文件
-				result := fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s  路径: %s\n  目录文件: %s  路径: %s", sameNameCount, filepath.Base(virtualPath), diffCmdType.Get(), getLast8Chars(checkEntry.Hash), checkEntry.RealPath, getLast8Chars(hashValue), targetPath)
+				result := fmt.Sprintf("%d. 文件 %s 的 %s 值不同:\n  校验文件: %s  路径: %s\n  目录文件: %s  路径: %s", sameNameCount, filepath.Base(virtualPath), diffCmdType.Get(), common.GetLast8Chars(checkEntry.Hash), checkEntry.RealPath, common.GetLast8Chars(hashValue), targetPath)
 				if diffCmdWrite.Get() {
 					if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
-						return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+						return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 					}
 				} else {
 					fmt.Println(result)
@@ -784,7 +785,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	validationFileOnly := "\n=== 仅存在于校验文件中的文件 ==="
 	if diffCmdWrite.Get() {
 		if _, writeErr := fileWrite.WriteString(validationFileOnly + "\n"); writeErr != nil {
-			return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+			return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 		}
 	} else {
 		cl.Green(validationFileOnly)
@@ -797,7 +798,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 		result := fmt.Sprintf("%d. 文件 %s 仅存在于校验文件: %s", onlyCheckFileCountDisplay, filepath.Base(virtualPath), checkEntry.RealPath)
 		if diffCmdWrite.Get() {
 			if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
-				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+				return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 			}
 		} else {
 			fmt.Println(result)
@@ -806,7 +807,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	if onlyCheckFileCountDisplay == 0 {
 		if diffCmdWrite.Get() {
 			if _, writeErr := fileWrite.WriteString("无匹配文件\n"); writeErr != nil {
-				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+				return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 			}
 		} else {
 			fmt.Println("无匹配文件")
@@ -817,7 +818,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	directoryOnlyFile := "\n=== 仅存在于目录中的文件 ==="
 	if diffCmdWrite.Get() {
 		if _, writeErr := fileWrite.WriteString(directoryOnlyFile + "\n"); writeErr != nil {
-			return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+			return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 		}
 	} else {
 		cl.Green(directoryOnlyFile)
@@ -830,7 +831,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 		result := fmt.Sprintf("%d. 文件 %s 仅存在于目录: %s", onlyDirFileCountDisplay, virtualPath, targetPath)
 		if diffCmdWrite.Get() {
 			if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
-				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+				return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 			}
 		} else {
 			fmt.Println(result)
@@ -839,7 +840,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	if onlyDirFileCountDisplay == 0 {
 		if diffCmdWrite.Get() {
 			if _, writeErr := fileWrite.WriteString("无匹配文件\n"); writeErr != nil {
-				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+				return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 			}
 		} else {
 			fmt.Println("无匹配文件")
@@ -850,7 +851,7 @@ func compareDirWithCheckFile(checkFileHashes globals.VirtualHashMap, targetFiles
 	result := fmt.Sprintf("\n=== 统计结果 ===\n相同文件: %d\n不同文件: %d\n仅校验文件: %d\n仅目录文件: %d", sameCount, diffCount, onlyCheckFileCount, onlyDirFileCount)
 	if diffCmdWrite.Get() {
 		if _, writeErr := fileWrite.WriteString(result + "\n"); writeErr != nil {
-			return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, writeErr)
+			return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, writeErr)
 		}
 	} else {
 		cl.Green(result)
@@ -867,7 +868,7 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 	}
 
 	// 检查指定的目录是否包含禁止输入的路径
-	if _, ok := globals.ForbiddenPaths[diffCmdDirs.Get()]; ok {
+	if _, ok := types.ForbiddenPaths[diffCmdDirs.Get()]; ok {
 		return fmt.Errorf("指定的目录包含禁止输入的路径: %s", diffCmdDirs.Get())
 	}
 
@@ -913,9 +914,9 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 	if diffCmdWrite.Get() {
 		var err error
 		// 打开文件以写入
-		fileWrite, err = os.OpenFile(globals.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		fileWrite, err = os.OpenFile(types.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
-			return fmt.Errorf("打开文件 %s 失败: %v", globals.OutputCheckFileName, err)
+			return fmt.Errorf("打开文件 %s 失败: %v", types.OutputCheckFileName, err)
 		}
 		defer func() {
 			if err := fileWrite.Close(); err != nil {
@@ -924,13 +925,13 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 		}()
 
 		// 写入文件头
-		if err := writeFileHeader(fileWrite, hashCmdType.Get(), globals.TimestampFormat); err != nil {
+		if err := common.WriteFileHeader(fileWrite, diffCmdType.Get(), types.TimestampFormat); err != nil {
 			return fmt.Errorf("写入文件头失败: %v", err)
 		}
 	}
 
 	// 替换目录map中的路径为基于虚拟父目录路径的绝对路径
-	replaceDirFiles := replacePath(globals.VirtualRootDir, targetFiles)
+	replaceDirFiles := replacePath(types.VirtualRootDir, targetFiles)
 
 	// 对比校验文件与目录文件
 	if err := compareDirWithCheckFile(checkFileHashes, replaceDirFiles, hashFunc, cl, fileWrite); err != nil {
@@ -939,7 +940,7 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 
 	// 如果是写入文件模式，则打印文件路径
 	if diffCmdWrite.Get() {
-		cl.PrintOkf("比较结果已写入文件: %s\n", globals.OutputCheckFileName)
+		cl.PrintOkf("比较结果已写入文件: %s\n", types.OutputCheckFileName)
 	}
 
 	return nil

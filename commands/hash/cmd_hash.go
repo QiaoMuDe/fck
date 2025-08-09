@@ -1,11 +1,9 @@
-package commands
+package hash
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"hash"
-	"io"
 	"io/fs"
 	"os"
 	"os/signal"
@@ -16,18 +14,12 @@ import (
 	"syscall"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/globals"
+	"gitee.com/MM-Q/fck/commands/internal/common"
+	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
-// 字节单位定义
-const (
-	Byte = 1 << (10 * iota) // 1 字节
-	KB                      // 千字节 (1024 B)
-	MB                      // 兆字节 (1024 KB)
-)
-
-// hashCmdMain 是 hash 子命令的主函数
-func hashCmdMain(cl *colorlib.ColorLib) error {
+// HashCmdMain 是 hash 子命令的主函数
+func HashCmdMain(cl *colorlib.ColorLib) error {
 	// 获取指定的路径
 	targetPaths := hashCmd.Args()
 
@@ -37,7 +29,7 @@ func hashCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 检查指定的哈希算法是否有效
-	hashType, ok := globals.SupportedAlgorithms[hashCmdType.Get()]
+	hashType, ok := types.SupportedAlgorithms[hashCmdType.Get()]
 	if !ok {
 		return fmt.Errorf("在校验哈希值时，哈希算法 %s 无效", hashCmdType.Get())
 	}
@@ -126,7 +118,7 @@ func hashCmdMain(cl *colorlib.ColorLib) error {
 		} else {
 			// 打印成功信息
 			if hashCmdWrite.Get() {
-				cl.PrintOkf("已将哈希值写入文件 %s, 共处理 %d 个文件\n", globals.OutputFileName, len(files))
+				cl.PrintOkf("已将哈希值写入文件 %s, 共处理 %d 个文件\n", types.OutputFileName, len(files))
 			}
 		}
 	}
@@ -157,10 +149,10 @@ func hashRunTasks(ctx context.Context, files []string, hashType func() hash.Hash
 	if hashCmdWrite.Get() {
 		var err error
 		// 打开文件以写入
-		fileWrite, err = os.OpenFile(globals.OutputFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		fileWrite, err = os.OpenFile(types.OutputFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
-			errors <- fmt.Errorf("打开文件 %s 失败: %v", globals.OutputFileName, err)
-			return []error{fmt.Errorf("打开文件 %s 失败: %v", globals.OutputFileName, err)}
+			errors <- fmt.Errorf("打开文件 %s 失败: %v", types.OutputFileName, err)
+			return []error{fmt.Errorf("打开文件 %s 失败: %v", types.OutputFileName, err)}
 		}
 		defer func() {
 			if err := fileWrite.Close(); err != nil {
@@ -169,9 +161,9 @@ func hashRunTasks(ctx context.Context, files []string, hashType func() hash.Hash
 		}()
 
 		// 写入文件头
-		if err := writeFileHeader(fileWrite, hashCmdType.Get(), globals.TimestampFormat); err != nil {
-			errors <- fmt.Errorf("写入文件头 %s 失败: %v", globals.OutputFileName, err)
-			return []error{fmt.Errorf("写入文件头 %s 失败: %v", globals.OutputFileName, err)}
+		if err := common.WriteFileHeader(fileWrite, hashCmdType.Get(), types.TimestampFormat); err != nil {
+			errors <- fmt.Errorf("写入文件头 %s 失败: %v", types.OutputFileName, err)
+			return []error{fmt.Errorf("写入文件头 %s 失败: %v", types.OutputFileName, err)}
 		}
 	}
 
@@ -260,7 +252,7 @@ func hashTask(ctx context.Context, filePath string, hashType func() hash.Hash, f
 	}
 
 	// 计算文件哈希值
-	hashValue, checkErr := checksum(filePath, hashType)
+	hashValue, checkErr := common.Checksum(filePath, hashType)
 	if checkErr != nil {
 		return fmt.Errorf("计算文件 %s 哈希值失败: %v", filePath, checkErr)
 	}
@@ -272,11 +264,11 @@ func hashTask(ctx context.Context, filePath string, hashType func() hash.Hash, f
 
 	// 根据 hashCmdWrite.Get() 标志决定是否写入文件
 	if hashCmdWrite.Get() {
-		// 写入到 globals.OutputFileName 文件
+		// 写入到 types.OutputFileName 文件
 		if fileWrite != nil {
 			_, err := fmt.Fprintf(fileWrite, "%s\t%q\n", hashValue, filePath)
 			if err != nil {
-				return fmt.Errorf("写入文件 %s 失败: %v", globals.OutputFileName, err)
+				return fmt.Errorf("写入文件 %s 失败: %v", types.OutputFileName, err)
 			}
 		}
 	} else {
@@ -284,74 +276,6 @@ func hashTask(ctx context.Context, filePath string, hashType func() hash.Hash, f
 	}
 
 	return nil
-}
-
-// 计算文件哈希值的函数
-//
-// 参数值:
-//   - filePath: 文件路径
-//   - hashFunc: 哈希函数
-//
-// 返回值:
-//   - hashValue: 哈希值
-//   - err: 错误信息
-func checksum(filePath string, hashFunc func() hash.Hash) (string, error) {
-	// 检查文件是否存在
-	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		return "", fmt.Errorf("文件不存在或无法访问: %v", err)
-	}
-
-	// 打开文件
-	file, err := os.Open(filePath)
-	if err != nil {
-		return "", fmt.Errorf("无法打开文件: %v", err)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Printf("close file failed: %v\n", err)
-		}
-	}()
-
-	// 创建哈希对象
-	hash := hashFunc()
-
-	// 根据文件大小动态分配缓冲区
-	fileSize := fileInfo.Size()
-	bufferSize := calculateBufferSize(fileSize)
-	buffer := make([]byte, bufferSize)
-
-	// 使用 io.CopyBuffer 进行高效复制并计算哈希
-	if _, err := io.CopyBuffer(hash, file, buffer); err != nil {
-		return "", fmt.Errorf("读取文件失败: %v", err)
-	}
-
-	// 返回哈希值的十六进制表示
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-// calculateBufferSize 根据文件大小计算最佳缓冲区大小
-// 参数 fileSize 是文件大小(字节)
-// 返回值为计算出的缓冲区大小(字节)
-func calculateBufferSize(fileSize int64) int {
-	switch {
-	case fileSize < 32*KB: // 小于 32KB 的文件使用 32KB 缓冲区
-		return int(32 * KB)
-	case fileSize < 128*KB: // 32KB-128KB 使用 64KB 缓冲区
-		return int(64 * KB)
-	case fileSize < 512*KB: // 128KB-512KB 使用 128KB 缓冲区
-		return int(128 * KB)
-	case fileSize < 1*MB: // 512KB-1MB 使用 256KB 缓冲区
-		return int(256 * KB)
-	case fileSize < 4*MB: // 1MB-4MB 使用 512KB 缓冲区
-		return int(512 * KB)
-	case fileSize < 16*MB: // 4MB-16MB 使用 1MB 缓冲区
-		return int(1 * MB)
-	case fileSize < 64*MB: // 16MB-64MB 使用 2MB 缓冲区
-		return int(2 * MB)
-	default: // 大于 64MB 的文件使用 4MB 缓冲区
-		return int(4 * MB)
-	}
 }
 
 // walkDir 函数用于根据递归标志遍历指定目录并收集文件列表。
@@ -377,7 +301,7 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 		// 遍历目录中的所有条目
 		for _, entry := range dir {
 			// 如果是隐藏项并且不允许隐藏项，则跳过该条目
-			if !hashCmdHidden.Get() && isHidden(entry.Name()) {
+			if !hashCmdHidden.Get() && common.IsHidden(entry.Name()) {
 				continue
 			}
 
@@ -407,7 +331,7 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 		}
 
 		// 如果是隐藏项并且不允许隐藏项，则跳过该条目
-		if !hashCmdHidden.Get() && isHidden(path) {
+		if !hashCmdHidden.Get() && common.IsHidden(path) {
 			// 如果是隐藏目录，跳过整个目录
 			if d.IsDir() {
 				return filepath.SkipDir
@@ -493,7 +417,7 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 			}
 
 			// 如果是隐藏项且不允许隐藏项, 则跳过该目录
-			if !hashCmdHidden.Get() && isHidden(file) {
+			if !hashCmdHidden.Get() && common.IsHidden(file) {
 				continue
 			}
 
@@ -535,7 +459,7 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 	}
 
 	// 如果是隐藏项且不允许隐藏项, 则跳过该路径
-	if !hashCmdHidden.Get() && isHidden(targetPath) {
+	if !hashCmdHidden.Get() && common.IsHidden(targetPath) {
 		return nil, fmt.Errorf("跳过隐藏项: %s", targetPath)
 	}
 
