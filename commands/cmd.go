@@ -1,9 +1,10 @@
-// Package cmd 包含了命令行工具相关的功能和函数
-package cmd
+// package commands 包含了命令行工具相关的功能和函数
+package commands
 
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/qflag"
@@ -13,7 +14,7 @@ func Run() {
 	defer func() {
 		if err := recover(); err != nil {
 			// 打印错误信息并退出
-			fmt.Printf("err: %v\n", err)
+			fmt.Printf("err: %v\nstack: %s\n", err, debug.Stack())
 			os.Exit(1)
 		}
 	}()
