@@ -34,26 +34,6 @@ func HashCmdMain(cl *colorlib.ColorLib) error {
 		return fmt.Errorf("在校验哈希值时，哈希算法 %s 无效", hashCmdType.Get())
 	}
 
-	// 设置并发任务数
-	if hashCmdJob.Get() == -1 {
-		// 使用CPU核数*2
-		if setErr := hashCmdJob.Set(fmt.Sprint(runtime.NumCPU() * 2)); setErr != nil {
-			return fmt.Errorf("设置并发任务数失败: %v", setErr)
-		}
-	}
-	if hashCmdJob.Get() <= 0 {
-		// 最小并发数为1
-		if setErr := hashCmdJob.Set(fmt.Sprint(1)); setErr != nil {
-			return fmt.Errorf("设置并发任务数失败: %v", setErr)
-		}
-	}
-	if hashCmdJob.Get() > 20 {
-		// 最大并发数为20
-		if setErr := hashCmdJob.Set(fmt.Sprint(20)); setErr != nil {
-			return fmt.Errorf("设置并发任务数失败: %v", setErr)
-		}
-	}
-
 	// 创建一个可以被外部取消的上下文（支持指定取消原因）
 	ctx, cancel := context.WithCancelCause(context.Background())
 
@@ -132,8 +112,8 @@ func hashRunTasks(ctx context.Context, files []string, hashType func() hash.Hash
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil) // 正常完成时不设置取消原因
 
-	// 根据 hashCmdJob.Get() 的值创建一个工作池
-	jobPool := make(chan struct{}, hashCmdJob.Get())
+	// 根据 CPU 核心数创建工作池
+	jobPool := make(chan struct{}, runtime.NumCPU())
 
 	// 创建错误收集通道
 	errors := make(chan error, len(files))
