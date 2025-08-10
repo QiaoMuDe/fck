@@ -13,7 +13,6 @@ var (
 	// fck size 子命令
 	sizeCmd           *cmd.Cmd
 	sizeCmdColor      *qflag.BoolFlag // color 标志
-	sizeCmdJob        *qflag.IntFlag  // job 标志
 	sizeCmdTableStyle *qflag.EnumFlag // ts 标志
 	sizeCmdHidden     *qflag.BoolFlag // hidden 标志
 )
@@ -22,14 +21,13 @@ var (
 func InitSizeCmd() *cmd.Cmd {
 	// fck size 子命令
 	sizeCmd = qflag.NewCmd("size", "s", flag.ExitOnError).
-		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " size [options] <path>\n")).
+		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " size [options] <path>...\n")).
 		WithUseChinese(true).
 		WithNote("大小单位会自动选择最合适的(B/KB/MB/GB/TB)").
 		WithDescription("文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示")
 
 	// 标志定义
 	sizeCmdColor = sizeCmd.Bool("color", "c", false, "启用颜色输出")
-	sizeCmdJob = sizeCmd.Int("job", "j", -1, "指定并发数量, 默认为-1表示根据CPU核心数自动设置, 其余整数表示并发任务数")
 	sizeCmdHidden = sizeCmd.Bool("hidden", "H", false, "包含隐藏文件或目录进行大小计算，默认过滤")
 	sizeCmdTableStyle = sizeCmd.Enum("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\t\t[default] - 默认样式\n"+

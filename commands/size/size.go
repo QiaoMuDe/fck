@@ -36,7 +36,7 @@ func SizeCmdMain(cl *colorlib.ColorLib) error {
 
 	// 如果没有指定路径, 则默认计算当前目录下每个项目的大小
 	if len(targetPaths) == 0 {
-		return fmt.Errorf("请指定要计算大小路径")
+		targetPaths = []string{"*"} // 使用通配符匹配当前目录所有项目
 	}
 
 	// 根据sizeCmdColor设置颜色模式
@@ -50,71 +50,79 @@ func SizeCmdMain(cl *colorlib.ColorLib) error {
 		// 清理路径
 		targetPath = filepath.Clean(targetPath)
 
-		// 如果路径包含通配符, 则使用通配符匹配路径
-		if strings.Contains(targetPath, "*") {
-			filePaths, err := filepath.Glob(targetPath)
-			if err != nil {
-				cl.PrintErrf("通配符匹配失败: %v\n", err)
-				continue
-			}
-
-			if len(filePaths) == 0 {
-				cl.PrintErr("没有找到匹配的文件")
-				continue
-			}
-
-			// 计算每个匹配路径的大小
-			for _, filePath := range filePaths {
-				// 如果是隐藏文件且未启用-H选项, 则跳过
-				if !sizeCmdHidden.Get() {
-					if common.IsHidden(filePath) {
-						continue
-					}
-				}
-
-				// 获取文件大小
-				size, err := getPathSize(filePath)
-				if err != nil {
-					cl.PrintErrf("计算大小时出现错误: %s\n", err)
-				}
-
-				// 添加到 items 数组中
-				itemList = append(itemList, item{
-					Name: filePath,
-					Size: humanReadableSize(size, 2),
-				})
-				continue
-			}
-
-			// 打印输出
-			printSizeTable(itemList, cl)
-			return nil
-		}
-
-		// 如果是隐藏文件且未启用-H选项, 则跳过
-		if !sizeCmdHidden.Get() {
-			if common.IsHidden(targetPath) {
-				continue
-			}
-		}
-
-		// 直接调用 getPathSize，它内部会处理文件和目录两种情况
-		size, err := getPathSize(targetPath)
+		// 获取所有需要处理的路径
+		pathsToProcess, err := expandPath(targetPath)
 		if err != nil {
-			cl.PrintErrf("计算大小失败: 路径 %s 错误: %v\n", targetPath, err)
+			cl.PrintErrf("展开路径失败: %v\n", err)
 			continue
 		}
 
-		// 统一处理：添加到数组并打印
-		itemList = append(itemList, item{
-			Name: targetPath,
-			Size: humanReadableSize(size, 2),
-		})
+		// 处理每个路径
+		for _, path := range pathsToProcess {
+			addPathToList(path, &itemList, cl)
+		}
+	}
+
+	// 统一打印所有结果
+	if len(itemList) > 0 {
 		printSizeTable(itemList, cl)
-		continue
 	}
 
 	return nil
+}
+
+// expandPath 展开路径(处理通配符)
+//
+// 参数:
+//   - path: 要展开的路径
+//
+// 返回:
+//   - []string: 展开后的路径列表
+//   - error: 如果发生错误，返回错误信息，否则返回 nil
+func expandPath(path string) ([]string, error) {
+	// 如果路径不包含通配符，则直接返回
+	if !strings.Contains(path, "*") {
+		return []string{path}, nil
+	}
+
+	// 使用 filepath.Glob 获取所有匹配的文件路径
+	filePaths, err := filepath.Glob(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查是否有匹配的文件
+	if len(filePaths) == 0 {
+		return nil, fmt.Errorf("没有找到匹配的文件: %s", path)
+	}
+
+	return filePaths, nil
+}
+
+// addPathToList 添加路径到列表(统一处理逻辑)
+//
+// 参数:
+//   - path: 要添加的路径
+//   - itemList: 存储路径的列表
+//   - cl: 用于打印输出的 ColorLib 对象
+func addPathToList(path string, itemList *items, cl *colorlib.ColorLib) {
+	// 统一的隐藏文件检查
+	if !sizeCmdHidden.Get() && common.IsHidden(path) {
+		return
+	}
+
+	// 获取文件或目录大小
+	size, err := getPathSize(path)
+	if err != nil {
+		cl.PrintErrf("计算大小失败: %s - %v\n", path, err)
+		return
+	}
+
+	// 添加到数组
+	*itemList = append(*itemList, item{
+		Name: path,
+		Size: humanReadableSize(size, 2),
+	})
 }
 
 // getPathSize 获取路径大小
