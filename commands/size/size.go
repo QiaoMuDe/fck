@@ -5,10 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
-	"sync"
-	"sync/atomic"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/commands/internal/common"
@@ -43,11 +40,7 @@ func SizeCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 根据sizeCmdColor设置颜色模式
-	if sizeCmdColor.Get() {
-		cl.NoColor.Store(false)
-	} else {
-		cl.NoColor.Store(true)
-	}
+	cl.NoColor.Store(!sizeCmdColor.Get())
 
 	// 新建一个表格项列表
 	var itemList items
@@ -105,39 +98,18 @@ func SizeCmdMain(cl *colorlib.ColorLib) error {
 			}
 		}
 
-		// 获取文件信息
-		info, statErr := os.Lstat(targetPath)
-		if statErr != nil {
-			cl.PrintErrf("获取文件信息失败: 路径 %s 错误: %v\n", targetPath, statErr)
+		// 直接调用 getPathSize，它内部会处理文件和目录两种情况
+		size, err := getPathSize(targetPath)
+		if err != nil {
+			cl.PrintErrf("计算大小失败: 路径 %s 错误: %v\n", targetPath, err)
 			continue
 		}
 
-		// 如果是文件, 则直接计算大小
-		if !info.IsDir() {
-			// 添加到 items 数组中
-			itemList = append(itemList, item{
-				Name: targetPath,
-				Size: humanReadableSize(info.Size(), 2),
-			})
-			// 打印输出
-			printSizeTable(itemList, cl)
-			continue
-		}
-
-		// 如果是目录, 则递归计算大小
-		size, getErr := getPathSize(targetPath)
-		if getErr != nil {
-			cl.PrintErrf("计算目录大小失败: 路径 %s 错误: %v\n", targetPath, getErr)
-			continue
-		}
-
-		// 添加到 items 数组中
+		// 统一处理：添加到数组并打印
 		itemList = append(itemList, item{
 			Name: targetPath,
 			Size: humanReadableSize(size, 2),
 		})
-
-		// 打印输出
 		printSizeTable(itemList, cl)
 		continue
 	}
@@ -146,6 +118,13 @@ func SizeCmdMain(cl *colorlib.ColorLib) error {
 }
 
 // getPathSize 获取路径大小
+//
+// 参数:
+//   - path: 要获取大小的路径
+//
+// 返回:
+//   - int64: 路径大小
+//   - error: 如果发生错误，返回错误信息，否则返回 nil
 func getPathSize(path string) (int64, error) {
 	// 如果是隐藏文件且未启用-H选项，则跳过
 	if !sizeCmdHidden.Get() {
@@ -177,99 +156,57 @@ func getPathSize(path string) (int64, error) {
 		return info.Size(), nil
 	}
 
-	// 定义总大小 (使用原子类型)
-	var totalSize atomic.Int64
+	// 定义总大小和跳过文件计数
+	var totalSize int64
+	var skippedFiles int
 
-	// 文件信息结构体
-	type fileInfo struct {
-		path string
-		size int64
-	}
-
-	// 创建并发任务池
-	var wg sync.WaitGroup
-	fileChan := make(chan fileInfo, 10000) // 缓冲区大小为10000
-	errChan := make(chan error, 100)       // 错误通道大小为100
-
-	// 启动worker goroutines
-	workers := sizeCmdJob.Get()
-	if workers == -1 {
-		// 如果未指定并发数量, 则根据CPU核心数自动设置 (每个核心2个worker)
-		workers = runtime.NumCPU() * 2
-	}
-	if workers <= 0 {
-		// 如果并发数量小于等于0, 则使用单线程执行
-		workers = 1
-	}
-	if workers > 20 {
-		// 如果并发数量大于20, 则限制为20
-		workers = 20
-	}
-
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for file := range fileChan {
-				totalSize.Add(file.size) // 原子操作累加文件大小
-			}
-		}()
-	}
+	// 获取是否跳过隐藏文件
+	skipHidden := sizeCmdHidden.Get()
 
 	// 遍历目录 (使用更高效的 WalkDir)
 	walkErr := filepath.WalkDir(path, func(filePath string, dirEntry fs.DirEntry, err error) error {
-		// 如果遍历目录遇到权限错误, 则忽略该错误并给出更友好的提示信息
+		// 如果遍历目录遇到错误, 静默跳过并计数
 		if err != nil {
-			// 跳过不存在的文件或目录
-			if os.IsNotExist(err) {
-				return nil
+			if !os.IsNotExist(err) {
+				skippedFiles++
 			}
-
-			// 如果遍历目录失败, 返回错误
-			return fmt.Errorf("遍历目录失败: 路径 %s 错误: %v", filePath, err)
+			return nil
 		}
 
-		// 如果是指定的路径, 则跳过
+		// 如果是当前指定的路径, 则跳过
 		if filePath == path {
 			return nil
 		}
 
 		// 如果是隐藏文件且未启用-H选项，则跳过
-		if !sizeCmdHidden.Get() {
+		if !skipHidden {
 			if common.IsHidden(filePath) {
 				return nil
 			}
 		}
 
-		// 把文件信息发送到通道, 由worker处理
+		// 直接累加文件大小
 		if !dirEntry.IsDir() {
 			// 获取文件信息
 			info, err := dirEntry.Info()
 			if err != nil {
-				if len(errChan) < cap(errChan) {
-					errChan <- fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", filePath, err)
-				}
+				skippedFiles++
 				return nil
 			}
-			fileChan <- fileInfo{path: filePath, size: info.Size()}
+			totalSize += info.Size()
 		}
 		return nil
 	})
 
-	close(fileChan) // 关闭文件通道
-	wg.Wait()       // 等待所有worker完成
-	close(errChan)  // 关闭错误通道
-
+	// 处理遍历错误
 	if walkErr != nil {
 		// 如果遍历目录遇到权限错误, 则忽略该错误并给出更友好的提示信息
 		if os.IsPermission(walkErr) {
-			// 如果遍历目录失败, 返回错误
 			return 0, fmt.Errorf("权限不足: 路径 %s", path)
 		}
 
 		// 检查是否为文件不存在错误
 		if os.IsNotExist(walkErr) {
-			// 如果是文件不存在错误, 则忽略该错误并给出更友好的提示信息
 			return 0, fmt.Errorf("文件不存在: 路径 %s", path)
 		}
 
@@ -277,50 +214,13 @@ func getPathSize(path string) (int64, error) {
 		return 0, fmt.Errorf("遍历目录失败: %v", walkErr)
 	}
 
-	// 检查并去重错误，最多显示5类错误
-	errorMap := make(map[string]bool)
-	errorCount := 0
-	var otherErrors []error
-	for err := range errChan {
-		errStr := err.Error()
-		if !errorMap[errStr] {
-			errorMap[errStr] = true
-			errorCount++
-			if strings.Contains(errStr, "遍历目录失败") {
-				// walkErr是目录遍历错误
-				if walkErr == nil {
-					walkErr = err
-				} else {
-					walkErr = fmt.Errorf("%v; %v", walkErr, err)
-				}
-			} else if errorCount <= 5 {
-				// 其他类型错误
-				otherErrors = append(otherErrors, err)
-			}
-		}
-	}
-	// 组合所有错误
-	if len(otherErrors) > 0 {
-		if walkErr != nil {
-			walkErr = fmt.Errorf("%v; 其他错误: %v", walkErr, otherErrors)
-		} else {
-			walkErr = fmt.Errorf("其他错误: %v", otherErrors)
-		}
-	}
-	if errorCount > 5 {
-		walkErr = fmt.Errorf("%v (还有%d个类似错误...)", walkErr, errorCount-5)
+	// 如果有跳过的文件，给出简单提示
+	if skippedFiles > 0 {
+		return totalSize, fmt.Errorf("已跳过 %d 个无法访问的文件", skippedFiles)
 	}
 
-	// 获取最终的总大小
-	finalSize := totalSize.Load()
-
-	// 根据是否有错误返回不同内容
-	if walkErr != nil {
-		// 有错误时返回错误和计算得到的大小
-		return finalSize, fmt.Errorf("计算完成但遇到错误: %v (总大小: %s)", walkErr, humanReadableSize(finalSize, 2))
-	}
 	// 无错误时只返回大小
-	return finalSize, nil
+	return totalSize, nil
 }
 
 // 预定义单位和对应的阈值
