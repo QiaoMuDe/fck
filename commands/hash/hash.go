@@ -62,7 +62,7 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, hashType func()
 	}
 
 	// 执行哈希任务
-	errors := hashRunTasks(files, hashType)
+	errors := hashRunTasksRefactored(files, hashType)
 
 	// 处理执行结果
 	if len(errors) > 0 {

@@ -9,238 +9,417 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 
 	"gitee.com/MM-Q/fck/commands/internal/common"
 	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
-// FileWriter 文件写入接口
-type FileWriter interface {
-	Write(content string) error
-	Close() error
+// HashResult 哈希计算结果
+type HashResult struct {
+	FilePath  string // 文件路径
+	HashValue string // 哈希值
+	Error     error  // 错误信息
 }
 
-// safeFileWriter 安全的文件写入器
-type safeFileWriter struct {
-	file   *os.File
-	writer *bufio.Writer
-	mutex  sync.Mutex
+// WriteRequest 写入请求
+type WriteRequest struct {
+	Content string     // 要写入的内容
+	Done    chan error // 完成通知通道
 }
 
-// newSafeFileWriter 创建安全的文件写入器
-func newSafeFileWriter(filename, hashType string) (*safeFileWriter, error) {
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("打开文件 %s 失败: %w", filename, err)
-	}
+// HashTaskManager 哈希任务管理器
+type HashTaskManager struct {
+	// 配置参数
+	files       []string         // 文件列表
+	hashType    func() hash.Hash // 哈希类型
+	concurrency int              // 并发数
 
-	writer := bufio.NewWriter(file)
+	// 通道
+	resultCh chan HashResult   // 哈希结果通道
+	writeCh  chan WriteRequest // 写入请求通道
 
-	// 写入文件头
-	if err := common.WriteFileHeader(file, hashType, types.TimestampFormat); err != nil {
-		_ = file.Close()
-		return nil, fmt.Errorf("写入文件头失败: %w", err)
-	}
+	// 控制
+	ctx    context.Context         // 上下文
+	cancel context.CancelCauseFunc // 上下文取消函数
 
-	return &safeFileWriter{
-		file:   file,
-		writer: writer,
-	}, nil
+	// 状态
+	wg          sync.WaitGroup // 并发任务等待组
+	writerWg    sync.WaitGroup // 写入协程等待组
+	errors      []error        // 错误列表
+	errorsMutex sync.Mutex     // 错误列表互斥锁
+
+	// 统计
+	processedCount atomic.Int64 // 已处理文件数
+	errorCount     atomic.Int64 // 错误计数
 }
 
-// Write 线程安全的写入
-func (w *safeFileWriter) Write(content string) error {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-
-	_, err := w.writer.WriteString(content)
-	return err
-}
-
-// Close 关闭文件写入器
-func (w *safeFileWriter) Close() error {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-
-	if err := w.writer.Flush(); err != nil {
-		_ = w.file.Close()
-		return err
-	}
-
-	return w.file.Close()
-}
-
-// hashTaskRunner 封装任务执行逻辑
-type hashTaskRunner struct {
-	ctx         context.Context
-	cancel      context.CancelCauseFunc
-	concurrency int
-	files       []string
-	hashType    func() hash.Hash
-	errors      chan error
-	results     []error
-	once        sync.Once
-	fileWriter  *safeFileWriter
-}
-
-// hashRunTasks 执行哈希值校验任务，支持并发控制和错误处理
-func hashRunTasks(files []string, hashType func() hash.Hash) []error {
-	if len(files) == 0 {
-		return nil
-	}
-
-	// 创建带取消原因的上下文
+// NewHashTaskManager 创建哈希任务管理器
+//
+// 参数:
+//   - files: 文件列表
+//   - hashType: 哈希类型
+//
+// 返回值:
+//   - *HashTaskManager: 哈希任务管理器
+func NewHashTaskManager(files []string, hashType func() hash.Hash) *HashTaskManager {
 	ctx, cancel := context.WithCancelCause(context.Background())
-	defer cancel(nil)
 
-	// 根据任务特性调整并发数（I/O密集型任务可以适当增加）
+	// 根据CPU核心数和文件数量调整并发数
 	concurrency := runtime.NumCPU() * 2
 	if len(files) < concurrency {
 		concurrency = len(files)
 	}
 
-	// 创建任务执行器
-	runner := &hashTaskRunner{
-		ctx:         ctx,
-		cancel:      cancel,
-		concurrency: concurrency,
+	return &HashTaskManager{
 		files:       files,
 		hashType:    hashType,
-		errors:      make(chan error, len(files)),    // 足够的缓冲区
-		results:     make([]error, 0, len(files)/10), // 预估错误率
+		concurrency: concurrency,
+		resultCh:    make(chan HashResult, concurrency*2), // 适当的缓冲区
+		writeCh:     make(chan WriteRequest, 100),         // 写入请求缓冲区
+		ctx:         ctx,
+		cancel:      cancel,
+		errors:      make([]error, 0),
 	}
-
-	return runner.run()
 }
 
-// run 执行所有任务
-func (r *hashTaskRunner) run() []error {
-	// 初始化文件写入器
-	if err := r.initFileWriter(); err != nil {
-		return []error{err}
+// Run 执行所有哈希任务
+//
+// 返回值:
+//   - []error: 错误列表
+func (m *HashTaskManager) Run() []error {
+	defer m.cancel(nil)
+
+	// 启动写入协程
+	if hashCmdWrite.Get() {
+		m.writerWg.Add(1)
+		go m.writerWorker()
 	}
-	defer r.closeFileWriter()
 
-	// 启动错误收集器
-	go r.collectErrors()
+	// 启动结果处理协程
+	var resultWg sync.WaitGroup
+	resultWg.Add(1)
+	go func() {
+		defer resultWg.Done()
+		m.resultCollector()
+	}()
 
-	// 启动工作池
-	r.runWorkerPool()
+	// 启动计算工作池
+	m.startComputeWorkers()
 
-	// 等待所有任务完成
-	close(r.errors)
+	// 等待所有计算任务完成
+	m.wg.Wait()
+	close(m.resultCh)
 
-	// 添加上下文取消错误
-	r.addContextError()
+	// 等待结果处理完成
+	resultWg.Wait()
 
-	return r.results
+	// 等待写入完成
+	if hashCmdWrite.Get() {
+		close(m.writeCh)
+		m.writerWg.Wait()
+	}
+
+	return m.errors
 }
 
-// initFileWriter 初始化文件写入器
-func (r *hashTaskRunner) initFileWriter() error {
-	if !hashCmdWrite.Get() {
-		return nil
+// startComputeWorkers 启动计算工作池
+func (m *HashTaskManager) startComputeWorkers() {
+	// 创建文件任务通道
+	fileCh := make(chan string, m.concurrency)
+
+	// 启动工作协程
+	for i := 0; i < m.concurrency; i++ {
+		m.wg.Add(1)
+		go m.computeWorker(fileCh)
 	}
 
-	writer, err := newSafeFileWriter(types.OutputFileName, hashCmdType.Get())
-	if err != nil {
-		return fmt.Errorf("初始化文件写入器失败: %w", err)
-	}
-
-	r.fileWriter = writer
-	return nil
-}
-
-// runWorkerPool 运行工作池
-func (r *hashTaskRunner) runWorkerPool() {
-	var wg sync.WaitGroup
-	jobPool := make(chan struct{}, r.concurrency)
-
-	for _, file := range r.files {
-		// 检查上下文是否已取消
-		select {
-		case <-r.ctx.Done():
-			r.handleError(r.ctx.Err())
-			goto cleanup
-		default:
+	// 分发文件任务
+	go func() {
+		defer close(fileCh)
+		for _, file := range m.files {
+			select {
+			case fileCh <- file:
+			case <-m.ctx.Done():
+				return
+			}
 		}
+	}()
+}
 
-		jobPool <- struct{}{}
-		wg.Add(1)
+// computeWorker 计算工作协程
+//
+// 参数:
+//   - fileCh: 文件路径通道
+func (m *HashTaskManager) computeWorker(fileCh <-chan string) {
+	defer m.wg.Done()
 
-		go func(filePath string) {
-			defer func() {
-				wg.Done()
-				<-jobPool
-				r.recoverPanic(filePath)
-			}()
+	for {
+		select {
+		case filePath, ok := <-fileCh:
+			if !ok {
+				return // 通道已关闭
+			}
+			m.processFile(filePath)
 
-			r.processFile(filePath)
-		}(file)
+		case <-m.ctx.Done():
+			return // 上下文已取消
+		}
 	}
-
-cleanup:
-	wg.Wait()
 }
 
 // processFile 处理单个文件
-func (r *hashTaskRunner) processFile(filePath string) {
-	var writer FileWriter
-	if r.fileWriter != nil {
-		writer = r.fileWriter
+//
+// 参数:
+//   - filePath: 要处理的文件路径
+func (m *HashTaskManager) processFile(filePath string) {
+	defer func() {
+		if r := recover(); r != nil {
+			result := HashResult{
+				FilePath: filePath,
+				Error:    fmt.Errorf("处理文件 %s 时发生panic: %v", filePath, r),
+			}
+			m.sendResult(result)
+		}
+	}()
+
+	// 检查文件状态
+	if skip, err := shouldSkipFile(filePath); err != nil {
+		result := HashResult{
+			FilePath: filePath,
+			Error:    fmt.Errorf("检查文件 %s 状态失败: %w", filePath, err),
+		}
+		m.sendResult(result)
+		return
+	} else if skip {
+		return // 跳过文件
 	}
-	if err := hashTask(r.ctx, filePath, r.hashType, writer); err != nil {
-		r.handleError(err)
+
+	// 计算哈希值
+	hashValue, err := m.computeHashWithContext(filePath)
+	result := HashResult{
+		FilePath:  filePath,
+		HashValue: hashValue,
+		Error:     err,
+	}
+
+	m.sendResult(result)
+}
+
+// computeHashWithContext 支持上下文取消的哈希计算
+func (m *HashTaskManager) computeHashWithContext(filePath string) (string, error) {
+	done := make(chan struct{})
+	var hashValue string
+	var err error
+
+	go func() {
+		defer close(done)
+		hashValue, err = common.Checksum(filePath, m.hashType)
+	}()
+
+	select {
+	case <-done:
+		return hashValue, err
+	case <-m.ctx.Done():
+		return "", m.ctx.Err()
 	}
 }
 
-// handleError 统一错误处理
-func (r *hashTaskRunner) handleError(err error) {
+// sendResult 发送计算结果
+//
+// 参数：
+//   - result: 计算结果
+func (m *HashTaskManager) sendResult(result HashResult) {
 	select {
-	case r.errors <- err:
-	case <-r.ctx.Done():
-		// 上下文已取消，不再发送错误
+	case m.resultCh <- result:
+	case <-m.ctx.Done():
+		// 上下文已取消，记录错误
+		m.addError(fmt.Errorf("发送结果失败，任务已取消: %s", result.FilePath))
+	}
+}
+
+// resultCollector 结果收集协程
+func (m *HashTaskManager) resultCollector() {
+	for result := range m.resultCh {
+		if result.Error != nil {
+			m.addError(result.Error)
+			m.errorCount.Add(1)
+			continue
+		}
+
+		// 输出到控制台
+		if !hashCmdWrite.Get() {
+			fmt.Printf("%s\t%q\n", result.HashValue, result.FilePath)
+		}
+
+		// 发送写入请求
+		if hashCmdWrite.Get() {
+			content := fmt.Sprintf("%s\t%q\n", result.HashValue, result.FilePath)
+			m.requestWrite(content)
+		}
+
+		m.processedCount.Add(1)
+	}
+}
+
+// requestWrite 请求写入
+//
+// 参数:
+//   - content: 要写入的内容
+func (m *HashTaskManager) requestWrite(content string) {
+	// 检查上下文是否已取消
+	if m.ctx.Err() != nil {
 		return
 	}
-	r.once.Do(func() { r.cancel(err) })
-}
 
-// recoverPanic 恢复panic
-func (r *hashTaskRunner) recoverPanic(filePath string) {
-	if rec := recover(); rec != nil {
-		err := fmt.Errorf("处理文件 %s 时发生 panic: %v", filePath, rec)
-		r.handleError(err)
+	req := WriteRequest{
+		Content: content,
+		Done:    make(chan error, 1),
+	}
+
+	// 尝试发送写入请求
+	select {
+	case m.writeCh <- req:
+		// 成功发送，等待写入完成
+		if err := <-req.Done; err != nil {
+			m.addError(fmt.Errorf("写入失败: %w", err))
+		}
+	case <-m.ctx.Done():
+		// 上下文已取消
+		return
+	default:
+		// 写入通道满或已关闭，记录警告
+		m.addError(fmt.Errorf("写入通道不可用，跳过内容写入"))
 	}
 }
 
-// collectErrors 收集错误
-func (r *hashTaskRunner) collectErrors() {
-	for err := range r.errors {
-		r.results = append(r.results, err)
+// writerWorker 写入工作协程
+func (m *HashTaskManager) writerWorker() {
+	defer m.writerWg.Done()
+
+	// 初始化文件写入器
+	wrapper, err := m.initFileWriter()
+	if err != nil {
+		m.addError(fmt.Errorf("初始化文件写入器失败: %w", err))
+		return
+	}
+	defer m.closeWriter(wrapper)
+
+	// 处理写入请求
+	for req := range m.writeCh {
+		err := m.writeContent(wrapper, req.Content)
+		req.Done <- err
 	}
 }
 
-// addContextError 添加上下文错误
-func (r *hashTaskRunner) addContextError() {
-	if r.ctx.Err() != nil {
-		if cause := context.Cause(r.ctx); cause != nil {
-			r.results = append(r.results, fmt.Errorf("任务被取消: %w", cause))
-		} else {
-			r.results = append(r.results, r.ctx.Err())
+// initFileWriter 初始化文件写入器
+//
+// 返回值:
+//   - *FileWriterWrapper: 文件写入器包装
+//   - error: 错误信息，如果发生错误则返回非nil值
+func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
+	file, err := os.OpenFile(types.OutputFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("打开文件 %s 失败: %w", types.OutputFileName, err)
+	}
+
+	// 写入文件头
+	if err := common.WriteFileHeader(file, hashCmdType.Get(), types.TimestampFormat); err != nil {
+		_ = file.Close()
+		return nil, fmt.Errorf("写入文件头失败: %w", err)
+	}
+
+	return &FileWriterWrapper{
+		file:   file,
+		writer: bufio.NewWriter(file),
+	}, nil
+}
+
+// writeContent 写入内容
+//
+// 参数:
+//   - wrapper: 文件写入器包装
+//   - content: 要写入的内容
+//
+// 返回值:
+//   - error: 错误信息，如果发生错误则返回非nil值
+func (m *HashTaskManager) writeContent(wrapper *FileWriterWrapper, content string) error {
+	_, err := wrapper.writer.WriteString(content)
+	return err
+}
+
+// FileWriterWrapper 文件写入器包装
+type FileWriterWrapper struct {
+	file   *os.File
+	writer *bufio.Writer
+}
+
+// closeWriter 关闭写入器
+//
+// 参数:
+//   - wrapper: 文件写入器包装
+func (m *HashTaskManager) closeWriter(wrapper *FileWriterWrapper) {
+	var errs []error
+
+	if err := wrapper.writer.Flush(); err != nil {
+		errs = append(errs, fmt.Errorf("flush失败: %w", err))
+	}
+
+	if err := wrapper.file.Close(); err != nil {
+		errs = append(errs, fmt.Errorf("关闭文件失败: %w", err))
+	}
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			m.addError(err)
 		}
 	}
 }
 
-// closeFileWriter 关闭文件写入器
-func (r *hashTaskRunner) closeFileWriter() {
-	if r.fileWriter != nil {
-		if err := r.fileWriter.Close(); err != nil {
-			r.results = append(r.results, fmt.Errorf("关闭文件写入器失败: %v", err))
-		}
+// addError 线程安全地添加错误
+//
+// 参数:
+//   - err: 错误信息
+func (m *HashTaskManager) addError(err error) {
+	m.errorsMutex.Lock()
+	defer m.errorsMutex.Unlock()
+	m.errors = append(m.errors, err)
+}
+
+// GetStats 获取统计信息
+//
+// 返回值:
+//   - processed: 已处理的文件数
+//   - errors: 错误数
+func (m *HashTaskManager) GetStats() (processed, errors int64) {
+	return m.processedCount.Load(), m.errorCount.Load()
+}
+
+// hashRunTasksRefactored 重构后的任务执行函数
+//
+// 参数:
+//   - files: 文件列表
+//   - hashType: 哈希类型函数
+//
+// 返回:
+//   - []error: 错误列表
+func hashRunTasksRefactored(files []string, hashType func() hash.Hash) []error {
+	if len(files) == 0 {
+		return nil
 	}
+
+	manager := NewHashTaskManager(files, hashType)
+	return manager.Run()
 }
 
 // shouldSkipFile 检查是否应该跳过文件
+//
+// 参数:
+//   - filePath: 文件路径
+//
+// 返回:
+//   - bool: 如果应该跳过文件，则返回true；否则返回false
+//   - error: 错误信息，如果发生错误则返回非nil值
 func shouldSkipFile(filePath string) (bool, error) {
 	fileInfo, err := os.Lstat(filePath)
 	if err != nil {
@@ -249,66 +428,4 @@ func shouldSkipFile(filePath string) (bool, error) {
 
 	// 跳过软链接
 	return fileInfo.Mode()&fs.ModeSymlink != 0, nil
-}
-
-// computeHashWithContext 支持上下文取消的哈希计算
-func computeHashWithContext(ctx context.Context, filePath string, hashType func() hash.Hash) (string, error) {
-	// 这里可以在 common.Checksum 中添加上下文支持
-	// 或者使用带超时的上下文
-	done := make(chan struct{})
-	var hashValue string
-	var err error
-
-	go func() {
-		defer close(done)
-		hashValue, err = common.Checksum(filePath, hashType)
-	}()
-
-	select {
-	case <-done:
-		return hashValue, err
-	case <-ctx.Done():
-		return "", ctx.Err()
-	}
-}
-
-// outputResult 统一输出结果
-func outputResult(hashValue, filePath string, writer FileWriter) error {
-	output := formatHashOutput(hashValue, filePath)
-
-	if writer != nil {
-		return writer.Write(output)
-	}
-
-	fmt.Print(output)
-	return nil
-}
-
-// formatHashOutput 统一输出格式
-func formatHashOutput(hashValue, filePath string) string {
-	return fmt.Sprintf("%s\t%q\n", hashValue, filePath)
-}
-
-// hashTask 处理单个文件的哈希计算，支持上下文取消
-func hashTask(ctx context.Context, filePath string, hashType func() hash.Hash, writer FileWriter) error {
-	// 检查上下文是否已取消
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
-	// 检查文件状态（软链接检查）
-	if skip, err := shouldSkipFile(filePath); err != nil {
-		return fmt.Errorf("检查文件 %s 状态失败: %w", filePath, err)
-	} else if skip {
-		return nil // 跳过软链接
-	}
-
-	// 计算文件哈希值（支持上下文取消）
-	hashValue, err := computeHashWithContext(ctx, filePath, hashType)
-	if err != nil {
-		return fmt.Errorf("计算文件 %s 哈希值失败: %w", filePath, err)
-	}
-
-	// 输出结果
-	return outputResult(hashValue, filePath, writer)
 }

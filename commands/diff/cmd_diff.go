@@ -140,7 +140,7 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 	if diffCmdWrite.Get() {
 		var err error
 		// 打开文件以写入
-		fileWrite, err = os.OpenFile(types.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		fileWrite, err = os.OpenFile(types.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
 			return fmt.Errorf("打开文件 %s 失败: %v", types.OutputCheckFileName, err)
 		}
@@ -180,7 +180,7 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 	}
 
 	// 打开校验文件
-	checkFileRead, openErr := os.OpenFile(checkFile, os.O_RDONLY, 0644)
+	checkFileRead, openErr := os.OpenFile(checkFile, os.O_RDONLY, 0600)
 	if openErr != nil {
 		return nil, nil, fmt.Errorf("无法打开校验文件: %v", openErr)
 	}
@@ -914,7 +914,7 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 	if diffCmdWrite.Get() {
 		var err error
 		// 打开文件以写入
-		fileWrite, err = os.OpenFile(types.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		fileWrite, err = os.OpenFile(types.OutputCheckFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
 			return fmt.Errorf("打开文件 %s 失败: %v", types.OutputCheckFileName, err)
 		}

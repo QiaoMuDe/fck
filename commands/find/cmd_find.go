@@ -947,9 +947,14 @@ func deleteMatchedItem(path string, isDir bool, cl *colorlib.ColorLib) error {
 }
 
 // moveMatchedItem 移动匹配的文件或目录到指定位置
-// 参数path是要移动的源路径
-// 参数destPath是目标路径
-// 返回移动过程中的错误
+//
+// 参数:
+//   - path: 要移动的文件或目录的路径
+//   - targetPath: 目标路径
+//   - cl: ColorLib 实例，用于彩色输出
+//
+// 返回值：
+//   - error: 如果发生错误，则返回错误信息
 func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) error {
 	// 检查源路径是否为空
 	if path == "" {
@@ -997,7 +1002,7 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 	}
 
 	// 尝试移动前先检查权限
-	if err := os.WriteFile(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp"), []byte{}, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp"), []byte{}, 0600); err != nil {
 		return fmt.Errorf("目标目录无写入权限: %v", err)
 	}
 	if err := os.Remove(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp")); err != nil {
