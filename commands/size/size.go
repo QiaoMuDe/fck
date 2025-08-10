@@ -12,6 +12,7 @@ import (
 	"gitee.com/MM-Q/fck/commands/internal/types"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/schollz/progressbar/v3"
 )
 
 // 用于存储在输出时的项
@@ -171,6 +172,24 @@ func getPathSize(path string) (int64, error) {
 	// 获取是否跳过隐藏文件
 	skipHidden := sizeCmdHidden.Get()
 
+	// 创建进度条
+	bar := progressbar.NewOptions64(
+		-1,                                // 总进度
+		progressbar.OptionClearOnFinish(), // 完成后清除进度条
+		progressbar.OptionSetDescription(filepath.Base(path)+" 计算中"), // 设置进度条描述
+	)
+	defer func() {
+		// 完成进度条
+		if err := bar.Finish(); err != nil {
+			fmt.Printf("finish progress bar failed: %v\n", err)
+		}
+
+		// 关闭进度条
+		if err := bar.Close(); err != nil {
+			fmt.Printf("close progress bar failed: %v\n", err)
+		}
+	}()
+
 	// 遍历目录 (使用更高效的 WalkDir)
 	walkErr := filepath.WalkDir(path, func(filePath string, dirEntry fs.DirEntry, err error) error {
 		// 如果遍历目录遇到错误, 静默跳过并计数
@@ -202,6 +221,7 @@ func getPathSize(path string) (int64, error) {
 				return nil
 			}
 			totalSize += info.Size()
+			_ = bar.Add64(info.Size())
 		}
 		return nil
 	})
