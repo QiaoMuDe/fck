@@ -189,18 +189,23 @@ func (m *HashTaskManager) processFile(filePath string) {
 			FilePath: filePath,
 			Error:    fmt.Errorf("检查文件 %s 状态失败: %w", filePath, err),
 		}
+		// 发送结果并返回
 		m.sendResult(result)
 		return
 	} else if skip {
 		return // 跳过文件
 	}
 
-	// 计算哈希值
-	hashValue, err := common.Checksum(filePath, m.hashType)
+	// 创建结果对象
 	result := HashResult{
-		FilePath:  filePath,  // 文件路径
-		HashValue: hashValue, // 哈希值
-		Error:     err,       // 错误
+		FilePath: filePath, // 文件路径
+	}
+
+	// 计算哈希值, 并设置结果的哈希值和错误信息
+	if hashCmdProgress.Get() {
+		result.HashValue, result.Error = common.ChecksumProgress(filePath, m.hashType)
+	} else {
+		result.HashValue, result.Error = common.Checksum(filePath, m.hashType)
 	}
 
 	// 发送结果

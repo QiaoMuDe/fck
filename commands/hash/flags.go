@@ -15,6 +15,7 @@ var (
 	hashCmdRecursion *qflag.BoolFlag // recursion 标志
 	hashCmdWrite     *qflag.BoolFlag // write 标志
 	hashCmdHidden    *qflag.BoolFlag // hidden 标志
+	hashCmdProgress  *qflag.BoolFlag // progress 标志
 )
 
 func InitHashCmd() *cmd.Cmd {
@@ -27,6 +28,7 @@ func InitHashCmd() *cmd.Cmd {
 	hashCmdRecursion = hashCmd.Bool("recursion", "r", false, "递归处理目录")
 	hashCmdWrite = hashCmd.Bool("write", "w", false, "将哈希值写入文件, 文件名为checksum.hash")
 	hashCmdHidden = hashCmd.Bool("hidden", "H", false, "启用计算隐藏文件/目录的哈希值，默认跳过")
+	hashCmdProgress = hashCmd.Bool("progress", "p", false, "显示文件哈希计算进度条, 推荐在大文件处理时使用")
 
 	return hashCmd
 }
