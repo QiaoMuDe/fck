@@ -13,7 +13,7 @@ use_vendor = false
 # --git, -g: 在编译时注入git信息
 inject_git_info = true
 # --simple-name, -sn: 使用简单名称（不包含平台和架构信息）
-simple_name = false
+simple_name = true
 # --proxy, -p: 设置Go代理
 proxy = 'https://goproxy.cn,https://goproxy.io,direct'
 # --enable-cgo, -ec: 启用CGO
@@ -21,7 +21,7 @@ enable_cgo = false
 # --color, -c: 启用颜色输出
 color_output = true
 # --batch, -b: 批量编译模式
-batch_mode = true
+batch_mode = false
 # --current-platform-only, -cpo: 仅编译当前平台
 current_platform_only = false
 # --zip, -z: 将输出文件打包为zip

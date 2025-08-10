@@ -60,6 +60,12 @@ func collectGlobFiles(pattern string, recursive bool, cl *colorlib.ColorLib) ([]
 
 		pathFiles, err := collectSinglePath(path, recursive, cl)
 		if err != nil {
+			// 对于通配符匹配，如果是目录相关的错误，只打印警告而不中断整个过程
+			if isDirectorySkipError(err) {
+				cl.PrintWarn(err.Error())
+				continue
+			}
+			// 其他错误仍然返回
 			return nil, err
 		}
 
@@ -109,7 +115,7 @@ func collectSinglePath(targetPath string, recursive bool, cl *colorlib.ColorLib)
 //   - error: 错误信息，如果发生错误则返回非nil值
 func handleDirectory(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
 	if !recursive {
-		return nil, fmt.Errorf("跳过目录：%s, 请使用 -r 选项以递归方式处理", dirPath)
+		return nil, fmt.Errorf("跳过目录: %s 请使用 -r 选项以递归方式处理", dirPath)
 	}
 
 	return walkDir(dirPath, recursive, cl)
@@ -209,7 +215,7 @@ func walkDirNonRecursive(dirPath string, cl *colorlib.ColorLib) ([]string, error
 		}
 
 		if entry.IsDir() {
-			cl.PrintWarnf("跳过目录：%s, 请使用 -r 选项以递归方式处理\n", entry.Name())
+			cl.PrintWarnf("跳过目录: %s 请使用 -r 选项以递归方式处理\n", entry.Name())
 			continue
 		}
 
@@ -235,4 +241,16 @@ func wrapWalkError(err error, dirPath string) error {
 		return fmt.Errorf("文件不存在: %s", dirPath)
 	}
 	return fmt.Errorf("遍历目录失败: %w", err)
+}
+
+// isDirectorySkipError 检查是否是目录跳过错误
+//
+// 参数:
+//   - err: 要检查的错误
+//
+// 返回值:
+//   - bool: 如果是目录跳过错误则返回true，否则返回false
+func isDirectorySkipError(err error) bool {
+	errStr := err.Error()
+	return strings.Contains(errStr, "跳过目录") || strings.Contains(errStr, "跳过隐藏项")
 }
