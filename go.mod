@@ -5,7 +5,7 @@ go 1.24.4
 require gitee.com/MM-Q/colorlib v1.2.4
 
 require (
-	gitee.com/MM-Q/qflag v0.2.2
+	gitee.com/MM-Q/qflag v0.2.3
 	gitee.com/MM-Q/verman v0.0.14
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/schollz/progressbar/v3 v3.18.0

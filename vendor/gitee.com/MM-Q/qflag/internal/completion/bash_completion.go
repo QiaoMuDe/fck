@@ -17,7 +17,7 @@ import (
 // - cmdOpts: 命令选项
 // - programName: 程序名称
 func generateBashCommandTreeEntry(cmdTreeEntries *bytes.Buffer, cmdPath string, cmdOpts []string, programName string) {
-	fmt.Fprintf(cmdTreeEntries, "%s_cmd_tree[%s]=\"%s\"\n", programName, cmdPath, strings.Join(cmdOpts, "|"))
+	fmt.Fprintf(cmdTreeEntries, "%s_cmd_tree[%q]=%q\n", programName, cmdPath, strings.Join(cmdOpts, "|"))
 }
 
 // generateBashCompletion 生成优化的Bash自动补全脚本
@@ -191,7 +191,7 @@ readonly {{.ProgramName}}_FUZZY_CACHE_MAX_SIZE=500
 # ==================== 静态数据定义 ====================
 # 静态命令树定义 - 在函数外预初始化
 declare -A {{.ProgramName}}_cmd_tree
-{{.ProgramName}}_cmd_tree[/]="{{.RootCmdOpts}}"
+{{.ProgramName}}_cmd_tree["/"]="{{.RootCmdOpts}}"
 {{.CmdTreeEntries}}
 
 # 标志参数定义 - 存储类型和值类型 (type|valueType)
@@ -318,8 +318,8 @@ _{{.ProgramName}}_fuzzy_score_cached() {
     local cache_key="${pattern}|${candidate}"
     
     # 缓存命中检查
-    if [[ -n "${{.ProgramName}}_fuzzy_cache[$cache_key]" ]]; then
-        echo "${{.ProgramName}}_fuzzy_cache[$cache_key]"
+    if [[ -n "${{{.ProgramName}}_fuzzy_cache[$cache_key]}" ]]; then
+        echo "${{{.ProgramName}}_fuzzy_cache[$cache_key]}"
         return
     fi
     
@@ -332,7 +332,7 @@ _{{.ProgramName}}_fuzzy_score_cached() {
         {{.ProgramName}}_fuzzy_cache=()  # 清空缓存
     fi
     
-    {{.ProgramName}}_fuzzy_cache[$cache_key]="$score"
+    {{.ProgramName}}_fuzzy_cache["$cache_key"]="$score"
     echo "$score"
 }
 

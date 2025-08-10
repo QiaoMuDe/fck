@@ -193,15 +193,15 @@ const (
 const (
 	// PowerShell自动补全脚本头部
 	PwshFunctionHeader = `# -------------------------- Configuration Area (Need to be modified according to actual commands) --------------------------
-# Command Name
+# 命令名称
 ${{.SanitizedName}}_commandName = "{{.ProgramName}}"
 
-# 1. Command Tree
+# 1. 命令树结构
 ${{.SanitizedName}}_cmdTree = @(
 {{.CmdTree}}
 )
 
-# 2. Flag Parameter Definitions
+# 2. 标志参数定义
 ${{.SanitizedName}}_flagParams = @(
 {{.FlagParams}}
 )
@@ -522,19 +522,20 @@ $scriptBlock = {
         $currentContextItem = $script:{{.SanitizedName}}_contextIndex[$context]
         $currentOptions = if ($currentContextItem) { $currentContextItem.Options } else { @() }
 
-        # 4. 优先补全当前级别的所有选项（子命令 + 标志）
+        # 4. 优先补全当前级别的所有选项（子命令 + 标志）- 使用智能匹配
         if ($currentOptions -and $currentOptions.Count -gt 0) {
-            # 使用ArrayList提高数组操作性能
-            $matchingOptions = [System.Collections.ArrayList]::new()
-            $wordPattern = "$wordToComplete*"
+            # 使用智能匹配获取最佳选项匹配 - 这是关键修复！
+            $intelligentMatches = Get-{{.SanitizedName}}IntelligentMatches -Pattern $wordToComplete -Options $currentOptions
             
-            foreach ($option in $currentOptions) {
-                if ($option -like $wordPattern) {
+            if ($intelligentMatches.Count -gt 0) {
+                # 使用ArrayList提高数组操作性能
+                $matchingOptions = [System.Collections.ArrayList]::new()
+                
+                foreach ($option in $intelligentMatches) {
                     $result = if ($script:{{.SanitizedName}}_flagRegex.IsMatch($option)) { $option } else { "$option " }
                     [void]$matchingOptions.Add($result)
                 }
-            }
-            if ($matchingOptions.Count -gt 0) {
+                
                 return $matchingOptions.ToArray()
             }
         }
