@@ -68,7 +68,7 @@ func NewHashTaskManager(files []string, hashType func() hash.Hash) *HashTaskMana
 	// 根据CPU核心数和文件数量调整并发数
 	concurrency := runtime.NumCPU() * 2
 	if len(files) < concurrency {
-		concurrency = len(files)
+		concurrency = len(files) // 如果文件数量小于并发数，则使用文件数量作为并发数
 	}
 
 	return &HashTaskManager{
@@ -196,33 +196,15 @@ func (m *HashTaskManager) processFile(filePath string) {
 	}
 
 	// 计算哈希值
-	hashValue, err := m.computeHashWithContext(filePath)
+	hashValue, err := common.Checksum(filePath, m.hashType)
 	result := HashResult{
-		FilePath:  filePath,
-		HashValue: hashValue,
-		Error:     err,
+		FilePath:  filePath,  // 文件路径
+		HashValue: hashValue, // 哈希值
+		Error:     err,       // 错误
 	}
 
+	// 发送结果
 	m.sendResult(result)
-}
-
-// computeHashWithContext 支持上下文取消的哈希计算
-func (m *HashTaskManager) computeHashWithContext(filePath string) (string, error) {
-	done := make(chan struct{})
-	var hashValue string
-	var err error
-
-	go func() {
-		defer close(done)
-		hashValue, err = common.Checksum(filePath, m.hashType)
-	}()
-
-	select {
-	case <-done:
-		return hashValue, err
-	case <-m.ctx.Done():
-		return "", m.ctx.Err()
-	}
 }
 
 // sendResult 发送计算结果
