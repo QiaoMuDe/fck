@@ -38,6 +38,7 @@ var (
 	findCmdX             *qflag.BoolFlag   // x 标志
 	findCmdType          *qflag.EnumFlag   // type 标志
 	findCmdWholeWord     *qflag.BoolFlag   // whole-word 标志
+	findCmdUseShell      *qflag.BoolFlag   // use-shell 标志
 )
 
 func InitFindCmd() *cmd.Cmd {
@@ -92,6 +93,7 @@ func InitFindCmd() *cmd.Cmd {
 		"\t\t\t\t\t[n | nonappend]  - 只查找非追加模式文件\n"+
 		"\t\t\t\t\t[u | exclusive]  - 只查找独占模式文件", types.FindTypeLimits)
 	findCmdWholeWord = findCmd.Bool("whole-word", "W", false, "匹配完整关键字")
+	findCmdUseShell = findCmd.Bool("use-shell", "us", false, "通过系统shell执行命令, 支持管道、重定向等shell功能")
 
 	return findCmd
 }

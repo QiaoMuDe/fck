@@ -7,9 +7,17 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/commands/internal/common"
+)
+
+// shell 检测缓存
+var (
+	detectedShell     string    // 检测到的shell
+	detectedShellArgs []string  // shell参数
+	shellMutex        sync.Once // shell检测互斥锁
 )
 
 // FileOperator 负责所有文件操作：删除、移动、执行命令
@@ -162,7 +170,7 @@ func (o *FileOperator) Move(srcPath, targetPath string) error {
 	return nil
 }
 
-// Execute 直接执行指定的命令，用户可以在命令字符串中自己指定shell
+// Execute 执行指定的命令，支持直接执行和shell执行两种模式
 //
 // 参数:
 //   - cmdStr: 要执行的命令字符串
@@ -171,10 +179,9 @@ func (o *FileOperator) Move(srcPath, targetPath string) error {
 // 返回:
 //   - error: 错误信息
 //
-// 使用示例:
-//   - 直接执行: "cat {}"
-//   - 使用shell: "sh -c 'cat {} | head -5'"
-//   - Windows shell: "cmd /c 'type {} && echo Done'"
+// 执行模式:
+//   - 默认直接执行: "cat {}" (更安全，性能更好)
+//   - 使用--use-shell/-us启用shell执行: 支持管道、重定向等shell功能
 func (o *FileOperator) Execute(cmdStr, path string) error {
 	// 检查cmdStr是否为空
 	if cmdStr == "" {
@@ -199,43 +206,12 @@ func (o *FileOperator) Execute(cmdStr, path string) error {
 		return fmt.Errorf("无法访问文件/目录: %s", path)
 	}
 
-	// 安全地替换{}为实际的文件路径
-	safePath := o.quotePath(path)
-	finalCmd := strings.ReplaceAll(cmdStr, "{}", safePath)
-
-	// 解析命令参数
-	args, err := o.parseCommand(finalCmd)
-	if err != nil {
-		return fmt.Errorf("解析命令失败: %v", err)
+	// 根据--use-shell标志选择执行方式
+	if findCmdUseShell.Get() {
+		return o.executeWithShell(cmdStr, path)
+	} else {
+		return o.executeDirect(cmdStr, path)
 	}
-
-	// 检查命令参数是否为空
-	if len(args) == 0 {
-		return fmt.Errorf("解析后的命令为空")
-	}
-
-	// 检查命令是否存在
-	if _, err := exec.LookPath(args[0]); err != nil {
-		return fmt.Errorf("找不到命令 %s: %v", args[0], err)
-	}
-
-	// 如果启用了print-cmd输出, 打印执行的命令
-	if findCmdPrintCmd.Get() {
-		o.cl.Redf("exec: %v\n", args)
-	}
-
-	// 构建命令并设置输出
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Dir = filepath.Dir(path) // 设置工作目录
-	cmd.Stdout = os.Stdout       // 设置标准输出
-	cmd.Stderr = os.Stderr       // 设置标准错误输出
-
-	// 执行命令并捕获错误
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("命令执行失败: %v", err)
-	}
-
-	return nil
 }
 
 // quotePath 安全地引用文件路径，防止路径中的特殊字符导致问题
@@ -259,6 +235,159 @@ func (o *FileOperator) quotePath(path string) string {
 		escapedPath := strings.ReplaceAll(cleanPath, "'", "'\"'\"'")
 		return fmt.Sprintf("'%s'", escapedPath)
 	}
+}
+
+// executeDirect 直接执行命令（默认模式）
+//
+// 参数:
+//   - cmdStr: 要执行的命令字符串
+//   - path: 文件路径
+//
+// 返回:
+//   - error: 错误信息
+func (o *FileOperator) executeDirect(cmdStr, path string) error {
+	// 安全地替换{}为实际的文件路径
+	safePath := o.quotePath(path)
+	finalCmd := strings.ReplaceAll(cmdStr, "{}", safePath)
+
+	// 解析命令参数
+	args, err := o.parseCommand(finalCmd)
+	if err != nil {
+		return fmt.Errorf("解析命令失败: %v", err)
+	}
+
+	if len(args) == 0 {
+		return fmt.Errorf("解析后的命令为空")
+	}
+
+	// 检查命令是否存在
+	if _, err := exec.LookPath(args[0]); err != nil {
+		return fmt.Errorf("找不到命令 %s (提示: 对于内置命令如echo, 请使用--use-shell/-us标志)", args[0])
+	}
+
+	// 如果启用了print-cmd输出, 打印执行的命令
+	if findCmdPrintCmd.Get() {
+		o.cl.Redf("exec(direct): %v\n", args)
+	}
+
+	// 构建命令并设置输出
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Dir = filepath.Dir(path) // 设置工作目录
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// 执行命令并捕获错误
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("命令执行失败: %v", err)
+	}
+
+	return nil
+}
+
+// executeWithShell 通过shell执行命令（--use-shell模式）
+//
+// 参数:
+//   - cmdStr: 要执行的命令字符串
+//   - path: 文件路径
+//
+// 返回:
+//   - error: 错误信息
+func (o *FileOperator) executeWithShell(cmdStr, path string) error {
+	// 安全地替换{}为实际的文件路径
+	safePath := o.quotePath(path)
+	finalCmd := strings.ReplaceAll(cmdStr, "{}", safePath)
+
+	// 根据操作系统选择shell和参数
+	shell, args := o.getShellCommand(finalCmd)
+
+	// 检查shell是否存在
+	if _, err := exec.LookPath(shell); err != nil {
+		return fmt.Errorf("找不到 %s 解释器: %v", shell, err)
+	}
+
+	// 如果启用了print-cmd输出, 打印执行的命令
+	if findCmdPrintCmd.Get() {
+		o.cl.Redf("exec(shell): [%s %s]\n", shell, strings.Join(args, " "))
+	}
+
+	// 构建命令并设置输出
+	cmd := exec.Command(shell, args...)
+	cmd.Dir = filepath.Dir(path) // 设置工作目录
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// 执行命令并捕获错误
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("命令执行失败: %v", err)
+	}
+
+	return nil
+}
+
+// initShellDetection 初始化shell检测，只执行一次
+func initShellDetection() {
+	if runtime.GOOS == "windows" {
+		// Windows 平台按优先级检测: pwsh -> powershell -> cmd
+		windowsShells := []struct {
+			name string
+			flag string
+		}{
+			{"pwsh", "-Command"},       // PowerShell Core (跨平台)
+			{"powershell", "-Command"}, // Windows PowerShell
+			{"cmd", "/C"},              // Command Prompt
+		}
+
+		for _, shell := range windowsShells {
+			if _, err := exec.LookPath(shell.name); err == nil {
+				detectedShell = shell.name
+				detectedShellArgs = []string{shell.flag}
+				return
+			}
+		}
+
+		// 如果都找不到，使用默认的 cmd（理论上不会发生）
+		detectedShell = "cmd"
+		detectedShellArgs = []string{"/C"}
+	} else {
+		// Unix/Linux 平台按优先级检测: bash -> sh -> zsh
+		unixShells := []string{"bash", "sh", "zsh"}
+
+		for _, shell := range unixShells {
+			if _, err := exec.LookPath(shell); err == nil {
+				detectedShell = shell
+				detectedShellArgs = []string{"-c"}
+				return
+			}
+		}
+
+		// 如果都找不到，使用默认的 sh（理论上不会发生）
+		detectedShell = "sh"
+		detectedShellArgs = []string{"-c"}
+	}
+}
+
+// getShellCommand 根据操作系统获取shell命令和参数（带缓存优化）
+//
+// 参数:
+//   - cmdStr: 要执行的命令字符串
+//
+// 返回:
+//   - string: shell命令
+//   - []string: shell参数
+//
+// 支持的shell:
+//   - Windows: pwsh -> powershell -> cmd (按优先级)
+//   - Unix/Linux: bash -> sh -> zsh (按优先级)
+func (o *FileOperator) getShellCommand(cmdStr string) (string, []string) {
+	// 使用 sync.Once 确保只检测一次
+	shellMutex.Do(initShellDetection)
+
+	// 构建完整的参数列表
+	args := make([]string, len(detectedShellArgs)+1) // +1 是为了包含命令字符串
+	copy(args, detectedShellArgs)                    // 复制shell参数
+	args[len(args)-1] = cmdStr                       // 将执行的命令添加到最后
+
+	return detectedShell, args
 }
 
 // parseCommand 解析命令字符串为参数数组
