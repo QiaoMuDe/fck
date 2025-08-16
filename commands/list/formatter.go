@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
@@ -112,11 +113,12 @@ func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) er
 // 返回:
 //   - error: 错误
 func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error {
-	// 获取终端宽度
-	width, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		width = 80 // 默认宽度
+	if len(files) == 0 {
+		return nil
 	}
+
+	// 获取终端宽度
+	width := f.getSafeTerminalWidth()
 
 	// 准备文件名列表
 	fileNames := f.prepareFileNames(files, opts)
@@ -139,7 +141,8 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 			end = len(fileNames)
 		}
 
-		row := make([]interface{}, end-i)
+		// 添加到行
+		row := make([]any, end-i)
 		for j := i; j < end; j++ {
 			row[j-i] = fileNames[j]
 		}
@@ -156,6 +159,40 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 
 	t.Render()
 	return nil
+}
+
+// getSafeTerminalWidth 安全获取终端宽度
+//
+// 返回:
+//   - int: 终端宽度
+func (f *FileFormatter) getSafeTerminalWidth() int {
+	defaultWidth := 80 // 默认宽度
+	minWidth := 20     // 最小宽度
+	maxWidth := 500    // 最大宽度
+
+	// 检查环境变量
+	if cols := os.Getenv("COLUMNS"); cols != "" {
+		if width, err := strconv.Atoi(cols); err == nil && width >= minWidth && width <= maxWidth {
+			return width
+		}
+	}
+
+	// 检查是否为终端
+	fd := os.Stdout.Fd()
+	if fd > 1024 || !term.IsTerminal(int(fd)) {
+		return defaultWidth
+	}
+
+	// 安全的类型转换和获取尺寸
+	if fd <= uintptr(^uint(0)>>1) { // 确保不会溢出
+		if width, _, err := term.GetSize(int(fd)); err == nil {
+			if width >= minWidth && width <= maxWidth {
+				return width
+			}
+		}
+	}
+
+	return defaultWidth
 }
 
 // renderTable 渲染表格格式（长格式）

@@ -31,7 +31,7 @@ func ListCmdMain(cl *colorlib.ColorLib) error {
 
 	// 3. 获取和处理路径
 	paths := getPaths()
-	expandedPaths, _, err := expandPaths(paths, cl)
+	expandedPaths, err := expandPaths(paths, cl)
 	if err != nil {
 		return err
 	}
@@ -80,41 +80,60 @@ func getPaths() []string {
 //
 // 返回:
 //   - []string: 展开后的路径列表
-//   - bool: 是否包含通配符
 //   - error: 错误信息
-func expandPaths(paths []string, cl *colorlib.ColorLib) ([]string, bool, error) {
+func expandPaths(paths []string, cl *colorlib.ColorLib) ([]string, error) {
 	var expandedPaths []string // 展开后的路径列表
-	var hasWildcard bool       // 是否包含通配符
-
-	// 检查是否包含通配符
-	for _, path := range paths {
-		if strings.ContainsAny(path, "*?") {
-			hasWildcard = true
-			break
-		}
-	}
 
 	// 扫描匹配的路径
 	for _, path := range paths {
+		// 清理路径
 		path = filepath.Clean(path)
 
-		matches, err := filepath.Glob(path)
-		if err != nil {
-			cl.PrintErrorf("路径模式错误 %q: %v\n", path, err)
-			continue
+		// 检查路径遍历模式
+		if strings.Contains(path, "..") {
+			return nil, fmt.Errorf("路径包含非法遍历字符: %s", path)
 		}
 
-		// 如果路径模式没有匹配任何文件，则打印错误信息
-		if len(matches) == 0 {
-			cl.PrintWarnf("该路径下为空或不是一个有效路径: %s\n", path)
-			continue
-		}
+		// 判断是否为通配符路径
+		isWildcardPath := strings.ContainsAny(path, "*?[")
 
-		// 过滤隐藏文件
-		for _, match := range matches {
-			if listCmdAll.Get() || !common.IsHidden(match) {
-				expandedPaths = append(expandedPaths, match)
+		if isWildcardPath {
+			// 处理通配符路径
+			matches, err := filepath.Glob(path)
+			if err != nil {
+				cl.PrintErrorf("路径模式错误 %q: %v\n", path, err)
+				continue
 			}
+
+			// 如果路径模式没有匹配任何文件，则打印错误信息
+			if len(matches) == 0 {
+				cl.PrintWarnf("通配符路径未匹配到任何文件: %s\n", path)
+				continue
+			}
+
+			// 过滤隐藏文件: 默认不显示隐藏文件
+			for _, match := range matches {
+				if listCmdAll.Get() || !common.IsHidden(match) {
+					expandedPaths = append(expandedPaths, match)
+				}
+			}
+
+			continue
+		}
+
+		// 处理普通路径
+		if _, err := os.Stat(path); err != nil {
+			if os.IsNotExist(err) {
+				cl.PrintWarnf("路径不存在: %s\n", path)
+			} else {
+				cl.PrintErrorf("无法访问路径 %q: %v\n", path, err)
+			}
+			continue
+		}
+
+		// 检查是否为隐藏文件: 默认不显示隐藏文件
+		if listCmdAll.Get() || !common.IsHidden(path) {
+			expandedPaths = append(expandedPaths, path)
 		}
 	}
 
@@ -128,7 +147,7 @@ func expandPaths(paths []string, cl *colorlib.ColorLib) ([]string, bool, error) 
 		}
 	}
 
-	return uniquePaths, hasWildcard, nil
+	return uniquePaths, nil
 }
 
 // getScanOptions 获取扫描选项
