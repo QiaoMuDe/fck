@@ -32,7 +32,7 @@ func HashCmdMain(cl *colorlib.ColorLib) error {
 	for _, targetPath := range targetPaths {
 		if err := processSinglePath(cl, filepath.Clean(targetPath), hashType); err != nil {
 			// 记录错误但继续处理其他路径
-			cl.PrintErrf("处理路径 %s 时发生错误: %v\n", targetPath, err)
+			cl.PrintErrorf("处理路径 %s 时发生错误: %v\n", targetPath, err)
 		}
 	}
 
@@ -94,7 +94,7 @@ func printUniqueErrors(cl *colorlib.ColorLib, errors []error) {
 		errStr := err.Error()
 		if _, exists := seen[errStr]; !exists {
 			seen[errStr] = struct{}{}
-			cl.PrintErr(errStr)
+			cl.PrintError(errStr)
 		}
 	}
 }

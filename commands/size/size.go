@@ -41,7 +41,7 @@ func SizeCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 根据sizeCmdColor设置颜色模式
-	cl.NoColor.Store(!sizeCmdColor.Get())
+	cl.SetColor(sizeCmdColor.Get())
 
 	// 新建一个表格项列表
 	var itemList items
@@ -54,7 +54,7 @@ func SizeCmdMain(cl *colorlib.ColorLib) error {
 		// 获取所有需要处理的路径
 		pathsToProcess, err := expandPath(targetPath)
 		if err != nil {
-			cl.PrintErrf("展开路径失败: %v\n", err)
+			cl.PrintErrorf("展开路径失败: %v\n", err)
 			continue
 		}
 
@@ -115,7 +115,7 @@ func addPathToList(path string, itemList *items, cl *colorlib.ColorLib) {
 	// 获取文件或目录大小
 	size, err := getPathSize(path)
 	if err != nil {
-		cl.PrintErrf("计算大小失败: %s - %v\n", path, err)
+		cl.PrintErrorf("计算大小失败: %s - %v\n", path, err)
 		return
 	}
 

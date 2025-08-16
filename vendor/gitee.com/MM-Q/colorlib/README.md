@@ -1,324 +1,396 @@
-# ColorLib - Go 语言的彩色终端输出库
+# ColorLib - Go 语言高性能彩色终端输出库
 
-## 用途和特点
+[![Go Version](https://img.shields.io/badge/Go-%3E%3D1.24-blue.svg)](https://golang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/gitee.com/MM-Q/colorlib)](https://goreportcard.com/report/gitee.com/MM-Q/colorlib)
 
-`ColorLib` 是一个用于在 Go 语言中实现彩色终端输出的库。它提供了丰富的接口，用于打印和返回带有颜色的文本，并支持自定义颜色和日志级别。该库的主要特点包括：
+## 📖 简介
 
-- 支持16种颜色输出，包括标准色和亮色
-- 提供带占位符和不带占位符的打印方法
-- 支持日志级别前缀，方便打印带有提示信息的消息
-- 简洁易用的接口，方便开发者快速集成
-- 支持全局实例和自定义实例
-- 可控制颜色、加粗、下划线、闪烁等文本效果
-- 支持禁用颜色输出（NoColor模式）
-- 内置并发安全测试，可通过 `-race` 参数进行竞态检测
+`ColorLib` 是一个功能强大、高性能的 Go 语言终端颜色输出库。它提供了丰富的颜色输出功能，支持标准颜色和亮色系列，具备样式设置（粗体、下划线、闪烁）、链式调用、自定义输出接口、线程安全等特性，专为提升命令行程序的用户体验而设计。
 
-## 定义的颜色常量
+## ✨ 核心特性
 
-以下是库中定义的颜色及其对应的 ANSI 颜色代码：
+- 🎨 **丰富的颜色支持**：16种标准颜色 + 7种亮色，满足各种场景需求
+- 🔗 **链式调用**：支持流畅的链式API，代码更简洁优雅
+- 🎯 **多种输出方式**：直接打印、格式化输出、字符串返回
+- 🏷️ **日志级别支持**：内置 Debug、Info、Ok、Warn、Error 等级别
+- 🎭 **样式控制**：支持粗体、下划线、闪烁等文本效果
+- 🔒 **线程安全**：全局实例和并发操作完全安全
+- 📝 **自定义输出**：支持输出到文件、缓冲区等任意 io.Writer
+- ⚡ **高性能**：内置对象池和智能缓存，减少内存分配
+- 🧪 **完整测试**：99+ 测试用例，覆盖率 > 90%
 
-`PS`:带 `l`开头的为亮色!
+## 🚀 快速开始
 
-| 颜色常量名 | 颜色名称 |
-| ---------- | -------- |
-| Black      | 黑色     |
-| Red        | 红色     |
-| Green      | 绿色     |
-| Yellow     | 黄色     |
-| Blue       | 蓝色     |
-| Purple     | 紫色     |
-| Cyan       | 青色     |
-| White      | 白色     |
-| Gray       | 灰色     |
-| Lred       | 亮红色   |
-| Lgreen     | 亮绿色   |
-| Lyellow    | 亮黄色   |
-| Lblue      | 亮蓝色   |
-| Lpurple    | 亮紫色   |
-| Lcyan      | 亮青色   |
-| Lwhite     | 亮白色   |
-
-## 提示信息级别和名称
-
-以下是库中定义的提示级别及其对应的前缀：
-
-| 提示级别 | 前缀名称  |
-| :------- | :-------- |
-| success  | [Success] |
-| error    | [Error]   |
-| warning  | [Warning] |
-| info     | [Info]    |
-| debug    | [Debug]   |
-| ok       | ok:       |
-| err      | err:      |
-| warn     | warn:     |
-| inf      | info:     |
-| dbg      | debug:    |
-
-## 内置的函数
-### 创建实例函数
-
-- `NewColorLib()`：创建一个新的 `ColorLib` 实例
-- `GetCL()`：线程安全地获取全局 `ColorLib` 实例 (CL)
-
-### 全局实例
-
-ColorLib 提供了一个预初始化的全局实例 `CL`，可以直接使用而无需调用 `NewColorLib()`。可以通过 `GetCL()` 函数安全地获取这个实例。
-
-## ColorLib 结构体
-`ColorLib` 结构体用于管理颜色输出和文本效果。
-
-| 字段名称  | 字段类型       | 字段描述                     |
-| :-------- | :------------- | :--------------------------- |
-| NoColor   | atomic.Bool    | 原子操作控制是否禁用颜色输出 |
-| NoBold    | atomic.Bool    | 原子操作控制是否禁用加粗效果 |
-| Underline | atomic.Bool    | 原子操作控制是否启用下划线   |
-| Blink     | atomic.Bool    | 原子操作控制是否启用闪烁效果 |
-
-> 所有字段均采用atomic原子类型，保证并发安全
-
-`ColorLib` 结构体实现了以下方法：
-
-### 终端打印（不支持占位符）自带换行符
-
-| 方法名称                     | 描述                                 |
-| ---------------------------- | ------------------------------------ |
-| `Blue(msg ...any)`         | 打印蓝色信息到控制台（不带占位符）   |
-| `Green(msg ...any)`        | 打印绿色信息到控制台（不带占位符）   |
-| `Red(msg ...any)`          | 打印红色信息到控制台（不带占位符）   |
-| `Yellow(msg ...any)`       | 打印黄色信息到控制台（不带占位符）   |
-| `Purple(msg ...any)`       | 打印紫色信息到控制台（不带占位符）   |
-| `PrintSuccess(msg ...any)` | 打印成功信息到控制台（不带占位符）   |
-| `PrintError(msg ...any)`   | 打印错误信息到控制台（不带占位符）   |
-| `PrintWarning(msg ...any)` | 打印警告信息到控制台（不带占位符）   |
-| `PrintInfo(msg ...any)`    | 打印信息到控制台（不带占位符）       |
-| `PrintDebug(msg ...any)`   | 打印调试信息到控制台（不带占位符）   |
-| `Black(msg ...any)`        | 打印黑色信息到控制台（不带占位符）   |
-| `Cyan(msg ...any)`         | 打印青色信息到控制台（不带占位符）   |
-| `White(msg ...any)`        | 打印白色信息到控制台（不带占位符）   |
-| `Gray(msg ...any)`         | 打印灰色信息到控制台（不带占位符）   |
-| `Lred(msg ...any)`         | 打印亮红色信息到控制台（不带占位符） |
-| `Lgreen(msg ...any)`       | 打印亮绿色信息到控制台（不带占位符） |
-| `Lyellow(msg ...any)`      | 打印亮黄色信息到控制台（不带占位符） |
-| `Lblue(msg ...any)`        | 打印亮蓝色信息到控制台（不带占位符） |
-| `Lpurple(msg ...any)`      | 打印亮紫色信息到控制台（不带占位符） |
-| `Lcyan(msg ...any)`        | 打印亮青色信息到控制台（不带占位符） |
-| `Lwhite(msg ...any)`       | 打印亮白色信息到控制台（不带占位符） |
-| `PrintDbg(msg...any)`      | 打印调试信息到控制台（不带占位符）   |
-| `PrintInf(msg...any)`      | 打印信息到控制台（不带占位符）       |
-| `PrintWarn(msg...any)`     | 打印警告信息到控制台（不带占位符）   |
-| `PrintErr(msg...any)`      | 打印错误信息到控制台（不带占位符）   |
-| `PrintOk(msg...any)`       | 打印成功信息到控制台（不带占位符）   |
-
-### 终端打印（支持占位符）
-
-| 方法名称                                   | 描述                               |
-| ------------------------------------------ | ---------------------------------- |
-| `Bluef(format string, a ...any)`         | 打印蓝色信息到控制台（带占位符）   |
-| `Greenf(format string, a ...any)`        | 打印绿色信息到控制台（带占位符）   |
-| `Redf(format string, a ...any)`          | 打印红色信息到控制台（带占位符）   |
-| `Yellowf(format string, a ...any)`       | 打印黄色信息到控制台（带占位符）   |
-| `Purplef(format string, a ...any)`       | 打印紫色信息到控制台（带占位符）   |
-| `PrintSuccessf(format string, a ...any)` | 打印成功信息到控制台（带占位符）   |
-| `PrintErrorf(format string, a ...any)`   | 打印错误信息到控制台（带占位符）   |
-| `PrintWarningf(format string, a ...any)` | 打印警告信息到控制台（带占位符）   |
-| `PrintInfof(format string, a ...any)`    | 打印信息到控制台（带占位符）       |
-| `PrintDebugf(format string, a ...any)`   | 打印调试信息到控制台（带占位符）   |
-| `Blackf(format string, a ...any)`        | 打印黑色信息到控制台（带占位符）   |
-| `Cyanf(format string, a ...any)`         | 打印青色信息到控制台（带占位符）   |
-| `Whitef(format string, a ...any)`        | 打印白色信息到控制台（带占位符）   |
-| `Grayf(format string, a ...any)`         | 打印灰色信息到控制台（带占位符）   |
-| `Lredf(format string, a ...any)`         | 打印亮红色信息到控制台（带占位符） |
-| `Lgreenf(format string, a ...any)`       | 打印亮绿色信息到控制台（带占位符） |
-| `Lyellowf(format string, a ...any)`      | 打印亮黄色信息到控制台（带占位符） |
-| `Lbluef(format string, a ...any)`        | 打印亮蓝色信息到控制台（带占位符） |
-| `Lpurplef(format string, a ...any)`      | 打印亮紫色信息到控制台（带占位符） |
-| `Lcyanf(format string, a ...any)`        | 打印亮青色信息到控制台（带占位符） |
-| `Lwhitef(format string, a ...any)`       | 打印亮白色信息到控制台（带占位符） |
-| `PrintDbgf(format string, a...any)`      | 打印调试信息到控制台（带占位符）   |
-| `PrintInff(format string, a...any)`      | 打印信息到控制台（带占位符）       |
-| `PrintWarnf(format string, a...any)`     | 打印警告信息到控制台（带占位符）   |
-| `PrintErrf(format string, a...any)`      | 打印错误信息到控制台（带占位符）   |
-| `PrintOkf(format string, a...any)`       | 打印成功信息到控制台（带占位符）   |
-
-### 返回构造字符串（不支持占位符）
-
-| 方法名称                 | 描述                                   |
-| ------------------------ | -------------------------------------- |
-| `Sblue(msg ...any)`    | 返回构造后的蓝色字符串（不带占位符）   |
-| `Sgreen(msg ...any)`   | 返回构造后的绿色字符串（不带占位符）   |
-| `Sred(msg ...any)`     | 返回构造后的红色字符串（不带占位符）   |
-| `Syellow(msg ...any)`  | 返回构造后的黄色字符串（不带占位符）   |
-| `Spurple(msg ...any)`  | 返回构造后的紫色字符串（不带占位符）   |
-| `Sblack(msg ...any)`   | 返回构造后的黑色字符串（不带占位符）   |
-| `Scyan(msg ...any)`    | 返回构造后的青色字符串（不带占位符）   |
-| `Swhite(msg ...any)`   | 返回构造后的白色字符串（不带占位符）   |
-| `Sgray(msg ...any)`    | 返回构造后的灰色字符串（不带占位符）   |
-| `Slred(msg ...any)`    | 返回构造后的亮红色字符串（不带占位符） |
-| `Slgreen(msg ...any)`  | 返回构造后的亮绿色字符串（不带占位符） |
-| `Slyellow(msg ...any)` | 返回构造后的亮黄色字符串（不带占位符） |
-| `Slblue(msg ...any)`   | 返回构造后的亮蓝色字符串（不带占位符） |
-| `Slpurple(msg ...any)` | 返回构造后的亮紫色字符串（不带占位符） |
-| `Slcyan(msg ...any)`   | 返回构造后的亮青色字符串（不带占位符） |
-| `Slwhite(msg ...any)`  | 返回构造后的亮白色字符串（不带占位符） |
-
-### 返回构造字符串（支持占位符）
-
-| 方法名称                               | 描述                                 |
-| -------------------------------------- | ------------------------------------ |
-| `Sbluef(format string, a ...any)`    | 返回构造后的蓝色字符串（带占位符）   |
-| `Sgreenf(format string, a ...any)`   | 返回构造后的绿色字符串（带占位符）   |
-| `Sredf(format string, a ...any)`     | 返回构造后的红色字符串（带占位符）   |
-| `Syellowf(format string, a ...any)`  | 返回构造后的黄色字符串（带占位符）   |
-| `Spurplef(format string, a ...any)`  | 返回构造后的紫色字符串（带占位符）   |
-| `Sblackf(format string, a ...any)`   | 返回构造后的黑色字符串（带占位符）   |
-| `Scyanf(format string, a ...any)`    | 返回构造后的青色字符串（带占位符）   |
-| `Swhitef(format string, a ...any)`   | 返回构造后的白色字符串（带占位符）   |
-| `Sgrayf(format string, a ...any)`    | 返回构造后的灰色字符串（带占位符）   |
-| `Slredf(format string, a ...any)`    | 返回构造后的亮红色字符串（带占位符） |
-| `Slgreenf(format string, a ...any)`  | 返回构造后的亮绿色字符串（带占位符） |
-| `Slyellowf(format string, a ...any)` | 返回构造后的亮黄色字符串（带占位符） |
-| `Slbluef(format string, a ...any)`   | 返回构造后的亮蓝色字符串（带占位符） |
-| `Slpurplef(format string, a ...any)` | 返回构造后的亮紫色字符串（带占位符） |
-| `Slcyanf(format string, a ...any)`   | 返回构造后的亮青色字符串（带占位符） |
-| `Slwhitef(format string, a ...any)`  | 返回构造后的亮白色字符串（带占位符） |
-
-### 通用颜色方法
-
-| 方法名称                                   | 描述                                   |
-| ------------------------------------------ | -------------------------------------- |
-| `PrintColorf(code int, format string, a ...any)`    | 打印通用颜色信息到控制台（带占位符）   |
-| `PrintColor(code int, msg ...any)`                  | 打印通用颜色信息到控制台（不带占位符） |
-| `Scolorf(code int, format string, a ...any)` string | 返回构造后的通用颜色字符串（带占位符） |
-| `Scolor(code int, msg ...any)` string               | 返回构造后的通用颜色字符串（不带占位符） |
-
-## 文本效果控制
-`ColorLib` 提供了多种文本效果控制选项，可以灵活调整输出样式。
-
-### NoColor - 禁用颜色输出
-```go
-cl := NewColorLib()
-cl.NoColor.Store(true)  // 原子操作禁用颜色
-cl.NoBold.Store(false)  // 启用加粗
-cl.Underline.Store(true) // 原子操作启用下划线
-
-// 输出无颜色但有下划线的文本
-cl.Red("这条消息将显示为无颜色但有下划线")
-```
-
-### NoBold - 禁用加粗效果
-默认情况下文本会加粗显示，设置 `NoBold` 为 `true` 可以禁用加粗效果。
-
-### Underline - 启用下划线
-设置 `Underline` 为 `true` 可以为输出文本添加下划线效果。
-
-### Blink - 启用闪烁效果
-设置 `Blink` 为 `true` 可以让输出文本闪烁显示（部分终端可能不支持）。
-
-### 使用场景
-
-- 当终端不支持某些效果时
-- 需要将输出重定向到文件时
-- 需要特殊强调某些文本时
-- 其他需要调整文本显示效果的场景
-
-## 下载和使用
-
-### 下载
-
-通过 Go 模块管理工具下载 `ColorLib`：
+### 安装
 
 ```bash
 go get gitee.com/MM-Q/colorlib
 ```
 
-## 下载和使用
-### 引入和使用
-
-在您的 Go 代码中引入 `ColorLib`：
+### 基础用法
 
 ```go
 package main
 
 import (
-	"gitee.com/MM-Q/colorlib"
+    "gitee.com/MM-Q/colorlib"
 )
 
 func main() {
-	// 使用全局实例CL（无需初始化）
-	colorlib.CL.PrintDebug("这是一条来自全局实例的调试消息")
-	colorlib.CL.PrintError("这是一条来自全局实例的错误消息")
-	colorlib.CL.Blue("这是一条来自全局实例的蓝色消息")
-	
-	// 或者创建新的实例
-	cl := colorlib.NewColorLib()
-
-	// 打印带有颜色的文本
-	cl.Blue("这是一条蓝色的消息")
-	cl.Greenf("这是一条绿色的消息：%s\n", "Hello, ColorLib!")
-
-	// 返回带有颜色的字符串
-	coloredString := cl.Sred("这是一条红色的字符串")
-	fmt.Println(coloredString)
-
-	// 打印带有日志级别的消息
-	cl.PrintSuccess("操作成功！")
-	cl.PrintError("发生了一个错误")
-	cl.PrintWarning("请注意：这是一个警告")
-	cl.PrintInfo("这是一条普通信息")
+    // 使用全局实例（推荐）
+    cl := colorlib.GetCL()
+    
+    // 基础颜色输出
+    cl.Red("这是红色文本")
+    cl.Green("这是绿色文本")
+    cl.Blue("这是蓝色文本")
+    
+    // 格式化输出
+    cl.Yellowf("用户 %s 登录成功，时间：%s\n", "张三", "2024-01-01")
+    
+    // 日志级别输出
+    cl.PrintInfo("系统启动中...")
+    cl.PrintOk("启动成功！")
+    cl.PrintWarn("内存使用率较高")
+    cl.PrintError("连接数据库失败")
+    
+    // 返回带颜色的字符串
+    coloredMsg := cl.Sgreen("成功处理 100 条记录")
+    fmt.Println(coloredMsg)
 }
 ```
 
-### 全局实例
+## 🎨 颜色支持
 
-ColorLib 提供了一个预初始化的全局实例 `CL`，可以直接使用而无需调用 `NewColorLib()`。
+### 标准颜色
+
+| 颜色名称 | 方法名 | 颜色代码 | 示例 |
+|---------|--------|----------|------|
+| 黑色 | `Black()` | 30 | `cl.Black("黑色文本")` |
+| 红色 | `Red()` | 31 | `cl.Red("红色文本")` |
+| 绿色 | `Green()` | 32 | `cl.Green("绿色文本")` |
+| 黄色 | `Yellow()` | 33 | `cl.Yellow("黄色文本")` |
+| 蓝色 | `Blue()` | 34 | `cl.Blue("蓝色文本")` |
+| 品红色 | `Magenta()` | 35 | `cl.Magenta("品红色文本")` |
+| 青色 | `Cyan()` | 36 | `cl.Cyan("青色文本")` |
+| 白色 | `White()` | 37 | `cl.White("白色文本")` |
+| 灰色 | `Gray()` | 90 | `cl.Gray("灰色文本")` |
+
+### 亮色系列
+
+| 颜色名称 | 方法名 | 颜色代码 | 示例 |
+|---------|--------|----------|------|
+| 亮红色 | `BrightRed()` | 91 | `cl.BrightRed("亮红色文本")` |
+| 亮绿色 | `BrightGreen()` | 92 | `cl.BrightGreen("亮绿色文本")` |
+| 亮黄色 | `BrightYellow()` | 93 | `cl.BrightYellow("亮黄色文本")` |
+| 亮蓝色 | `BrightBlue()` | 94 | `cl.BrightBlue("亮蓝色文本")` |
+| 亮品红色 | `BrightMagenta()` | 95 | `cl.BrightMagenta("亮品红色文本")` |
+| 亮青色 | `BrightCyan()` | 96 | `cl.BrightCyan("亮青色文本")` |
+| 亮白色 | `BrightWhite()` | 97 | `cl.BrightWhite("亮白色文本")` |
+
+## 🏷️ 日志级别
+
+| 级别 | 方法名 | 前缀 | 颜色 | 使用场景 |
+|------|--------|------|------|----------|
+| Debug | `PrintDebug()` | `debug: ` | 品红色 | 调试信息 |
+| Info | `PrintInfo()` | `info: ` | 蓝色 | 一般信息 |
+| Ok | `PrintOk()` | `ok: ` | 绿色 | 成功操作 |
+| Warn | `PrintWarn()` | `warn: ` | 黄色 | 警告信息 |
+| Error | `PrintError()` | `error: ` | 红色 | 错误信息 |
 
 ```go
-// 使用全局实例
-colorlib.CL.PrintSuccess("操作成功！")
-colorlib.CL.PrintError("发生错误")
-colorlib.CL.Blue("蓝色文本")
+cl := colorlib.GetCL()
 
-// 返回带颜色的字符串
-msg := colorlib.CL.Sgreen("绿色字符串")
-fmt.Println(msg)
+cl.PrintDebug("调试信息：变量值为", value)
+cl.PrintInfo("正在处理用户请求...")
+cl.PrintOk("数据保存成功")
+cl.PrintWarn("磁盘空间不足")
+cl.PrintError("网络连接超时")
+
+// 格式化版本
+cl.PrintDebugf("用户ID: %d, 状态: %s", userID, status)
+cl.PrintInfof("处理进度: %d%%", progress)
 ```
 
-## 常用用法
+## 🎭 样式控制
 
-以下是 `ColorLib` 的一些常用用法示例：
-
-### 打印彩色文本
+### 基础样式设置
 
 ```go
 cl := colorlib.NewColorLib()
-cl.Blue("蓝色文本")
-cl.Greenf("绿色文本：%s\n", "带占位符")
+
+// 设置样式
+cl.SetColor(true)      // 启用颜色
+cl.SetBold(true)       // 启用粗体
+cl.SetUnderline(true)  // 启用下划线
+cl.SetBlink(true)      // 启用闪烁
+
+cl.Red("带样式的红色文本")
 ```
 
-### 返回彩色字符串
+### 链式调用
 
 ```go
-coloredString := cl.Spurple("紫色字符串")
-fmt.Println(coloredString)
+cl := colorlib.NewColorLib()
+
+// 链式设置样式
+cl.WithColor(true).
+   WithBold(true).
+   WithUnderline(true).
+   Red("链式调用的红色粗体下划线文本")
 ```
 
-### 打印日志级别消息
+### 禁用颜色输出
 
 ```go
-cl.PrintSuccess("操作成功！")
-cl.PrintError("发生错误：参数无效")
-cl.PrintWarning("警告：磁盘空间不足")
-cl.PrintInfo("正在处理数据...")
-cl.PrintDebug("正在测试...")
+cl := colorlib.NewColorLib()
+cl.SetColor(false)  // 禁用颜色，适用于日志文件输出
+cl.Red("这将显示为普通文本")
 ```
 
-### 打印简洁版终端提示信息
+## 📤 输出方式
+
+### 1. 直接打印（带换行）
 
 ```go
-cl.PrintOk("操作成功")
-cl.PrintErr("发生错误")
-cl.PrintWarn("警告")
-cl.PrintInf("信息")
-cl.PrintDbg("调试信息")
+cl.Red("直接打印红色文本")           // 输出后自动换行
+cl.Green("直接打印绿色文本")         // 输出后自动换行
 ```
+
+### 2. 格式化打印（不换行）
+
+```go
+cl.Redf("用户: %s", username)       // 格式化输出，不自动换行
+cl.Greenf("状态: %s", status)       // 需要手动添加 \n
+```
+
+### 3. 返回字符串
+
+```go
+redText := cl.Sred("红色字符串")     // 返回带颜色的字符串
+greenText := cl.Sgreen("绿色字符串") // 返回带颜色的字符串
+fmt.Println(redText, greenText)
+```
+
+### 4. 格式化返回字符串
+
+```go
+coloredMsg := cl.Sredf("错误代码: %d", errorCode)
+log.Println(coloredMsg)  // 可以传递给其他日志库
+```
+
+## 🔧 高级用法
+
+### 自定义输出接口
+
+```go
+// 输出到文件
+file, _ := os.Create("colored_log.txt")
+defer file.Close()
+cl := colorlib.NewColorLibWithWriter(file)
+cl.Red("这将写入文件")
+
+// 输出到缓冲区
+var buf bytes.Buffer
+cl := colorlib.NewColorLibWithWriter(&buf)
+cl.Green("这将写入缓冲区")
+fmt.Println(buf.String())
+
+// 使用 WithWriter 创建新实例
+cl1 := colorlib.GetCL()
+cl2 := cl1.WithWriter(os.Stderr)  // 输出到标准错误
+cl2.Red("错误信息")
+```
+
+### 全局实例 vs 自定义实例
+
+```go
+// 方式1: 使用全局实例（推荐）
+cl := colorlib.GetCL()  // 线程安全的单例
+cl.Red("使用全局实例")
+
+// 方式2: 创建新实例
+cl := colorlib.NewColorLib()  // 或者 colorlib.New()
+cl.Red("使用新实例")
+
+// 方式3: 指定输出接口
+cl := colorlib.NewColorLibWithWriter(os.Stderr)
+cl.Red("输出到标准错误")
+```
+
+### 并发使用
+
+```go
+cl := colorlib.GetCL()  // 全局实例是线程安全的
+
+// 在多个 goroutine 中安全使用
+go func() {
+    cl.Red("Goroutine 1")
+}()
+
+go func() {
+    cl.Green("Goroutine 2")
+}()
+```
+
+## 📋 完整 API 参考
+
+### 构造函数
+
+| 函数名 | 描述 |
+|--------|------|
+| `GetCL()` | 获取全局单例实例（线程安全） |
+| `NewColorLib()` | 创建新实例（输出到 stdout） |
+| `New()` | `NewColorLib()` 的别名 |
+| `NewColorLibWithWriter(io.Writer)` | 创建指定输出接口的实例 |
+
+### 样式设置
+
+| 方法名 | 描述 |
+|--------|------|
+| `SetColor(bool)` | 设置是否启用颜色 |
+| `SetBold(bool)` | 设置是否启用粗体 |
+| `SetUnderline(bool)` | 设置是否启用下划线 |
+| `SetBlink(bool)` | 设置是否启用闪烁 |
+| `WithColor(bool)` | 链式设置颜色（返回自身） |
+| `WithBold(bool)` | 链式设置粗体（返回自身） |
+| `WithUnderline(bool)` | 链式设置下划线（返回自身） |
+| `WithBlink(bool)` | 链式设置闪烁（返回自身） |
+| `WithWriter(io.Writer)` | 创建新的输出接口实例 |
+
+### 颜色方法命名规则
+
+| 前缀/后缀 | 说明 | 示例 |
+|-----------|------|------|
+| 无前缀 | 直接打印（带换行） | `Red("text")` |
+| `f` 后缀 | 格式化打印（不换行） | `Redf("user: %s", name)` |
+| `S` 前缀 | 返回字符串 | `Sred("text")` |
+| `S` + `f` | 格式化返回字符串 | `Sredf("user: %s", name)` |
+| `Bright` 前缀 | 亮色版本 | `BrightRed("text")` |
+
+## 🎯 使用场景
+
+### CLI 工具
+
+```go
+func main() {
+    cl := colorlib.GetCL()
+    
+    cl.PrintInfo("正在初始化...")
+    
+    if err := initialize(); err != nil {
+        cl.PrintError("初始化失败:", err)
+        os.Exit(1)
+    }
+    
+    cl.PrintOk("初始化完成")
+    cl.Green("欢迎使用 MyTool v1.0.0")
+}
+```
+
+### 日志系统
+
+```go
+type Logger struct {
+    cl *colorlib.ColorLib
+}
+
+func NewLogger() *Logger {
+    return &Logger{cl: colorlib.GetCL()}
+}
+
+func (l *Logger) Info(msg string) {
+    l.cl.PrintInfo(msg)
+}
+
+func (l *Logger) Error(msg string) {
+    l.cl.PrintError(msg)
+}
+```
+
+### 测试输出
+
+```go
+func TestSomething(t *testing.T) {
+    cl := colorlib.GetCL()
+    
+    cl.PrintInfo("开始测试...")
+    
+    if result := doSomething(); result {
+        cl.PrintOk("测试通过")
+    } else {
+        cl.PrintError("测试失败")
+        t.Fail()
+    }
+}
+```
+
+## 🔧 配置建议
+
+### 生产环境
+
+```go
+cl := colorlib.NewColorLib()
+
+// 根据环境变量决定是否启用颜色
+if os.Getenv("NO_COLOR") != "" {
+    cl.SetColor(false)
+}
+
+// 输出到日志文件时禁用颜色
+if isLogFile {
+    cl.SetColor(false)
+}
+```
+
+### 开发环境
+
+```go
+cl := colorlib.GetCL()
+cl.WithBold(true).WithUnderline(true)  // 开发时使用更明显的样式
+```
+
+## 📊 性能特性
+
+- **对象池技术**：内置 `strings.Builder` 对象池，减少内存分配
+- **智能缓存**：ANSI 序列缓存，避免重复构建
+- **零拷贝**：优化的字符串操作，减少不必要的内存复制
+- **并发安全**：使用原子操作，无锁设计
+
+## 🧪 测试
+
+运行所有测试：
+
+```bash
+go test ./...
+```
+
+运行竞态检测：
+
+```bash
+go test -race ./...
+```
+
+查看测试覆盖率：
+
+```bash
+go test -cover ./...
+```
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📞 联系方式
+
+- 项目地址：[https://gitee.com/MM-Q/colorlib](https://gitee.com/MM-Q/colorlib)
+- 问题反馈：[Issues](https://gitee.com/MM-Q/colorlib/issues)
+
+---
+
+⭐ 如果这个项目对你有帮助，请给个 Star 支持一下！

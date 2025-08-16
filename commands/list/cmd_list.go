@@ -27,7 +27,7 @@ func ListCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 2. 配置颜色输出
-	configureColorOutput(cl)
+	cl.SetColor(listCmdColor.Get())
 
 	// 3. 获取和处理路径
 	paths := getPaths()
@@ -50,18 +50,6 @@ func ListCmdMain(cl *colorlib.ColorLib) error {
 	// 6. 格式化输出
 	formatter := NewFileFormatter(cl)
 	return formatter.Render(processed, getFormatOptions())
-}
-
-// configureColorOutput 配置颜色输出
-//
-// 参数:
-//   - cl: 颜色库
-func configureColorOutput(cl *colorlib.ColorLib) {
-	if listCmdColor.Get() {
-		cl.NoColor.Store(false)
-	} else {
-		cl.NoColor.Store(true)
-	}
 }
 
 // getPaths 获取路径列表
@@ -112,7 +100,7 @@ func expandPaths(paths []string, cl *colorlib.ColorLib) ([]string, bool, error) 
 
 		matches, err := filepath.Glob(path)
 		if err != nil {
-			cl.PrintErrf("路径模式错误 %q: %v\n", path, err)
+			cl.PrintErrorf("路径模式错误 %q: %v\n", path, err)
 			continue
 		}
 

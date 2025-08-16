@@ -171,6 +171,7 @@ func (s *FileScanner) scanDirectory(dirPath, rootDir string, opts ScanOptions) (
 //   - os.FileInfo: 文件信息
 //   - error: 获取过程中的错误
 func (s *FileScanner) getFileInfo(path string) (os.FileInfo, error) {
+	// 命中缓存
 	s.mutex.RLock()
 	if info, exists := s.cache[path]; exists {
 		s.mutex.RUnlock()
@@ -178,6 +179,7 @@ func (s *FileScanner) getFileInfo(path string) (os.FileInfo, error) {
 	}
 	s.mutex.RUnlock()
 
+	// 未命中缓存, 获取并缓存文件信息
 	info, err := os.Stat(path)
 	if err != nil {
 		return nil, err

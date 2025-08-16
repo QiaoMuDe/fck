@@ -1,6 +1,10 @@
-# gitee.com/MM-Q/colorlib v1.2.4
+# gitee.com/MM-Q/colorlib v1.3.0
 ## explicit; go 1.23.4
 gitee.com/MM-Q/colorlib
+gitee.com/MM-Q/colorlib/internal/buffer
+gitee.com/MM-Q/colorlib/internal/cache
+gitee.com/MM-Q/colorlib/internal/color
+gitee.com/MM-Q/colorlib/internal/style
 # gitee.com/MM-Q/qflag v0.2.3
 ## explicit; go 1.24.4
 gitee.com/MM-Q/qflag

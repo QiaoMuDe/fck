@@ -9,10 +9,8 @@ import (
 	"hash"
 	"os"
 	"regexp"
-	"sort"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"gitee.com/MM-Q/colorlib"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -79,99 +77,6 @@ var (
 	}
 )
 
-// list子命令用于存储文件信息的结构体
-type ListInfo struct {
-	// 文件名 - BaseName
-	Name string
-
-	// 文件路径 - 绝对路径
-	Path string
-
-	// 类型 - 文件/目录/软链接
-	EntryType string
-
-	// 大小 - 字节数
-	Size int64
-
-	// 修改时间 - time.Time
-	ModTime time.Time
-
-	// 权限 - 类型-所有者-组-其他用户
-	Perm string
-
-	// 所属用户 - windows环境为?
-	Owner string
-
-	// 所属组 - windows环境为?
-	Group string
-
-	// 扩展名 - 扩展名
-	FileExt string
-
-	// 如果是软链接，则是指向的文件路径，否则为空字符串
-	LinkTargetPath string
-}
-
-// list子命令用于存储文件信息的结构体切片
-type ListInfos []ListInfo
-
-// 用于存储listInfos的结构体
-type ListInfosMap struct {
-	ListInfos ListInfos `json:"listInfos"` // 存储文件信息的结构体切片
-	FileNames []string  `json:"fileNames"` // 存储文件名的字符串切片
-}
-
-// SortByFileNameAsc 按照文件名升序排序
-func (lis ListInfos) SortByFileNameAsc() {
-	sort.Slice(lis, func(i, j int) bool {
-		return lis[i].Name < lis[j].Name
-	})
-}
-
-// SortByFileSizeAsc 按照文件大小升序排序
-func (lis ListInfos) SortByFileSizeAsc() {
-	sort.Slice(lis, func(i, j int) bool {
-		return lis[i].Size < lis[j].Size
-	})
-}
-
-// SortByModTimeAsc 按照修改时间升序排序
-func (lis ListInfos) SortByModTimeAsc() {
-	sort.Slice(lis, func(i, j int) bool {
-		return lis[i].ModTime.Before(lis[j].ModTime)
-	})
-}
-
-// SortByFileNameDesc 按照文件名降序排序
-func (lis ListInfos) SortByFileNameDesc() {
-	sort.Slice(lis, func(i, j int) bool {
-		return lis[i].Name > lis[j].Name
-	})
-}
-
-// SortByFileSizeDesc 按照文件大小降序排序
-func (lis ListInfos) SortByFileSizeDesc() {
-	sort.Slice(lis, func(i, j int) bool {
-		return lis[i].Size > lis[j].Size
-	})
-}
-
-// SortByModTimeDesc 按照修改时间降序排序
-func (lis ListInfos) SortByModTimeDesc() {
-	sort.Slice(lis, func(i, j int) bool {
-		return lis[i].ModTime.After(lis[j].ModTime)
-	})
-}
-
-// GetFileNames 获取文件名列表
-func (lis ListInfos) GetFileNames() []string {
-	names := make([]string, len(lis))
-	for i, file := range lis {
-		names[i] = file.Name
-	}
-	return names
-}
-
 // 定义文件类型标识符常量
 const (
 	DirType         = "d" // 目录类型
@@ -237,14 +142,14 @@ var TableStyles = []string{
 // 定义禁用样式
 var StyleNone = table.Style{
 	Box: table.BoxStyle{
-		PaddingLeft:      " ", // 左边框
-		PaddingRight:     " ", // 右边框
-		MiddleHorizontal: " ", // 水平线
-		MiddleVertical:   " ", // 垂直线
-		TopLeft:          " ", // 左上角
-		TopRight:         " ", // 右上角
-		BottomLeft:       " ", // 左下角
-		BottomRight:      " ", // 右下角
+		PaddingLeft:      "  ", // 左边框
+		PaddingRight:     "  ", // 右边框
+		MiddleHorizontal: "  ", // 水平线
+		MiddleVertical:   "  ", // 垂直线
+		TopLeft:          "  ", // 左上角
+		TopRight:         "  ", // 右上角
+		BottomLeft:       "  ", // 左下角
+		BottomRight:      "  ", // 右下角
 	},
 }
 

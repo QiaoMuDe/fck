@@ -39,7 +39,7 @@ func TestHashCmdMain(t *testing.T) {
 	_ = hashCmdProgress.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true) // 禁用颜色输出
+	cl.SetColor(false) // 禁用颜色输出
 
 	tests := []struct {
 		name        string
@@ -109,7 +109,7 @@ func TestProcessSinglePath(t *testing.T) {
 	_ = hashCmdHidden.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	tests := []struct {
 		name        string
@@ -150,7 +150,7 @@ func TestProcessSinglePath(t *testing.T) {
 // TestPrintUniqueErrors 测试错误去重打印
 func TestPrintUniqueErrors(t *testing.T) {
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	tests := []struct {
 		name   string
@@ -215,7 +215,7 @@ func TestHashCmdMainWithWrite(t *testing.T) {
 	_ = hashCmdProgress.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	// 测试写入功能
 	err := processSinglePath(cl, testFile, md5.New)
@@ -261,7 +261,7 @@ func TestHashCmdMainWithRecursion(t *testing.T) {
 	_ = hashCmdProgress.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	err := processSinglePath(cl, tempDir, md5.New)
 	if err != nil {
@@ -297,7 +297,7 @@ func TestHashCmdMainWithGlob(t *testing.T) {
 	_ = hashCmdProgress.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	// 测试通配符处理
 	globPattern := "test*.txt"
@@ -322,7 +322,7 @@ func TestHashCmdMainEmptyDirectory(t *testing.T) {
 	_ = hashCmdProgress.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	// 空目录应该返回错误（非递归模式）
 	err := processSinglePath(cl, tempDir, md5.New)
@@ -352,7 +352,7 @@ func BenchmarkProcessSinglePath(b *testing.B) {
 	_ = hashCmdProgress.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

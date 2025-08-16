@@ -1,8 +1,6 @@
-package common
+package list
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -11,17 +9,142 @@ import (
 	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
-// 定义全局常量的颜色映射
-var PermissionColorMap = map[int]string{
-	1: "green",  // 所有者-读-绿色
-	2: "yellow", // 所有者-写-黄色
-	3: "red",    // 所有者-执行-红色
-	4: "green",  // 组-读-绿色
-	5: "yellow", // 组-写-黄色
-	6: "red",    // 组-执行-红色
-	7: "green",  // 其他-读-绿色
-	8: "yellow", // 其他-写-黄色
-	9: "red",    // 其他-执行-红色
+// GetColorString 根据文件信息返回带有相应颜色的路径字符串
+//
+// 参数:
+//   - devColor: 是否使用开发环境配色方案
+//   - info: 包含文件类型和文件后缀名等信息的FileInfo结构体实例
+//   - pF: 要处理的路径字符串
+//   - cl: 用于彩色输出的colorlib.ColorLib实例
+//
+// 返回:
+//   - string: 经过颜色处理后的路径字符串
+//
+// 注意:
+//   - 如果启用了开发环境模式，将使用开发环境配色方案
+//   - 支持Windows、macOS、Linux平台的特殊文件类型处理
+func GetColorString(devColor bool, info FileInfo, pF string, cl *colorlib.ColorLib) string {
+	// 如果启用了开发环境模式, 则返回开发模式下的颜色处理结果
+	if devColor {
+		return getDevColorString(info, pF, cl)
+	}
+
+	// 依据文件的类型来确定输出的颜色
+	switch info.EntryType {
+	case types.SymlinkType:
+		// 若文件类型为符号链接，则使用青色来渲染字符串
+		return cl.Scyan(pF)
+	case types.DirType:
+		// 若文件类型为目录，则使用蓝色来渲染字符串
+		return cl.Sblue(pF)
+	case types.ExecutableType:
+		// 若文件类型为可执行文件，则使用绿色来渲染字符串
+		return cl.Sgreen(pF)
+	case types.SocketType, types.PipeType, types.BlockDeviceType, types.CharDeviceType:
+		// 若文件类型为套接字、管道、块设备、字符设备，则使用黄色来渲染字符串
+		return cl.Syellow(pF)
+	case types.EmptyType:
+		// 若文件类型为空文件, 则使用灰色来渲染字符串
+		return cl.Sgray(pF)
+	case types.FileType:
+		// 若文件类型为普通文件，则根据平台差异来设置颜色
+		if runtime.GOOS == "windows" {
+			switch {
+			case types.WindowsExecutableExts[info.FileExt]:
+				// 对于 Windows 系统下的可执行文件，使用绿色来渲染字符串
+				return cl.Sgreen(pF)
+			case types.WindowsSymlinkExts[info.FileExt]:
+				// 对于 Windows 系统下的符号链接，使用青色来渲染字符串
+				return cl.Scyan(pF)
+			default:
+				// 对于其他文件类型，使用白色来渲染字符串
+				return cl.Swhite(pF)
+			}
+		}
+
+		// 添加MacOS特殊文件处理
+		if runtime.GOOS == "darwin" {
+			base := filepath.Base(pF)
+			switch {
+			case base == ".DS_Store" || base == ".localized" || strings.HasPrefix(base, "._"):
+				return cl.Sgray(pF) // MacOS系统文件使用灰色
+			case filepath.Ext(pF) == ".app":
+				return cl.Sgreen(pF) // MacOS应用程序包使用绿色
+			}
+		}
+
+		// 对于 Linux 系统下的普通文件，使用白色来渲染字符串
+		return cl.Swhite(pF)
+	default:
+		// 对于未匹配的类型，使用白色来渲染字符串
+		return cl.Swhite(pF)
+	}
+}
+
+// getDevColorString 根据开发环境配色方案返回带颜色的路径字符串
+//
+// 参数:
+//   - info: 包含文件类型和文件后缀名等信息的FileInfo结构体实例
+//   - pF: 要处理的路径字符串
+//   - cl: 用于处理颜色的colorlib.ColorLib实例
+//
+// 返回:
+//   - string: 经过开发环境配色方案处理后的路径字符串
+//
+// 注意:
+//   - 该函数专门用于开发环境配色方案
+//   - 根据文件扩展名匹配预定义的颜色映射表
+//   - 支持代码文件、配置文件、数据文件、库文件等不同类型的着色
+func getDevColorString(info FileInfo, pF string, cl *colorlib.ColorLib) string {
+	// 依据文件的类型来确定输出的颜色
+	switch info.EntryType {
+	case types.SymlinkType:
+		// 若文件类型为符号链接，则使用青色来渲染字符串
+		return cl.Scyan(pF)
+	case types.DirType:
+		// 若文件类型为目录，则使用蓝色来渲染字符串
+		return cl.Sblue(pF)
+	case types.ExecutableType:
+		// 若文件类型为可执行文件，则使用绿色来渲染字符串
+		return cl.Sgreen(pF)
+	case types.SocketType, types.PipeType, types.BlockDeviceType, types.CharDeviceType, types.EmptyType:
+		// 若文件类型为套接字, 管道, 块设备, 字符设备, 空文件, 则使用灰色来渲染字符串
+		return cl.Sgray(pF)
+	case types.FileType:
+		// 若文件类型为普通文件，则根据开发环境配色方案来设置颜色
+		if runtime.GOOS == "windows" {
+			switch {
+			case types.WindowsExecutableExts[info.FileExt]:
+				// 对于 Windows 系统下的可执行文件，使用绿色来渲染字符串
+				return cl.Sgreen(pF)
+			case types.WindowsSymlinkExts[info.FileExt]:
+				// 对于 Windows 系统下的符号链接，使用青色来渲染字符串
+				return cl.Scyan(pF)
+			}
+		}
+
+		// 常规配色方案
+		for color, extMap := range devColorMap {
+			if extMap[info.FileExt] {
+				switch color {
+				case "yellow":
+					return cl.Syellow(pF)
+				case "green":
+					return cl.Sgreen(pF)
+				case "red":
+					return cl.Sred(pF)
+				case "magenta":
+					return cl.Smagenta(pF)
+				}
+			}
+		}
+
+		// 普通文件，使用白色来渲染字符串
+		return cl.Swhite(pF)
+	default:
+		// 对于未匹配的类型, 使用灰色来渲染字符串
+		return cl.Sgray(pF)
+	}
 }
 
 // 颜色映射表，用于开发环境配色方案
@@ -317,7 +440,7 @@ var devColorMap = map[string]map[string]bool{
 		".msi":       true, // Windows 安装包
 	},
 	// 库文件或静态库文件或编译后的产物
-	"purple": {
+	"magenta": {
 		".so":            true, // Linux 共享对象库文件
 		".dll":           true, // Windows 动态链接库文件
 		".lib":           true, // Windows 静态链接库文件
@@ -361,280 +484,4 @@ var devColorMap = map[string]map[string]bool{
 		".d":             true, // 依赖文件
 		".rlib":          true, // Rust 库文件
 	},
-}
-
-// SplitPathColor 根据路径类型以不同颜色返回字符串
-//
-// 参数:
-//   - p: 文件路径
-//   - cl: colorlib.ColorLib实例，用于彩色输出
-//   - dirCode: 目录部分的颜色代码
-//   - fileCode: 文件名部分的颜色代码
-//
-// 返回:
-//   - string: 经过颜色处理的路径字符串
-func SplitPathColor(p string, cl *colorlib.ColorLib, dirCode int, fileCode int) string {
-	// 获取路径的目录和文件名
-	dir, file := filepath.Split(p)
-
-	// 如果目录为空，则返回文件名
-	if dir == "" {
-		return fmt.Sprint(cl.SColor(fileCode, file))
-	}
-
-	// 设置渐进式颜色
-	return fmt.Sprint(cl.SColor(dirCode, dir), cl.SColor(fileCode, file))
-}
-
-// SprintStringColor 根据路径类型以不同颜色输出字符串
-//
-// 参数:
-//   - p: 要检查的路径，用于获取文件类型信息
-//   - s: 要着色的字符串内容
-//   - cl: colorlib.ColorLib实例，用于彩色输出
-//
-// 返回:
-//   - string: 根据路径类型以不同颜色返回的字符串
-func SprintStringColor(p string, s string, cl *colorlib.ColorLib) string {
-	// 获取路径信息
-	pathInfo, statErr := os.Lstat(p)
-	if statErr != nil {
-		return cl.Sred(s) // 如果获取路径信息失败, 返回红色输出
-	}
-
-	// 根据路径类型设置颜色
-	switch mode := pathInfo.Mode(); {
-	case mode&os.ModeSymlink != 0:
-		// 符号链接 - 使用青色输出
-		return cl.Scyan(s)
-	case runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsSymlinkExts[filepath.Ext(p)]:
-		// Windows下的快捷方式文件 - 使用青色输出
-		return cl.Scyan(s)
-	case mode.IsDir():
-		// 目录 - 使用蓝色输出
-		return cl.Sblue(s)
-	case mode&os.ModeDevice != 0:
-		// 设备文件 - 使用黄色输出
-		return cl.Syellow(s)
-	case mode&os.ModeNamedPipe != 0:
-		// 命名管道 - 使用黄色输出
-		return cl.Syellow(s)
-	case mode&os.ModeSocket != 0:
-		// 套接字文件 - 使用黄色输出
-		return cl.Syellow(s)
-	case mode&os.ModeType == 0 && mode&os.ModeCharDevice != 0:
-		// 字符设备文件 - 使用黄色输出
-		return cl.Syellow(s)
-	case mode.IsRegular() && pathInfo.Size() == 0:
-		// 空文件 - 使用灰色输出
-		return cl.Sgray(s)
-	case mode.IsRegular() && mode&0111 != 0:
-		// 可执行文件 - 使用绿色输出
-		return cl.Sgreen(s)
-	case runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsExecutableExts[filepath.Ext(p)]:
-		// Windows下的可执行文件 - 使用绿色输出
-		return cl.Sgreen(s)
-	case mode.IsRegular():
-		// 普通文件 - 使用白色输出
-		return cl.Swhite(s)
-	default:
-		// 其他类型文件 - 使用白色输出
-		return cl.Swhite(s)
-	}
-}
-
-// PrintPathColor 根据路径类型以不同颜色输出路径字符串
-//
-// 参数:
-//   - path: 要检查的路径，用于获取文件类型信息
-//   - cl: colorlib.ColorLib实例，用于彩色输出
-//
-// 注意:
-//   - 该函数直接输出到标准输出，不返回值
-func PrintPathColor(path string, cl *colorlib.ColorLib) {
-	// 获取路径信息
-	pathInfo, statErr := os.Lstat(path)
-	if statErr != nil {
-		// 如果获取路径信息失败, 输出红色的路径
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Red))
-		return
-	}
-
-	// 根据路径类型设置颜色
-	switch mode := pathInfo.Mode(); {
-	case mode&os.ModeSymlink != 0:
-		// 符号链接 - 使用青色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Cyan))
-	case runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsSymlinkExts[filepath.Ext(path)]:
-		// Windows快捷方式 - 使用青色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Cyan))
-	case mode.IsDir():
-		// 目录 - 使用蓝色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Blue))
-	case mode&os.ModeDevice != 0:
-		// 设备文件 - 使用黄色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Yellow))
-	case mode&os.ModeCharDevice != 0:
-		// 字符设备文件 - 使用黄色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Yellow))
-	case mode&os.ModeNamedPipe != 0:
-		// 命名管道 - 使用黄色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Yellow))
-	case mode&os.ModeSocket != 0:
-		// 套接字文件 - 使用黄色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Yellow))
-	case mode&os.ModeType == 0 && mode&0111 != 0:
-		// 可执行文件 - 使用绿色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Green))
-	case runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsExecutableExts[filepath.Ext(path)]:
-		// Windows可执行文件 - 使用绿色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Green))
-	case pathInfo.Size() == 0:
-		// 空文件 - 使用灰色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.Gray))
-	case mode.IsRegular():
-		// 普通文件 - 使用白色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.White))
-	default:
-		// 其他类型文件 - 使用白色输出
-		fmt.Println(SplitPathColor(path, cl, colorlib.Cyan, colorlib.White))
-	}
-}
-
-// GetColorString 根据文件信息返回带有相应颜色的路径字符串
-//
-// 参数:
-//   - devColor: 是否使用开发环境配色方案
-//   - info: 包含文件类型和文件后缀名等信息的types.ListInfo结构体实例
-//   - pF: 要处理的路径字符串
-//   - cl: 用于彩色输出的colorlib.ColorLib实例
-//
-// 返回:
-//   - string: 经过颜色处理后的路径字符串
-//
-// 注意:
-//   - 如果启用了开发环境模式，将使用开发环境配色方案
-//   - 支持Windows、macOS、Linux平台的特殊文件类型处理
-func GetColorString(devColor bool, info types.ListInfo, pF string, cl *colorlib.ColorLib) string {
-	// 如果启用了开发环境模式, 则返回开发模式下的颜色处理结果
-	if devColor {
-		return getDevColorString(info, pF, cl)
-	}
-
-	// 依据文件的类型来确定输出的颜色
-	switch info.EntryType {
-	case types.SymlinkType:
-		// 若文件类型为符号链接，则使用青色来渲染字符串
-		return cl.Scyan(pF)
-	case types.DirType:
-		// 若文件类型为目录，则使用蓝色来渲染字符串
-		return cl.Sblue(pF)
-	case types.ExecutableType:
-		// 若文件类型为可执行文件，则使用绿色来渲染字符串
-		return cl.Sgreen(pF)
-	case types.SocketType, types.PipeType, types.BlockDeviceType, types.CharDeviceType:
-		// 若文件类型为套接字、管道、块设备、字符设备，则使用黄色来渲染字符串
-		return cl.Syellow(pF)
-	case types.EmptyType:
-		// 若文件类型为空文件, 则使用灰色来渲染字符串
-		return cl.Sgray(pF)
-	case types.FileType:
-		// 若文件类型为普通文件，则根据平台差异来设置颜色
-		if runtime.GOOS == "windows" {
-			switch {
-			case types.WindowsExecutableExts[info.FileExt]:
-				// 对于 Windows 系统下的可执行文件，使用绿色来渲染字符串
-				return cl.Sgreen(pF)
-			case types.WindowsSymlinkExts[info.FileExt]:
-				// 对于 Windows 系统下的符号链接，使用青色来渲染字符串
-				return cl.Scyan(pF)
-			default:
-				// 对于其他文件类型，使用白色来渲染字符串
-				return cl.Swhite(pF)
-			}
-		}
-
-		// 添加MacOS特殊文件处理
-		if runtime.GOOS == "darwin" {
-			base := filepath.Base(pF)
-			switch {
-			case base == ".DS_Store" || base == ".localized" || strings.HasPrefix(base, "._"):
-				return cl.Sgray(pF) // MacOS系统文件使用灰色
-			case filepath.Ext(pF) == ".app":
-				return cl.Sgreen(pF) // MacOS应用程序包使用绿色
-			}
-		}
-
-		// 对于 Linux 系统下的普通文件，使用白色来渲染字符串
-		return cl.Swhite(pF)
-	default:
-		// 对于未匹配的类型，使用白色来渲染字符串
-		return cl.Swhite(pF)
-	}
-}
-
-// getDevColorString 根据开发环境配色方案返回带颜色的路径字符串
-//
-// 参数:
-//   - info: 包含文件类型和文件后缀名等信息的types.ListInfo结构体实例
-//   - pF: 要处理的路径字符串
-//   - cl: 用于处理颜色的colorlib.ColorLib实例
-//
-// 返回:
-//   - string: 经过开发环境配色方案处理后的路径字符串
-//
-// 注意:
-//   - 该函数专门用于开发环境配色方案
-//   - 根据文件扩展名匹配预定义的颜色映射表
-//   - 支持代码文件、配置文件、数据文件、库文件等不同类型的着色
-func getDevColorString(info types.ListInfo, pF string, cl *colorlib.ColorLib) string {
-	// 依据文件的类型来确定输出的颜色
-	switch info.EntryType {
-	case types.SymlinkType:
-		// 若文件类型为符号链接，则使用青色来渲染字符串
-		return cl.Scyan(pF)
-	case types.DirType:
-		// 若文件类型为目录，则使用蓝色来渲染字符串
-		return cl.Sblue(pF)
-	case types.ExecutableType:
-		// 若文件类型为可执行文件，则使用绿色来渲染字符串
-		return cl.Sgreen(pF)
-	case types.SocketType, types.PipeType, types.BlockDeviceType, types.CharDeviceType, types.EmptyType:
-		// 若文件类型为套接字, 管道, 块设备, 字符设备, 空文件, 则使用灰色来渲染字符串
-		return cl.Sgray(pF)
-	case types.FileType:
-		// 若文件类型为普通文件，则根据开发环境配色方案来设置颜色
-		if runtime.GOOS == "windows" {
-			switch {
-			case types.WindowsExecutableExts[info.FileExt]:
-				// 对于 Windows 系统下的可执行文件，使用绿色来渲染字符串
-				return cl.Sgreen(pF)
-			case types.WindowsSymlinkExts[info.FileExt]:
-				// 对于 Windows 系统下的符号链接，使用青色来渲染字符串
-				return cl.Scyan(pF)
-			}
-		}
-
-		// 常规配色方案
-		for color, extMap := range devColorMap {
-			if extMap[info.FileExt] {
-				switch color {
-				case "yellow":
-					return cl.Syellow(pF)
-				case "green":
-					return cl.Sgreen(pF)
-				case "red":
-					return cl.Sred(pF)
-				case "purple":
-					return cl.Spurple(pF)
-				}
-			}
-		}
-
-		// 普通文件，使用白色来渲染字符串
-		return cl.Swhite(pF)
-	default:
-		// 对于未匹配的类型, 使用灰色来渲染字符串
-		return cl.Sgray(pF)
-	}
 }

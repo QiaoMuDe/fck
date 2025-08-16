@@ -29,18 +29,32 @@ type FormatOptions struct {
 	ShowUserGroup bool   // 是否显示用户组
 }
 
-// FileInfo 文件信息结构
+// list子命令用于存储文件信息的结构体
 type FileInfo struct {
-	EntryType      string    // 文件类型
-	Name           string    // 文件名
-	Size           int64     // 文件大小
-	ModTime        time.Time // 修改时间
-	Perm           string    // 权限
-	Owner          string    // 所有者
-	Group          string    // 组
-	FileExt        string    // 文件扩展名
-	LinkTargetPath string    // 符号链接目标路径
+	Name           string    // 文件名 - BaseName
+	Path           string    // 文件路径 - 绝对路径
+	EntryType      string    // 类型 - 文件/目录/软链接
+	Size           int64     // 大小 - 字节数
+	ModTime        time.Time // 修改时间 - time.Time
+	Perm           string    // 权限 - 类型-所有者-组-其他用户
+	Owner          string    // 所属用户 - windows环境为?
+	Group          string    // 所属组 - windows环境为?
+	FileExt        string    // 扩展名 - 扩展名
+	LinkTargetPath string    // 如果是软链接，则是指向的文件路径，否则为空字符串
 }
 
 // FileInfoList 文件信息列表类型
 type FileInfoList []FileInfo
+
+// 定义全局常量的颜色映射
+var permissionColorMap = map[int]string{
+	1: "green",  // 所有者-读-绿色
+	2: "yellow", // 所有者-写-黄色
+	3: "red",    // 所有者-执行-红色
+	4: "green",  // 组-读-绿色
+	5: "yellow", // 组-写-黄色
+	6: "red",    // 组-执行-红色
+	7: "green",  // 其他-读-绿色
+	8: "yellow", // 其他-写-黄色
+	9: "red",    // 其他-执行-红色
+}

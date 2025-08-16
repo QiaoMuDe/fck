@@ -7,9 +7,13 @@ import (
 	"hash"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"time"
 
+	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/fck/commands/internal/types"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -343,5 +347,62 @@ func calculateBufferSize(fileSize int64) int {
 		return int(2 * MB)
 	default: // 大于 64MB 的文件使用 4MB 缓冲区
 		return int(4 * MB)
+	}
+}
+
+// SprintStringColor 根据路径类型以不同颜色输出字符串
+//
+// 参数:
+//   - p: 要检查的路径，用于获取文件类型信息
+//   - s: 要着色的字符串内容
+//   - cl: colorlib.ColorLib实例，用于彩色输出
+//
+// 返回:
+//   - string: 根据路径类型以不同颜色返回的字符串
+func SprintStringColor(p string, s string, cl *colorlib.ColorLib) string {
+	// 获取路径信息
+	pathInfo, statErr := os.Lstat(p)
+	if statErr != nil {
+		return cl.Sred(s) // 如果获取路径信息失败, 返回红色输出
+	}
+
+	// 根据路径类型设置颜色
+	switch mode := pathInfo.Mode(); {
+	case mode&os.ModeSymlink != 0:
+		// 符号链接 - 使用青色输出
+		return cl.Scyan(s)
+	case runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsSymlinkExts[filepath.Ext(p)]:
+		// Windows下的快捷方式文件 - 使用青色输出
+		return cl.Scyan(s)
+	case mode.IsDir():
+		// 目录 - 使用蓝色输出
+		return cl.Sblue(s)
+	case mode&os.ModeDevice != 0:
+		// 设备文件 - 使用黄色输出
+		return cl.Syellow(s)
+	case mode&os.ModeNamedPipe != 0:
+		// 命名管道 - 使用黄色输出
+		return cl.Syellow(s)
+	case mode&os.ModeSocket != 0:
+		// 套接字文件 - 使用黄色输出
+		return cl.Syellow(s)
+	case mode&os.ModeType == 0 && mode&os.ModeCharDevice != 0:
+		// 字符设备文件 - 使用黄色输出
+		return cl.Syellow(s)
+	case mode.IsRegular() && pathInfo.Size() == 0:
+		// 空文件 - 使用灰色输出
+		return cl.Sgray(s)
+	case mode.IsRegular() && mode&0111 != 0:
+		// 可执行文件 - 使用绿色输出
+		return cl.Sgreen(s)
+	case runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsExecutableExts[filepath.Ext(p)]:
+		// Windows下的可执行文件 - 使用绿色输出
+		return cl.Sgreen(s)
+	case mode.IsRegular():
+		// 普通文件 - 使用白色输出
+		return cl.Swhite(s)
+	default:
+		// 其他类型文件 - 使用白色输出
+		return cl.Swhite(s)
 	}
 }

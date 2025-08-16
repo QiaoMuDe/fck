@@ -39,11 +39,7 @@ func FindCmdMain(cl *colorlib.ColorLib) error {
 	}
 
 	// 根据findCmdColor.Get()选项设置颜色
-	if findCmdColor.Get() {
-		cl.NoColor.Store(false)
-	} else {
-		cl.NoColor.Store(true)
-	}
+	cl.SetColor(findCmdColor.Get())
 
 	// 准备正则表达式模式
 	isRegex := findCmdRegex.Get()       // 是否启用正则表达式
@@ -176,7 +172,7 @@ func processWalkDir(config *types.FindConfig, findPath string) error {
 
 			// 检查是否为权限不足的报错
 			if os.IsPermission(err) {
-				config.Cl.PrintErrf("权限不足, 无法访问某些目录: %s\n", path)
+				config.Cl.PrintErrorf("权限不足, 无法访问某些目录: %s\n", path)
 				return nil
 			}
 
@@ -556,7 +552,7 @@ func filterConditions(config *types.FindConfig, entry os.DirEntry, path string) 
 			}
 
 			// 输出完整路径
-			common.PrintPathColor(fullPath, config.Cl)
+			printPathColor(fullPath, config.Cl)
 		}
 
 		return nil
@@ -567,7 +563,7 @@ func filterConditions(config *types.FindConfig, entry os.DirEntry, path string) 
 
 	// 如果没有启用count标志, 才输出匹配路径
 	if !findCmdCount.Get() {
-		common.PrintPathColor(path, config.Cl)
+		printPathColor(path, config.Cl)
 	}
 
 	return nil
@@ -1006,7 +1002,7 @@ func moveMatchedItem(path string, targetPath string, cl *colorlib.ColorLib) erro
 		return fmt.Errorf("目标目录无写入权限: %v", err)
 	}
 	if err := os.Remove(filepath.Join(filepath.Dir(absTargetPath), ".fck_tmp")); err != nil {
-		cl.PrintErrf("delete tmp file error: %v\n", err)
+		cl.PrintErrorf("delete tmp file error: %v\n", err)
 	}
 
 	// 检查目标文件是否已存在
@@ -1133,7 +1129,7 @@ func processWalkDirConcurrent(config *types.FindConfig, findPath string) error {
 					}
 
 					if errors.Is(processErr, os.ErrPermission) {
-						config.Cl.PrintErrf("路径 %s 权限不足, 已跳过\n", path)
+						config.Cl.PrintErrorf("路径 %s 权限不足, 已跳过\n", path)
 						// 跳过该路径
 						continue
 					}
@@ -1156,7 +1152,7 @@ func processWalkDirConcurrent(config *types.FindConfig, findPath string) error {
 
 			// 忽略权限错误
 			if os.IsPermission(err) {
-				config.Cl.PrintErrf("路径 %s 因权限不足已跳过\n", p)
+				config.Cl.PrintErrorf("路径 %s 因权限不足已跳过\n", p)
 				return nil
 			}
 

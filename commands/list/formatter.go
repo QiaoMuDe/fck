@@ -148,7 +148,7 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 	}
 
 	// 设置表格样式
-	if opts.TableStyle != "" && opts.TableStyle != "none" {
+	if opts.TableStyle != "" {
 		if style, ok := types.TableStyleMap[opts.TableStyle]; ok {
 			t.SetStyle(style)
 		}
@@ -167,23 +167,6 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 // 返回:
 //   - error: 错误
 func (f *FileFormatter) renderTable(files FileInfoList, opts FormatOptions) error {
-	// 转换为原有格式以复用现有逻辑
-	var listInfos types.ListInfos
-	for _, file := range files {
-		listInfo := types.ListInfo{
-			EntryType:      file.EntryType,
-			Name:           file.Name,
-			Size:           file.Size,
-			ModTime:        file.ModTime,
-			Perm:           file.Perm,
-			Owner:          file.Owner,
-			Group:          file.Group,
-			FileExt:        file.FileExt,
-			LinkTargetPath: file.LinkTargetPath,
-		}
-		listInfos = append(listInfos, listInfo)
-	}
-
 	// 创建表格
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
@@ -198,7 +181,7 @@ func (f *FileFormatter) renderTable(files FileInfoList, opts FormatOptions) erro
 	}
 
 	// 添加数据行
-	for _, info := range listInfos {
+	for _, info := range files {
 		f.addTableRow(t, info, opts)
 	}
 
@@ -241,7 +224,7 @@ func (f *FileFormatter) prepareFileNames(files FileInfoList, opts FormatOptions)
 
 		// 处理颜色
 		if opts.UseColor {
-			info := types.ListInfo{
+			info := FileInfo{
 				EntryType:      file.EntryType,      // 文件类型
 				Name:           file.Name,           // 文件名
 				Size:           file.Size,           // 文件大小
@@ -252,7 +235,7 @@ func (f *FileFormatter) prepareFileNames(files FileInfoList, opts FormatOptions)
 				FileExt:        file.FileExt,        // 文件扩展名
 				LinkTargetPath: file.LinkTargetPath, // 符号链接目标路径
 			}
-			name = common.GetColorString(opts.DevColor, info, name, f.colorLib) // 添加颜色
+			name = GetColorString(opts.DevColor, info, name, f.colorLib) // 添加颜色
 		}
 
 		fileNames[i] = name
@@ -278,7 +261,7 @@ func (f *FileFormatter) getMaxWidth(fileNames []string) int {
 //   - t: 表格写入器
 //   - info: 文件信息
 //   - opts: 格式选项
-func (f *FileFormatter) addTableRow(t table.Writer, info types.ListInfo, opts FormatOptions) {
+func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOptions) {
 	// 获取文件名
 	_, fileName := filepath.Split(info.Name)
 
@@ -286,18 +269,18 @@ func (f *FileFormatter) addTableRow(t table.Writer, info types.ListInfo, opts Fo
 	infoPerm := f.formatPermissionString(info)
 
 	// 文件类型
-	infoType := common.GetColorString(opts.DevColor, info, info.EntryType, f.colorLib)
+	infoType := GetColorString(opts.DevColor, info, info.EntryType, f.colorLib)
 
 	// 文件大小和单位
 	infoSize, infoSizeUnit := f.humanSize(info.Size)
-	f.colorLib.NoBold.Store(true)
+	f.colorLib.SetBold(false)
 	infoSize = f.colorLib.Syellow(infoSize)
 	infoSizeUnit = f.colorLib.Syellow(infoSizeUnit)
 
 	// 修改时间
 	const timeFormat = "2006-01-02 15:04:05"
 	infoModTime := f.colorLib.Sblue(info.ModTime.Format(timeFormat))
-	f.colorLib.NoBold.Store(false)
+	f.colorLib.SetBold(true)
 
 	// 文件名处理
 	var infoName string
@@ -310,13 +293,13 @@ func (f *FileFormatter) addTableRow(t table.Writer, info types.ListInfo, opts Fo
 	if info.EntryType == types.SymlinkType {
 		arrow := " -> "                                  // 软链接箭头
 		arrowColor := f.colorLib.Swhite(arrow)           // 软链接箭头颜色
-		linkFormat := formatStr + arrowColor + formatStr // 软链接格式化字符串
+		linkFormat := formatStr + arrowColor + formatStr // 软链接格式化占位符
 
 		// 检查软连接目标是否存在
 		if _, err := os.Stat(info.LinkTargetPath); os.IsNotExist(err) {
-			linkPath := f.colorLib.Sred(fileName)                    // 软链接文件名颜色
-			sourcePath := f.colorLib.Sgray(info.LinkTargetPath)      // 软链接目标路径颜色
-			infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath) // 软链接格式化字符串
+			linkPath := f.colorLib.Sred(fileName)               // 软链接文件名颜色
+			sourcePath := f.colorLib.Sgray(info.LinkTargetPath) // 软链接目标路径颜色
+			infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath)
 		} else {
 			linkPath := f.colorLib.Scyan(fileName)
 			sourcePath := common.SprintStringColor(info.LinkTargetPath, info.LinkTargetPath, f.colorLib)
@@ -324,7 +307,7 @@ func (f *FileFormatter) addTableRow(t table.Writer, info types.ListInfo, opts Fo
 		}
 	} else {
 		// 普通文件
-		infoName = common.GetColorString(opts.DevColor, info, fmt.Sprintf(formatStr, fileName), f.colorLib)
+		infoName = GetColorString(opts.DevColor, info, fmt.Sprintf(formatStr, fileName), f.colorLib)
 	}
 
 	// 添加行
@@ -342,7 +325,7 @@ func (f *FileFormatter) addTableRow(t table.Writer, info types.ListInfo, opts Fo
 //
 // 返回:
 //   - string: 格式化后的权限字符串
-func (f *FileFormatter) formatPermissionString(info types.ListInfo) string {
+func (f *FileFormatter) formatPermissionString(info FileInfo) string {
 	if len(info.Perm) < 10 {
 		return "?-?-?"
 	}
@@ -354,7 +337,7 @@ func (f *FileFormatter) formatPermissionString(info types.ListInfo) string {
 	// 格式化权限字符串
 	var formattedPerm string
 	for i := 1; i < len(info.Perm); i++ {
-		colorName := common.PermissionColorMap[i]
+		colorName := permissionColorMap[i]
 		switch colorName {
 		case "green":
 			formattedPerm += f.colorLib.Sgreen(string(info.Perm[i]))

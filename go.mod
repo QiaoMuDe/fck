@@ -2,7 +2,7 @@ module gitee.com/MM-Q/fck
 
 go 1.24.4
 
-require gitee.com/MM-Q/colorlib v1.2.4
+require gitee.com/MM-Q/colorlib v1.3.0
 
 require (
 	gitee.com/MM-Q/qflag v0.2.3

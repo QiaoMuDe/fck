@@ -45,11 +45,11 @@ func (p *FileProcessor) sort(files FileInfoList, opts ProcessOptions) FileInfoLi
 
 	// 根据排序类型进行排序
 	switch opts.SortBy {
-	case "time":
+	case "time": // 按修改时间排序
 		p.sortByTime(sorted, opts.Reverse)
-	case "size":
+	case "size": // 按文件大小排序
 		p.sortBySize(sorted, opts.Reverse)
-	case "name":
+	case "name": // 按名称排序
 		p.sortByName(sorted, opts.Reverse)
 	default:
 		// 默认按名称排序
@@ -96,9 +96,9 @@ func (p *FileProcessor) sortBySize(files FileInfoList, reverse bool) {
 //   - reverse: 是否逆序
 func (p *FileProcessor) sortByName(files FileInfoList, reverse bool) {
 	sort.Slice(files, func(i, j int) bool {
-		name1 := strings.ToLower(files[i].Name)
-		name2 := strings.ToLower(files[j].Name)
-		result := name1 < name2
+		name1 := strings.ToLower(files[i].Name) // 转换为小写
+		name2 := strings.ToLower(files[j].Name) // 转换为小写
+		result := name1 < name2                 // 判断是否小于
 		if reverse {
 			return !result
 		}

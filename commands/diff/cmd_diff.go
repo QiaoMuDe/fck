@@ -146,7 +146,7 @@ func checkWithDirAndDir(cl *colorlib.ColorLib) error {
 		}
 		defer func() {
 			if err := fileWrite.Close(); err != nil {
-				cl.PrintErrf("colse file failed: %v\n", err)
+				cl.PrintErrorf("colse file failed: %v\n", err)
 			}
 		}()
 
@@ -241,7 +241,7 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 
 			// 如果哈希值或文件路径为空，则跳过
 			if expectedHash == "" || relPath == "" {
-				cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s\n", checkFile, lineCount, line)
+				cl.PrintErrorf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s\n", checkFile, lineCount, line)
 				continue
 			}
 
@@ -256,7 +256,7 @@ func readHashFileToMap(checkFile string, cl *colorlib.ColorLib, isRelPath bool) 
 		} else {
 			// 如果哈希值或文件路径为空，则跳过
 			if expectedHash == "" || filePath == "" {
-				cl.PrintErrf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s\n", checkFile, lineCount, line)
+				cl.PrintErrorf("error: 校验文件格式错误, 文件 %s 的第 %d 行, %s\n", checkFile, lineCount, line)
 				continue
 			}
 
@@ -343,7 +343,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 		// 计算哈希值
 		hash, checksumErr = common.Checksum(entry.RealPath, hashFunc)
 		if checksumErr != nil {
-			cl.PrintErrf("计算文件哈希失败: %v\n", checksumErr)
+			cl.PrintErrorf("计算文件哈希失败: %v\n", checksumErr)
 		}
 
 		// 将哈希值存储在目标目录哈希值映射中
@@ -362,7 +362,7 @@ func fileCheck(checkFile string, cl *colorlib.ColorLib) error {
 
 		// 比较哈希值
 		if targetHash != checkEntry.Hash {
-			cl.PrintErrf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s\n", filePath, common.GetLast8Chars(checkEntry.Hash), common.GetLast8Chars(targetHash))
+			cl.PrintErrorf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s\n", filePath, common.GetLast8Chars(checkEntry.Hash), common.GetLast8Chars(targetHash))
 			checkCount++
 		}
 	}
@@ -489,12 +489,12 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 			// 获取文件大小
 			fileInfoA, err := os.Lstat(pathA)
 			if err != nil {
-				cl.PrintErrf("获取文件 %s 的大小时出错: %v\n", pathA, err)
+				cl.PrintErrorf("获取文件 %s 的大小时出错: %v\n", pathA, err)
 				continue
 			}
 			fileInfoB, err := os.Lstat(pathB)
 			if err != nil {
-				cl.PrintErrf("获取文件 %s 的大小时出错: %v\n", pathB, err)
+				cl.PrintErrorf("获取文件 %s 的大小时出错: %v\n", pathB, err)
 				continue
 			}
 
@@ -532,10 +532,10 @@ func compareFiles(filesA, filesB map[string]string, hashType func() hash.Hash, c
 				// 等待两个校验值计算完成
 				if err := eg.Wait(); err != nil {
 					if errA != nil {
-						cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", diffCmdType.Get(), pathA, errA)
+						cl.PrintErrorf("计算文件 %s 的 %s 值时出错: %v\n", diffCmdType.Get(), pathA, errA)
 					}
 					if errB != nil {
-						cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", diffCmdType.Get(), pathB, errB)
+						cl.PrintErrorf("计算文件 %s 的 %s 值时出错: %v\n", diffCmdType.Get(), pathB, errB)
 					}
 					continue
 				}
@@ -714,7 +714,7 @@ func compareDirWithCheckFile(checkFileHashes types.VirtualHashMap, targetFiles m
 			// 如果目录中存在同名文件，计算其哈希值并比较
 			hashValue, err := common.Checksum(targetPath, hashFunc)
 			if err != nil {
-				cl.PrintErrf("计算文件 %s 的 %s 值时出错: %v\n", diffCmdType.Get(), targetPath, err)
+				cl.PrintErrorf("计算文件 %s 的 %s 值时出错: %v\n", diffCmdType.Get(), targetPath, err)
 				continue
 			}
 
@@ -920,7 +920,7 @@ func checkWithFileAndDir(checkFile, checkDir string, cl *colorlib.ColorLib) erro
 		}
 		defer func() {
 			if err := fileWrite.Close(); err != nil {
-				cl.PrintErrf("close file failed: %v\n", err)
+				cl.PrintErrorf("close file failed: %v\n", err)
 			}
 		}()
 

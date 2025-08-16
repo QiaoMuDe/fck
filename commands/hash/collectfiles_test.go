@@ -33,7 +33,7 @@ func TestCollectFiles(t *testing.T) {
 	_ = hashCmdHidden.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	tests := []struct {
 		name        string
@@ -118,7 +118,7 @@ func TestCollectGlobFiles(t *testing.T) {
 	_ = hashCmdHidden.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	tests := []struct {
 		name        string
@@ -196,7 +196,7 @@ func TestCollectSinglePath(t *testing.T) {
 	hashCmd = InitHashCmd()
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	tests := []struct {
 		name        string
@@ -295,7 +295,7 @@ func TestHandleDirectory(t *testing.T) {
 	_ = hashCmdHidden.Set("false")
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	tests := []struct {
 		name        string
@@ -375,7 +375,7 @@ func TestWalkDir(t *testing.T) {
 	hashCmd = InitHashCmd()
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	tests := []struct {
 		name        string
@@ -612,7 +612,7 @@ func TestWalkDirNonRecursive(t *testing.T) {
 	hashCmd = InitHashCmd()
 
 	cl := colorlib.NewColorLib()
-	cl.NoColor.Store(true)
+	cl.SetColor(false)
 
 	tests := []struct {
 		name        string
