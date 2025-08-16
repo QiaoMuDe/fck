@@ -25,6 +25,13 @@ func NewFileOperator(cl *colorlib.ColorLib) *FileOperator {
 }
 
 // Delete 删除匹配的文件或目录
+//
+// 参数:
+//   - path: 要删除的文件/目录
+//   - isDir: 文件/目录类型
+//
+// 返回:
+//   - error: 错误信息
 func (o *FileOperator) Delete(path string, isDir bool) error {
 	// 检查是否为空路径
 	if path == "" {
@@ -74,6 +81,13 @@ func (o *FileOperator) Delete(path string, isDir bool) error {
 }
 
 // Move 移动匹配的文件或目录到指定位置
+//
+// 参数:
+//   - srcPath: 源文件/目录路径
+//   - targetPath: 目标路径
+//
+// 返回:
+//   - error: 错误信息
 func (o *FileOperator) Move(srcPath, targetPath string) error {
 	// 检查源路径是否为空
 	if srcPath == "" {
@@ -120,23 +134,18 @@ func (o *FileOperator) Move(srcPath, targetPath string) error {
 		absTargetPath = filepath.Join(absTargetPath, filepath.Base(absSearchPath))
 	}
 
-	// 尝试移动前先检查权限
-	if err := o.checkWritePermission(filepath.Dir(absTargetPath)); err != nil {
-		return fmt.Errorf("目标目录无写入权限: %v", err)
-	}
-
 	// 检查目标文件是否已存在
 	if _, err := os.Stat(absTargetPath); err == nil {
 		// 如果是移动操作, 直接跳过而不是报错
 		if findCmdMove.Get() != "" {
 			return nil
 		}
-		return fmt.Errorf("目标文件已存在: %s", absTargetPath)
+		return fmt.Errorf("目标已存在: %s", absTargetPath)
 	}
 
 	// 打印移动信息
 	if findCmdPrintMove.Get() {
-		o.cl.Redf("%s -> %s\n", absSearchPath, absTargetPath)
+		o.cl.Redf("mv: %s -> %s\n", absSearchPath, absTargetPath)
 	}
 
 	// 执行移动操作
@@ -153,7 +162,19 @@ func (o *FileOperator) Move(srcPath, targetPath string) error {
 	return nil
 }
 
-// Execute 执行指定的命令，支持跨平台并检查shell是否存在
+// Execute 直接执行指定的命令，用户可以在命令字符串中自己指定shell
+//
+// 参数:
+//   - cmdStr: 要执行的命令字符串
+//   - path: 文件路径，用于替换命令中的{}占位符
+//
+// 返回:
+//   - error: 错误信息
+//
+// 使用示例:
+//   - 直接执行: "cat {}"
+//   - 使用shell: "sh -c 'cat {} | head -5'"
+//   - Windows shell: "cmd /c 'type {} && echo Done'"
 func (o *FileOperator) Execute(cmdStr, path string) error {
 	// 检查cmdStr是否为空
 	if cmdStr == "" {
@@ -179,28 +200,35 @@ func (o *FileOperator) Execute(cmdStr, path string) error {
 	}
 
 	// 安全地替换{}为实际的文件路径
-	safeCmdStr, err := o.sanitizeCommand(cmdStr, path)
+	safePath := o.quotePath(path)
+	finalCmd := strings.ReplaceAll(cmdStr, "{}", safePath)
+
+	// 解析命令参数
+	args, err := o.parseCommand(finalCmd)
 	if err != nil {
-		return fmt.Errorf("命令安全检查失败: %v", err)
+		return fmt.Errorf("解析命令失败: %v", err)
 	}
 
-	// 根据操作系统选择shell和参数
-	shell, args := o.getShellCommand(safeCmdStr)
+	// 检查命令参数是否为空
+	if len(args) == 0 {
+		return fmt.Errorf("解析后的命令为空")
+	}
 
-	// 检查shell是否存在
-	if _, err := exec.LookPath(shell); err != nil {
-		return fmt.Errorf("找不到 %s 解释器: %v", shell, err)
+	// 检查命令是否存在
+	if _, err := exec.LookPath(args[0]); err != nil {
+		return fmt.Errorf("找不到命令 %s: %v", args[0], err)
 	}
 
 	// 如果启用了print-cmd输出, 打印执行的命令
 	if findCmdPrintCmd.Get() {
-		o.cl.Redf("%s %s\n", shell, strings.Join(args, " "))
+		o.cl.Redf("exec: %v\n", args)
 	}
 
 	// 构建命令并设置输出
-	cmd := exec.Command(shell, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Dir = filepath.Dir(path) // 设置工作目录
+	cmd.Stdout = os.Stdout       // 设置标准输出
+	cmd.Stderr = os.Stderr       // 设置标准错误输出
 
 	// 执行命令并捕获错误
 	if err := cmd.Run(); err != nil {
@@ -210,56 +238,41 @@ func (o *FileOperator) Execute(cmdStr, path string) error {
 	return nil
 }
 
-// sanitizeCommand 安全地处理命令字符串，防止命令注入
-func (o *FileOperator) sanitizeCommand(cmdStr, path string) (string, error) {
-	// 清理路径，移除潜在的危险字符
+// quotePath 安全地引用文件路径，防止路径中的特殊字符导致问题
+//
+// 参数:
+//   - path: 文件路径
+//
+// 返回:
+//   - string: 引用后的安全路径
+func (o *FileOperator) quotePath(path string) string {
+	// 清理路径
 	cleanPath := filepath.Clean(path)
 
-	// 检查路径是否包含危险字符
-	dangerousChars := []string{";", "&", "|", "`", "$", "(", ")", "<", ">", "\"", "'"}
-	for _, char := range dangerousChars {
-		if strings.Contains(cleanPath, char) {
-			// 对危险字符进行转义而不是拒绝
-			cleanPath = strings.ReplaceAll(cleanPath, char, "\\"+char)
-		}
-	}
-
 	// 根据系统类型选择引用方式
-	var quotedPath string
 	if runtime.GOOS == "windows" {
-		quotedPath = fmt.Sprintf("\"%s\"", cleanPath) // Windows使用双引号
+		// Windows使用双引号，并转义内部的双引号
+		escapedPath := strings.ReplaceAll(cleanPath, "\"", "\\\"")
+		return fmt.Sprintf("\"%s\"", escapedPath)
 	} else {
-		quotedPath = fmt.Sprintf("'%s'", cleanPath) // Linux使用单引号
+		// Unix系统使用单引号，并处理内部的单引号
+		escapedPath := strings.ReplaceAll(cleanPath, "'", "'\"'\"'")
+		return fmt.Sprintf("'%s'", escapedPath)
 	}
-
-	// 替换{}为安全的路径
-	safeCmdStr := strings.ReplaceAll(cmdStr, "{}", quotedPath)
-
-	return safeCmdStr, nil
 }
 
-// getShellCommand 根据操作系统获取shell命令和参数
-func (o *FileOperator) getShellCommand(cmdStr string) (string, []string) {
-	if runtime.GOOS == "windows" {
-		// 先尝试使用 PowerShell
-		if _, err := exec.LookPath("powershell"); err == nil {
-			return "powershell", []string{"-Command", cmdStr}
-		}
-		// 如果 PowerShell 不存在, 使用 cmd
-		return "cmd", []string{"/C", cmdStr}
+// parseCommand 解析命令字符串为参数数组
+//
+// 参数:
+//   - cmdStr: 命令字符串
+//
+// 返回:
+//   - []string: 解析后的参数数组
+//   - error: 解析错误
+func (o *FileOperator) parseCommand(cmdStr string) ([]string, error) {
+	args := strings.Fields(strings.TrimSpace(cmdStr))
+	if len(args) == 0 {
+		return nil, fmt.Errorf("命令为空")
 	}
-	// Unix-like系统使用bash
-	return "bash", []string{"-c", cmdStr}
-}
-
-// checkWritePermission 检查目录的写入权限
-func (o *FileOperator) checkWritePermission(dir string) error {
-	tmpFile := filepath.Join(dir, ".fck_tmp")
-	if err := os.WriteFile(tmpFile, []byte{}, 0600); err != nil {
-		return err
-	}
-	if err := os.Remove(tmpFile); err != nil {
-		o.cl.PrintErrorf("删除临时文件失败: %v\n", err)
-	}
-	return nil
+	return args, nil
 }
