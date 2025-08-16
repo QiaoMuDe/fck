@@ -48,12 +48,13 @@ func InitFindCmd() *cmd.Cmd {
 		WithDescription("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")
 	findCmd.AddNote("大小单位支持B/K/M/G/b/k/m/g")
 	findCmd.AddNote("时间参数以天为单位")
-	findCmd.AddNote("不能同时指定-f、-d和-l标志")
-	findCmd.AddNote("不能同时执行-exec和-delete标志")
+	findCmd.AddNote("不能同时执行-exec和-delete以及-move标志")
 	findCmd.AddNote("如果不指定路径，默认为当前目录")
+
+	// 添加标志
 	findCmdName = findCmd.String("name", "n", "", "指定要查找的文件或目录名")
 	findCmdPath = findCmd.String("path", "p", "", "指定要查找的路径")
-	findCmdExt = findCmd.Slice("ext", "e", []string{}, "按文件扩展名查找(支持多个扩展名，如 '.txt,.go', '.txt|.go', '.txt;.go')")
+	findCmdExt = findCmd.Slice("ext", "e", []string{}, "按文件扩展名查找")
 	findCmdMaxDepth = findCmd.Int("max-depth", "m", -1, "指定查找的最大深度, -1 表示不限制")
 	findCmdSize = findCmd.String("size", "s", "", "按文件大小过滤, 格式如+5M(大于5M)或-5M(小于5M), 支持单位B/K/M/G")
 	findCmdModTime = findCmd.String("mtime", "mt", "", "按修改时间过滤, 默认格式如+5(5天前)或-5(5天内)")
@@ -74,7 +75,7 @@ func InitFindCmd() *cmd.Cmd {
 	findCmdOr = findCmd.Bool("or", "", false, "用于在-n和-p参数中组合条件, 默认为false, 表示只要满足任一条件即可")
 	findCmdMaxDepthLimit = findCmd.Int("max-depth-limit", "mdl", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")
 	findCmdCount = findCmd.Bool("count", "ct", false, "仅统计匹配项的数量而不显示具体路径")
-	findCmdX = findCmd.Bool("xmode", "X", false, "启用并发模式")
+	findCmdX = findCmd.Bool("xmode", "X", false, "启用并发模式(在某些情况可能默认单线程模式会更快)")
 	findCmdType = findCmd.Enum("type", "t", "all", "指定要查找的类型，支持以下选项：\n"+
 		"\t\t\t\t\t[f | file]       - 只查找文件\n"+
 		"\t\t\t\t\t[d | dir]        - 只查找目录\n"+
