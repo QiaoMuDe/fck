@@ -36,6 +36,8 @@ func InitListCmd() *cmd.Cmd {
 		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " list [options] <path>\n"))
 	listCmd.AddNote("如果不指定路径，默认为当前目录")
 	listCmd.AddNote("排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个")
+
+	// 添加标志
 	listCmdAll = listCmd.Bool("all", "a", false, "列出所有文件和目录，包括隐藏文件和目录")
 	listCmdColor = listCmd.Bool("color", "c", false, "启用颜色输出")
 	listCmdSortByTime = listCmd.Bool("time", "t", false, "按修改时间排序")
