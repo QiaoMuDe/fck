@@ -1,5 +1,11 @@
 package types
 
+import (
+	"fmt"
+	"path/filepath"
+	"strings"
+)
+
 // 支持的压缩格式
 type CompressType string
 
@@ -50,4 +56,27 @@ func SupportedCompressTypes() []string {
 		compressTypes = append(compressTypes, ct.String())
 	}
 	return compressTypes
+}
+
+// DetectCompressFormat 智能检测压缩文件格式
+//
+// 参数:
+//   - filename: 文件名
+//
+// 返回:
+//   - types.CompressType: 检测到的压缩格式
+//   - error: 错误信息
+func DetectCompressFormat(filename string) (CompressType, error) {
+	// 处理.tar.gz特殊情况
+	if strings.HasSuffix(strings.ToLower(filename), ".tar.gz") {
+		return CompressTypeTarGz, nil
+	}
+
+	// 获取文件扩展名
+	ext := filepath.Ext(filename)
+	if !IsSupportedCompressType(ext) {
+		return "", fmt.Errorf("不支持的压缩文件格式: %s, 支持的格式: %v", ext, SupportedCompressTypes())
+	}
+
+	return CompressType(ext), nil
 }
