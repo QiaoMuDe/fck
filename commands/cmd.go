@@ -73,27 +73,32 @@ func Run() {
 	case hashCmd.LongName(), hashCmd.ShortName(): // hash 子命令
 		// 执行 hash 子命令
 		if err := hash.HashCmdMain(cmdCL); err != nil {
-			panic(err)
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
 		}
 	case sizeCmd.LongName(), sizeCmd.ShortName(): // size 子命令
 		// 执行 size 子命令
 		if err := size.SizeCmdMain(cmdCL); err != nil {
-			panic(err)
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
 		}
 	case checkCmd.LongName(), checkCmd.ShortName(): // check 子命令
 		// 执行 check 子命令
 		if err := check.CheckCmdMain(cmdCL); err != nil {
-			panic(err)
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
 		}
 	case findCmd.LongName(), findCmd.ShortName(): // find 子命令
 		// 执行 find 子命令
 		if err := find.FindCmdMain(cmdCL); err != nil {
-			panic(err)
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
 		}
 	case listCmd.LongName(), listCmd.ShortName(): // list 子命令
 		// 执行 list 子命令
 		if err := list.ListCmdMain(cmdCL); err != nil {
-			panic(err)
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
 		}
 	default:
 		// 如果是未知的子命令, 则打印帮助信息并退出
