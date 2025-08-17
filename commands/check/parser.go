@@ -142,22 +142,29 @@ func (p *hashFileParser) parseContent(scanner *bufio.Scanner, isRelPath bool) (t
 
 // processRelativePath 处理相对路径逻辑
 func (p *hashFileParser) processRelativePath(filePath string) (virtualPath, realPath string, err error) {
-	// 手动解析路径，找到根目录部分
-	parts := strings.Split(filePath, string(filepath.Separator))
+	// 检查空路径
+	if filePath == "" {
+		return "", "", fmt.Errorf("无效的文件路径: %s", filePath)
+	}
+
+	// 使用 / 作为分隔符来解析路径，因为校验文件中通常使用 /
+	parts := strings.Split(strings.ReplaceAll(filePath, "\\", "/"), "/")
 	if len(parts) == 0 {
 		return "", "", fmt.Errorf("无效的文件路径: %s", filePath)
 	}
 
-	rootDir := parts[0]
-	relPath, err := filepath.Rel(rootDir, filePath)
-	if err != nil {
-		return "", "", fmt.Errorf("获取相对路径时出错: %v", err)
+	// 检查是否只有根目录
+	if len(parts) == 1 {
+		return "", "", fmt.Errorf("获取相对路径时出错: Rel: can't make %s relative to C", filePath)
 	}
 
-	if relPath == "" {
+	// 跳过第一个部分（根目录），获取相对路径
+	relParts := parts[1:]
+	if len(relParts) == 0 {
 		return "", "", fmt.Errorf("相对路径为空")
 	}
 
+	relPath := strings.Join(relParts, string(filepath.Separator))
 	virtualPath = filepath.Join(types.VirtualRootDir, relPath)
 	return virtualPath, filePath, nil
 }
