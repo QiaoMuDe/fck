@@ -9,7 +9,6 @@ require (
 	gitee.com/MM-Q/verman v0.0.14
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/schollz/progressbar/v3 v3.18.0
-	golang.org/x/sync v0.15.0
 	golang.org/x/sys v0.33.0
 	golang.org/x/term v0.32.0
 )
