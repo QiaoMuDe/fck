@@ -1,3 +1,5 @@
+// Package list 实现了文件列表显示命令的主要逻辑。
+// 该文件包含 list 子命令的入口函数，负责参数验证、路径处理、文件扫描和格式化输出。
 package list
 
 import (

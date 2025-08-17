@@ -1,3 +1,5 @@
+// Package check 定义了文件校验命令的标志和参数配置。
+// 该文件负责初始化 check 子命令的命令行参数解析和帮助信息设置。
 package check
 
 import (

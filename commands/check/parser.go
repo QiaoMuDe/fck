@@ -1,3 +1,5 @@
+// Package check 实现了校验文件的解析功能。
+// 该文件提供了校验文件解析器，用于解析包含文件哈希信息的校验文件格式。
 package check
 
 import (

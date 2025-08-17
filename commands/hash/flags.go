@@ -1,3 +1,5 @@
+// Package hash 定义了文件哈希计算命令的标志和参数配置。
+// 该文件负责初始化 hash 子命令的命令行参数解析和帮助信息设置。
 package hash
 
 import (

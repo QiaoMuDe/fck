@@ -1,3 +1,5 @@
+// Package check 实现了文件完整性校验命令的主要逻辑。
+// 该文件包含 check 子命令的入口函数，负责解析校验文件并执行文件完整性验证。
 package check
 
 import (

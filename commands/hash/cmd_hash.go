@@ -1,3 +1,5 @@
+// Package hash 实现了文件哈希计算命令的主要逻辑。
+// 该文件包含 hash 子命令的入口函数，负责参数验证、文件收集和哈希计算任务的执行。
 package hash
 
 import (

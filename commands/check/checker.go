@@ -1,3 +1,5 @@
+// Package check 实现了文件哈希校验功能。
+// 该文件提供了并发文件校验器，用于验证文件的完整性和一致性。
 package check
 
 import (

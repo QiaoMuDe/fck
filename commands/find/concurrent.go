@@ -1,3 +1,5 @@
+// Package find 实现了文件查找的并发搜索功能。
+// 该文件提供了多线程并发搜索器，用于提高大目录结构的搜索性能。
 package find
 
 import (

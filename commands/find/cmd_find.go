@@ -1,3 +1,5 @@
+// Package find 实现了文件查找命令的主要逻辑和配置管理。
+// 该文件包含 find 子命令的入口函数，负责参数验证、配置创建和搜索执行。
 package find
 
 import (

@@ -1,3 +1,5 @@
+// Package list 定义了 list 子命令的命令行标志和参数配置。
+// 该文件包含所有 list 命令支持的选项，如排序方式、显示格式、过滤条件等。
 package list
 
 import (

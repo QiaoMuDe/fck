@@ -1,3 +1,5 @@
+// Package common 提供了跨模块共享的通用工具函数和实用程序。
+// 该文件包含文件哈希计算、路径处理、错误处理、颜色输出等常用功能。
 package common
 
 import (

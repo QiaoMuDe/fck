@@ -1,3 +1,5 @@
+// Package find 定义了文件查找命令的标志和参数配置。
+// 该文件负责初始化 find 子命令的所有命令行参数、选项和帮助信息设置。
 package find
 
 import (

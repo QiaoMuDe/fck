@@ -1,3 +1,5 @@
+// Package size 定义了 size 子命令的命令行标志和参数配置。
+// 该文件包含 size 命令支持的所有选项，如颜色输出、表格样式、隐藏文件处理等。
 package size
 
 import (

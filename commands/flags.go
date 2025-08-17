@@ -1,3 +1,5 @@
+// Package commands 提供了主命令的初始化和配置功能。
+// 该文件负责设置 fck 工具的版本信息、帮助文档、Logo 显示等全局配置。
 package commands
 
 import (
