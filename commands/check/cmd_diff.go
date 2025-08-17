@@ -21,7 +21,7 @@ func CheckCmdMain(cl *colorlib.ColorLib) error {
 		return fmt.Errorf("校验文件不存在: %s", checkFile)
 	}
 
-	cl.PrintOk("正在校验目录完整性...")
+	cl.Blue("正在校验完整性...")
 
 	// 创建解析器
 	parser := newHashFileParser(cl)

@@ -112,18 +112,17 @@ func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int)
 		processedCount++
 
 		if result.err != nil {
-			c.cl.PrintErrorf("校验错误: %v\n", result.err)
+			c.cl.Redf("%s ✗\n", result.filePath)
 			errorCount++
 			continue
 		}
 
 		// 比较哈希值
 		if result.actualHash != result.expectedHash {
-			c.cl.PrintErrorf("文件 %s 不一致, 预期Hash值: %s, 实际Hash值: %s\n",
-				result.filePath,
-				common.GetLast8Chars(result.expectedHash),
-				common.GetLast8Chars(result.actualHash))
+			c.cl.Redf("%s ✗\n", result.filePath)
 			mismatchCount++
+		} else {
+			c.cl.Greenf("%s ✓\n", result.filePath)
 		}
 	}
 
@@ -135,10 +134,6 @@ func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int)
 
 // printSummary 打印校验结果摘要
 func (c *fileChecker) printSummary(processed, mismatched, errors, total int) {
-	if mismatched == 0 && errors == 0 {
-		c.cl.PrintOk("校验成功，无文件差异")
-	} else {
-		c.cl.PrintWarnf("校验完成: 总计 %d 个文件，处理 %d 个，不匹配 %d 个，错误 %d 个\n",
-			total, processed, mismatched, errors)
-	}
+	passedCount := processed - mismatched - errors
+	c.cl.Bluef("完成: %d/%d 通过\n", passedCount, total)
 }
