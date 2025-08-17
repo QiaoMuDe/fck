@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/commands/diff"
+	"gitee.com/MM-Q/fck/commands/check"
 	"gitee.com/MM-Q/fck/commands/find"
 	"gitee.com/MM-Q/fck/commands/hash"
 	"gitee.com/MM-Q/fck/commands/list"
@@ -38,7 +38,7 @@ func Run() {
 	listCmd := list.InitListCmd()
 
 	// 获取diffCmd子命令
-	diffCmd := diff.InitDiffCmd()
+	checkCmd := check.InitCheckCmd()
 
 	// 获取hashCmd子命令
 	hashCmd := hash.InitHashCmd()
@@ -47,7 +47,7 @@ func Run() {
 	findCmd := find.InitFindCmd()
 
 	// 添加子命令到全局根命令
-	if addCmdErr := qflag.AddSubCmd(sizeCmd, listCmd, diffCmd, hashCmd, findCmd); addCmdErr != nil {
+	if addCmdErr := qflag.AddSubCmd(sizeCmd, listCmd, checkCmd, hashCmd, findCmd); addCmdErr != nil {
 		fmt.Printf("err: %v\n", addCmdErr)
 		os.Exit(1)
 	}
@@ -80,9 +80,9 @@ func Run() {
 		if err := size.SizeCmdMain(cmdCL); err != nil {
 			panic(err)
 		}
-	case diffCmd.LongName(), diffCmd.ShortName(): // diff 子命令
-		// 执行 diff 子命令
-		if err := diff.DiffCmdMain(cmdCL); err != nil {
+	case checkCmd.LongName(), checkCmd.ShortName(): // check 子命令
+		// 执行 check 子命令
+		if err := check.CheckCmdMain(cmdCL); err != nil {
 			panic(err)
 		}
 	case findCmd.LongName(), findCmd.ShortName(): // find 子命令

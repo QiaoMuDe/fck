@@ -1,4 +1,4 @@
-package diff
+package check
 
 import (
 	"bufio"
@@ -14,11 +14,11 @@ import (
 	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
-// DiffCmdMain 是 check 命令的主函数
-func DiffCmdMain(cl *colorlib.ColorLib) error {
+// CheckCmdMain 是 check 命令的主函数
+func CheckCmdMain(cl *colorlib.ColorLib) error {
 	// 获取校验文件路径
-	checkFile := diffCmd.Arg(0)
-	if checkFile != "" {
+	checkFile := checkCmd.Arg(0)
+	if checkFile == "" {
 		checkFile = types.OutputFileName
 	}
 
