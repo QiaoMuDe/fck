@@ -41,18 +41,18 @@ func InitPackCmd() *cmd.Cmd {
 
 	// 添加压缩配置标志
 	compressionLevel = packCmd.Enum("compression", "c", types.CompressionLevelDefault, "压缩级别，支持以下选项：\n"+
-		types.CompressionLevelDefault+"\n"+
-		types.CompressionLevelNone+"\n"+
-		types.CompressionLevelFast+"\n"+
-		types.CompressionLevelBest+"\n"+
-		types.CompressionLevelHuffman, types.SupportedCompressionLevels)
+		"\t\t\t\t\t[default ] - 默认压缩级别\n"+
+		"\t\t\t\t\t[none    ] - 不压缩\n"+
+		"\t\t\t\t\t[fast    ] - 快速压缩\n"+
+		"\t\t\t\t\t[best    ] - 最佳压缩\n"+
+		"\t\t\t\t\t[huffman ] - huffman 压缩", types.SupportedCompressionLevels)
 	overwrite = packCmd.Bool("overwrite", "f", false, "覆盖已存在的压缩文件")
 	progress = packCmd.Bool("progress", "p", false, "显示压缩进度")
 	progressStyle = packCmd.Enum("progress-style", "ps", types.ProgressStyleAscii, "进度条样式，支持以下选项：\n"+
-		types.ProgressStyleText+"\n"+
-		types.ProgressStyleDefault+"\n"+
-		types.ProgressStyleUnicode+"\n"+
-		types.ProgressStyleAscii, types.SupportedProgressStyles)
+		"\t\t\t\t\t[text   ] - 文本样式\n"+
+		"\t\t\t\t\t[default] - 默认样式\n"+
+		"\t\t\t\t\t[unicode] - unicode 样式\n"+
+		"\t\t\t\t\t[ascii  ] - ascii 样式", types.SupportedProgressStyles)
 	noValidate = packCmd.Bool("no-validate", "nv", false, "禁用路径验证")
 
 	return packCmd

@@ -43,10 +43,10 @@ func InitUnpackCmd() *cmd.Cmd {
 	overwrite = unpackCmd.Bool("overwrite", "f", false, "覆盖已存在的文件")
 	progress = unpackCmd.Bool("progress", "p", false, "显示解压进度")
 	progressStyle = unpackCmd.Enum("progress-style", "ps", types.ProgressStyleAscii, "进度条样式，支持以下选项：\n"+
-		types.ProgressStyleText+"\n"+
-		types.ProgressStyleDefault+"\n"+
-		types.ProgressStyleUnicode+"\n"+
-		types.ProgressStyleAscii, types.SupportedProgressStyles)
+		"\t\t\t\t\t[text   ] - 文本样式\n"+
+		"\t\t\t\t\t[default] - 默认样式\n"+
+		"\t\t\t\t\t[unicode] - unicode 样式\n"+
+		"\t\t\t\t\t[ascii  ] - ascii 样式", types.SupportedProgressStyles)
 	noValidate = unpackCmd.Bool("no-validate", "nv", false, "禁用路径验证")
 
 	return unpackCmd
