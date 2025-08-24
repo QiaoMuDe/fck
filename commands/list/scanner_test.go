@@ -174,8 +174,8 @@ func TestFileScanner_GetFileInfo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("创建测试文件失败: %v", err)
 	}
-	if err := f.Close(); err != nil {
-		t.Fatalf("关闭测试文件失败: %v", err)
+	if closeErr := f.Close(); closeErr != nil {
+		t.Fatalf("关闭测试文件失败: %v", closeErr)
 	}
 
 	scanner := NewFileScanner()
@@ -311,14 +311,14 @@ func TestFileScanner_BuildFileInfo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("创建测试文件失败: %v", err)
 	}
-	if err := f.Close(); err != nil {
-		t.Fatalf("关闭测试文件失败: %v", err)
+	if closeErr := f.Close(); closeErr != nil {
+		t.Fatalf("关闭测试文件失败: %v", closeErr)
 	}
 
 	// 写入一些内容
 	content := "test content"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
-		t.Fatalf("写入测试文件失败: %v", err)
+	if writeErr := os.WriteFile(testFile, []byte(content), 0644); writeErr != nil {
+		t.Fatalf("写入测试文件失败: %v", writeErr)
 	}
 
 	scanner := NewFileScanner()
@@ -362,11 +362,11 @@ func TestFileScanner_GetEntryType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("创建测试文件失败: %v", err)
 	}
-	if _, err := f.WriteString("content"); err != nil {
-		t.Fatalf("写入测试文件失败: %v", err)
+	if _, writeErr := f.WriteString("content"); writeErr != nil {
+		t.Fatalf("写入测试文件失败: %v", writeErr)
 	}
-	if err := f.Close(); err != nil {
-		t.Fatalf("关闭测试文件失败: %v", err)
+	if closeErr := f.Close(); closeErr != nil {
+		t.Fatalf("关闭测试文件失败: %v", closeErr)
 	}
 
 	// 创建空文件

@@ -95,9 +95,11 @@ func GetAppName() string {
 }
 
 // Get 返回包含当前应用程序版本信息的 VersionInfo 结构体。
-// 该函数将全局变量中存储的版本信息收集到一个 VersionInfo 结构体中并返回。
-func Get() VerMan {
-	return Info // 返回全局变量中的版本信息
+//
+// 返回值：
+//   - *VersionInfo：包含当前应用程序版本信息的 VersionInfo 结构体。
+func Get() *VerMan {
+	return &Info // 返回全局变量中的版本信息
 }
 
 // String 返回版本信息的字符串表示
@@ -106,6 +108,10 @@ func (v VerMan) String() string {
 }
 
 // 定义一个名为JSON的方法，该方法属于VersionInfo类型
+//
+// 返回值：
+//   - string：JSON格式的字符串表示
+//   - error：转换错误信息
 func (v VerMan) JSON() (string, error) {
 	// 使用json.MarshalIndent将VersionInfo类型的v转换为JSON格式的字节切片
 	// 第二个参数""表示在JSON输出的每个键之前不添加任何前缀
@@ -121,14 +127,17 @@ func (v VerMan) JSON() (string, error) {
 }
 
 // PrintVersion 根据指定的格式打印版本信息。
-// 该方法接受一个字符串参数 format，用于指定输出格式。
-// 支持的格式包括:
-// "json": 以 JSON 格式输出版本信息
-// "text": 以完整详细格式输出版本信息
-// "simple": 以简洁格式输出版本信息
-// 如果传入的格式不是支持的格式，将打印错误信息。
+//
 // 参数:
 //   - format: 输出格式，支持 "json", "text" 和 "simple"。
+//
+// 支持的格式包括:
+//   - "json": 以 JSON 格式输出版本信息
+//   - "text": 以完整详细格式输出版本信息
+//   - "simple": 以简洁格式输出版本信息
+//
+// 注意:
+//   - 如果传入的格式不是支持的格式，将打印错误信息。
 func (v VerMan) PrintVersion(format string) {
 	switch format {
 	// JSON 格式
@@ -159,13 +168,17 @@ func (v VerMan) PrintVersion(format string) {
 
 // SprintVersion 根据指定的格式返回版本信息。
 // 该方法接受一个字符串参数 format，用于指定返回格式。
-// 支持的格式包括:
-// "json": 以 JSON 格式返回版本信息
-// "text": 以完整详细格式返回版本信息
-// "simple": 以简洁格式返回版本信息
-// 如果传入的格式不是支持的格式，将返回错误信息。
+//
 // 参数:
 //   - format: 返回格式，支持 "json", "text" 和 "simple"。
+//
+// 支持的格式包括:
+//   - "json": 以 JSON 格式返回版本信息
+//   - "text": 以完整详细格式返回版本信息
+//   - "simple": 以简洁格式返回版本信息
+//
+// 注意:
+//   - 如果传入的格式不是支持的格式，将返回错误信息。
 func (v VerMan) SprintVersion(format string) (string, error) {
 	// 根据传入的格式参数进行不同的处理
 	switch format {

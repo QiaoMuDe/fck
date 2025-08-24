@@ -13,7 +13,10 @@ import (
 	"gitee.com/MM-Q/fck/commands/find"
 	"gitee.com/MM-Q/fck/commands/hash"
 	"gitee.com/MM-Q/fck/commands/list"
+	"gitee.com/MM-Q/fck/commands/pack"
+	"gitee.com/MM-Q/fck/commands/preview"
 	"gitee.com/MM-Q/fck/commands/size"
+	"gitee.com/MM-Q/fck/commands/unpack"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -48,8 +51,17 @@ func Run() {
 	// 获取findCmd子命令
 	findCmd := find.InitFindCmd()
 
+	// 获取packCmd子命令
+	packCmd := pack.InitPackCmd()
+
+	// 获取unpackCmd子命令
+	unpackCmd := unpack.InitUnpackCmd()
+
+	// 获取previewCmd子命令
+	previewCmd := preview.InitPreviewCmd()
+
 	// 添加子命令到全局根命令
-	if addCmdErr := qflag.AddSubCmd(sizeCmd, listCmd, checkCmd, hashCmd, findCmd); addCmdErr != nil {
+	if addCmdErr := qflag.AddSubCmd(sizeCmd, listCmd, checkCmd, hashCmd, findCmd, packCmd, unpackCmd, previewCmd); addCmdErr != nil {
 		fmt.Printf("err: %v\n", addCmdErr)
 		os.Exit(1)
 	}
@@ -78,30 +90,56 @@ func Run() {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
+
 	case sizeCmd.LongName(), sizeCmd.ShortName(): // size 子命令
 		// 执行 size 子命令
 		if err := size.SizeCmdMain(cmdCL); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
+
 	case checkCmd.LongName(), checkCmd.ShortName(): // check 子命令
 		// 执行 check 子命令
 		if err := check.CheckCmdMain(cmdCL); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
+
 	case findCmd.LongName(), findCmd.ShortName(): // find 子命令
 		// 执行 find 子命令
 		if err := find.FindCmdMain(cmdCL); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
+
 	case listCmd.LongName(), listCmd.ShortName(): // list 子命令
 		// 执行 list 子命令
 		if err := list.ListCmdMain(cmdCL); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
+
+	case packCmd.LongName(), packCmd.ShortName(): // pack 子命令
+		// 执行 pack 子命令
+		if err := pack.PackCmdMain(); err != nil {
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
+		}
+
+	case unpackCmd.LongName(), unpackCmd.ShortName(): // unpack 子命令
+		// 执行 unpack 子命令
+		if err := unpack.UnpackCmdMain(); err != nil {
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
+		}
+
+	case previewCmd.LongName(), previewCmd.ShortName(): // preview 子命令
+		// 执行 preview 子命令
+		if err := preview.PreviewCmdMain(); err != nil {
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
+		}
+
 	default:
 		// 如果是未知的子命令, 则打印帮助信息并退出
 		fmt.Printf("err: 未知的子命令 %s\n", subCmdName)

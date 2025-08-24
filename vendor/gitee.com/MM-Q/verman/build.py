@@ -9,6 +9,7 @@ import platform
 import threading
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 
 
 ############################### 以下为可配置的变量 #################################
@@ -33,9 +34,16 @@ DEFAULT_CURRENT_PLATFORM_ONLY = False
 # 是否将构建成功的可执行文件打包为zip文件, 默认为False
 DEFAULT_PACKAGE_ZIP = False
 # 批量构建时默认的并发线程数
-DEFAULT_CONCURRENCY = 4
+DEFAULT_CONCURRENCY = max(1, os.cpu_count() - 1)  # 使用CPU核心数-1
 # 批量构建时默认的超时时间(秒)
 DEFAULT_TIMEOUT = 1800
+# 默认环境变量字典
+DEFAULT_ENV_VARS = {
+    "GOPROXY": "https://goproxy.cn,https://goproxy.io,direct",  # Go 代理地址, 默认为 goproxy.cn 和 goproxy.io
+    "CGO_ENABLED": "0",  # 是否启用 CGO 编译, 0为禁用, 1为启用
+    "CC": "gcc",  # 默认使用gcc编译器
+    "CXX": "g++",  # 默认使用g++编译器
+}
 ####################################################################################
 
 
@@ -56,13 +64,6 @@ GREEN_BOLD = "\033[1;32m"  # 绿色加粗
 RESET = "\033[0m"  # 重置颜色
 # 默认构建时的链接器标志
 DEFAULT_LDFLAGS = "-s -w"
-# 默认环境变量字典
-DEFAULT_ENV_VARS = {
-    "GOPROXY": "https://goproxy.cn,https://goproxy.io,direct",  # Go 代理地址, 默认为 goproxy.cn 和 goproxy.io
-    "CGO_ENABLED": "0",  # 是否启用 CGO 编译, 0为禁用, 1为启用
-    "CC": "gcc",  # 默认使用gcc编译器
-    "CXX": "g++",  # 默认使用g++编译器
-}
 # 启用git信息注入时的链接器标志模板
 LD_FLAGS_TEMPLATE = "-X 'gitee.com/MM-Q/verman.appName={app_name}' -X 'gitee.com/MM-Q/verman.gitVersion={git_version}' -X 'gitee.com/MM-Q/verman.gitCommit={git_commit}' -X 'gitee.com/MM-Q/verman.gitCommitTime={commit_time}' -X 'gitee.com/MM-Q/verman.buildTime={build_time}' -X 'gitee.com/MM-Q/verman.gitTreeState={tree_state}' -s -w"
 ####################################################################################
@@ -183,24 +184,37 @@ def run_gofmt(go_compiler):
         sys.exit(1)
 
 
+# 数据类封装构建配置参数
+@dataclass
+class BuildConfig:
+    go_compiler: str
+    output_file: str
+    entry_file: str
+    ldflags: str
+    use_vendor_in_build: bool
+    is_batch: bool = False
+    args: argparse.Namespace = None
+
+
 def build_go_app(
-    go_compiler,
-    output_file,
-    entry_file,
-    ldflags,
-    use_vendor_in_build,
-    is_batch=False,
-    args=None,
+    config: BuildConfig,
 ):
     """组装并执行构建命令"""
-    command = [go_compiler, "build", "-o", output_file, "-ldflags", ldflags]
-    if use_vendor_in_build:
+    command = [
+        config.go_compiler,
+        "build",
+        "-o",
+        config.output_file,
+        "-ldflags",
+        config.ldflags,
+    ]
+    if config.use_vendor_in_build:
         # 检查 vendor 目录是否存在
         if not os.path.exists("vendor"):
             print_error("vendor 目录不存在, 无法使用 -mod=vendor 选项。")
             return False
         command.extend(["-mod=vendor"])
-    command.append(entry_file)
+    command.append(config.entry_file)
     try:
         # 强制设置环境变量
         env = os.environ.copy()
@@ -212,29 +226,29 @@ def build_go_app(
             env["CC"] = "aarch64-linux-gnu-gcc"
             env["CXX"] = "aarch64-linux-gnu-g++"
         # 添加自定义环境变量
-        if args and hasattr(args, "env") and args.env:
-            for env_var in args.env:
+        if config.args and hasattr(config.args, "env") and config.args.env:
+            for env_var in config.args.env:
                 if "=" in env_var:
                     key, value = env_var.split("=", 1)
                     env[key] = value
         # 从输出文件名中提取平台信息
-        if "_windows_" in output_file:
+        if "_windows_" in config.output_file:
             env["GOOS"] = "windows"
-        elif "_linux_" in output_file:
+        elif "_linux_" in config.output_file:
             env["GOOS"] = "linux"
-        elif "_darwin_" in output_file:
+        elif "_darwin_" in config.output_file:
             env["GOOS"] = "darwin"
         else:
             env["GOOS"] = platform.system().lower()
 
         # 从输出文件名中提取架构信息
-        if "_amd64" in output_file:
+        if "_amd64" in config.output_file:
             env["GOARCH"] = "amd64"
-        elif "_arm64" in output_file:
+        elif "_arm64" in config.output_file:
             env["GOARCH"] = "arm64"
-        elif "_386" in output_file:
+        elif "_386" in config.output_file:
             env["GOARCH"] = "386"
-        elif "_arm" in output_file:
+        elif "_arm" in config.output_file:
             env["GOARCH"] = "arm"
         else:
             machine = platform.machine().lower()
@@ -253,8 +267,8 @@ def build_go_app(
             encoding="utf-8",
         )
 
-        if not is_batch:
-            print_success(f"构建成功, 输出文件：{output_file}")
+        if not config.is_batch:
+            print_success(f"构建成功, 输出文件：{config.output_file}")
         return True
     except subprocess.CalledProcessError as e:
         print_error("构建失败：")
@@ -425,15 +439,20 @@ def single_build(args, system, architecture, output_file, zip_file):
             )
 
         # 执行构建
-        build_result = build_go_app(
-            args.go_compiler,
-            output_file,
-            args.entry,
-            ldflags,
-            args.use_vendor_in_build,
-            True,
+        build_config = BuildConfig(
+            go_compiler=args.go_compiler,
+            output_file=output_file,
+            entry_file=args.entry,
+            ldflags=ldflags,
+            use_vendor_in_build=args.use_vendor_in_build,
+            is_batch=True,
+            args=args,
         )
 
+        # 构建
+        build_result = build_go_app(build_config)
+
+        # 压缩
         if build_result and args.zip and zip_file:
             zip_executable(output_file, zip_file, True)
 
@@ -877,14 +896,16 @@ def main():
 
     # 执行构建命令
     print_success("开始构建...")
-    build_result = build_go_app(
-        go_compiler,
-        output_file,
-        entry_file,
-        ldflags,
-        args.use_vendor_in_build,
-        args.batch,
+    build_config = BuildConfig(
+        go_compiler=go_compiler,
+        output_file=output_file,
+        entry_file=entry_file,
+        ldflags=ldflags,
+        use_vendor_in_build=args.use_vendor_in_build,
+        is_batch=args.batch,
+        args=args,
     )
+    build_result = build_go_app(build_config)
 
     # 判断构建结果
     if build_result:

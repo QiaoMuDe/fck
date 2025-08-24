@@ -91,13 +91,8 @@ func expandPaths(paths []string, cl *colorlib.ColorLib) ([]string, error) {
 		// 清理路径
 		path = filepath.Clean(path)
 
-		// 检查路径遍历模式
-		if strings.Contains(path, "..") {
-			return nil, fmt.Errorf("路径包含非法遍历字符: %s", path)
-		}
-
 		// 判断是否为通配符路径
-		isWildcardPath := strings.ContainsAny(path, "*?[")
+		isWildcardPath := strings.ContainsAny(path, "*?[]")
 
 		if isWildcardPath {
 			// 处理通配符路径

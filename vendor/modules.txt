@@ -5,6 +5,20 @@ gitee.com/MM-Q/colorlib/internal/buffer
 gitee.com/MM-Q/colorlib/internal/cache
 gitee.com/MM-Q/colorlib/internal/color
 gitee.com/MM-Q/colorlib/internal/style
+# gitee.com/MM-Q/comprx v0.1.1
+## explicit; go 1.24.4
+gitee.com/MM-Q/comprx
+gitee.com/MM-Q/comprx/internal/config
+gitee.com/MM-Q/comprx/internal/core
+gitee.com/MM-Q/comprx/internal/cxbzip2
+gitee.com/MM-Q/comprx/internal/cxgzip
+gitee.com/MM-Q/comprx/internal/cxtar
+gitee.com/MM-Q/comprx/internal/cxtgz
+gitee.com/MM-Q/comprx/internal/cxzip
+gitee.com/MM-Q/comprx/internal/cxzlib
+gitee.com/MM-Q/comprx/internal/progress
+gitee.com/MM-Q/comprx/internal/utils
+gitee.com/MM-Q/comprx/types
 # gitee.com/MM-Q/qflag v0.2.3
 ## explicit; go 1.24.4
 gitee.com/MM-Q/qflag
@@ -17,7 +31,7 @@ gitee.com/MM-Q/qflag/internal/types
 gitee.com/MM-Q/qflag/internal/validator
 gitee.com/MM-Q/qflag/qerr
 gitee.com/MM-Q/qflag/validator
-# gitee.com/MM-Q/verman v0.0.14
+# gitee.com/MM-Q/verman v0.0.16
 ## explicit; go 1.24.2
 gitee.com/MM-Q/verman
 # github.com/jedib0t/go-pretty/v6 v6.6.8
@@ -36,15 +50,15 @@ github.com/rivo/uniseg
 # github.com/schollz/progressbar/v3 v3.18.0
 ## explicit; go 1.22
 github.com/schollz/progressbar/v3
-# golang.org/x/sys v0.33.0
+# golang.org/x/sys v0.35.0
 ## explicit; go 1.23.0
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.32.0
+# golang.org/x/term v0.34.0
 ## explicit; go 1.23.0
 golang.org/x/term
-# golang.org/x/text v0.26.0
+# golang.org/x/text v0.28.0
 ## explicit; go 1.23.0
 golang.org/x/text/transform
 golang.org/x/text/width

@@ -37,11 +37,6 @@ func (v *ConfigValidator) ValidateArgs(findPath string) error {
 
 // ValidatePath 验证路径的安全性和有效性
 func (v *ConfigValidator) ValidatePath(findPath string) error {
-	// 检查路径遍历攻击
-	if strings.Contains(findPath, "..") {
-		return fmt.Errorf("检测到路径遍历攻击，路径包含 '..'")
-	}
-
 	// 检查路径是否存在
 	if _, err := os.Lstat(findPath); err != nil {
 		// 检查是否是权限不足的错误

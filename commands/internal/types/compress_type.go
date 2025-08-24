@@ -1,82 +1,88 @@
 package types
 
 import (
-	"fmt"
-	"path/filepath"
-	"strings"
+	"gitee.com/MM-Q/comprx/types"
 )
 
-// 支持的压缩格式
-type CompressType string
-
+// 进度条样式
 const (
-	CompressTypeZip   CompressType = ".zip"    // zip 压缩格式
-	CompressTypeTar   CompressType = ".tar"    // tar 压缩格式
-	CompressTypeTgz   CompressType = ".tgz"    // tgz 压缩格式
-	CompressTypeTarGz CompressType = ".tar.gz" // tar.gz 压缩格式
-	CompressTypeGz    CompressType = ".gz"     // gz 压缩格式
+	ProgressStyleText    = "text"    // 文本样式
+	ProgressStyleDefault = "default" // 默认样式
+	ProgressStyleUnicode = "unicode" // unicode样式
+	ProgressStyleAscii   = "ascii"   // ascii样式
 )
 
-// supportedCompressTypes 受支持的压缩格式map, key是压缩格式类型，value是空结构体
-var supportedCompressTypes = map[CompressType]struct{}{
-	CompressTypeZip:   {}, // zip 压缩格式
-	CompressTypeTar:   {}, // tar 压缩格式
-	CompressTypeTgz:   {}, // tgz 压缩格式
-	CompressTypeTarGz: {}, // tar.gz 压缩格式
-	CompressTypeGz:    {}, // gz 压缩格式
+// 受支持的进度条样式
+var SupportedProgressStyles = []string{
+	ProgressStyleText,
+	ProgressStyleDefault,
+	ProgressStyleUnicode,
+	ProgressStyleAscii,
 }
 
-// String 压缩格式的字符串表示
-//
-// 返回:
-//   - string: 压缩格式的字符串表示
-func (c CompressType) String() string {
-	return string(c)
+// 进度条样式映射
+var ProgressStyleMap = map[string]types.ProgressStyle{
+	ProgressStyleText:    types.ProgressStyleText,    // 文本
+	ProgressStyleDefault: types.ProgressStyleDefault, // 默认
+	ProgressStyleUnicode: types.ProgressStyleUnicode, // unicode
+	ProgressStyleAscii:   types.ProgressStyleASCII,   // ascii
 }
 
-// IsSupportedCompressType 判断是否受支持的压缩格式
+// 压缩级别
+const (
+	CompressionLevelDefault = "default"      // 默认压缩级别
+	CompressionLevelNone    = "none"         // 不压缩
+	CompressionLevelFast    = "fast"         // 快速压缩
+	CompressionLevelBest    = "best"         // 最佳压缩
+	CompressionLevelHuffman = "huffman-only" // 仅使用霍夫曼编码
+)
+
+// 受支持的压缩级别
+var SupportedCompressionLevels = []string{
+	CompressionLevelDefault,
+	CompressionLevelNone,
+	CompressionLevelFast,
+	CompressionLevelBest,
+	CompressionLevelHuffman,
+}
+
+// 压缩级别映射
+var CompressionLevelMap = map[string]types.CompressionLevel{
+	CompressionLevelDefault: types.CompressionLevelDefault,     // 默认
+	CompressionLevelNone:    types.CompressionLevelNone,        // 不压缩
+	CompressionLevelFast:    types.CompressionLevelFast,        // 快速
+	CompressionLevelBest:    types.CompressionLevelBest,        // 最佳
+	CompressionLevelHuffman: types.CompressionLevelHuffmanOnly, //  Huffman
+}
+
+// GetCompressionLevel 获取压缩级别，如果无效则返回默认级别
 //
 // 参数:
-//   - ct: 压缩格式字符串
+//   - level: 压缩级别字符串
 //
-// 返回:
-//   - bool: 如果是受支持的压缩格式, 返回 true, 否则返回 false
-func IsSupportedCompressType(ct string) bool {
-	_, ok := supportedCompressTypes[CompressType(ct)]
-	return ok
-}
-
-// SupportedCompressTypes 返回受支持的压缩格式字符串列表
-//
-// 返回:
-//   - []string: 受支持的压缩格式字符串列表
-func SupportedCompressTypes() []string {
-	var compressTypes []string
-	for ct := range supportedCompressTypes {
-		compressTypes = append(compressTypes, ct.String())
+// 返回值:
+//   - types.CompressionLevel: 压缩级别枚举值
+//   - bool: 是否成功获取到压缩级别
+func GetCompressionLevel(level string) (types.CompressionLevel, bool) {
+	compressionLevel, ok := CompressionLevelMap[level]
+	if !ok {
+		return types.CompressionLevelDefault, false
 	}
-	return compressTypes
+	return compressionLevel, true
 }
 
-// DetectCompressFormat 智能检测压缩文件格式
+// GetProgressStyle 获取进度条样式，如果无效则返回默认样式
 //
 // 参数:
-//   - filename: 文件名
+//   - style: 进度条样式字符串
 //
-// 返回:
-//   - types.CompressType: 检测到的压缩格式
-//   - error: 错误信息
-func DetectCompressFormat(filename string) (CompressType, error) {
-	// 处理.tar.gz特殊情况
-	if strings.HasSuffix(strings.ToLower(filename), ".tar.gz") {
-		return CompressTypeTarGz, nil
+// 返回值:
+//   - types.ProgressStyle: 进度条样式枚举值
+//   - bool: 是否成功获取到进度条样式
+func GetProgressStyle(style string) (types.ProgressStyle, bool) {
+	progressStyle, ok := ProgressStyleMap[style]
+	if !ok {
+		return types.ProgressStyleDefault, false
 	}
-
-	// 获取文件扩展名
-	ext := filepath.Ext(filename)
-	if !IsSupportedCompressType(ext) {
-		return "", fmt.Errorf("不支持的压缩文件格式: %s, 支持的格式: %v", ext, SupportedCompressTypes())
-	}
-
-	return CompressType(ext), nil
+	return progressStyle, true
 }

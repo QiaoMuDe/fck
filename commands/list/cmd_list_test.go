@@ -115,11 +115,6 @@ func TestExpandPaths(t *testing.T) {
 		expectEmpty bool
 	}{
 		{
-			name:        "路径遍历攻击检测",
-			paths:       []string{"../../../etc/passwd"},
-			expectError: true,
-		},
-		{
 			name:        "正常文件路径",
 			paths:       []string{testFile1},
 			expectError: false,

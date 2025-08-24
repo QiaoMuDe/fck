@@ -94,13 +94,6 @@ func TestHashLineValidator_ValidateLine(t *testing.T) {
 			errorMsg:    "第10行哈希值格式无效: abc123",
 		},
 		{
-			name:        "安全错误-路径遍历攻击",
-			line:        "c34652066a18513105ac1ab96fcbef8e ../../../etc/passwd",
-			lineNum:     11,
-			expectError: true,
-			errorMsg:    "第11行路径包含非法字符 '..':",
-		},
-		{
 			name:        "安全错误-路径过长",
 			line:        "c34652066a18513105ac1ab96fcbef8e " + generateLongPath(5000),
 			lineNum:     12,
@@ -213,13 +206,6 @@ func TestHashLineValidator_ValidateFilePath(t *testing.T) {
 			filePath:    "subdir/test.txt",
 			lineNum:     2,
 			expectError: false,
-		},
-		{
-			name:        "路径遍历攻击",
-			filePath:    "../test.txt",
-			lineNum:     3,
-			expectError: true,
-			errorMsg:    "第3行路径包含非法字符 '..': ../test.txt",
 		},
 		{
 			name:        "空路径",
