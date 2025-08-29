@@ -38,6 +38,9 @@ func NewFileSearcher(config *types.FindConfig, matcher *PatternMatcher, operator
 // 返回:
 //   - error: 搜索错误（如果有）
 func (s *FileSearcher) Search(findPath string) error {
+	// 获取静默模式标志，避免在遍历过程中频繁获取
+	quietMode := findCmdQuiet.Get()
+
 	// 使用 filepath.WalkDir 遍历目录
 	walkDirErr := filepath.WalkDir(findPath, func(path string, entry os.DirEntry, err error) error {
 		// 检查遍历过程中是否遇到错误
@@ -49,7 +52,10 @@ func (s *FileSearcher) Search(findPath string) error {
 
 			// 检查是否为权限不足的报错
 			if os.IsPermission(err) {
-				s.config.Cl.PrintErrorf("权限不足, 无法访问某些目录: %s\n", path)
+				// 如果启用了静默模式，不显示权限错误
+				if !quietMode {
+					s.config.Cl.PrintErrorf("权限不足, 无法访问某些目录: %s\n", path)
+				}
 				return nil
 			}
 
