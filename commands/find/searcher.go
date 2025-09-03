@@ -395,7 +395,7 @@ func (s *FileSearcher) executeAction(entry os.DirEntry, path string) error {
 	if !findCmdCount.Get() {
 		// 如果启用了delete标志, 删除匹配的文件或目录
 		if findCmdDelete.Get() {
-			if err := s.operator.Delete(path, entry.IsDir()); err != nil {
+			if err := s.operator.Delete(path); err != nil {
 				return err
 			}
 			// 如果是目录, 跳过整个目录

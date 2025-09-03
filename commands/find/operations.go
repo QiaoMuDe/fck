@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/commands/internal/common"
 )
 
 // shell 检测缓存
@@ -38,52 +37,17 @@ func NewFileOperator(cl *colorlib.ColorLib) *FileOperator {
 //
 // 参数:
 //   - path: 要删除的文件/目录
-//   - isDir: 文件/目录类型
 //
 // 返回:
 //   - error: 错误信息
-func (o *FileOperator) Delete(path string, isDir bool) error {
-	// 检查是否为空路径
-	if path == "" {
-		return fmt.Errorf("没有可删除的路径")
-	}
-
-	// 先检查文件/目录是否存在
-	if _, err := os.Lstat(path); err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("文件/目录不存在: %s", path)
-		}
-		return fmt.Errorf("检查文件/目录时出错: %s: %v", path, err)
-	}
-
+func (o *FileOperator) Delete(path string) error {
 	// 打印删除信息
-	if findCmdPrintDelete.Get() {
+	if findCmdPrintActions.Get() {
 		o.cl.Redf("del: %s\n", path)
 	}
 
-	// 根据类型选择删除方法
-	var rmErr error
-	if isDir {
-		// 检查目录是否为空
-		dirEntries, readDirErr := os.ReadDir(path)
-		if readDirErr != nil {
-			return common.HandleError(path, readDirErr)
-		}
-
-		// 根据目录是否为空选择删除方法
-		if len(dirEntries) > 0 {
-			// 目录不为空, 递归删除
-			rmErr = os.RemoveAll(path)
-		} else {
-			// 删除空目录
-			rmErr = os.Remove(path)
-		}
-	} else {
-		// 删除文件
-		rmErr = os.Remove(path)
-	}
-
-	if rmErr != nil {
+	// 调用删除函数统一处理
+	if rmErr := os.RemoveAll(path); rmErr != nil {
 		return fmt.Errorf("删除失败: %s: %v", path, rmErr)
 	}
 
@@ -154,7 +118,7 @@ func (o *FileOperator) Move(srcPath, targetPath string) error {
 	}
 
 	// 打印移动信息
-	if findCmdPrintMove.Get() {
+	if findCmdPrintActions.Get() {
 		o.cl.Redf("mv: %s -> %s\n", absSearchPath, absTargetPath)
 	}
 
@@ -267,8 +231,8 @@ func (o *FileOperator) executeDirect(cmdStr, path string) error {
 		return fmt.Errorf("找不到命令 %s (提示: 对于内置命令如echo, 请使用--use-shell/-us标志)", args[0])
 	}
 
-	// 如果启用了print-cmd输出, 打印执行的命令
-	if findCmdPrintCmd.Get() {
+	// 如果启用了print-actions输出, 打印执行的命令
+	if findCmdPrintActions.Get() {
 		o.cl.Redf("exec(direct): %v\n", args)
 	}
 
@@ -307,8 +271,8 @@ func (o *FileOperator) executeWithShell(cmdStr, path string) error {
 		return fmt.Errorf("找不到 %s 解释器: %v", shell, err)
 	}
 
-	// 如果启用了print-cmd输出, 打印执行的命令
-	if findCmdPrintCmd.Get() {
+	// 如果启用了print-actions输出, 打印执行的命令
+	if findCmdPrintActions.Get() {
 		o.cl.Redf("exec(shell): [%s %s]\n", shell, strings.Join(args, " "))
 	}
 

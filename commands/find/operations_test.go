@@ -63,7 +63,7 @@ func TestFileOperator_Delete(t *testing.T) {
 				return "/nonexistent/file/path"
 			},
 			isDir:       false,
-			expectError: true,
+			expectError: false, // os.RemoveAll 对不存在的文件不返回错误
 		},
 	}
 
@@ -71,7 +71,7 @@ func TestFileOperator_Delete(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			filePath := tt.setupFile()
 
-			err := operator.Delete(filePath, tt.isDir)
+			err := operator.Delete(filePath)
 
 			if tt.expectError && err == nil {
 				t.Errorf("期望错误但没有返回错误")
@@ -272,7 +272,7 @@ func BenchmarkFileOperator_Delete(b *testing.B) {
 		_ = tempFile.Close()
 
 		// 删除文件
-		err = operator.Delete(tempFile.Name(), false)
+		err = operator.Delete(tempFile.Name())
 		if err != nil {
 			b.Fatalf("删除文件失败: %v", err)
 		}

@@ -28,11 +28,9 @@ var (
 	findCmdExcludeName   *qflag.StringFlag // exclude-name 标志
 	findCmdExcludePath   *qflag.StringFlag // exclude-path 标志
 	findCmdExec          *qflag.StringFlag // exec 标志
-	findCmdPrintCmd      *qflag.BoolFlag   // print-cmd 标志
 	findCmdDelete        *qflag.BoolFlag   // delete 标志
-	findCmdPrintDelete   *qflag.BoolFlag   // print-delete 标志
 	findCmdMove          *qflag.StringFlag // move 标志
-	findCmdPrintMove     *qflag.BoolFlag   // print-move 标志
+	findCmdPrintActions  *qflag.BoolFlag   // print-actions 标志，用于打印操作详情
 	findCmdAnd           *qflag.BoolFlag   // and 标志
 	findCmdOr            *qflag.BoolFlag   // or 标志
 	findCmdMaxDepthLimit *qflag.IntFlag    // max-depth-limit 标志
@@ -70,11 +68,9 @@ func InitFindCmd() *cmd.Cmd {
 	findCmdExcludeName = findCmd.String("exclude-name", "en", "", "指定要排除的文件或目录名")
 	findCmdExcludePath = findCmd.String("exclude-path", "ep", "", "指定要排除的路径")
 	findCmdExec = findCmd.String("exec", "ex", "", "对匹配的每个路径执行指定命令，使用{}作为占位符")
-	findCmdPrintCmd = findCmd.Bool("print-cmd", "pc", false, "在执行-exec命令前打印将要执行的命令")
 	findCmdDelete = findCmd.Bool("delete", "d", false, "删除匹配的文件或目录")
-	findCmdPrintDelete = findCmd.Bool("print-del", "pd", false, "在删除前打印将要删除的文件或目录")
 	findCmdMove = findCmd.String("move", "mv", "", "将匹配项移动到指定的路径")
-	findCmdPrintMove = findCmd.Bool("print-mv", "pm", false, "在移动前打印 old -> new")
+	findCmdPrintActions = findCmd.Bool("print-actions", "pa", false, "打印执行的操作详情(exec/delete/move)")
 	findCmdAnd = findCmd.Bool("and", "", true, "用于在-n和-p参数中组合条件, 默认为true, 表示所有条件必须满足")
 	findCmdOr = findCmd.Bool("or", "", false, "用于在-n和-p参数中组合条件, 默认为false, 表示只要满足任一条件即可")
 	findCmdMaxDepthLimit = findCmd.Int("max-depth-limit", "mdl", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")

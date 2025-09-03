@@ -160,11 +160,6 @@ func (v *ConfigValidator) validateExecFlags() error {
 		return fmt.Errorf("使用-exec标志时必须包含{}作为路径占位符")
 	}
 
-	// 检查-print-cmd标志是否与-exec一起使用
-	if findCmdPrintCmd.Get() && findCmdExec.Get() == "" {
-		return fmt.Errorf("使用-print-cmd标志时必须同时指定-exec标志")
-	}
-
 	return nil
 }
 
