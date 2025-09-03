@@ -89,7 +89,7 @@ func Zlib(dst string, src string, cfg *config.Config) error {
 	fileSize := srcInfo.Size()
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(fileSize, dst, fmt.Sprintf("正在压缩 %s...", filepath.Base(dst))); err != nil {
+	if err := cfg.Progress.Start(fileSize, dst, fmt.Sprintf("正在压缩'%s'...", filepath.Base(dst))); err != nil {
 		return fmt.Errorf("开始进度显示失败: %w", err)
 	}
 	defer func() {

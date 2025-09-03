@@ -90,7 +90,7 @@ func Untgz(tgzFilePath string, targetDir string, cfg *config.Config) error {
 	tarReader := tar.NewReader(gzipReader)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, tgzFilePath, fmt.Sprintf("正在解压 %s...", filepath.Base(tgzFilePath))); err != nil {
+	if err := cfg.Progress.Start(totalSize, tgzFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(tgzFilePath))); err != nil {
 		return fmt.Errorf("开始进度显示失败: %w", err)
 	}
 	defer func() {

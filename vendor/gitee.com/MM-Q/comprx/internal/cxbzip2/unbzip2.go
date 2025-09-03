@@ -110,7 +110,7 @@ func Unbz2(bz2FilePath string, targetPath string, cfg *config.Config) error {
 	totalSize := calculateBzip2TotalSize(bz2FilePath, cfg)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, bz2FilePath, fmt.Sprintf("正在解压 %s...", filepath.Base(bz2FilePath))); err != nil {
+	if err := cfg.Progress.Start(totalSize, bz2FilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(bz2FilePath))); err != nil {
 		return fmt.Errorf("开始进度显示失败: %w", err)
 	}
 	defer func() {

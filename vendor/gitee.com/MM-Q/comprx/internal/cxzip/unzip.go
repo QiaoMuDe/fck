@@ -65,7 +65,7 @@ func Unzip(zipFilePath string, targetDir string, cfg *config.Config) error {
 	totalSize := calculateZipTotalSize(zipReader, cfg)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, zipFilePath, fmt.Sprintf("正在解压 %s...", filepath.Base(zipFilePath))); err != nil {
+	if err := cfg.Progress.Start(totalSize, zipFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(zipFilePath))); err != nil {
 		return fmt.Errorf("开始进度显示失败: %w", err)
 	}
 	defer func() {

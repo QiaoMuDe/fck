@@ -75,7 +75,7 @@ func Untar(tarFilePath string, targetDir string, cfg *config.Config) error {
 	tarReader := tar.NewReader(tarFile)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, tarFilePath, fmt.Sprintf("正在解压 %s...", filepath.Base(tarFilePath))); err != nil {
+	if err := cfg.Progress.Start(totalSize, tarFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(tarFilePath))); err != nil {
 		return fmt.Errorf("开始进度显示失败: %w", err)
 	}
 	defer func() {

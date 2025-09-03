@@ -77,7 +77,7 @@ func Zip(dst string, src string, cfg *config.Config) error {
 	totalSize := progress.CalculateSourceTotalSizeWithProgress(src, cfg.Progress, "正在分析内容...", cfg.Filter)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, dst, fmt.Sprintf("正在压缩 %s...", filepath.Base(dst))); err != nil {
+	if err := cfg.Progress.Start(totalSize, dst, fmt.Sprintf("正在压缩'%s'...", filepath.Base(dst))); err != nil {
 		return fmt.Errorf("开始进度显示失败: %w", err)
 	}
 	defer func() {

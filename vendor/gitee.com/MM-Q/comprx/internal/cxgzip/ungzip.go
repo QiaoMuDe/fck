@@ -108,7 +108,7 @@ func Ungzip(gzipFilePath string, targetPath string, config *config.Config) error
 	totalSize := calculateGzipTotalSize(gzipFilePath, config)
 
 	// 开始进度显示
-	if err := config.Progress.Start(totalSize, gzipFilePath, fmt.Sprintf("正在解压 %s...", filepath.Base(gzipFilePath))); err != nil {
+	if err := config.Progress.Start(totalSize, gzipFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(gzipFilePath))); err != nil {
 		return fmt.Errorf("开始进度显示失败: %w", err)
 	}
 	defer func() {

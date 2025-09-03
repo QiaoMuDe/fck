@@ -113,7 +113,7 @@ func Unzlib(zlibFilePath string, targetPath string, config *config.Config) error
 	totalSize := calculateZlibTotalSize(zlibFilePath, config)
 
 	// 开始进度显示
-	if err := config.Progress.Start(totalSize, zlibFilePath, fmt.Sprintf("正在解压 %s...", filepath.Base(zlibFilePath))); err != nil {
+	if err := config.Progress.Start(totalSize, zlibFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(zlibFilePath))); err != nil {
 		return fmt.Errorf("开始进度显示失败: %w", err)
 	}
 	defer func() {
