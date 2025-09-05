@@ -25,8 +25,18 @@ const (
 // 返回:
 //   - bool: 如果是空文件返回true，否则返回false
 func isEmptyFile(d os.DirEntry) bool {
+	// 空DirEntry对象直接返回false
+	if d == nil {
+		return false
+	}
+
 	info, err := d.Info()
-	return err == nil && info.Size() == 0
+	// 如果获取文件信息失败或info为nil，返回false
+	if err != nil || info == nil {
+		return false
+	}
+
+	return info.Size() == 0
 }
 
 // isWindowsSymlink 检查是否为Windows快捷方式
@@ -59,13 +69,13 @@ func isSpecialDevice(mode os.FileMode) bool {
 // 注意:
 //   - 该函数直接输出到标准输出，不返回值
 func printPathColor(path string, cl *colorlib.ColorLib, d os.DirEntry) {
-	// 路径为空时返回
-	if path == "" {
+	// 路径为空或DirEntry为空或ColorLib为空时直接返回
+	if path == "" || d == nil || cl == nil {
 		return
 	}
 
 	// 禁用颜色输出时直接输出路径
-	if cl == nil || !findCmdColor.Get() {
+	if !findCmdColor.Get() {
 		fmt.Println(path)
 		return
 	}
