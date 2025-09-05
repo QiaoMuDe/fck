@@ -10,20 +10,23 @@ const InvalidFlagChars = " !@#$%^&*(){}[]|\\;:'\"<>,.?/"
 type FlagType int
 
 const (
-	FlagTypeUnknown  FlagType = iota // 未知类型
-	FlagTypeInt                      // 整数类型
-	FlagTypeInt64                    // 64位整数类型
-	FlagTypeUint16                   // 16位无符号整数类型
-	FlagTypeUint32                   // 32位无符号整数类型
-	FlagTypeUint64                   // 64位无符号整数类型
-	FlagTypeString                   // 字符串类型
-	FlagTypeBool                     // 布尔类型
-	FlagTypeFloat64                  // 64位浮点数类型
-	FlagTypeEnum                     // 枚举类型
-	FlagTypeDuration                 // 时间间隔类型
-	FlagTypeSlice                    // 切片类型
-	FlagTypeTime                     // 时间类型
-	FlagTypeMap                      // 映射类型
+	FlagTypeUnknown     FlagType = iota // 未知类型
+	FlagTypeInt                         // 整数类型
+	FlagTypeInt64                       // 64位整数类型
+	FlagTypeUint16                      // 16位无符号整数类型
+	FlagTypeUint32                      // 32位无符号整数类型
+	FlagTypeUint64                      // 64位无符号整数类型
+	FlagTypeString                      // 字符串类型
+	FlagTypeBool                        // 布尔类型
+	FlagTypeFloat64                     // 64位浮点数类型
+	FlagTypeEnum                        // 枚举类型
+	FlagTypeDuration                    // 时间间隔类型
+	FlagTypeTime                        // 时间类型
+	FlagTypeMap                         // 映射类型
+	FlagTypeStringSlice                 // 字符串切片类型
+	FlagTypeIntSlice                    // []int 切片类型
+	FlagTypeInt64Slice                  // []int64 切片类型
+	FlagTypeSize                        // 大小类型
 )
 
 // 内置标志名称
@@ -95,8 +98,12 @@ var FlagSplitSlice = []string{
 // Validator 验证器接口, 所有自定义验证器需实现此接口
 type Validator interface {
 	// Validate 验证参数值是否合法
-	// value: 待验证的参数值
-	// 返回值: 验证通过返回nil, 否则返回错误信息
+	//
+	// 参数:
+	//   - value: 需要验证的参数值
+	//
+	// 返回:
+	//   - error: 验证失败时返回错误信息, 验证成功时返回nil
 	Validate(value any) error
 }
 
@@ -133,33 +140,50 @@ type TypedFlag[T any] interface {
 //   - 带语义信息的类型字符串，用于命令行帮助信息显示
 func FlagTypeToString(flagType FlagType) string {
 	switch flagType {
-	case FlagTypeInt:
+	case FlagTypeInt: // 整数类型
+
 		return "<int>"
-	case FlagTypeInt64:
+
+	case FlagTypeInt64: // 64位整数类型
 		return "<int64>"
-	case FlagTypeUint16:
+
+	case FlagTypeUint16: // 16位无符号整数类型
 		return "<0-65535>"
-	case FlagTypeUint32:
+
+	case FlagTypeUint32: // 32位无符号整数类型
 		return "<uint32>"
-	case FlagTypeUint64:
+
+	case FlagTypeUint64: // 64位无符号整数类型
 		return "<uint64>"
-	case FlagTypeString:
+
+	case FlagTypeString: // 字符串类型
 		return "<string>"
-	case FlagTypeBool:
+
+	case FlagTypeBool: // 布尔类型
 		// 布尔类型特殊处理
 		return ""
-	case FlagTypeFloat64:
+
+	case FlagTypeFloat64: // 64位浮点数类型
 		return "<float64>"
-	case FlagTypeEnum:
+
+	case FlagTypeEnum: // 枚举类型
 		return "<enum>"
-	case FlagTypeDuration:
+
+	case FlagTypeDuration: // 时间间隔类型
 		return "<duration>"
-	case FlagTypeTime:
+
+	case FlagTypeTime: // 时间类型
 		return "<time>"
-	case FlagTypeMap:
+
+	case FlagTypeMap: // 映射类型
 		return "<k=v,k=v,...>"
-	case FlagTypeSlice:
+
+	case FlagTypeStringSlice, FlagTypeIntSlice, FlagTypeInt64Slice: // 切片类型
 		return "<value,value,...>"
+
+	case FlagTypeSize: // 大小类型
+		return "<size+unit>"
+
 	default:
 		return "<value>"
 	}

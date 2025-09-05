@@ -1,17 +1,57 @@
-# qflag
+<div align="center">
+
+# 🚀 qflag
+
+**功能强大的 Go 语言命令行参数解析库**
 
 [![Go Version](https://img.shields.io/badge/Go-1.24.4-blue.svg)](https://golang.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Gitee](https://img.shields.io/badge/Gitee-qflag-red.svg)](https://gitee.com/MM-Q/qflag)
+[![GitHub](https://img.shields.io/badge/GitHub-qflag-black.svg)](https://github.com/QiaoMuDe/qflag)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/QiaoMuDe/qflag)
 
-qflag 是一个功能强大的 Go 语言命令行参数解析库，支持多种数据类型、子命令管理、参数验证、自动补全等高级特性。该库提供了简洁易用的 API，同时保持了高度的灵活性和扩展性。
+*支持多种数据类型 • 子命令管理 • 参数验证 • 自动补全 • 企业级特性*
 
-## 项目地址
+[📖 快速开始](#快速开始) • [🔧 安装指南](#安装) • [📚 API 文档](#api-文档) • [🤝 贡献指南](#贡献指南)
 
-该项目托管在 Gitee 和 GitHub 上，您可以访问以下链接查看源代码和最新动态：
+</div>
 
-- [Gitee](https://gitee.com/MM-Q/qflag.git)
-- [GitHub](https://github.com/QiaoMuDe/qflag.git)
+---
+
+## 📋 目录
+
+- [🚀 qflag](#-qflag)
+  - [📋 目录](#-目录)
+  - [✨ 项目简介](#-项目简介)
+  - [🔗 项目地址](#-项目地址)
+  - [📦 安装](#-安装)
+  - [🌟 核心特性](#-核心特性)
+  - [📊 支持的标志类型](#-支持的标志类型)
+  - [🚀 快速开始](#-快速开始)
+  - [🔧 高级功能示例](#-高级功能示例)
+  - [🎯 自动补全](#-自动补全)
+  - [📝 帮助信息定制](#-帮助信息定制)
+  - [🏗️ 项目架构](#️-项目架构)
+  - [📚 API 文档](#-api-文档)
+  - [⚡ 性能特性](#-性能特性)
+  - [🔄 兼容性](#-兼容性)
+  - [🧪 测试说明](#-测试说明)
+  - [🤝 贡献指南](#-贡献指南)
+  - [📄 许可证](#-许可证)
+  - [💬 支持与反馈](#-支持与反馈)
+
+## ✨ 项目简介
+
+qflag 是一个基于 Go 泛型的现代化命令行参数解析库，对标准库 flag 进行了全面增强。它采用模块化架构设计，提供了 16+ 种标志类型（包括基础类型、切片类型、复杂类型如枚举、时间、映射、大小等）、完整的子命令系统、强大的参数验证框架、智能的 Shell 自动补全（支持 Bash/PowerShell）、环境变量绑定等企业级特性。通过泛型设计确保类型安全，内置并发保护机制，支持中英文帮助信息，为构建专业的 CLI 应用提供了完整的解决方案。
+
+## 🔗 项目地址
+
+该项目同时托管在 Gitee 和 GitHub 上，您可以选择合适的平台访问：
+
+| 平台 | 地址 | 描述 |
+|------|------|------|
+| 🔴 **Gitee** | [gitee.com/MM-Q/qflag](https://gitee.com/MM-Q/qflag) | 国内访问更快，主要开发仓库 |
+| ⚫ **GitHub** | [github.com/QiaoMuDe/qflag](https://github.com/QiaoMuDe/qflag) | 国际化平台，同步更新 |
 
 ## 安装
 
@@ -34,7 +74,7 @@ import "gitee.com/MM-Q/qflag/validator"
 
 ### 🚀 丰富的数据类型支持
 - **基础类型**：字符串、整数（int/int64/uint16/uint32/uint64）、布尔值、浮点数
-- **高级类型**：枚举、时间间隔、时间、切片、映射
+- **高级类型**：枚举、时间间隔、时间、切片([]string, []int64, []int)、映射、大小
 - **泛型设计**：基于 Go 泛型的类型安全标志系统
 
 ### 🎯 强大的命令管理
@@ -73,10 +113,13 @@ import "gitee.com/MM-Q/qflag/validator"
 | `Float64Flag` | `Float64()` | `Float64Var()` | 64位浮点数 | `--threshold 0.95` |
 | **高级类型** |
 | `EnumFlag` | `Enum()` | `EnumVar()` | 枚举类型 | `--mode "debug"` |
-| `SliceFlag` | `Slice()` | `SliceVar()` | 字符串切片 | `--files file1,file2` |
+| `StringSliceFlag` | `StringSlice()` | `StringSliceVar()` | 字符串切片 | `--files file1,file2` |
+| `IntSliceFlag` | `IntSlice()` | `IntSliceVar()` | 整数切片 | `--ports 8080,9000,3000` |
+| `Int64SliceFlag` | `Int64Slice()` | `Int64SliceVar()` | 64位整数切片 | `--sizes 1024,2048,4096` |
 | `DurationFlag` | `Duration()` | `DurationVar()` | 时间间隔 | `--timeout 30s` |
 | `TimeFlag` | `Time()` | `TimeVar()` | 时间类型 | `--start "2024-01-01T00:00:00"` |
 | `MapFlag` | `Map()` | `MapVar()` | 键值对映射 | `--config key=value,key2=value2` |
+| `SizeFlag` | `Size()` | `SizeVar()` | 大小类型 | `--max-size 1024MB` |
 
 ## 快速开始
 
@@ -221,11 +264,18 @@ import (
 )
 
 func main() {
-    // 创建切片标志
-    files := qflag.Slice("files", "f", []string{}, "要处理的文件列表")
+    // 创建字符串切片标志
+    files := qflag.StringSlice("files", "f", []string{}, "要处理的文件列表")
+    
+    // 创建整数切片标志
+    ports := qflag.IntSlice("ports", "p", []int{8080}, "服务端口列表")
+    
+    // 创建64位整数切片标志
+    sizes := qflag.Int64Slice("sizes", "s", []int64{}, "文件大小列表")
     
     // 自定义分隔符（默认为逗号）
-    files.SetSeparator(";")
+    files.SetDelimiters([]string{";"})
+    ports.SetDelimiters([]string{","})
     
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
@@ -233,10 +283,15 @@ func main() {
     }
     
     fmt.Printf("要处理的文件: %v\n", files.Get())
+    fmt.Printf("服务端口: %v\n", ports.Get())
+    fmt.Printf("文件大小: %v\n", sizes.Get())
 }
 ```
 
-使用方式：`./app --files file1.txt;file2.txt;file3.txt`
+使用方式：
+```bash
+./app --files file1.txt;file2.txt;file3.txt --ports 8080,9000,3000 --sizes 1024,2048,4096
+```
 
 ### 3. 映射类型标志
 
@@ -467,7 +522,6 @@ qflag 采用模块化设计，主要包含以下包：
 - **[flags 包文档](./flags/APIDOC.md)** - 标志类型定义和使用方法
 - **[validator 包文档](./validator/APIDOC.md)** - 参数验证器接口和实现
 - **[qerr 包文档](./qerr/APIDOC.md)** - 错误处理相关 API
-- **[utils 包文档](./utils/APIDOC.md)** - 工具函数文档
 
 ## 性能特性
 
@@ -482,7 +536,63 @@ qflag 采用模块化设计，主要包含以下包：
 - **操作系统**：支持 Windows、Linux、macOS
 - **Shell 支持**：Bash、PowerShell
 
-## 贡献指南
+## 🧪 测试说明
+
+qflag 提供了完整的测试套件，确保代码质量和功能稳定性。
+
+### 运行测试
+
+```bash
+# 运行所有测试
+go test ./...
+
+# 运行测试并显示覆盖率
+go test -cover ./...
+
+# 生成详细的覆盖率报告
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out -o coverage.html
+
+# 运行基准测试
+go test -bench=. ./...
+
+# 运行特定包的测试
+go test ./flags
+go test ./cmd
+go test ./validator
+```
+
+### 测试结构
+
+```
+qflag/
+├── flags/
+│   ├── *_test.go          # 标志类型测试
+│   └── sizeflag_test.go   # 大小标志专项测试
+├── cmd/
+│   ├── *_test.go          # 命令管理测试
+│   └── extended_test.go   # 扩展功能测试
+├── validator/
+│   └── *_test.go          # 验证器测试
+└── qerr/
+    └── *_test.go          # 错误处理测试
+```
+
+### 测试覆盖率目标
+
+- **整体覆盖率**：> 90%
+- **核心包覆盖率**：> 95%
+- **关键功能**：100% 覆盖
+
+### 持续集成
+
+项目配置了自动化测试流程：
+
+- **代码质量检查**：使用 `golangci-lint` 进行静态分析
+- **多版本测试**：在 Go 1.24+ 版本上测试
+- **跨平台测试**：Windows、Linux、macOS 环境验证
+
+## 🤝 贡献指南
 
 我们欢迎社区贡献！请遵循以下步骤：
 
@@ -511,4 +621,8 @@ qflag 采用模块化设计，主要包含以下包：
 
 ---
 
+<div align="center">
+
 **qflag** - 让命令行参数解析变得简单而强大！ 🚀
+
+</div>

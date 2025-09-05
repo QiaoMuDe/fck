@@ -13,10 +13,10 @@ var (
 	packCmd *cmd.Cmd // pack 命令
 
 	// 过滤器配置标志
-	includePatterns *qflag.SliceFlag // 包含模式
-	excludePatterns *qflag.SliceFlag // 排除模式
-	minSize         *qflag.Int64Flag // 最小文件大小
-	maxSize         *qflag.Int64Flag // 最大文件大小
+	includePatterns *qflag.StringSliceFlag // 包含模式
+	excludePatterns *qflag.StringSliceFlag // 排除模式
+	minSize         *qflag.Int64Flag       // 最小文件大小
+	maxSize         *qflag.Int64Flag       // 最大文件大小
 
 	// 压缩配置标志
 	compressionLevel *qflag.EnumFlag // 压缩级别
@@ -34,8 +34,8 @@ func InitPackCmd() *cmd.Cmd {
 	packCmd.AddNote("支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib")
 
 	// 添加过滤器配置标志
-	includePatterns = packCmd.Slice("include", "i", []string{}, "包含的文件模式(支持glob语法)")
-	excludePatterns = packCmd.Slice("exclude", "e", []string{}, "排除的文件模式(支持glob语法)")
+	includePatterns = packCmd.StringSlice("include", "i", []string{}, "包含的文件模式(支持glob语法)")
+	excludePatterns = packCmd.StringSlice("exclude", "e", []string{}, "排除的文件模式(支持glob语法)")
 	minSize = packCmd.Int64("min-size", "ms", 0, "最小文件大小限制(单位字节, 0表示不限制)")
 	maxSize = packCmd.Int64("max-size", "mx", 0, "最大文件大小限制(单位字节, 0表示不限制)")
 

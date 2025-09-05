@@ -41,37 +41,31 @@ type FlagParam struct {
 var (
 	// CompletionNotesCN 中文版本注意事项
 	CompletionNotesCN = []string{
-		"Windows环境: 需要PowerShell 5.1或更高版本以支持Register-ArgumentCompleter",
-		"Linux环境: 需要bash 4.0或更高版本以支持关联数组特性",
-		"请确保您的环境满足上述版本要求，否则自动补全功能可能无法正常工作",
+		"Windows需PowerShell 5.1+",
+		"Linux需bash 4.0+",
 	}
 
 	// CompletionNotesEN 英文版本注意事项
 	CompletionNotesEN = []string{
-		"Windows environment: Requires PowerShell 5.1 or higher to support Register-ArgumentCompleter",
-		"Linux environment: Requires bash 4.0 or higher to support associative array features",
-		"Please ensure your environment meets the above version requirements, otherwise the auto-completion feature may not work properly",
+		"Windows requires PowerShell 5.1+",
+		"Linux requires bash 4.0+",
 	}
 )
 
-// 内置自动补全命令的示例使用（中文）
+// 内置自动补全命令的示例使用(中文)
 var CompletionExamplesCN = []types.ExampleInfo{
-	{Description: "Linux环境 临时启用", Usage: "source <(%s --generate-shell-completion bash)"},
-	{Description: "Linux环境 永久启用(添加到~/.bashrc)", Usage: "echo \"source <(%s --generate-shell-completion bash)\" >> ~/.bashrc"},
-	//{Description: "Linux环境 系统级安装(至/etc/profile.d)", Usage: "sudo %s --generate-shell-completion bash > /etc/profile.d/qflag_completion.bash"},
-	{Description: "Windows环境 临时启用", Usage: "%s --generate-shell-completion powershell | Out-String | Invoke-Expression"},
-	{Description: "Windows环境 永久启用(添加到PowerShell配置文件)", Usage: "echo \"%s --generate-shell-completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
-	//{Description: "Windows环境 系统级安装(至ProgramFiles)", Usage: "%s --generate-shell-completion powershell > $env:ProgramFiles\\qflag\\completion.ps1"},
+	{Description: "Linux 临时启用", Usage: "source <(%s --generate-shell-completion bash)"},
+	{Description: "Linux 永久启用", Usage: "echo \"source <(%s --generate-shell-completion bash)\" >> ~/.bashrc"},
+	{Description: "Windows 临时启用", Usage: "%s --generate-shell-completion powershell | Out-String | Invoke-Expression"},
+	{Description: "Windows 永久启用", Usage: "echo \"%s --generate-shell-completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
 }
 
 // 内置自动补全命令的示例使用（英文）
 var CompletionExamplesEN = []types.ExampleInfo{
-	{Description: "Linux environment temporary activation", Usage: "source <(%s --generate-shell-completion bash)"},
-	{Description: "Linux environment permanent activation (add to ~/.bashrc)", Usage: "echo \"source <(%s --generate-shell-completion bash)\" >> ~/.bashrc"},
-	//{Description: "Linux system-wide installation (to /etc/profile.d)", Usage: "sudo %s --generate-shell-completion bash > /etc/profile.d/qflag_completion.bash"},
-	{Description: "Windows environment temporary activation", Usage: "%s --generate-shell-completion powershell | Out-String | Invoke-Expression"},
-	{Description: "Windows environment permanent activation (add to PowerShell profile)", Usage: "echo \"%s --generate-shell-completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
-	//{Description: "Windows system-wide installation (to ProgramFiles)", Usage: "%s --generate-shell-completion powershell > $env:ProgramFiles\\qflag\\completion.ps1"},
+	{Description: "Linux Temporary", Usage: "source <(%s --generate-shell-completion bash)"},
+	{Description: "Linux Permanent", Usage: "echo \"source <(%s --generate-shell-completion bash)\" >> ~/.bashrc"},
+	{Description: "Windows Temporary", Usage: "%s --generate-shell-completion powershell | Out-String | Invoke-Expression"},
+	{Description: "Windows Permanent", Usage: "echo \"%s --generate-shell-completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
 }
 
 // GenerateShellCompletion 生成shell自动补全脚本

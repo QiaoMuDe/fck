@@ -133,13 +133,41 @@ GetNotes 获取所有备注信息
 func (c *Cmd) AddSubCmd(subCmds ...*Cmd) error
 ```
 
-AddSubCmd 添加外部子命令到当前命令。支持批量添加多个子命令, 遇到错误时收集所有错误并返回
+向当前命令添加一个或多个子命令。此方法会对所有子命令进行完整性验证，包括名称冲突检查、循环依赖检测等。操作过程中会自动设置子命令的父命令引用，确保命令树结构的完整性。
 
 **参数:**
-- `subCmds`: 一个或多个子命令实例指针
+- `subCmds`: 要添加的子命令实例指针，支持传入多个子命令进行批量添加
 
 **返回值:**
-- 错误信息, 如果所有子命令添加成功则返回nil
+- `error`: 添加过程中的错误信息。如果任何子命令验证失败，将返回包含所有错误详情的聚合错误；如果所有子命令成功添加，返回 nil
+
+**并发安全:** 使用互斥锁保护，可安全地在多个 goroutine 中并发调用
+
+##### AddSubCmds
+
+```go
+func (c *Cmd) AddSubCmds(subCmds []*Cmd) error
+```
+
+向当前命令添加子命令切片的便捷方法。此方法是 AddSubCmd 的便捷包装，专门用于处理子命令切片，内部直接调用 AddSubCmd 方法，具有相同的验证逻辑和并发安全特性。
+
+**参数:**
+- `subCmds`: 子命令切片，包含要添加的所有子命令实例指针
+
+**返回值:**
+- `error`: 添加过程中的错误信息，与 AddSubCmd 返回的错误类型相同
+
+**并发安全:** 通过调用 AddSubCmd 实现，继承其互斥锁保护特性
+
+**使用示例:**
+```go
+// 使用 AddSubCmd - 适合已知数量的子命令
+cmd.AddSubCmd(subCmd1, subCmd2, subCmd3)
+
+// 使用 AddSubCmds - 适合动态生成的子命令切片
+subCmds := []*qflag.Cmd{subCmd1, subCmd2, subCmd3}
+cmd.AddSubCmds(subCmds)
+```
 
 ##### CmdExists
 
@@ -543,13 +571,13 @@ EnumVar 绑定枚举类型标志到指针并内部注册Flag对象
 - `usage`: string - 帮助说明
 - `options`: []string - 限制该标志取值的枚举值切片
 
-##### Slice
+##### StringSlice
 
 ```go
-func (c *Cmd) Slice(longName, shortName string, defValue []string, usage string) *flags.SliceFlag
+func (c *Cmd) StringSlice(longName, shortName string, defValue []string, usage string) *flags.StringSliceFlag
 ```
 
-Slice 绑定字符串切片类型标志并内部注册Flag对象
+StringSlice 绑定字符串切片类型标志并内部注册Flag对象
 
 **参数值:**
 - `longName`: 长标志名
@@ -558,15 +586,15 @@ Slice 绑定字符串切片类型标志并内部注册Flag对象
 - `usage`: 帮助说明
 
 **返回值:**
-- `*flags.SliceFlag`: 字符串切片标志对象指针
+- `*flags.StringSliceFlag`: 字符串切片标志对象指针
 
-##### SliceVar
+##### StringSliceVar
 
 ```go
-func (c *Cmd) SliceVar(f *flags.SliceFlag, longName, shortName string, defValue []string, usage string)
+func (c *Cmd) StringSliceVar(f *flags.StringSliceFlag, longName, shortName string, defValue []string, usage string)
 ```
 
-SliceVar 绑定字符串切片类型标志到指针并内部注册Flag对象
+StringSliceVar 绑定字符串切片类型标志到指针并内部注册Flag对象
 
 **参数值:**
 - `f`: 字符串切片标志指针
@@ -574,6 +602,118 @@ SliceVar 绑定字符串切片类型标志到指针并内部注册Flag对象
 - `shortName`: 短标志名
 - `defValue`: 默认值
 - `usage`: 帮助说明
+
+##### IntSlice
+
+```go
+func (c *Cmd) IntSlice(longName, shortName string, defValue []int, usage string) *flags.IntSliceFlag
+```
+
+IntSlice 绑定整数切片类型标志并内部注册Flag对象
+
+**参数值:**
+- `longName`: 长标志名
+- `shortName`: 短标志名
+- `defValue`: 默认值
+- `usage`: 帮助说明
+
+**返回值:**
+- `*flags.IntSliceFlag`: 整数切片标志对象指针
+
+##### IntSliceVar
+
+```go
+func (c *Cmd) IntSliceVar(f *flags.IntSliceFlag, longName, shortName string, defValue []int, usage string)
+```
+
+IntSliceVar 绑定整数切片类型标志到指针并内部注册Flag对象
+
+**参数值:**
+- `f`: 整数切片标志指针
+- `longName`: 长标志名
+- `shortName`: 短标志名
+- `defValue`: 默认值
+- `usage`: 帮助说明
+
+##### Int64Slice
+
+```go
+func (c *Cmd) Int64Slice(longName, shortName string, defValue []int64, usage string) *flags.Int64SliceFlag
+```
+
+Int64Slice 绑定64位整数切片类型标志并内部注册Flag对象
+
+**参数值:**
+- `longName`: 长标志名
+- `shortName`: 短标志名
+- `defValue`: 默认值
+- `usage`: 帮助说明
+
+**返回值:**
+- `*flags.Int64SliceFlag`: 64位整数切片标志对象指针
+
+##### Int64SliceVar
+
+```go
+func (c *Cmd) Int64SliceVar(f *flags.Int64SliceFlag, longName, shortName string, defValue []int64, usage string)
+```
+
+Int64SliceVar 绑定64位整数切片类型标志到指针并内部注册Flag对象
+
+**参数值:**
+- `f`: 64位整数切片标志指针
+- `longName`: 长标志名
+- `shortName`: 短标志名
+- `defValue`: 默认值
+- `usage`: 帮助说明
+
+##### Size
+
+```go
+func (c *Cmd) Size(longName, shortName string, defValue int64, usage string) *flags.SizeFlag
+```
+
+Size 添加大小类型标志, 返回标志对象指针
+
+**参数值:**
+- `longName`: string - 长标志名
+- `shortName`: string - 短标志名
+- `defValue`: int64 - 默认值(单位为字节)
+- `usage`: string - 帮助说明
+
+**返回值:**
+- `*flags.SizeFlag` - 大小标志对象指针
+
+**支持的单位格式:**
+- 字节: "B", "b", "byte", "bytes"
+- 十进制: "KB", "MB", "GB", "TB", "PB" 或简写 "K", "M", "G", "T", "P"
+- 二进制: "KiB", "MiB", "GiB", "TiB", "PiB"
+- 支持小数: "1.5GB", "2.5MB"
+- 支持负数: "-1GB", "-500MB"
+- 特殊值: "0" (零值特例)
+
+##### SizeVar
+
+```go
+func (c *Cmd) SizeVar(f *flags.SizeFlag, longName, shortName string, defValue int64, usage string)
+```
+
+SizeVar 绑定大小类型标志到指针并内部注册Flag对象
+
+**参数值:**
+- `f`: *flags.SizeFlag - 大小标志对象指针
+- `longName`: string - 长标志名
+- `shortName`: string - 短标志名
+- `defValue`: int64 - 默认值(单位为字节)
+- `usage`: string - 帮助说明
+
+**支持的单位格式:**
+- 字节: "B", "b", "byte", "bytes"
+- 十进制: "KB", "MB", "GB", "TB", "PB" 或简写 "K", "M", "G", "T", "P"
+- 二进制: "KiB", "MiB", "GiB", "TiB", "PiB"
+- 支持小数: "1.5GB", "2.5MB"
+- 支持负数: "-1GB", "-500MB"
+- 特殊值: "0" (零值特例)
 
 ##### Time
 

@@ -501,7 +501,7 @@ func (c *Cmd) Map(longName, shortName string, defValue map[string]string, usage 
 // 切片类型标志
 // =============================================================================
 
-// Slice 绑定字符串切片类型标志并内部注册Flag对象
+// StringSlice 绑定字符串切片类型标志并内部注册Flag对象
 //
 // 参数值:
 //   - longName: 长标志名
@@ -510,14 +510,14 @@ func (c *Cmd) Map(longName, shortName string, defValue map[string]string, usage 
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.SliceFlag: 字符串切片标志对象指针
-func (c *Cmd) Slice(longName, shortName string, defValue []string, usage string) *flags.SliceFlag {
-	f := &flags.SliceFlag{}
-	c.SliceVar(f, longName, shortName, defValue, usage)
+//   - *flags.StringSliceFlag: 字符串切片标志对象指针
+func (c *Cmd) StringSlice(longName, shortName string, defValue []string, usage string) *flags.StringSliceFlag {
+	f := &flags.StringSliceFlag{}
+	c.StringSliceVar(f, longName, shortName, defValue, usage)
 	return f
 }
 
-// SliceVar 绑定字符串切片类型标志到指针并内部注册Flag对象
+// StringSliceVar 绑定字符串切片类型标志到指针并内部注册Flag对象
 //
 // 参数值:
 //   - f: 字符串切片标志指针
@@ -525,7 +525,7 @@ func (c *Cmd) Slice(longName, shortName string, defValue []string, usage string)
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) SliceVar(f *flags.SliceFlag, longName, shortName string, defValue []string, usage string) {
+func (c *Cmd) StringSliceVar(f *flags.StringSliceFlag, longName, shortName string, defValue []string, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -548,6 +548,230 @@ func (c *Cmd) SliceVar(f *flags.SliceFlag, longName, shortName string, defValue 
 	}
 
 	// 初始化Flag对象字段
+	if initErr := f.Init(longName, shortName, defValue, usage); initErr != nil {
+		panic(initErr)
+	}
+
+	// 绑定短标志
+	if shortName != "" {
+		c.ctx.FlagSet.Var(f, shortName, usage)
+	}
+
+	// 绑定长标志
+	if longName != "" {
+		c.ctx.FlagSet.Var(f, longName, usage)
+	}
+
+	// 注册Flag对象
+	if registerErr := c.ctx.FlagRegistry.RegisterFlag(&flags.FlagMeta{Flag: f}); registerErr != nil {
+		panic(registerErr)
+	}
+}
+
+// =============================================================================
+// 整数切片类型标志
+// =============================================================================
+
+// IntSlice 绑定整数切片类型标志并内部注册Flag对象
+//
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+//
+// 返回值:
+//   - *flags.IntSliceFlag: 整数切片标志对象指针
+func (c *Cmd) IntSlice(longName, shortName string, defValue []int, usage string) *flags.IntSliceFlag {
+	f := &flags.IntSliceFlag{}
+	c.IntSliceVar(f, longName, shortName, defValue, usage)
+	return f
+}
+
+// IntSliceVar 绑定整数切片类型标志到指针并内部注册Flag对象
+//
+// 参数值:
+//   - f: 整数切片标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+func (c *Cmd) IntSliceVar(f *flags.IntSliceFlag, longName, shortName string, defValue []int, usage string) {
+	c.ctx.Mutex.Lock()
+	defer c.ctx.Mutex.Unlock()
+
+	// 检查指针是否为空
+	if f == nil {
+		panic("IntSliceFlag pointer cannot be nil")
+	}
+
+	// 检查标志是否为内置标志
+	if ok := c.ctx.BuiltinFlags.IsBuiltinFlag(longName); ok {
+		panic(fmt.Errorf("flag long name %s is reserved", longName))
+	}
+	if ok := c.ctx.BuiltinFlags.IsBuiltinFlag(shortName); ok {
+		panic(fmt.Errorf("flag short name %s is reserved", shortName))
+	}
+
+	// 确保默认值不为空
+	if defValue == nil {
+		defValue = make([]int, 0)
+	}
+
+	// 初始化Flag对象字段
+	if initErr := f.Init(longName, shortName, defValue, usage); initErr != nil {
+		panic(initErr)
+	}
+
+	// 绑定短标志
+	if shortName != "" {
+		c.ctx.FlagSet.Var(f, shortName, usage)
+	}
+
+	// 绑定长标志
+	if longName != "" {
+		c.ctx.FlagSet.Var(f, longName, usage)
+	}
+
+	// 注册Flag对象
+	if registerErr := c.ctx.FlagRegistry.RegisterFlag(&flags.FlagMeta{Flag: f}); registerErr != nil {
+		panic(registerErr)
+	}
+}
+
+// =============================================================================
+// 64位整数切片类型标志
+// =============================================================================
+
+// Int64Slice 绑定64位整数切片类型标志并内部注册Flag对象
+//
+// 参数值:
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+//
+// 返回值:
+//   - *flags.Int64SliceFlag: 64位整数切片标志对象指针
+func (c *Cmd) Int64Slice(longName, shortName string, defValue []int64, usage string) *flags.Int64SliceFlag {
+	f := &flags.Int64SliceFlag{}
+	c.Int64SliceVar(f, longName, shortName, defValue, usage)
+	return f
+}
+
+// Int64SliceVar 绑定64位整数切片类型标志到指针并内部注册Flag对象
+//
+// 参数值:
+//   - f: 64位整数切片标志指针
+//   - longName: 长标志名
+//   - shortName: 短标志名
+//   - defValue: 默认值
+//   - usage: 帮助说明
+func (c *Cmd) Int64SliceVar(f *flags.Int64SliceFlag, longName, shortName string, defValue []int64, usage string) {
+	c.ctx.Mutex.Lock()
+	defer c.ctx.Mutex.Unlock()
+
+	// 检查指针是否为空
+	if f == nil {
+		panic("Int64SliceFlag pointer cannot be nil")
+	}
+
+	// 检查标志是否为内置标志
+	if ok := c.ctx.BuiltinFlags.IsBuiltinFlag(longName); ok {
+		panic(fmt.Errorf("flag long name %s is reserved", longName))
+	}
+	if ok := c.ctx.BuiltinFlags.IsBuiltinFlag(shortName); ok {
+		panic(fmt.Errorf("flag short name %s is reserved", shortName))
+	}
+
+	// 确保默认值不为空
+	if defValue == nil {
+		defValue = make([]int64, 0)
+	}
+
+	// 初始化Flag对象字段
+	if initErr := f.Init(longName, shortName, defValue, usage); initErr != nil {
+		panic(initErr)
+	}
+
+	// 绑定短标志
+	if shortName != "" {
+		c.ctx.FlagSet.Var(f, shortName, usage)
+	}
+
+	// 绑定长标志
+	if longName != "" {
+		c.ctx.FlagSet.Var(f, longName, usage)
+	}
+
+	// 注册Flag对象
+	if registerErr := c.ctx.FlagRegistry.RegisterFlag(&flags.FlagMeta{Flag: f}); registerErr != nil {
+		panic(registerErr)
+	}
+}
+
+// =============================================================================
+// 大小类型标志
+// =============================================================================
+
+// Size 添加大小类型标志, 返回标志对象指针
+//
+// 参数值:
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志名
+//   - defValue: int64 - 默认值(单位为字节)
+//   - usage: string - 帮助说明
+//
+// 返回值:
+//   - *flags.SizeFlag - 大小标志对象指针
+//
+// 支持的单位格式:
+//   - 字节: "B", "b", "byte", "bytes"
+//   - 十进制: "KB", "MB", "GB", "TB", "PB" 或简写 "K", "M", "G", "T", "P"
+//   - 二进制: "KiB", "MiB", "GiB", "TiB", "PiB"
+//   - 支持小数: "1.5GB", "2.5MB"
+//   - 支持负数: "-1GB", "-500MB"
+//   - 特殊值: "0" (零值特例)
+func (c *Cmd) Size(longName, shortName string, defValue int64, usage string) *flags.SizeFlag {
+	f := &flags.SizeFlag{}
+	c.SizeVar(f, longName, shortName, defValue, usage)
+	return f
+}
+
+// SizeVar 绑定大小类型标志到指针并内部注册Flag对象
+//
+// 参数值:
+//   - f: *flags.SizeFlag - 大小标志对象指针
+//   - longName: string - 长标志名
+//   - shortName: string - 短标志名
+//   - defValue: int64 - 默认值(单位为字节)
+//   - usage: string - 帮助说明
+//
+// 支持的单位格式:
+//   - 字节: "B", "b", "byte", "bytes"
+//   - 十进制: "KB", "MB", "GB", "TB", "PB" 或简写 "K", "M", "G", "T", "P"
+//   - 二进制: "KiB", "MiB", "GiB", "TiB", "PiB"
+//   - 支持小数: "1.5GB", "2.5MB"
+//   - 支持负数: "-1GB", "-500MB"
+//   - 特殊值: "0" (零值特例)
+func (c *Cmd) SizeVar(f *flags.SizeFlag, longName, shortName string, defValue int64, usage string) {
+	c.ctx.Mutex.Lock()
+	defer c.ctx.Mutex.Unlock()
+
+	// 检查指针是否为nil
+	if f == nil {
+		panic("SizeFlag pointer cannot be nil")
+	}
+
+	// 检查标志是否为内置标志
+	if ok := c.ctx.BuiltinFlags.IsBuiltinFlag(longName); ok {
+		panic(fmt.Errorf("flag long name %s is reserved", longName))
+	}
+	if ok := c.ctx.BuiltinFlags.IsBuiltinFlag(shortName); ok {
+		panic(fmt.Errorf("flag short name %s is reserved", shortName))
+	}
+
+	// 初始化Flag对象
 	if initErr := f.Init(longName, shortName, defValue, usage); initErr != nil {
 		panic(initErr)
 	}

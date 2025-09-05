@@ -427,7 +427,7 @@ func (s *FileSearcher) executeAction(entry os.DirEntry, path string) error {
 	}
 
 	// 输出匹配结果
-	s.outputResult(path)
+	s.outputResult(path, entry)
 	return nil
 }
 
@@ -435,7 +435,8 @@ func (s *FileSearcher) executeAction(entry os.DirEntry, path string) error {
 //
 // 参数:
 //   - path: 文件或目录的路径
-func (s *FileSearcher) outputResult(path string) {
+//   - d: 匹配到的DirEntry对象
+func (s *FileSearcher) outputResult(path string, d os.DirEntry) {
 	// 增加匹配计数
 	s.config.MatchCount.Add(1)
 
@@ -452,10 +453,10 @@ func (s *FileSearcher) outputResult(path string) {
 			fullPath = path // 如果获取完整路径失败, 则使用相对路径
 		}
 		// 输出完整路径
-		printPathColor(fullPath, s.config.Cl)
+		printPathColor(fullPath, s.config.Cl, d)
 	} else {
 		// 输出匹配的路径
-		printPathColor(path, s.config.Cl)
+		printPathColor(path, s.config.Cl, d)
 	}
 }
 

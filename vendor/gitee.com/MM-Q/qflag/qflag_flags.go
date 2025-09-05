@@ -185,8 +185,8 @@ func DurationVar(f *flags.DurationFlag, longName, shortName string, defValue tim
 	getQCommandLine().DurationVar(f, longName, shortName, defValue, usage)
 }
 
-// Slice 为全局默认命令定义一个字符串切片类型的命令行标志。
-// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Slice` 方法，为命令行添加支持长短标志的字符串切片类型参数，
+// StringSlice 为全局默认命令定义一个字符串切片类型的命令行标志。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `StringSlice` 方法，为命令行添加支持长短标志的字符串切片类型参数，
 //
 // 参数值：
 //   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
@@ -195,13 +195,13 @@ func DurationVar(f *flags.DurationFlag, longName, shortName string, defValue tim
 //   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
 //
 // 返回值：
-//   - *flags.SliceFlag: 指向新创建的字符串切片类型标志对象的指针。
-func Slice(longName, shortName string, defValue []string, usage string) *flags.SliceFlag {
-	return getQCommandLine().Slice(longName, shortName, defValue, usage)
+//   - *flags.StringSliceFlag: 指向新创建的字符串切片类型标志对象的指针。
+func StringSlice(longName, shortName string, defValue []string, usage string) *flags.StringSliceFlag {
+	return getQCommandLine().StringSlice(longName, shortName, defValue, usage)
 }
 
-// SliceVar 为全局默认命令将一个字符串切片类型的命令行标志绑定到指定的 `SliceFlag` 指针。
-// 该函数会调用全局默认命令实例 `QCommandLine` 的 `SliceVar` 方法，为命令行添加支持长短标志的字符串切片类型参数，
+// StringSliceVar 为全局默认命令将一个字符串切片类型的命令行标志绑定到指定的 `StringSliceFlag` 指针。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `StringSliceVar` 方法，为命令行添加支持长短标志的字符串切片类型参数，
 //
 // 参数值：
 //   - f: 指向要绑定的 `SliceFlag` 对象的指针。
@@ -209,8 +209,64 @@ func Slice(longName, shortName string, defValue []string, usage string) *flags.S
 //   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
 //   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
 //   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
-func SliceVar(f *flags.SliceFlag, longName, shortName string, defValue []string, usage string) {
-	getQCommandLine().SliceVar(f, longName, shortName, defValue, usage)
+func StringSliceVar(f *flags.StringSliceFlag, longName, shortName string, defValue []string, usage string) {
+	getQCommandLine().StringSliceVar(f, longName, shortName, defValue, usage)
+}
+
+// IntSlice 为全局默认命令定义一个整数切片类型的命令行标志。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `IntSlice` 方法，为命令行添加支持长短标志的整数切片类型参数，
+//
+// 参数值：
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+//
+// 返回值：
+//   - *flags.IntSliceFlag: 指向新创建的整数切片类型标志对象的指针。
+func IntSlice(longName, shortName string, defValue []int, usage string) *flags.IntSliceFlag {
+	return getQCommandLine().IntSlice(longName, shortName, defValue, usage)
+}
+
+// IntSliceVar 为全局默认命令将一个整数切片类型的命令行标志绑定到指定的 `IntSliceFlag` 指针。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `IntSliceVar` 方法，为命令行添加支持长短标志的整数切片类型参数，
+//
+// 参数值：
+//   - f: 指向要绑定的 `IntSliceFlag` 对象的指针。
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+func IntSliceVar(f *flags.IntSliceFlag, longName, shortName string, defValue []int, usage string) {
+	getQCommandLine().IntSliceVar(f, longName, shortName, defValue, usage)
+}
+
+// Int64Slice 为全局默认命令定义一个64位整数切片类型的命令行标志。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Int64Slice` 方法，为命令行添加支持长短标志的64位整数切片类型参数，
+//
+// 参数值：
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+//
+// 返回值：
+//   - *flags.Int64SliceFlag: 指向新创建的64位整数切片类型标志对象的指针。
+func Int64Slice(longName, shortName string, defValue []int64, usage string) *flags.Int64SliceFlag {
+	return getQCommandLine().Int64Slice(longName, shortName, defValue, usage)
+}
+
+// Int64SliceVar 为全局默认命令将一个64位整数切片类型的命令行标志绑定到指定的 `Int64SliceFlag` 指针。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Int64SliceVar` 方法，为命令行添加支持长短标志的64位整数切片类型参数，
+//
+// 参数值：
+//   - f: 指向要绑定的 `Int64SliceFlag` 对象的指针。
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+func Int64SliceVar(f *flags.Int64SliceFlag, longName, shortName string, defValue []int64, usage string) {
+	getQCommandLine().Int64SliceVar(f, longName, shortName, defValue, usage)
 }
 
 // Int64 为全局默认命令定义一个64位整数类型的命令行标志。
@@ -394,4 +450,33 @@ func Uint64(longName, shortName string, defValue uint64, usage string) *flags.Ui
 //   - usage: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户。
 func Uint64Var(f *flags.Uint64Flag, longName, shortName string, defValue uint64, usage string) {
 	getQCommandLine().Uint64Var(f, longName, shortName, defValue, usage)
+}
+
+// Size 为全局默认命令定义一个大小类型的命令行标志。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `Size` 方法，为命令行添加支持长短标志的大小类型参数。
+// 用户可以输入 "1KB", "5MB", "2.5GiB" 等带单位的字符串，该标志会自动解析为字节数。
+//
+// 参数值：
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值，单位为字节 (int64)。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+//
+// 返回值：
+//   - *flags.SizeFlag: 指向新创建的大小类型标志对象的指针。
+func Size(longName, shortName string, defValue int64, usage string) *flags.SizeFlag {
+	return getQCommandLine().Size(longName, shortName, defValue, usage)
+}
+
+// SizeVar 为全局默认命令将一个大小类型的命令行标志绑定到指定的 `SizeFlag` 指针。
+// 该函数会调用全局默认命令实例 `QCommandLine` 的 `SizeVar` 方法，为命令行添加支持长短标志的大小类型参数。
+//
+// 参数值：
+//   - f: 指向要绑定的 `SizeFlag` 对象的指针。
+//   - longName: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+//   - shortName: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+//   - defValue: 该命令行标志的默认值，单位为字节 (int64)。
+//   - usage: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+func SizeVar(f *flags.SizeFlag, longName, shortName string, defValue int64, usage string) {
+	getQCommandLine().SizeVar(f, longName, shortName, defValue, usage)
 }

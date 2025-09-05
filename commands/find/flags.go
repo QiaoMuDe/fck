@@ -14,32 +14,32 @@ import (
 var (
 	// fck find 子命令
 	findCmd              *cmd.Cmd
-	findCmdName          *qflag.StringFlag // name 标志
-	findCmdPath          *qflag.StringFlag // path 标志
-	findCmdExt           *qflag.SliceFlag  // ext 标志
-	findCmdMaxDepth      *qflag.IntFlag    // max-depth 标志
-	findCmdSize          *qflag.StringFlag // size 标志
-	findCmdModTime       *qflag.StringFlag // mod-time 标志
-	findCmdCase          *qflag.BoolFlag   // case 标志
-	findCmdFullPath      *qflag.BoolFlag   // full-path 标志
-	findCmdHidden        *qflag.BoolFlag   // hidden 标志
-	findCmdColor         *qflag.BoolFlag   // color 标志
-	findCmdRegex         *qflag.BoolFlag   // regex 标志
-	findCmdExcludeName   *qflag.StringFlag // exclude-name 标志
-	findCmdExcludePath   *qflag.StringFlag // exclude-path 标志
-	findCmdExec          *qflag.StringFlag // exec 标志
-	findCmdDelete        *qflag.BoolFlag   // delete 标志
-	findCmdMove          *qflag.StringFlag // move 标志
-	findCmdPrintActions  *qflag.BoolFlag   // print-actions 标志，用于打印操作详情
-	findCmdAnd           *qflag.BoolFlag   // and 标志
-	findCmdOr            *qflag.BoolFlag   // or 标志
-	findCmdMaxDepthLimit *qflag.IntFlag    // max-depth-limit 标志
-	findCmdCount         *qflag.BoolFlag   // count 标志
-	findCmdX             *qflag.BoolFlag   // x 标志
-	findCmdType          *qflag.EnumFlag   // type 标志
-	findCmdWholeWord     *qflag.BoolFlag   // whole-word 标志
-	findCmdUseShell      *qflag.BoolFlag   // use-shell 标志
-	findCmdQuiet         *qflag.BoolFlag   // quiet 标志
+	findCmdName          *qflag.StringFlag      // name 标志
+	findCmdPath          *qflag.StringFlag      // path 标志
+	findCmdExt           *qflag.StringSliceFlag // ext 标志
+	findCmdMaxDepth      *qflag.IntFlag         // max-depth 标志
+	findCmdSize          *qflag.StringFlag      // size 标志
+	findCmdModTime       *qflag.StringFlag      // mod-time 标志
+	findCmdCase          *qflag.BoolFlag        // case 标志
+	findCmdFullPath      *qflag.BoolFlag        // full-path 标志
+	findCmdHidden        *qflag.BoolFlag        // hidden 标志
+	findCmdColor         *qflag.BoolFlag        // color 标志
+	findCmdRegex         *qflag.BoolFlag        // regex 标志
+	findCmdExcludeName   *qflag.StringFlag      // exclude-name 标志
+	findCmdExcludePath   *qflag.StringFlag      // exclude-path 标志
+	findCmdExec          *qflag.StringFlag      // exec 标志
+	findCmdDelete        *qflag.BoolFlag        // delete 标志
+	findCmdMove          *qflag.StringFlag      // move 标志
+	findCmdPrintActions  *qflag.BoolFlag        // print-actions 标志，用于打印操作详情
+	findCmdAnd           *qflag.BoolFlag        // and 标志
+	findCmdOr            *qflag.BoolFlag        // or 标志
+	findCmdMaxDepthLimit *qflag.IntFlag         // max-depth-limit 标志
+	findCmdCount         *qflag.BoolFlag        // count 标志
+	findCmdX             *qflag.BoolFlag        // x 标志
+	findCmdType          *qflag.EnumFlag        // type 标志
+	findCmdWholeWord     *qflag.BoolFlag        // whole-word 标志
+	findCmdUseShell      *qflag.BoolFlag        // use-shell 标志
+	findCmdQuiet         *qflag.BoolFlag        // quiet 标志
 )
 
 func InitFindCmd() *cmd.Cmd {
@@ -56,7 +56,7 @@ func InitFindCmd() *cmd.Cmd {
 	// 添加标志
 	findCmdName = findCmd.String("name", "n", "", "指定要查找的文件或目录名")
 	findCmdPath = findCmd.String("path", "p", "", "指定要查找的路径")
-	findCmdExt = findCmd.Slice("ext", "e", []string{}, "按文件扩展名查找")
+	findCmdExt = findCmd.StringSlice("ext", "e", []string{}, "按文件扩展名查找")
 	findCmdMaxDepth = findCmd.Int("max-depth", "m", -1, "指定查找的最大深度, -1 表示不限制")
 	findCmdSize = findCmd.String("size", "s", "", "按文件大小过滤, 格式如+5M(大于5M)或-5M(小于5M), 支持单位B/K/M/G")
 	findCmdModTime = findCmd.String("mtime", "mt", "", "按修改时间过滤, 默认格式如+5(5天前)或-5(5天内)")

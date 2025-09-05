@@ -98,6 +98,30 @@ func AddSubCmd(subCmds ...*cmd.Cmd) error {
 	return getQCommandLine().AddSubCmd(subCmds...)
 }
 
+// AddSubCmds 向全局默认命令实例 `QCommandLine` 添加子命令切片的便捷函数
+// 该函数是 AddSubCmd 的便捷包装，专门用于处理子命令切片
+// 内部直接调用全局默认命令实例的 `AddSubCmds` 方法，具有相同的验证逻辑和并发安全特性
+//
+// 参数:
+//   - subCmds: 子命令切片，包含要添加的所有子命令实例指针
+//
+// 返回值:
+//   - error: 添加过程中的错误信息，与 AddSubCmd 返回的错误类型相同
+//
+// 使用示例:
+//
+//	subCmds := []*qflag.Cmd{
+//	    qflag.NewCmd("child1", "c1", "子命令1"),
+//	    qflag.NewCmd("child2", "c2", "子命令2"),
+//	}
+//
+//	if err := qflag.AddSubCmds(subCmds); err != nil {
+//	    log.Fatal(err)
+//	}
+func AddSubCmds(subCmds []*cmd.Cmd) error {
+	return getQCommandLine().AddSubCmds(subCmds)
+}
+
 // Args 获取全局默认命令实例 `QCommandLine` 解析后的非标志参数切片。
 // 非标志参数是指命令行中未被识别为标志的参数
 //

@@ -78,6 +78,30 @@ AddSubCmd 向全局默认命令实例 `QCommandLine` 添加一个或多个子命
 **返回值:**
 - `error`: 若添加子命令过程中出现错误（如子命令为 `nil` 或存在循环引用），则返回错误信息；否则返回 `nil`
 
+### AddSubCmds
+
+```go
+func AddSubCmds(subCmds []*cmd.Cmd) error
+```
+
+AddSubCmds 向全局默认命令实例 `QCommandLine` 添加子命令切片的便捷函数。该函数是 AddSubCmd 的便捷包装，专门用于处理子命令切片，内部直接调用全局默认命令实例的 `AddSubCmds` 方法，具有相同的验证逻辑和并发安全特性。
+
+**参数:**
+- `subCmds`: 子命令切片，包含要添加的所有子命令实例指针
+
+**返回值:**
+- `error`: 添加过程中的错误信息，与 AddSubCmd 返回的错误类型相同
+
+**使用场景对比:**
+```go
+// 使用 AddSubCmd - 适合已知数量的子命令
+qflag.AddSubCmd(subCmd1, subCmd2, subCmd3)
+
+// 使用 AddSubCmds - 适合动态生成的子命令切片
+subCmds := []*qflag.Cmd{subCmd1, subCmd2, subCmd3}
+qflag.AddSubCmds(subCmds)
+```
+
 ### Arg
 
 ```go
@@ -690,13 +714,48 @@ func ShortName() string
 
 ShortName 获取命令短名称。
 
-### Slice
+### Size
 
 ```go
-func Slice(longName, shortName string, defValue []string, usage string) *flags.SliceFlag
+func Size(longName, shortName string, defValue int64, usage string) *flags.SizeFlag
 ```
 
-Slice 为全局默认命令定义一个字符串切片类型的命令行标志。该函数会调用全局默认命令实例 `QCommandLine` 的 `Slice` 方法，为命令行添加支持长短标志的字符串切片类型参数。
+Size 为全局默认命令定义一个大小类型的命令行标志。
+该函数会调用全局默认命令实例 `QCommandLine` 的 `Size` 方法，为命令行添加支持长短标志的大小类型参数。
+用户可以输入 "1KB", "5MB", "2.5GiB" 等带单位的字符串，该标志会自动解析为字节数。
+
+**参数:**
+- `longName`: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+- `shortName`: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+- `defValue`: 该命令行标志的默认值，单位为字节 (int64)。
+- `usage`: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+
+**返回值:**
+- `*flags.SizeFlag`: 指向新创建的大小类型标志对象的指针。
+
+### SizeVar
+
+```go
+func SizeVar(f *flags.SizeFlag, longName, shortName string, defValue int64, usage string)
+```
+
+SizeVar 为全局默认命令将一个大小类型的命令行标志绑定到指定的 `SizeFlag` 指针。
+该函数会调用全局默认命令实例 `QCommandLine` 的 `SizeVar` 方法，为命令行添加支持长短标志的大小类型参数。
+
+**参数:**
+- `f`: 指向要绑定的 `SizeFlag` 对象的指针。
+- `longName`: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式。
+- `shortName`: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式。
+- `defValue`: 该命令行标志的默认值，单位为字节 (int64)。
+- `usage`: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途。
+
+### StringSlice
+
+```go
+func StringSlice(longName, shortName string, defValue []string, usage string) *flags.StringSliceFlag
+```
+
+StringSlice 为全局默认命令定义一个字符串切片类型的命令行标志。该函数会调用全局默认命令实例 `QCommandLine` 的 `StringSlice` 方法，为命令行添加支持长短标志的字符串切片类型参数。
 
 **参数:**
 - `longName`: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式
@@ -705,18 +764,82 @@ Slice 为全局默认命令定义一个字符串切片类型的命令行标志�
 - `usage`: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途
 
 **返回值:**
-- `*flags.SliceFlag`: 指向新创建的字符串切片类型标志对象的指针
+- `*flags.StringSliceFlag`: 指向新创建的字符串切片类型标志对象的指针
 
-### SliceVar
+### StringSliceVar
 
 ```go
-func SliceVar(f *flags.SliceFlag, longName, shortName string, defValue []string, usage string)
+func StringSliceVar(f *flags.StringSliceFlag, longName, shortName string, defValue []string, usage string)
 ```
 
-SliceVar 为全局默认命令将一个字符串切片类型的命令行标志绑定到指定的 `SliceFlag` 指针。该函数会调用全局默认命令实例 `QCommandLine` 的 `SliceVar` 方法，为命令行添加支持长短标志的字符串切片类型参数。
+StringSliceVar 为全局默认命令将一个字符串切片类型的命令行标志绑定到指定的 `StringSliceFlag` 指针。该函数会调用全局默认命令实例 `QCommandLine` 的 `StringSliceVar` 方法，为命令行添加支持长短标志的字符串切片类型参数。
 
 **参数:**
-- `f`: 指向要绑定的 `SliceFlag` 对象的指针
+- `f`: 指向要绑定的 `StringSliceFlag` 对象的指针
+- `longName`: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式
+- `shortName`: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式
+- `defValue`: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态
+- `usage`: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途
+
+### IntSlice
+
+```go
+func IntSlice(longName, shortName string, defValue []int, usage string) *flags.IntSliceFlag
+```
+
+IntSlice 为全局默认命令定义一个整数切片类型的命令行标志。该函数会调用全局默认命令实例 `QCommandLine` 的 `IntSlice` 方法，为命令行添加支持长短标志的整数切片类型参数。
+
+**参数:**
+- `longName`: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式
+- `shortName`: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式
+- `defValue`: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态
+- `usage`: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途
+
+**返回值:**
+- `*flags.IntSliceFlag`: 指向新创建的整数切片类型标志对象的指针
+
+### IntSliceVar
+
+```go
+func IntSliceVar(f *flags.IntSliceFlag, longName, shortName string, defValue []int, usage string)
+```
+
+IntSliceVar 为全局默认命令将一个整数切片类型的命令行标志绑定到指定的 `IntSliceFlag` 指针。该函数会调用全局默认命令实例 `QCommandLine` 的 `IntSliceVar` 方法，为命令行添加支持长短标志的整数切片类型参数。
+
+**参数:**
+- `f`: 指向要绑定的 `IntSliceFlag` 对象的指针
+- `longName`: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式
+- `shortName`: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式
+- `defValue`: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态
+- `usage`: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途
+
+### Int64Slice
+
+```go
+func Int64Slice(longName, shortName string, defValue []int64, usage string) *flags.Int64SliceFlag
+```
+
+Int64Slice 为全局默认命令定义一个64位整数切片类型的命令行标志。该函数会调用全局默认命令实例 `QCommandLine` 的 `Int64Slice` 方法，为命令行添加支持长短标志的64位整数切片类型参数。
+
+**参数:**
+- `longName`: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式
+- `shortName`: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式
+- `defValue`: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态
+- `usage`: 该命令行标志的帮助说明信息，在显示帮助信息时会呈现给用户，用以解释该标志的具体用途
+
+**返回值:**
+- `*flags.Int64SliceFlag`: 指向新创建的64位整数切片类型标志对象的指针
+
+### Int64SliceVar
+
+```go
+func Int64SliceVar(f *flags.Int64SliceFlag, longName, shortName string, defValue []int64, usage string)
+```
+
+Int64SliceVar 为全局默认命令将一个64位整数切片类型的命令行标志绑定到指定的 `Int64SliceFlag` 指针。该函数会调用全局默认命令实例 `QCommandLine` 的 `Int64SliceVar` 方法，为命令行添加支持长短标志的64位整数切片类型参数。
+
+**参数:**
+- `f`: 指向要绑定的 `Int64SliceFlag` 对象的指针
 - `longName`: 命令行标志的长名称，在命令行中使用时需遵循 `--longName` 的格式
 - `shortName`: 命令行标志的短名称，在命令行中使用时需遵循 `-shortName` 的格式
 - `defValue`: 该命令行标志的默认值。当用户在命令行中未指定该标志时，会采用此默认值。该值会被复制一份，避免外部修改影响内部状态
@@ -1176,13 +1299,37 @@ type MapFlag = flags.MapFlag
 
 MapFlag 导出flag包中的MapFlag结构体。
 
-### SliceFlag
+### StringSliceFlag
 
 ```go
-type SliceFlag = flags.SliceFlag
+type StringSliceFlag = flags.StringSliceFlag
 ```
 
-SliceFlag 导出flag包中的SliceFlag结构体。
+StringSliceFlag 导出flag包中的StringSliceFlag结构体。
+
+### IntSliceFlag
+
+```go
+type IntSliceFlag = flags.IntSliceFlag
+```
+
+IntSliceFlag 导出flag包中的IntSliceFlag结构体。
+
+### Int64SliceFlag
+
+```go
+type Int64SliceFlag = flags.Int64SliceFlag
+```
+
+Int64SliceFlag 导出flag包中的Int64SliceFlag结构体。
+
+### SizeFlag
+
+```go
+type SizeFlag = flags.SizeFlag
+```
+
+SizeFlag 导出flag包中的SizeFlag结构体。
 
 ### StringFlag
 

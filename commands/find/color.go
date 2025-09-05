@@ -12,62 +12,95 @@ import (
 	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
+const (
+	// 目录颜色常量
+	dirColor = "blue"
+)
+
+// isEmptyFile 检查DirEntry是否为空文件
+//
+// 参数:
+//   - d: 要检查的DirEntry对象
+//
+// 返回:
+//   - bool: 如果是空文件返回true，否则返回false
+func isEmptyFile(d os.DirEntry) bool {
+	info, err := d.Info()
+	return err == nil && info.Size() == 0
+}
+
+// isWindowsSymlink 检查是否为Windows快捷方式
+func isWindowsSymlink(mode os.FileMode, ext string) bool {
+	return runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsSymlinkExts[ext]
+}
+
+// isWindowsExecutable 检查是否为Windows可执行文件
+func isWindowsExecutable(mode os.FileMode, ext string) bool {
+	return runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsExecutableExts[ext]
+}
+
+// isUnixExecutable 检查是否为Unix可执行文件
+func isUnixExecutable(mode os.FileMode) bool {
+	return mode&os.ModeType == 0 && mode&0111 != 0
+}
+
+// isSpecialDevice 检查是否为特殊设备文件
+func isSpecialDevice(mode os.FileMode) bool {
+	return mode&(os.ModeDevice|os.ModeCharDevice|os.ModeNamedPipe|os.ModeSocket) != 0
+}
+
 // printPathColor 根据路径类型以不同颜色输出路径字符串
 //
 // 参数:
 //   - path: 要检查的路径，用于获取文件类型信息
 //   - cl: colorlib.ColorLib实例，用于彩色输出
+//   - d: 匹配到的DirEntry对象
 //
 // 注意:
 //   - 该函数直接输出到标准输出，不返回值
-func printPathColor(path string, cl *colorlib.ColorLib) {
-	// 获取路径信息
-	pathInfo, statErr := os.Lstat(path)
-	if statErr != nil {
-		// 如果获取路径信息失败, 直接输出红色的路径
-		printColor(path, cl, "cyan", "red")
+func printPathColor(path string, cl *colorlib.ColorLib, d os.DirEntry) {
+	// 路径为空时返回
+	if path == "" {
 		return
 	}
 
-	// 根据路径类型设置颜色并直接输出
-	switch mode := pathInfo.Mode(); {
-	case mode&os.ModeSymlink != 0:
-		// 符号链接 - 使用青色输出
-		printColor(path, cl, "cyan", "cyan")
-	case runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsSymlinkExts[filepath.Ext(path)]:
-		// Windows快捷方式 - 使用青色输出
-		printColor(path, cl, "cyan", "cyan")
-	case mode.IsDir():
-		// 目录 - 使用蓝色输出
-		printColor(path, cl, "cyan", "blue")
-	case mode&os.ModeDevice != 0:
-		// 设备文件 - 使用黄色输出
-		printColor(path, cl, "cyan", "yellow")
-	case mode&os.ModeCharDevice != 0:
-		// 字符设备文件 - 使用黄色输出
-		printColor(path, cl, "cyan", "yellow")
-	case mode&os.ModeNamedPipe != 0:
-		// 命名管道 - 使用黄色输出
-		printColor(path, cl, "cyan", "yellow")
-	case mode&os.ModeSocket != 0:
-		// 套接字文件 - 使用黄色输出
-		printColor(path, cl, "cyan", "yellow")
-	case mode&os.ModeType == 0 && mode&0111 != 0:
-		// 可执行文件 - 使用绿色输出
-		printColor(path, cl, "cyan", "green")
-	case runtime.GOOS == "windows" && mode.IsRegular() && types.WindowsExecutableExts[filepath.Ext(path)]:
-		// Windows可执行文件 - 使用绿色输出
-		printColor(path, cl, "cyan", "green")
-	case pathInfo.Size() == 0:
-		// 空文件 - 使用灰色输出
-		printColor(path, cl, "cyan", "gray")
-	case mode.IsRegular():
-		// 普通文件 - 使用白色输出
-		printColor(path, cl, "cyan", "white")
-	default:
-		// 其他类型文件 - 使用白色输出
-		printColor(path, cl, "cyan", "white")
+	// 禁用颜色输出时直接输出路径
+	if cl == nil || !findCmdColor.Get() {
+		fmt.Println(path)
+		return
 	}
+
+	mode := d.Type()          // 获取文件类型
+	ext := filepath.Ext(path) // 缓存扩展名，避免重复计算
+
+	// 确定文件颜色
+	var fileColor string
+	switch {
+	case mode&os.ModeSymlink != 0, isWindowsSymlink(mode, ext):
+		fileColor = "cyan" // 符号链接和Windows快捷方式
+
+	case mode.IsDir():
+		cl.Blue(path) // 目录直接输出(蓝色)
+		return
+
+	case isSpecialDevice(mode):
+		fileColor = "yellow" // 各种设备文件
+
+	case isUnixExecutable(mode), isWindowsExecutable(mode, ext):
+		fileColor = "green" // 可执行文件
+
+	case isEmptyFile(d):
+		fileColor = "gray" // 空文件
+
+	case mode.IsRegular():
+		fileColor = "white" // 普通文件
+
+	default:
+		fileColor = "white" // 其他类型文件
+	}
+
+	// 输出路径
+	printColor(path, cl, dirColor, fileColor)
 }
 
 // printColor 打印彩色路径

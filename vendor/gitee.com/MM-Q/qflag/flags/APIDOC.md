@@ -654,7 +654,10 @@ const (
     FlagTypeBool                     // 布尔类型
     FlagTypeEnum                     // 枚举类型
     FlagTypeDuration                 // 时间间隔类型
-    FlagTypeSlice                    // 切片类型
+    FlagTypeStringSlice              // 字符串切片类型
+    FlagTypeIntSlice                 // 整数切片类型
+    FlagTypeInt64Slice               // 64位整数切片类型
+    FlagTypeSize                     // 大小类型
     FlagTypeTime                     // 时间类型
     FlagTypeMap                      // 映射类型
 )
@@ -838,94 +841,275 @@ func (f *MapFlag) Type() FlagType
 
 - 返回值: FlagType - 标志类型枚举值
 
-### SliceFlag 切片类型标志结构体
+### StringSliceFlag 字符串切片类型标志结构体
 
 ```go
-type SliceFlag struct {
+type StringSliceFlag struct {
     BaseFlag[[]string] // 基类
 
     // Has unexported fields.
 }
 ```
 
-SliceFlag 是切片类型标志结构体，继承 BaseFlag[[]string] 泛型结构体，实现 Flag 接口。
+StringSliceFlag 是字符串切片类型标志结构体，继承 BaseFlag[[]string] 泛型结构体，实现 Flag 接口。
+
+### IntSliceFlag 整数切片类型标志结构体
+
+```go
+type IntSliceFlag struct {
+    BaseFlag[[]int] // 基类
+
+    // Has unexported fields.
+}
+```
+
+IntSliceFlag 是整数切片类型标志结构体，继承 BaseFlag[[]int] 泛型结构体，实现 Flag 接口。
+
+### Int64SliceFlag 64位整数切片类型标志结构体
+
+```go
+type Int64SliceFlag struct {
+    BaseFlag[[]int64] // 基类
+
+    // Has unexported fields.
+}
+```
+
+Int64SliceFlag 是64位整数切片类型标志结构体，继承 BaseFlag[[]int64] 泛型结构体，实现 Flag 接口。
+
+### SizeFlag 大小类型标志结构体
+
+```go
+type SizeFlag struct {
+    BaseFlag[int64]
+    // Has unexported fields.
+}
+```
+
+SizeFlag 是大小类型标志结构体，继承 BaseFlag[int64] 泛型结构体，实现 Flag 接口。
 
 #### 方法
 
 ```go
-func (f *SliceFlag) Clear() error
+func (f *SizeFlag) Init(longName, shortName string, defValue int64, usage string) error
 ```
 
-清空切片所有元素。
+初始化大小标志。
+
+- 参数:
+  - `longName` - 长标志名称
+  - `shortName` - 短标志字符
+  - `defValue` - 默认值（字节数）
+  - `usage` - 帮助说明
+- 返回值: `error` - 初始化错误信息
+
+```go
+func (f *SizeFlag) Set(value string) error
+```
+
+实现 `flag.Value` 接口，解析并设置大小值。
+
+- 参数: `value` - 待设置的值
+- 返回值: `error` - 解析或验证失败时返回错误信息
+
+```go
+func (f *SizeFlag) String() string
+```
+
+实现 `flag.Value` 接口，返回当前值的字符串表示。
+
+- 返回值: `string` - 当前值的字符串表示
+
+```go
+func (f *SizeFlag) Type() FlagType
+```
+
+返回标志类型。
+
+- 返回值: `FlagType` - 标志类型枚举值
+
+```go
+func (f *SizeFlag) SetAllowDecimal(allow bool) *SizeFlag
+```
+
+设置是否允许小数。
+
+- 参数: `allow` - `true` 表示允许小数，`false` 表示不允许
+- 返回值: `*SizeFlag` - 返回自身以支持链式调用
+
+```go
+func (f *SizeFlag) SetAllowNegative(allow bool) *SizeFlag
+```
+
+设置是否允许负数。
+
+- 参数: `allow` - `true` 表示允许负数，`false` 表示不允许
+- 返回值: `*SizeFlag` - 返回自身以支持链式调用
+
+```go
+func (f *SizeFlag) GetBytes() int64
+```
+
+获取字节数。
+
+- 返回值: `int64` - 字节数
+
+```go
+func (f *SizeFlag) GetKiB() float64
+```
+
+获取KiB数。
+
+- 返回值: `float64` - KiB数
+
+```go
+func (f *SizeFlag) GetMiB() float64
+```
+
+获取MiB数。
+
+- 返回值: `float64` - MiB数
+
+```go
+func (f *SizeFlag) GetGiB() float64
+```
+
+获取GiB数。
+
+- 返回值: `float64` - GiB数
+
+```go
+func (f *SizeFlag) GetTiB() float64
+```
+
+获取TiB数。
+
+- 返回值: `float64` - TiB数
+
+```go
+func (f *SizeFlag) GetPiB() float64
+```
+
+获取PiB数。
+
+- 返回值: `float64` - PiB数
+
+```go
+func (f *SizeFlag) IsZero() bool
+```
+
+检查是否为零。
+
+- 返回值: `bool` - `true` 表示为零，`false` 表示非零
+
+```go
+func (f *SizeFlag) IsPositive() bool
+```
+
+检查是否为正数。
+
+- 返回值: `bool` - `true` 表示为正数，`false` 表示非正数
+
+```go
+func (f *SizeFlag) IsNegative() bool
+```
+
+检查是否为负数。
+
+- 返回值: `bool` - `true` 表示为负数，`false` 表示非负数
+
+```go
+func (f *SizeFlag) GetAllowDecimal() bool
+```
+
+获取是否允许小数设置。
+
+- 返回值: `bool` - `true` 表示允许小数，`false` 表示不允许
+
+```go
+func (f *SizeFlag) GetAllowNegative() bool
+```
+
+获取是否允许负数设置。
+
+- 返回值: `bool` - `true` 表示允许负数，`false` 表示不允许
+
+#### StringSliceFlag 方法
+
+```go
+func (f *StringSliceFlag) Clear() error
+```
+
+清空字符串切片所有元素。
 
 - 返回值: 操作成功返回 nil，否则返回错误信息
 - 注意: 该方法会改变切片的指针
 
 ```go
-func (f *SliceFlag) Contains(element string) bool
+func (f *StringSliceFlag) Contains(element string) bool
 ```
 
-检查切片是否包含指定元素。
+检查字符串切片是否包含指定元素。
 
 - 参数: `element` - 待检查的元素
 - 返回值: 若切片包含指定元素，返回 true，否则返回 false
 - 注意: 当切片未设置值时，将使用默认值进行检查
 
 ```go
-func (f *SliceFlag) GetDelimiters() []string
+func (f *StringSliceFlag) GetDelimiters() []string
 ```
 
 获取当前分隔符列表。
 
 ```go
-func (f *SliceFlag) Init(longName, shortName string, defValue []string, usage string) error
+func (f *StringSliceFlag) Init(longName, shortName string, defValue []string, usage string) error
 ```
 
-初始化切片类型标志。
+初始化字符串切片类型标志。
 
 - 参数:
   - `longName` - 长标志名称
   - `shortName` - 短标志字符
-  - `defValue` - 默认值（切片类型）
+  - `defValue` - 默认值（字符串切片类型）
   - `usage` - 帮助说明
 - 返回值: error - 初始化错误信息
 
 ```go
-func (f *SliceFlag) Len() int
+func (f *StringSliceFlag) Len() int
 ```
 
-获取切片长度。
+获取字符串切片长度。
 
 - 返回值: 获取切片长度
 
 ```go
-func (f *SliceFlag) Remove(element string) error
+func (f *StringSliceFlag) Remove(element string) error
 ```
 
-从切片中移除指定元素（支持移除空字符串元素）。
+从字符串切片中移除指定元素（支持移除空字符串元素）。
 
 - 参数: `element` - 待移除的元素（支持空字符串）
 - 返回值: 操作成功返回 nil，否则返回错误信息
 
 ```go
-func (f *SliceFlag) Set(value string) error
+func (f *StringSliceFlag) Set(value string) error
 ```
 
-实现 flag.Value 接口，解析并设置切片值。
+实现 flag.Value 接口，解析并设置字符串切片值。
 
 - 参数: `value` - 待解析的切片值
 - 注意: 如果切片中包含分隔符，则根据分隔符进行分割，否则将整个值作为单个元素。例如: "a,b,c" -> ["a", "b", "c"]
 
 ```go
-func (f *SliceFlag) SetDelimiters(delimiters []string)
+func (f *StringSliceFlag) SetDelimiters(delimiters []string)
 ```
 
-设置切片解析的分隔符列表。
+设置字符串切片解析的分隔符列表。
 
 - 参数: `delimiters` - 分隔符列表
 
 ```go
-func (f *SliceFlag) SetSkipEmpty(skip bool)
+func (f *StringSliceFlag) SetSkipEmpty(skip bool)
 ```
 
 设置是否跳过空元素。
@@ -934,10 +1118,10 @@ func (f *SliceFlag) SetSkipEmpty(skip bool)
 - 线程安全的空元素跳过更新
 
 ```go
-func (f *SliceFlag) Sort() error
+func (f *StringSliceFlag) Sort() error
 ```
 
-对切片进行排序。
+对字符串切片进行排序。
 
 - 对当前切片标志的值进行原地排序，修改原切片内容
 - 采用 Go 标准库的 sort.Strings() 函数进行字典序排序（按 Unicode 代码点升序排列）
@@ -948,13 +1132,229 @@ func (f *SliceFlag) Sort() error
 - 返回值: 排序成功返回 nil，若排序过程中发生错误则返回错误信息
 
 ```go
-func (f *SliceFlag) String() string
+func (f *StringSliceFlag) String() string
 ```
 
 实现 flag.Value 接口，返回当前值的字符串表示。
 
 ```go
-func (f *SliceFlag) Type() FlagType
+func (f *StringSliceFlag) Type() FlagType
+```
+
+返回标志类型。
+
+#### IntSliceFlag 方法
+
+```go
+func (f *IntSliceFlag) Clear() error
+```
+
+清空整数切片所有元素。
+
+- 返回值: 操作成功返回 nil，否则返回错误信息
+- 注意: 该方法会改变切片的指针
+
+```go
+func (f *IntSliceFlag) Contains(element int) bool
+```
+
+检查整数切片是否包含指定元素。
+
+- 参数: `element` - 待检查的元素
+- 返回值: 若切片包含指定元素，返回 true，否则返回 false
+- 注意: 当切片未设置值时，将使用默认值进行检查
+
+```go
+func (f *IntSliceFlag) GetDelimiters() []string
+```
+
+获取当前分隔符列表。
+
+```go
+func (f *IntSliceFlag) Init(longName, shortName string, defValue []int, usage string) error
+```
+
+初始化整数切片类型标志。
+
+- 参数:
+  - `longName` - 长标志名称
+  - `shortName` - 短标志字符
+  - `defValue` - 默认值（整数切片类型）
+  - `usage` - 帮助说明
+- 返回值: error - 初始化错误信息
+
+```go
+func (f *IntSliceFlag) Len() int
+```
+
+获取整数切片长度。
+
+- 返回值: 获取切片长度
+
+```go
+func (f *IntSliceFlag) Remove(element int) error
+```
+
+从整数切片中移除指定元素。
+
+- 参数: `element` - 待移除的元素
+- 返回值: 操作成功返回 nil，否则返回错误信息
+
+```go
+func (f *IntSliceFlag) Set(value string) error
+```
+
+实现 flag.Value 接口，解析并设置整数切片值。
+
+- 参数: `value` - 待解析的切片值
+- 注意: 如果切片中包含分隔符，则根据分隔符进行分割，否则将整个值作为单个元素。例如: "1,2,3" -> [1, 2, 3]
+
+```go
+func (f *IntSliceFlag) SetDelimiters(delimiters []string)
+```
+
+设置整数切片解析的分隔符列表。
+
+- 参数: `delimiters` - 分隔符列表
+
+```go
+func (f *IntSliceFlag) SetSkipEmpty(skip bool)
+```
+
+设置是否跳过空元素。
+
+- 参数: `skip` - 为 true 时跳过空元素，为 false 时保留空元素
+- 线程安全的空元素跳过更新
+
+```go
+func (f *IntSliceFlag) Sort() error
+```
+
+对整数切片进行排序。
+
+- 对当前切片标志的值进行原地排序，修改原切片内容
+- 采用 Go 标准库的 sort.Ints() 函数进行数值升序排序
+- 注意:
+  - 排序会直接修改当前标志的值，而非返回新切片
+  - 若切片未设置值，将使用默认值进行排序
+- 返回值: 排序成功返回 nil，若排序过程中发生错误则返回错误信息
+
+```go
+func (f *IntSliceFlag) String() string
+```
+
+实现 flag.Value 接口，返回当前值的字符串表示。
+
+```go
+func (f *IntSliceFlag) Type() FlagType
+```
+
+返回标志类型。
+
+#### Int64SliceFlag 方法
+
+```go
+func (f *Int64SliceFlag) Clear() error
+```
+
+清空64位整数切片所有元素。
+
+- 返回值: 操作成功返回 nil，否则返回错误信息
+- 注意: 该方法会改变切片的指针
+
+```go
+func (f *Int64SliceFlag) Contains(element int64) bool
+```
+
+检查64位整数切片是否包含指定元素。
+
+- 参数: `element` - 待检查的元素
+- 返回值: 若切片包含指定元素，返回 true，否则返回 false
+- 注意: 当切片未设置值时，将使用默认值进行检查
+
+```go
+func (f *Int64SliceFlag) GetDelimiters() []string
+```
+
+获取当前分隔符列表。
+
+```go
+func (f *Int64SliceFlag) Init(longName, shortName string, defValue []int64, usage string) error
+```
+
+初始化64位整数切片类型标志。
+
+- 参数:
+  - `longName` - 长标志名称
+  - `shortName` - 短标志字符
+  - `defValue` - 默认值（64位整数切片类型）
+  - `usage` - 帮助说明
+- 返回值: error - 初始化错误信息
+
+```go
+func (f *Int64SliceFlag) Len() int
+```
+
+获取64位整数切片长度。
+
+- 返回值: 获取切片长度
+
+```go
+func (f *Int64SliceFlag) Remove(element int64) error
+```
+
+从64位整数切片中移除指定元素。
+
+- 参数: `element` - 待移除的元素
+- 返回值: 操作成功返回 nil，否则返回错误信息
+
+```go
+func (f *Int64SliceFlag) Set(value string) error
+```
+
+实现 flag.Value 接口，解析并设置64位整数切片值。
+
+- 参数: `value` - 待解析的切片值
+- 注意: 如果切片中包含分隔符，则根据分隔符进行分割，否则将整个值作为单个元素。例如: "1,2,3" -> [1, 2, 3]
+
+```go
+func (f *Int64SliceFlag) SetDelimiters(delimiters []string)
+```
+
+设置64位整数切片解析的分隔符列表。
+
+- 参数: `delimiters` - 分隔符列表
+
+```go
+func (f *Int64SliceFlag) SetSkipEmpty(skip bool)
+```
+
+设置是否跳过空元素。
+
+- 参数: `skip` - 为 true 时跳过空元素，为 false 时保留空元素
+- 线程安全的空元素跳过更新
+
+```go
+func (f *Int64SliceFlag) Sort() error
+```
+
+对64位整数切片进行排序。
+
+- 对当前切片标志的值进行原地排序，修改原切片内容
+- 采用自定义排序函数进行数值升序排序
+- 注意:
+  - 排序会直接修改当前标志的值，而非返回新切片
+  - 若切片未设置值，将使用默认值进行排序
+- 返回值: 排序成功返回 nil，若排序过程中发生错误则返回错误信息
+
+```go
+func (f *Int64SliceFlag) String() string
+```
+
+实现 flag.Value 接口，返回当前值的字符串表示。
+
+```go
+func (f *Int64SliceFlag) Type() FlagType
 ```
 
 返回标志类型。
