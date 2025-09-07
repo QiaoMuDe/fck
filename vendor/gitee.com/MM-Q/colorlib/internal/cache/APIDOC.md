@@ -29,14 +29,12 @@
 
 ### ANSICache
 
-ANSI序列缓存管理器，提供高效的序列缓存和统计功能。
+ANSI序列缓存管理器，提供高效的序列缓存功能。
 
 #### 主要方法
 
 - `NewANSICache() *ANSICache`
 - `GetANSI(colorCode int, bold, underline, blink bool) string`
-- `GetStats() *CacheStats`
-- `GetHitRate() float64`
 - `GetCacheSize() int`
 - `Clear()`
 
@@ -60,8 +58,6 @@ func main() {
     redBold := ansiCache.GetANSI(31, true, false, false)
     fmt.Printf("红色粗体序列: %s\n", redBold)
     
-    // 查看缓存统计
-    fmt.Printf("缓存命中率: %.2f%%\n", ansiCache.GetHitRate())
     fmt.Printf("缓存大小: %d\n", ansiCache.GetCacheSize())
 }
 ```
@@ -92,30 +88,12 @@ if key.IsValid() {
 
 ### 查找性能
 - O(1) 哈希查找时间复杂度
-- 预期缓存命中率: 85-95%
 - 位运算比较，单CPU指令完成
 
 ### 预热策略
 - 自动预热25+常用颜色组合
 - 基于实际使用模式优化
 - 支持日志级别常用组合
-
-## 统计信息
-
-### CacheStats 结构
-```go
-type CacheStats struct {
-    TotalRequests atomic.Int64 // 总请求次数
-    CacheHits     atomic.Int64 // 缓存命中次数
-    CacheMisses   atomic.Int64 // 缓存未命中次数
-}
-```
-
-### 监控方法
-- `GetStats()` - 获取详细统计
-- `GetHitRate()` - 获取命中率百分比
-- `GetTopHits(limit)` - 获取热点缓存键
-- `String()` - 获取状态摘要
 
 ## 扩展性设计
 
@@ -136,12 +114,10 @@ const (
 ## 线程安全
 
 - 使用 `sync.Map` 实现无锁缓存
-- 统计信息使用原子操作
 - 支持高并发读写操作
 
 ## 最佳实践
 
 1. **单例使用**: 建议在ColorLib中使用单个ANSICache实例
 2. **预热优化**: 根据应用场景自定义预热组合
-3. **监控统计**: 定期检查命中率，优化缓存策略
-4. **内存管理**: 在长期运行的应用中考虑定期清理
+3. **内存管理**: 在长期运行的应用中考虑定期清理

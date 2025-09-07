@@ -1,28 +1,17 @@
 // Package cache 提供了ANSI序列缓存管理功能。
 // 该文件实现了ANSICache结构体，用于缓存预构建的ANSI颜色序列，
-// 支持预热、统计、清理等功能，显著提升颜色输出的性能。
+// 支持预热、清理等功能，显著提升颜色输出的性能。
 package cache
 
 import (
 	"fmt"
 	"strings"
 	"sync"
-	"sync/atomic"
 )
 
 // ANSICache ANSI序列缓存管理器
 type ANSICache struct {
-	cache    sync.Map           // 线程安全的缓存存储 map[CacheKey]string
-	hitCount map[CacheKey]int64 // 命中次数统计
-	mu       sync.RWMutex       // 保护hitCount的读写锁
-	stats    CacheStats         // 缓存统计信息
-}
-
-// CacheStats 缓存统计信息
-type CacheStats struct {
-	TotalRequests atomic.Int64 // 总请求次数
-	CacheHits     atomic.Int64 // 缓存命中次数
-	CacheMisses   atomic.Int64 // 缓存未命中次数
+	cache sync.Map // 线程安全的缓存存储 map[CacheKey]string
 }
 
 // NewANSICache 创建新的ANSI序列缓存管理器
@@ -30,9 +19,7 @@ type CacheStats struct {
 // 返回值:
 //   - *ANSICache: ANSI缓存管理器实例
 func NewANSICache() *ANSICache {
-	cache := &ANSICache{
-		hitCount: make(map[CacheKey]int64),
-	}
+	cache := &ANSICache{}
 
 	// 预热常用组合
 	cache.preheat()
@@ -100,17 +87,13 @@ func (ac *ANSICache) preheat() {
 //   - string: ANSI序列字符串
 func (ac *ANSICache) GetANSI(colorCode int, bold, underline, blink bool) string {
 	key := BuildCacheKey(colorCode, bold, underline, blink)
-	ac.stats.TotalRequests.Add(1)
 
 	// 尝试从缓存获取
 	if cached, ok := ac.cache.Load(key); ok {
-		ac.recordHit(key)
-		ac.stats.CacheHits.Add(1)
 		return cached.(string)
 	}
 
 	// 缓存未命中，构建并缓存
-	ac.stats.CacheMisses.Add(1)
 	ansi := ac.buildANSI(key)
 	ac.cache.Store(key, ansi)
 	return ansi
@@ -153,37 +136,6 @@ func (ac *ANSICache) buildANSI(key CacheKey) string {
 	return builder.String()
 }
 
-// recordHit 记录缓存命中
-//
-// 参数:
-//   - key: 缓存键
-func (ac *ANSICache) recordHit(key CacheKey) {
-	ac.mu.Lock()
-	ac.hitCount[key]++
-	ac.mu.Unlock()
-}
-
-// GetStats 获取缓存统计信息
-//
-// 返回值:
-//   - *CacheStats: 缓存统计信息指针
-func (ac *ANSICache) GetStats() *CacheStats {
-	return &ac.stats
-}
-
-// GetHitRate 获取缓存命中率
-//
-// 返回值:
-//   - float64: 命中率百分比 (0-100)
-func (ac *ANSICache) GetHitRate() float64 {
-	total := ac.stats.TotalRequests.Load()
-	if total == 0 {
-		return 0.0
-	}
-	hits := ac.stats.CacheHits.Load()
-	return float64(hits) / float64(total) * 100.0
-}
-
 // GetCacheSize 获取当前缓存大小
 //
 // 返回值:
@@ -197,60 +149,12 @@ func (ac *ANSICache) GetCacheSize() int {
 	return count
 }
 
-// GetTopHits 获取命中次数最多的缓存键
-//
-// 参数:
-//   - limit: 返回的最大数量
-//
-// 返回值:
-//   - []CacheKey: 按命中次数排序的缓存键列表
-func (ac *ANSICache) GetTopHits(limit int) []CacheKey {
-	ac.mu.RLock()
-	defer ac.mu.RUnlock()
-
-	type keyHit struct {
-		key CacheKey
-		hit int64
-	}
-
-	var hits []keyHit
-	for key, count := range ac.hitCount {
-		hits = append(hits, keyHit{key, count})
-	}
-
-	// 简单的冒泡排序（因为数量不大）
-	for i := 0; i < len(hits)-1; i++ {
-		for j := 0; j < len(hits)-i-1; j++ {
-			if hits[j].hit < hits[j+1].hit {
-				hits[j], hits[j+1] = hits[j+1], hits[j]
-			}
-		}
-	}
-
-	// 返回前limit个
-	result := make([]CacheKey, 0, limit)
-	for i := 0; i < len(hits) && i < limit; i++ {
-		result = append(result, hits[i].key)
-	}
-
-	return result
-}
-
 // Clear 清空缓存
 func (ac *ANSICache) Clear() {
 	ac.cache.Range(func(key, value interface{}) bool {
 		ac.cache.Delete(key)
 		return true
 	})
-
-	ac.mu.Lock()
-	ac.hitCount = make(map[CacheKey]int64)
-	ac.mu.Unlock()
-
-	// 重置统计信息
-	ac.stats.TotalRequests.Store(0)
-	ac.stats.CacheHits.Store(0)
-	ac.stats.CacheMisses.Store(0)
 }
 
 // String 返回缓存状态的字符串表示
@@ -258,8 +162,5 @@ func (ac *ANSICache) Clear() {
 // 返回值:
 //   - string: 缓存状态信息
 func (ac *ANSICache) String() string {
-	return fmt.Sprintf("ANSICache{size:%d, hitRate:%.2f%%, requests:%d}",
-		ac.GetCacheSize(),
-		ac.GetHitRate(),
-		ac.stats.TotalRequests.Load())
+	return fmt.Sprintf("ANSICache{size:%d}", ac.GetCacheSize())
 }

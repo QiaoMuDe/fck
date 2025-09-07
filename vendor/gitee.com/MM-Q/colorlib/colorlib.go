@@ -9,7 +9,6 @@ import (
 	"os"
 	"sync"
 
-	"gitee.com/MM-Q/colorlib/internal/buffer"
 	"gitee.com/MM-Q/colorlib/internal/cache"
 	"gitee.com/MM-Q/colorlib/internal/color"
 	"gitee.com/MM-Q/colorlib/internal/style"
@@ -22,9 +21,6 @@ var (
 
 // ColorLib 结构体用于管理颜色输出和日志级别映射。
 type ColorLib struct {
-	// 构建器管理器
-	buildMgr *buffer.BuilderPool
-
 	// 样式配置管理器
 	configMgr *style.StyleConfig
 
@@ -81,11 +77,10 @@ func NewColorLibWithWriter(writer io.Writer) *ColorLib {
 
 	// 创建一个新的 ColorLib 实例
 	cl := &ColorLib{
-		buildMgr:  buffer.NewDefaultBuilderPool(), // 初始化构建器管理器
-		configMgr: style.NewStyleConfig(),         // 初始化样式配置
-		colorMgr:  color.NewColorManager(),        // 初始化颜色管理器
-		ansiCache: cache.NewANSICache(),           // 初始化ANSI序列缓存
-		writer:    writer,                         // 设置输出接口（不可变）
+		configMgr: style.NewStyleConfig(),  // 初始化样式配置
+		colorMgr:  color.NewColorManager(), // 初始化颜色管理器
+		ansiCache: cache.NewANSICache(),    // 初始化ANSI序列缓存
+		writer:    writer,                  // 设置输出接口（不可变）
 	}
 
 	return cl
@@ -190,24 +185,44 @@ func (c *ColorLib) WithBlink(enabled bool) *ColorLib {
 }
 
 // ===========================================================
-// 缓存统计方法
+// 样式获取方法
 // ===========================================================
 
-// GetCacheStats 获取ANSI序列缓存统计信息
+// GetColor 获取颜色启用状态
 //
 // 返回值:
-//   - *cache.CacheStats: 缓存统计信息指针
-func (c *ColorLib) GetCacheStats() *cache.CacheStats {
-	return c.ansiCache.GetStats()
+//   - bool: 颜色启用状态
+func (c *ColorLib) GetColor() bool {
+	return c.configMgr.GetColor()
 }
 
-// GetCacheHitRate 获取缓存命中率
+// GetBold 获取粗体启用状态
 //
 // 返回值:
-//   - float64: 命中率百分比 (0-100)
-func (c *ColorLib) GetCacheHitRate() float64 {
-	return c.ansiCache.GetHitRate()
+//   - bool: 粗体启用状态
+func (c *ColorLib) GetBold() bool {
+	return c.configMgr.GetBold()
 }
+
+// GetUnderline 获取下划线启用状态
+//
+// 返回值:
+//   - bool: 下划线启用状态
+func (c *ColorLib) GetUnderline() bool {
+	return c.configMgr.GetUnderline()
+}
+
+// GetBlink 获取闪烁启用状态
+//
+// 返回值:
+//   - bool: 闪烁启用状态
+func (c *ColorLib) GetBlink() bool {
+	return c.configMgr.GetBlink()
+}
+
+// ===========================================================
+// 缓存统计方法
+// ===========================================================
 
 // GetCacheSize 获取当前缓存大小
 //

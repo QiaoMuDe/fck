@@ -1,8 +1,8 @@
 module gitee.com/MM-Q/fck
 
-go 1.24.4
+go 1.25.0
 
-require gitee.com/MM-Q/colorlib v1.3.0
+require gitee.com/MM-Q/colorlib v1.3.2
 
 require (
 	gitee.com/MM-Q/comprx v0.1.3
@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	gitee.com/MM-Q/go-kit v0.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect

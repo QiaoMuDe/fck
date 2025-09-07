@@ -1092,3 +1092,47 @@ Yellowf 方法用于将传入的参数以黄色文本形式打印到控制台。
 - 参数:
   - `format`: 格式化字符串，用于指定输出的格式
   - `a`: 可变参数，用于填充格式化字符串中的占位符
+
+#### GetColor
+
+```go
+func (c *ColorLib) GetColor() bool
+```
+
+GetColor 获取颜色启用状态。
+
+- 返回值:
+  - `bool`: 颜色启用状态
+
+#### GetBold
+
+```go
+func (c *ColorLib) GetBold() bool
+```
+
+GetBold 获取粗体启用状态。
+
+- 返回值:
+  - `bool`: 粗体启用状态
+
+#### GetUnderline
+
+```go
+func (c *ColorLib) GetUnderline() bool
+```
+
+GetUnderline 获取下划线启用状态。
+
+- 返回值:
+  - `bool`: 下划线启用状态
+
+#### GetBlink
+
+```go
+func (c *ColorLib) GetBlink() bool
+```
+
+GetBlink 获取闪烁启用状态。
+
+- 返回值:
+  - `bool`: 闪烁启用状态

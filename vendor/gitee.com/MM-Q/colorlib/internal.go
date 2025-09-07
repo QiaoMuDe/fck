@@ -6,6 +6,8 @@ package colorlib
 import (
 	"fmt"
 	"strings"
+
+	"gitee.com/MM-Q/go-kit/pool"
 )
 
 // printWithColor 方法用于将传入的参数以指定颜色文本形式打印到控制台
@@ -39,11 +41,8 @@ func (c *ColorLib) printWithColor(colorCode int, msg string, needLineFeed bool) 
 		return
 	}
 
-	// 直接构建字符串
-	result := c.buildMgr.BuildString(func(builder *strings.Builder) {
-		// 预估容量：\033[ + 最多4个样式代码(每个2位) + 分号 + 颜色代码(2位) + m + 消息 + \033[0m
-		builder.Grow(len(msg) + 32)
-
+	// 直接构建字符串: 预估容量：\033[ + 最多4个样式代码(每个2位) + 分号 + 颜色代码(2位) + m + 消息 + \033[0m
+	result := pool.WithStrCap(len(msg)+32, func(builder *strings.Builder) {
 		// 使用辅助方法构建ANSI序列
 		c.buildAnsiSequence(builder, colorCode)
 
@@ -90,10 +89,7 @@ func (c *ColorLib) returnWithColor(colorCode int, msg string) string {
 	}
 
 	// 使用字符串构建器构建带颜色的字符串
-	return c.buildMgr.BuildString(func(builder *strings.Builder) {
-		// 预估容量
-		builder.Grow(len(msg) + 32)
-
+	return pool.WithStrCap(len(msg)+32, func(builder *strings.Builder) {
 		// 使用辅助方法构建ANSI序列
 		c.buildAnsiSequence(builder, colorCode)
 
@@ -144,7 +140,7 @@ func (c *ColorLib) promptMsg(level int, colorCode int, needLineFeed bool, format
 	}
 
 	// 使用字符串构建器构建消息
-	message := c.buildMgr.BuildString(func(builder *strings.Builder) {
+	message := pool.WithStrCap(len(prefix)+len(format)+32, func(builder *strings.Builder) {
 		// 写入前缀
 		_, _ = builder.WriteString(prefix)
 
@@ -154,12 +150,6 @@ func (c *ColorLib) promptMsg(level int, colorCode int, needLineFeed bool, format
 			_, _ = builder.WriteString(combinedMsg)
 		}
 	})
-
-	// 检查是否禁用颜色输出
-	if !c.configMgr.GetColor() {
-		_, _ = fmt.Fprintln(c.writer, message)
-		return
-	}
 
 	// 使用颜色打印
 	c.printWithColor(colorCode, message, needLineFeed)
