@@ -2,34 +2,6 @@
 
 Package utils 提供了多种实用工具函数，包括缓冲区管理、文件和目录大小计算、路径处理、文件列表处理和格式化显示等功能。这些工具函数被压缩库的各个模块广泛使用，提供了统一的基础功能。
 
-## 缓冲区管理
-
-### 主要功能
-
-- 缓冲区对象池管理
-- 动态大小缓冲区获取
-- 自动内存回收控制
-- 防止内存泄漏的大小限制
-
-### 性能优化
-
-- 使用 `sync.Pool` 减少 GC 压力
-- 支持不同大小的缓冲区需求
-- 自动限制大缓冲区回收
-
-### 使用示例
-
-```go
-// 获取缓冲区
-buffer := utils.GetBuffer(64 * 1024)
-
-// 使用缓冲区进行文件操作
-_, err := io.CopyBuffer(dst, src, buffer)
-
-// 归还缓冲区到对象池
-utils.PutBuffer(buffer)
-```
-
 ## 文件和目录大小计算
 
 ### 主要功能
@@ -121,9 +93,6 @@ if utils.Exists("file.txt") {
 
 // 确保目录存在
 err := utils.EnsureDir("output/dir")
-
-// 获取动态缓冲区大小
-bufSize := utils.GetBufferSize(fileSize)
 
 // 验证路径安全性
 safePath, err := utils.ValidatePathSimple(targetDir, filePath, false)
@@ -252,30 +221,6 @@ func FormatFileSize(size int64) string
 - **返回**:
   - `string`: 格式化后的文件大小字符串
 
-### GetBuffer
-
-```go
-func GetBuffer(size int) []byte
-```
-
-- **描述**: 从对象池获取缓冲区
-- **参数**:
-  - `size`: 缓冲区大小
-- **返回**:
-  - `[]byte`: 获取到的缓冲区
-
-### GetBufferSize
-
-```go
-func GetBufferSize(fileSize int64) int
-```
-
-- **描述**: 根据文件大小动态设置缓冲区大小
-- **参数**:
-  - `fileSize`: 文件大小
-- **返回**:
-  - `int`: 缓冲区大小
-
 ### GetSize
 
 ```go
@@ -371,19 +316,6 @@ func PrintFileList(files []types.FileInfo, showDetails bool)
 - **参数**:
   - `files`: 文件列表
   - `showDetails`: 是否显示详细信息
-
-### PutBuffer
-
-```go
-func PutBuffer(buffer []byte)
-```
-
-- **描述**: 将缓冲区归还到对象池
-- **参数**:
-  - `buffer`: 要归还的缓冲区
-- **说明**:
-  - 该函数将缓冲区归还到对象池，以便后续复用
-  - 只有容量不超过 1MB 的缓冲区才会被归还，以避免对象池占用过多内存
 
 ### ValidatePathSimple
 

@@ -44,6 +44,7 @@ import (
 	"gitee.com/MM-Q/comprx/internal/config"
 	"gitee.com/MM-Q/comprx/internal/progress"
 	"gitee.com/MM-Q/comprx/internal/utils"
+	"gitee.com/MM-Q/go-kit/pool"
 )
 
 // Tar 函数用于创建TAR归档文件
@@ -312,9 +313,9 @@ func processRegularFile(tarWriter *tar.Writer, path, headerName string, info os.
 	fileSize := info.Size()
 
 	// 获取缓冲区大小并创建缓冲区
-	bufferSize := utils.GetBufferSize(fileSize)
-	buffer := utils.GetBuffer(bufferSize)
-	defer utils.PutBuffer(buffer)
+	bufferSize := pool.CalculateBufferSize(fileSize)
+	buffer := pool.GetByteCap(bufferSize)
+	defer pool.PutByte(buffer)
 
 	// 复制文件内容到TAR写入器
 	if _, err := cfg.Progress.CopyBuffer(tarWriter, file, buffer); err != nil {

@@ -49,6 +49,7 @@ import (
 	"gitee.com/MM-Q/comprx/internal/config"
 	"gitee.com/MM-Q/comprx/internal/utils"
 	"gitee.com/MM-Q/comprx/types"
+	"gitee.com/MM-Q/go-kit/pool"
 )
 
 // Untar 解压缩 TAR 文件到指定目录
@@ -268,12 +269,10 @@ func extractRegularFile(tarReader *tar.Reader, targetPath string, header *tar.He
 	}
 	defer func() { _ = fileWriter.Close() }()
 
-	// 获取对应文件大小的缓冲区
-	bufferSize := utils.GetBufferSize(fileSize)
-
-	// 创建缓冲区
-	buffer := utils.GetBuffer(bufferSize)
-	defer utils.PutBuffer(buffer)
+	// 获取缓冲区大小并创建缓冲区
+	bufferSize := pool.CalculateBufferSize(fileSize)
+	buffer := pool.GetByteCap(bufferSize)
+	defer pool.PutByte(buffer)
 
 	// 将文件内容写入目标文件
 	if _, err := cfg.Progress.CopyBuffer(fileWriter, tarReader, buffer); err != nil {

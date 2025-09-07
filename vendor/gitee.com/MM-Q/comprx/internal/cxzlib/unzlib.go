@@ -50,6 +50,7 @@ import (
 	"gitee.com/MM-Q/comprx/internal/config"
 	"gitee.com/MM-Q/comprx/internal/utils"
 	"gitee.com/MM-Q/comprx/types"
+	"gitee.com/MM-Q/go-kit/pool"
 )
 
 // calculateZlibTotalSize 计算ZLIB文件的解压后大小
@@ -88,8 +89,8 @@ func calculateZlibTotalSize(zlibFilePath string, cfg *config.Config) int64 {
 
 	// 由于ZLIB是流式压缩，我们需要读取整个文件来计算大小
 	// 使用进度条作为写入器，直接通过io.CopyBuffer计算总大小
-	buffer := utils.GetBuffer(utils.DefaultBufferSize) // 32KB缓冲区
-	defer utils.PutBuffer(buffer)
+	buffer := pool.GetByteCap(utils.DefaultBufferSize) // 32KB缓冲区
+	defer pool.PutByte(buffer)
 
 	totalSize, err := io.CopyBuffer(bar, zlibReader, buffer)
 	if err != nil {
@@ -174,10 +175,9 @@ func Unzlib(zlibFilePath string, targetPath string, config *config.Config) error
 	defer func() { _ = targetFile.Close() }()
 
 	// 使用之前获取的zlibInfo来估算缓冲区大小
-	// 获取缓冲区大小并创建缓冲区
-	bufferSize := utils.GetBufferSize(zlibInfo.Size())
-	buffer := utils.GetBuffer(bufferSize)
-	defer utils.PutBuffer(buffer)
+	bufferSize := pool.CalculateBufferSize(zlibInfo.Size())
+	buffer := pool.GetByteCap(bufferSize)
+	defer pool.PutByte(buffer)
 
 	// 打印解压缩进度
 	config.Progress.Inflating(targetPath)

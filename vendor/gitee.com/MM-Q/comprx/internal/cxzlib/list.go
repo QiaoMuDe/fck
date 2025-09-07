@@ -50,6 +50,7 @@ import (
 
 	"gitee.com/MM-Q/comprx/internal/utils"
 	"gitee.com/MM-Q/comprx/types"
+	"gitee.com/MM-Q/go-kit/pool"
 )
 
 // ListZlib 获取ZLIB压缩包的文件信息
@@ -98,8 +99,8 @@ func ListZlib(archivePath string) (*types.ArchiveInfo, error) {
 
 	// ZLIB是单文件压缩，需要读取整个文件来获取原始大小
 	// 使用io.CopyBuffer配合io.Discard，既高效又准确
-	buffer := utils.GetBuffer(utils.DefaultBufferSize)
-	defer utils.PutBuffer(buffer)
+	buffer := pool.GetByteCap(utils.DefaultBufferSize)
+	defer pool.PutByte(buffer)
 
 	originalSize, err := io.CopyBuffer(io.Discard, zlibReader, buffer)
 	if err != nil {

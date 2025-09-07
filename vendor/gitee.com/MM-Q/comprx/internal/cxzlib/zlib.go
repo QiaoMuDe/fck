@@ -40,6 +40,7 @@ import (
 
 	"gitee.com/MM-Q/comprx/internal/config"
 	"gitee.com/MM-Q/comprx/internal/utils"
+	"gitee.com/MM-Q/go-kit/pool"
 )
 
 // Zlib 函数用于压缩单个文件为ZLIB格式
@@ -118,9 +119,9 @@ func Zlib(dst string, src string, cfg *config.Config) error {
 	defer func() { _ = srcFile.Close() }()
 
 	// 获取缓冲区大小并创建缓冲区
-	bufferSize := utils.GetBufferSize(fileSize)
-	buffer := utils.GetBuffer(bufferSize)
-	defer utils.PutBuffer(buffer)
+	bufferSize := pool.CalculateBufferSize(fileSize)
+	buffer := pool.GetByteCap(bufferSize)
+	defer pool.PutByte(buffer)
 
 	// 更新进度
 	cfg.Progress.Adding(src)

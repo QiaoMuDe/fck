@@ -51,6 +51,7 @@ import (
 	"gitee.com/MM-Q/comprx/internal/config"
 	"gitee.com/MM-Q/comprx/internal/utils"
 	"gitee.com/MM-Q/comprx/types"
+	"gitee.com/MM-Q/go-kit/pool"
 )
 
 // calculateBzip2TotalSize 计算BZIP2文件的解压后大小
@@ -85,8 +86,8 @@ func calculateBzip2TotalSize(bz2FilePath string, cfg *config.Config) int64 {
 
 	// 由于BZIP2是流式压缩，我们需要读取整个文件来计算大小
 	// 使用进度条作为写入器，直接通过io.CopyBuffer计算总大小
-	buffer := utils.GetBuffer(utils.DefaultBufferSize)
-	defer utils.PutBuffer(buffer)
+	buffer := pool.GetByteCap(utils.DefaultBufferSize)
+	defer pool.PutByte(buffer)
 
 	totalSize, err := io.CopyBuffer(bar, bz2Reader, buffer)
 	if err != nil {
@@ -174,9 +175,9 @@ func Unbz2(bz2FilePath string, targetPath string, cfg *config.Config) error {
 	defer func() { _ = targetFile.Close() }()
 
 	// 获取缓冲区大小并创建缓冲区
-	bufferSize := utils.GetBufferSize(bz2Info.Size())
-	buffer := utils.GetBuffer(bufferSize)
-	defer utils.PutBuffer(buffer)
+	bufferSize := pool.CalculateBufferSize(bz2Info.Size())
+	buffer := pool.GetByteCap(bufferSize)
+	defer pool.PutByte(buffer)
 
 	// 打印解压缩进度
 	cfg.Progress.Inflating(targetPath)

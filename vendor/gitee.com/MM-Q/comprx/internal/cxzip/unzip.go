@@ -42,6 +42,7 @@ import (
 	"gitee.com/MM-Q/comprx/internal/config"
 	"gitee.com/MM-Q/comprx/internal/utils"
 	"gitee.com/MM-Q/comprx/types"
+	"gitee.com/MM-Q/go-kit/pool"
 )
 
 // Unzip 解压缩 ZIP 文件到指定目录
@@ -270,11 +271,9 @@ func extractRegularFileWithWriter(file *zip.File, targetPath string, mode os.Fil
 	defer func() { _ = zipFileReader.Close() }()
 
 	// 获取对应文件大小的缓冲区
-	bufferSize := utils.GetBufferSize(int64(fileSize))
-
-	// 创建缓冲区
-	buffer := utils.GetBuffer(bufferSize)
-	defer utils.PutBuffer(buffer)
+	bufferSize := pool.CalculateBufferSize(int64(fileSize))
+	buffer := pool.GetByteCap(bufferSize)
+	defer pool.PutByte(buffer)
 
 	// 将文件内容写入目标文件
 	if _, err := cfg.Progress.CopyBuffer(fileWriter, zipFileReader, buffer); err != nil {

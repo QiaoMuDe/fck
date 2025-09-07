@@ -4,8 +4,8 @@ gitee.com/MM-Q/colorlib
 gitee.com/MM-Q/colorlib/internal/cache
 gitee.com/MM-Q/colorlib/internal/color
 gitee.com/MM-Q/colorlib/internal/style
-# gitee.com/MM-Q/comprx v0.1.3
-## explicit; go 1.24.4
+# gitee.com/MM-Q/comprx v0.1.4
+## explicit; go 1.25.0
 gitee.com/MM-Q/comprx
 gitee.com/MM-Q/comprx/internal/config
 gitee.com/MM-Q/comprx/internal/core

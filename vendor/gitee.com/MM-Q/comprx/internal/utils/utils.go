@@ -95,37 +95,6 @@ func EnsureDir(path string) error {
 	return err
 }
 
-// GetBufferSize 根据文件大小动态设置缓冲区大小。该函数会根据传入的文件大小，
-// 选择合适的缓冲区大小，以优化文件读写操作的性能。不同的文件大小范围对应不同的缓冲区大小。
-//
-// 参数:
-//   - fileSize: 文件的大小，单位为字节，类型为 int64。
-//
-// 返回值:
-//   - 缓冲区的大小，单位为字节，类型为 int。
-func GetBufferSize(fileSize int64) int {
-	switch {
-	// 当文件大小小于 512KB 时，设置缓冲区大小为 32KB
-	case fileSize < 512*1024:
-		return 32 * 1024
-	// 当文件大小小于 1MB 时，设置缓冲区大小为 64KB
-	case fileSize < 1*1024*1024:
-		return 64 * 1024
-	// 当文件大小小于 5MB 时，设置缓冲区大小为 128KB
-	case fileSize < 5*1024*1024:
-		return 128 * 1024
-	// 当文件大小小于 10MB 时，设置缓冲区大小为 256KB
-	case fileSize < 10*1024*1024:
-		return 256 * 1024
-	// 当文件大小小于 100MB 时，设置缓冲区大小为 512KB
-	case fileSize < 100*1024*1024:
-		return 512 * 1024
-	// 当文件大小大于等于 100MB 时，设置缓冲区大小为 1MB
-	default:
-		return 1024 * 1024
-	}
-}
-
 // EnsureAbsPath 确保路径为绝对路径，如果不是则转换为绝对路径
 //
 // 参数:
