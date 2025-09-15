@@ -34,7 +34,7 @@ c34652066a18513105ac1ab96fcbef8e ` + testFile
 
 	// 测试文件校验功能（直接调用内部函数）
 	parser := newHashFileParser(cl)
-	hashMap, hashFunc, err := parser.parseFile(validCheckFile, false)
+	hashMap, hashType, err := parser.parseFile(validCheckFile, false)
 	if err != nil {
 		t.Fatalf("解析校验文件失败: %v", err)
 	}
@@ -43,12 +43,12 @@ c34652066a18513105ac1ab96fcbef8e ` + testFile
 		t.Errorf("期望解析1个文件，实际解析了%d个", len(hashMap))
 	}
 
-	if hashFunc == nil {
-		t.Errorf("哈希函数不应该为nil")
+	if hashType == "" {
+		t.Errorf("哈希类型不应该为空")
 	}
 
 	// 测试校验器
-	checker := newFileChecker(cl, hashFunc)
+	checker := newFileChecker(cl, hashType)
 	err = checker.checkFiles(hashMap)
 	if err != nil {
 		t.Errorf("文件校验失败: %v", err)
@@ -159,7 +159,7 @@ c34652066a18513105ac1ab96fcbef8e ` + testFile
 		t.Run(tt.name, func(t *testing.T) {
 			// 使用新的解析器
 			parser := newHashFileParser(cl)
-			hashMap, hashFunc, err := parser.parseFile(checkFile, tt.isRelPath)
+			hashMap, hashType, err := parser.parseFile(checkFile, tt.isRelPath)
 
 			if tt.expectError {
 				if err == nil {
@@ -173,8 +173,8 @@ c34652066a18513105ac1ab96fcbef8e ` + testFile
 				return
 			}
 
-			if hashFunc == nil {
-				t.Errorf("哈希函数不应该为nil")
+			if hashType == "" {
+				t.Errorf("哈希类型不应该为空")
 			}
 
 			if len(hashMap) != tt.expectCount {

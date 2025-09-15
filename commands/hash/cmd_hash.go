@@ -4,7 +4,6 @@ package hash
 
 import (
 	"fmt"
-	"hash"
 	"path/filepath"
 
 	"gitee.com/MM-Q/colorlib"
@@ -19,12 +18,6 @@ func HashCmdMain(cl *colorlib.ColorLib) error {
 		targetPaths = []string{"*"} // 默认处理当前目录
 	}
 
-	// 获取哈希算法类型
-	hashType, ok := types.SupportedAlgorithms[hashCmdType.Get()]
-	if !ok {
-		return fmt.Errorf("哈希算法 %s 无效", hashCmdType.Get())
-	}
-
 	// 显示写入文件提示
 	if hashCmdWrite.Get() {
 		cl.PrintOk("正在将哈希值写入文件，请稍候...")
@@ -32,7 +25,7 @@ func HashCmdMain(cl *colorlib.ColorLib) error {
 
 	// 遍历所有目标路径
 	for _, targetPath := range targetPaths {
-		if err := processSinglePath(cl, filepath.Clean(targetPath), hashType); err != nil {
+		if err := processSinglePath(cl, filepath.Clean(targetPath), hashCmdType.Get()); err != nil {
 			// 记录错误但继续处理其他路径
 			cl.PrintErrorf("处理路径 %s 时发生错误: %v\n", targetPath, err)
 		}
@@ -50,7 +43,7 @@ func HashCmdMain(cl *colorlib.ColorLib) error {
 //
 // 返回:
 //   - error: 错误信息
-func processSinglePath(cl *colorlib.ColorLib, targetPath string, hashType func() hash.Hash) error {
+func processSinglePath(cl *colorlib.ColorLib, targetPath string, hashType string) error {
 	// 收集文件
 	files, err := collectFiles(targetPath, hashCmdRecursion.Get(), cl)
 	if err != nil {

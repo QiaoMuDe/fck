@@ -5,7 +5,6 @@ package check
 import (
 	"bufio"
 	"fmt"
-	"hash"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,6 +12,7 @@ import (
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/commands/internal/types"
+	"gitee.com/MM-Q/go-kit/hash"
 )
 
 // hashFileParser 校验文件解析器
@@ -30,16 +30,16 @@ func newHashFileParser(cl *colorlib.ColorLib) *hashFileParser {
 }
 
 // parseFile 解析校验文件
-func (p *hashFileParser) parseFile(checkFile string, isRelPath bool) (types.VirtualHashMap, func() hash.Hash, error) {
+func (p *hashFileParser) parseFile(checkFile string, isRelPath bool) (types.VirtualHashMap, string, error) {
 	// 检查文件是否存在
 	if _, err := os.Stat(checkFile); err != nil {
-		return nil, nil, fmt.Errorf("校验文件不存在: %s", checkFile)
+		return nil, "", fmt.Errorf("校验文件不存在: %s", checkFile)
 	}
 
 	// 打开文件
 	file, err := os.Open(checkFile)
 	if err != nil {
-		return nil, nil, fmt.Errorf("无法打开校验文件: %v", err)
+		return nil, "", fmt.Errorf("无法打开校验文件: %v", err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
@@ -50,28 +50,28 @@ func (p *hashFileParser) parseFile(checkFile string, isRelPath bool) (types.Virt
 	scanner := bufio.NewScanner(file)
 
 	// 解析文件头
-	hashFunc, err := p.parseHeader(scanner)
+	hashType, err := p.parseHeader(scanner)
 	if err != nil {
-		return nil, nil, err
+		return nil, "", err
 	}
 
 	// 解析文件内容
 	hashMap, err := p.parseContent(scanner, isRelPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, "", err
 	}
 
 	if len(hashMap) == 0 {
-		return nil, nil, fmt.Errorf("没有找到有效的校验文件内容")
+		return nil, "", fmt.Errorf("没有找到有效的校验文件内容")
 	}
 
-	return hashMap, hashFunc, nil
+	return hashMap, hashType, nil
 }
 
 // parseHeader 解析校验文件头
-func (p *hashFileParser) parseHeader(scanner *bufio.Scanner) (func() hash.Hash, error) {
+func (p *hashFileParser) parseHeader(scanner *bufio.Scanner) (string, error) {
 	if !scanner.Scan() {
-		return nil, fmt.Errorf("校验文件为空")
+		return "", fmt.Errorf("校验文件为空")
 	}
 
 	headerLine := scanner.Text()
@@ -79,20 +79,19 @@ func (p *hashFileParser) parseHeader(scanner *bufio.Scanner) (func() hash.Hash, 
 	matches := headerRegex.FindStringSubmatch(headerLine)
 
 	if matches == nil {
-		return nil, fmt.Errorf("校验文件头格式错误, 格式应为 #hashType#timestamp")
+		return "", fmt.Errorf("校验文件头格式错误, 格式应为 #hashType#timestamp")
 	}
 
 	hashType := matches[1]
 	if hashType == "" {
-		return nil, fmt.Errorf("校验文件头格式错误, 必须指定哈希算法")
+		return "", fmt.Errorf("校验文件头格式错误, 必须指定哈希算法")
 	}
 
-	hashFunc, ok := types.SupportedAlgorithms[hashType]
-	if !ok {
-		return nil, fmt.Errorf("不支持的哈希算法: %s", hashType)
+	if ok := hash.IsAlgorithmSupported(hashType); !ok {
+		return "", fmt.Errorf("不支持的哈希算法: %s", hashType)
 	}
 
-	return hashFunc, nil
+	return hashType, nil
 }
 
 // parseContent 解析文件内容

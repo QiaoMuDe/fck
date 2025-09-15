@@ -14,7 +14,7 @@ import (
 
 func TestFileChecker_CheckFiles(t *testing.T) {
 	cl := colorlib.New()
-	checker := newFileChecker(cl, md5.New)
+	checker := newFileChecker(cl, "md5")
 
 	// 创建临时测试目录
 	tempDir := t.TempDir()
@@ -112,7 +112,7 @@ func TestFileChecker_CheckFiles(t *testing.T) {
 
 func TestFileChecker_Worker(t *testing.T) {
 	cl := colorlib.New()
-	checker := newFileChecker(cl, md5.New)
+	checker := newFileChecker(cl, "md5")
 
 	// 创建临时测试文件
 	tempDir := t.TempDir()
@@ -168,7 +168,7 @@ func TestFileChecker_Worker(t *testing.T) {
 
 func TestFileChecker_WorkerWithNonexistentFile(t *testing.T) {
 	cl := colorlib.New()
-	checker := newFileChecker(cl, md5.New)
+	checker := newFileChecker(cl, "md5")
 
 	// 创建通道
 	jobs := make(chan types.VirtualHashEntry, 1)
@@ -203,7 +203,7 @@ func TestFileChecker_WorkerWithNonexistentFile(t *testing.T) {
 
 func TestFileChecker_PrintSummary(t *testing.T) {
 	cl := colorlib.New()
-	checker := newFileChecker(cl, md5.New)
+	checker := newFileChecker(cl, "md5")
 
 	tests := []struct {
 		name       string
@@ -246,7 +246,7 @@ func TestFileChecker_PrintSummary(t *testing.T) {
 
 func TestNewFileChecker(t *testing.T) {
 	cl := colorlib.New()
-	checker := newFileChecker(cl, md5.New)
+	checker := newFileChecker(cl, "md5")
 
 	if checker == nil {
 		t.Errorf("NewFileChecker 返回了 nil")
@@ -257,8 +257,8 @@ func TestNewFileChecker(t *testing.T) {
 		t.Errorf("ColorLib 不匹配")
 	}
 
-	if checker.hashFunc == nil {
-		t.Errorf("哈希函数不应该为 nil")
+	if checker.hashType != "md5" {
+		t.Errorf("哈希类型不匹配")
 	}
 
 	if checker.maxWorkers <= 0 {
@@ -268,7 +268,7 @@ func TestNewFileChecker(t *testing.T) {
 
 func TestFileChecker_CollectResults(t *testing.T) {
 	cl := colorlib.New()
-	checker := newFileChecker(cl, md5.New)
+	checker := newFileChecker(cl, "md5")
 
 	// 创建结果通道
 	results := make(chan checkResult, 3)

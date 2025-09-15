@@ -18,8 +18,9 @@ gitee.com/MM-Q/comprx/internal/cxzlib
 gitee.com/MM-Q/comprx/internal/progress
 gitee.com/MM-Q/comprx/internal/utils
 gitee.com/MM-Q/comprx/types
-# gitee.com/MM-Q/go-kit v0.0.7
+# gitee.com/MM-Q/go-kit v0.0.8
 ## explicit; go 1.25.0
+gitee.com/MM-Q/go-kit/hash
 gitee.com/MM-Q/go-kit/pool
 # gitee.com/MM-Q/qflag v0.3.0
 ## explicit; go 1.24.4

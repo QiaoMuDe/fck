@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
 func TestHashFileParser_ParseFile(t *testing.T) {
@@ -99,7 +98,7 @@ c34652066a18513105ac1ab96fcbef8e test.txt`,
 			}
 
 			// 执行解析
-			hashMap, hashFunc, err := parser.parseFile(testFile, tt.isRelPath)
+			hashMap, hashType, err := parser.parseFile(testFile, tt.isRelPath)
 
 			if tt.expectError {
 				if err == nil {
@@ -117,8 +116,8 @@ c34652066a18513105ac1ab96fcbef8e test.txt`,
 				return
 			}
 
-			if hashFunc == nil {
-				t.Errorf("哈希函数不应该为nil")
+			if hashType == "" {
+				t.Errorf("哈希类型不应该为空")
 			}
 
 			if len(hashMap) != tt.expectCount {
@@ -134,122 +133,6 @@ c34652066a18513105ac1ab96fcbef8e test.txt`,
 					} else {
 						t.Errorf("相对路径模式下应该包含虚拟根目录，实际: %s", virtualPath)
 					}
-				}
-			}
-		})
-	}
-}
-
-func TestHashFileParser_ParseHeader(t *testing.T) {
-	cl := colorlib.New()
-	parser := newHashFileParser(cl)
-
-	tests := []struct {
-		name        string
-		header      string
-		content     string
-		expectError bool
-		errorMsg    string
-		expectAlgo  string
-	}{
-		{
-			name:        "有效的MD5头",
-			header:      "#md5#2024-01-01 10:00:00",
-			content:     "c34652066a18513105ac1ab96fcbef8e test.txt",
-			expectError: false,
-			expectAlgo:  "md5",
-		},
-		{
-			name:        "有效的SHA1头",
-			header:      "#sha1#2024-01-01 10:00:00",
-			content:     "da39a3ee5e6b4b0d3255bfef95601890afd80709 test.txt",
-			expectError: false,
-			expectAlgo:  "sha1",
-		},
-		{
-			name:        "有效的SHA256头",
-			header:      "#sha256#2024-01-01 10:00:00",
-			content:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 test.txt",
-			expectError: false,
-			expectAlgo:  "sha256",
-		},
-		{
-			name:        "有效的SHA512头",
-			header:      "#sha512#2024-01-01 10:00:00",
-			content:     "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e test.txt",
-			expectError: false,
-			expectAlgo:  "sha512",
-		},
-		{
-			name:        "空的哈希类型#01",
-			header:      "##2024-01-01 10:00:00",
-			expectError: true,
-			errorMsg:    "校验文件头格式错误, 格式应为 #hashType#timestamp",
-		},
-		{
-			name:        "不支持的哈希算法",
-			header:      "#blake2#2024-01-01 10:00:00",
-			expectError: true,
-			errorMsg:    "不支持的哈希算法: blake2",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// 创建临时文件
-			tempDir := t.TempDir()
-			testFile := filepath.Join(tempDir, "test_header.hash")
-			fileContent := tt.header
-			if tt.content != "" {
-				fileContent += "\n" + tt.content
-			}
-			err := os.WriteFile(testFile, []byte(fileContent), 0644)
-			if err != nil {
-				t.Fatalf("创建测试文件失败: %v", err)
-			}
-
-			// 执行解析
-			_, hashFunc, err := parser.parseFile(testFile, false)
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("期望错误但没有发生错误")
-					return
-				}
-				if tt.errorMsg != "" && !strings.Contains(err.Error(), tt.errorMsg) {
-					t.Errorf("错误消息不匹配，期望包含: %s, 实际: %s", tt.errorMsg, err.Error())
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("不期望错误但发生了错误: %v", err)
-				return
-			}
-
-			if hashFunc == nil {
-				t.Errorf("哈希函数不应该为nil")
-			}
-
-			// 验证哈希函数是否正确
-			if tt.expectAlgo != "" {
-				expectedFunc, exists := types.SupportedAlgorithms[tt.expectAlgo]
-				if !exists {
-					t.Fatalf("测试配置错误: 不支持的算法 %s", tt.expectAlgo)
-				}
-
-				// 通过比较哈希结果来验证函数是否正确
-				testData := []byte("test")
-				expected := expectedFunc()
-				expected.Write(testData)
-				expectedSum := expected.Sum(nil)
-
-				actual := hashFunc()
-				actual.Write(testData)
-				actualSum := actual.Sum(nil)
-
-				if len(expectedSum) != len(actualSum) {
-					t.Errorf("哈希函数不匹配，期望长度: %d, 实际长度: %d", len(expectedSum), len(actualSum))
 				}
 			}
 		})

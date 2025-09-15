@@ -1,7 +1,6 @@
 package hash
 
 import (
-	"crypto/md5"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,7 +12,7 @@ import (
 // TestNewHashTaskManager 测试哈希任务管理器创建
 func TestNewHashTaskManager(t *testing.T) {
 	files := []string{"test1.txt", "test2.txt"}
-	manager := NewHashTaskManager(files, md5.New)
+	manager := NewHashTaskManager(files, "md5")
 
 	if manager == nil {
 		t.Fatal("NewHashTaskManager() 返回 nil")
@@ -51,7 +50,7 @@ func TestHashTaskManagerRun(t *testing.T) {
 	_ = hashCmdProgress.Set("false")
 
 	files := []string{testFile}
-	manager := NewHashTaskManager(files, md5.New)
+	manager := NewHashTaskManager(files, "md5")
 
 	errors := manager.Run()
 
@@ -89,7 +88,7 @@ func TestHashTaskManagerRunWithWrite(t *testing.T) {
 	_ = hashCmdType.Set("md5")
 
 	files := []string{testFile}
-	manager := NewHashTaskManager(files, md5.New)
+	manager := NewHashTaskManager(files, "md5")
 
 	errors := manager.Run()
 
@@ -113,7 +112,7 @@ func TestHashTaskManagerRunWithErrors(t *testing.T) {
 	_ = hashCmdWrite.Set("false")
 	_ = hashCmdProgress.Set("false")
 
-	manager := NewHashTaskManager(files, md5.New)
+	manager := NewHashTaskManager(files, "md5")
 	errors := manager.Run()
 
 	if len(errors) == 0 {
@@ -146,7 +145,7 @@ func TestHashTaskManagerConcurrency(t *testing.T) {
 	_ = hashCmdWrite.Set("false")
 	_ = hashCmdProgress.Set("false")
 
-	manager := NewHashTaskManager(files, md5.New)
+	manager := NewHashTaskManager(files, "md5")
 
 	start := time.Now()
 	errors := manager.Run()
@@ -235,7 +234,7 @@ func TestHashRunTasksRefactored(t *testing.T) {
 	_ = hashCmdWrite.Set("false")
 	_ = hashCmdProgress.Set("false")
 
-	errors := hashRunTasksRefactored(files, md5.New)
+	errors := hashRunTasksRefactored(files, "md5")
 
 	if len(errors) > 0 {
 		t.Errorf("hashRunTasksRefactored() 返回错误: %v", errors)
@@ -244,7 +243,7 @@ func TestHashRunTasksRefactored(t *testing.T) {
 
 // TestHashRunTasksRefactoredEmpty 测试空文件列表
 func TestHashRunTasksRefactoredEmpty(t *testing.T) {
-	errors := hashRunTasksRefactored([]string{}, md5.New)
+	errors := hashRunTasksRefactored([]string{}, "md5")
 
 	if errors != nil {
 		t.Errorf("hashRunTasksRefactored() 对空列表应该返回nil，但返回: %v", errors)
@@ -334,7 +333,7 @@ func BenchmarkHashTaskManager(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		manager := NewHashTaskManager(files, md5.New)
+		manager := NewHashTaskManager(files, "md5")
 		_ = manager.Run()
 	}
 }
@@ -359,6 +358,6 @@ func BenchmarkHashRunTasksRefactored(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = hashRunTasksRefactored(files, md5.New)
+		_ = hashRunTasksRefactored(files, "md5")
 	}
 }

@@ -6,15 +6,15 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"hash"
 	"io/fs"
 	"os"
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
-	"gitee.com/MM-Q/fck/commands/internal/common"
 	"gitee.com/MM-Q/fck/commands/internal/types"
+	"gitee.com/MM-Q/go-kit/hash"
 )
 
 // HashResult 哈希计算结果
@@ -33,9 +33,9 @@ type WriteRequest struct {
 // HashTaskManager 哈希任务管理器
 type HashTaskManager struct {
 	// 配置参数
-	files       []string         // 文件列表
-	hashType    func() hash.Hash // 哈希类型
-	concurrency int              // 并发数
+	files       []string // 文件列表
+	hashType    string   // 哈希类型
+	concurrency int      // 并发数
 
 	// 通道
 	resultCh chan HashResult   // 哈希结果通道
@@ -64,24 +64,29 @@ type HashTaskManager struct {
 //
 // 返回值:
 //   - *HashTaskManager: 哈希任务管理器
-func NewHashTaskManager(files []string, hashType func() hash.Hash) *HashTaskManager {
+func NewHashTaskManager(files []string, hashType string) *HashTaskManager {
 	ctx, cancel := context.WithCancelCause(context.Background())
 
 	// 根据CPU核心数和文件数量调整并发数
 	concurrency := runtime.NumCPU() * 2
-	if len(files) < concurrency {
-		concurrency = len(files) // 如果文件数量小于并发数，则使用文件数量作为并发数
+	if concurrency > len(files) {
+		concurrency = len(files) // 如果并发数大于文件数量，则使用文件数量作为并发数
+	}
+
+	// 并发数不能大于50
+	if concurrency > 50 {
+		concurrency = 50
 	}
 
 	return &HashTaskManager{
-		files:       files,
-		hashType:    hashType,
-		concurrency: concurrency,
+		files:       files,                                // 文件列表
+		hashType:    hashType,                             // 哈希类型
+		concurrency: concurrency,                          // 并发数
 		resultCh:    make(chan HashResult, concurrency*2), // 适当的缓冲区
 		writeCh:     make(chan WriteRequest, 100),         // 写入请求缓冲区
-		ctx:         ctx,
-		cancel:      cancel,
-		errors:      make([]error, 0),
+		ctx:         ctx,                                  // 上下文
+		cancel:      cancel,                               // 上下文取消函数
+		errors:      make([]error, 0),                     // 错误列表
 	}
 }
 
@@ -94,8 +99,11 @@ func (m *HashTaskManager) Run() []error {
 
 	// 启动写入协程
 	if hashCmdWrite.Get() {
-		m.writerWg.Add(1)
-		go m.writerWorker()
+		m.writerWg.Go(
+			func() {
+				m.writerWorker()
+			},
+		)
 	}
 
 	// 启动结果处理协程
@@ -132,8 +140,11 @@ func (m *HashTaskManager) startComputeWorkers() {
 
 	// 启动工作协程
 	for i := 0; i < m.concurrency; i++ {
-		m.wg.Add(1)
-		go m.computeWorker(fileCh)
+		m.wg.Go(
+			func() {
+				m.computeWorker(fileCh)
+			},
+		)
 	}
 
 	// 分发文件任务
@@ -154,8 +165,6 @@ func (m *HashTaskManager) startComputeWorkers() {
 // 参数:
 //   - fileCh: 文件路径通道
 func (m *HashTaskManager) computeWorker(fileCh <-chan string) {
-	defer m.wg.Done()
-
 	for {
 		select {
 		case filePath, ok := <-fileCh:
@@ -205,9 +214,9 @@ func (m *HashTaskManager) processFile(filePath string) {
 
 	// 计算哈希值, 并设置结果的哈希值和错误信息
 	if hashCmdProgress.Get() {
-		result.HashValue, result.Error = common.ChecksumProgress(filePath, m.hashType)
+		result.HashValue, result.Error = hash.ChecksumProgress(filePath, m.hashType)
 	} else {
-		result.HashValue, result.Error = common.Checksum(filePath, m.hashType)
+		result.HashValue, result.Error = hash.Checksum(filePath, m.hashType)
 	}
 
 	// 发送结果
@@ -262,8 +271,8 @@ func (m *HashTaskManager) requestWrite(content string) {
 	}
 
 	req := WriteRequest{
-		Content: content,
-		Done:    make(chan error, 1),
+		Content: content,             // 要写入的内容
+		Done:    make(chan error, 1), // 写入完成信号
 	}
 
 	// 尝试发送写入请求
@@ -284,8 +293,6 @@ func (m *HashTaskManager) requestWrite(content string) {
 
 // writerWorker 写入工作协程
 func (m *HashTaskManager) writerWorker() {
-	defer m.writerWg.Done()
-
 	// 初始化文件写入器
 	wrapper, err := m.initFileWriter()
 	if err != nil {
@@ -309,11 +316,12 @@ func (m *HashTaskManager) writerWorker() {
 func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
 	file, err := os.OpenFile(types.OutputFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
+		_ = file.Close()
 		return nil, fmt.Errorf("打开文件 %s 失败: %w", types.OutputFileName, err)
 	}
 
 	// 写入文件头
-	if err := common.WriteFileHeader(file, hashCmdType.Get(), types.TimestampFormat); err != nil {
+	if err := m.writeFileHeader(file, hashCmdType.Get(), types.TimestampFormat); err != nil {
 		_ = file.Close()
 		return nil, fmt.Errorf("写入文件头失败: %w", err)
 	}
@@ -322,6 +330,32 @@ func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
 		file:   file,
 		writer: bufio.NewWriter(file),
 	}, nil
+}
+
+// writeFileHeader 写入文件头信息
+//
+// 参数:
+//   - file: 要写入的文件对象
+//   - hashType: 哈希类型标识
+//   - timestampFormat: 时间戳格式
+//
+// 返回:
+//   - error: 错误信息，如果写入失败
+//
+// 注意:
+//   - 文件头格式为: #hashType#timestamp
+func (m *HashTaskManager) writeFileHeader(file *os.File, hashType string, timestampFormat string) error {
+	// 获取当前时间
+	now := time.Now()
+
+	// 构造文件头内容, 格式为: #hashType#timestamp#targetPath
+	header := fmt.Sprintf("#%s#%s\n", hashType, now.Format(timestampFormat))
+
+	// 写入文件头
+	if _, err := file.WriteString(header); err != nil {
+		return fmt.Errorf("写入文件头失败: %v", err)
+	}
+	return nil
 }
 
 // writeContent 写入内容
@@ -392,7 +426,7 @@ func (m *HashTaskManager) GetStats() (processed, errors int64) {
 //
 // 返回:
 //   - []error: 错误列表
-func hashRunTasksRefactored(files []string, hashType func() hash.Hash) []error {
+func hashRunTasksRefactored(files []string, hashType string) []error {
 	if len(files) == 0 {
 		return nil
 	}

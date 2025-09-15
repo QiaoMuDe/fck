@@ -4,28 +4,27 @@ package check
 
 import (
 	"fmt"
-	"hash"
 	"os"
 	"runtime"
 	"sync"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/commands/internal/common"
 	"gitee.com/MM-Q/fck/commands/internal/types"
+	"gitee.com/MM-Q/go-kit/hash"
 )
 
 // fileChecker 文件校验器
 type fileChecker struct {
 	cl         *colorlib.ColorLib // 颜色库
-	hashFunc   func() hash.Hash   // 哈希函数
+	hashType   string             // 哈希算法
 	maxWorkers int                // 最大并发数(默认: 逻辑处理器数量)
 }
 
 // newFileChecker 创建新的文件校验器
-func newFileChecker(cl *colorlib.ColorLib, hashFunc func() hash.Hash) *fileChecker {
+func newFileChecker(cl *colorlib.ColorLib, hashType string) *fileChecker {
 	return &fileChecker{
 		cl:         cl,
-		hashFunc:   hashFunc,
+		hashType:   hashType,
 		maxWorkers: runtime.NumCPU(),
 	}
 }
@@ -91,7 +90,7 @@ func (c *fileChecker) worker(jobs <-chan types.VirtualHashEntry, results chan<- 
 		}
 
 		// 计算文件哈希
-		actualHash, err := common.Checksum(entry.RealPath, c.hashFunc)
+		actualHash, err := hash.Checksum(entry.RealPath, c.hashType)
 		if err != nil {
 			result.err = fmt.Errorf("计算文件哈希失败: %v", err)
 		} else {

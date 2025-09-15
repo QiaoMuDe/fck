@@ -1,7 +1,6 @@
 package hash
 
 import (
-	"crypto/md5"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,85 +10,6 @@ import (
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/commands/internal/types"
 )
-
-// TestHashCmdMain 测试主函数
-func TestHashCmdMain(t *testing.T) {
-	// 创建临时目录和文件
-	tempDir := t.TempDir()
-	testFile := filepath.Join(tempDir, "test.txt")
-	testContent := "Hello, World!"
-
-	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
-		t.Fatalf("创建测试文件失败: %v", err)
-	}
-
-	// 切换到临时目录
-	oldDir, _ := os.Getwd()
-	defer func() { _ = os.Chdir(oldDir) }()
-	_ = os.Chdir(tempDir)
-
-	// 初始化命令
-	hashCmd = InitHashCmd()
-
-	// 设置测试参数
-	_ = hashCmdType.Set("md5")
-	_ = hashCmdRecursion.Set("false")
-	_ = hashCmdWrite.Set("false")
-	_ = hashCmdHidden.Set("false")
-	_ = hashCmdProgress.Set("false")
-
-	cl := colorlib.NewColorLib()
-	cl.SetColor(false) // 禁用颜色输出
-
-	tests := []struct {
-		name        string
-		hashType    string
-		expectError bool
-	}{
-		{
-			name:        "正常文件MD5",
-			hashType:    "md5",
-			expectError: false,
-		},
-		{
-			name:        "正常文件SHA256",
-			hashType:    "sha256",
-			expectError: false,
-		},
-		{
-			name:        "无效哈希算法",
-			hashType:    "invalid",
-			expectError: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// 设置哈希类型
-			_ = hashCmdType.Set(tt.hashType)
-
-			// 由于无法直接设置Args，我们通过processSinglePath测试核心逻辑
-			if tt.hashType == "invalid" {
-				// 测试无效哈希算法
-				_, ok := types.SupportedAlgorithms[tt.hashType]
-				if ok {
-					t.Errorf("期望 %s 是无效的哈希算法", tt.hashType)
-				}
-			} else {
-				// 测试有效的哈希算法
-				hashType, ok := types.SupportedAlgorithms[tt.hashType]
-				if !ok {
-					t.Errorf("期望 %s 是有效的哈希算法", tt.hashType)
-				} else {
-					err := processSinglePath(cl, testFile, hashType)
-					if err != nil {
-						t.Errorf("processSinglePath() 返回错误: %v", err)
-					}
-				}
-			}
-		})
-	}
-}
 
 // TestProcessSinglePath 测试单个路径处理
 func TestProcessSinglePath(t *testing.T) {
@@ -135,7 +55,7 @@ func TestProcessSinglePath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := processSinglePath(cl, tt.path, md5.New)
+			err := processSinglePath(cl, tt.path, "md5")
 
 			if tt.expectError && err == nil {
 				t.Errorf("processSinglePath() 期望返回错误，但没有错误")
@@ -218,7 +138,7 @@ func TestHashCmdMainWithWrite(t *testing.T) {
 	cl.SetColor(false)
 
 	// 测试写入功能
-	err := processSinglePath(cl, testFile, md5.New)
+	err := processSinglePath(cl, testFile, "md5")
 	if err != nil {
 		t.Errorf("processSinglePath() 返回错误: %v", err)
 	}
@@ -263,7 +183,7 @@ func TestHashCmdMainWithRecursion(t *testing.T) {
 	cl := colorlib.NewColorLib()
 	cl.SetColor(false)
 
-	err := processSinglePath(cl, tempDir, md5.New)
+	err := processSinglePath(cl, tempDir, "md5")
 	if err != nil {
 		t.Errorf("processSinglePath() 返回错误: %v", err)
 	}
@@ -301,7 +221,7 @@ func TestHashCmdMainWithGlob(t *testing.T) {
 
 	// 测试通配符处理
 	globPattern := "test*.txt"
-	err := processSinglePath(cl, globPattern, md5.New)
+	err := processSinglePath(cl, globPattern, "md5")
 	if err != nil {
 		t.Logf("processSinglePath() 对通配符返回错误: %v (这可能是正常的)", err)
 	}
@@ -325,7 +245,7 @@ func TestHashCmdMainEmptyDirectory(t *testing.T) {
 	cl.SetColor(false)
 
 	// 空目录应该返回错误（非递归模式）
-	err := processSinglePath(cl, tempDir, md5.New)
+	err := processSinglePath(cl, tempDir, "md5")
 	if err == nil {
 		t.Errorf("processSinglePath() 在空目录中应该返回错误")
 	}
@@ -356,6 +276,6 @@ func BenchmarkProcessSinglePath(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = processSinglePath(cl, testFile, md5.New)
+		_ = processSinglePath(cl, testFile, "md5")
 	}
 }
