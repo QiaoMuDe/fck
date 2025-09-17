@@ -23,6 +23,20 @@ var specialConfigFiles = map[string]bool{
 	"todo":           true,
 	"version":        true,
 	"cmakelists.txt": true,
+
+	// 现代项目文件
+	"justfile":    true, // Just命令运行器
+	"taskfile":    true, // Task运行器
+	"flake.nix":   true, // Nix Flakes
+	"default.nix": true, // Nix表达式
+	"shell.nix":   true, // Nix Shell
+	"deno.json":   true, // Deno配置
+	"bun.lockb":   true, // Bun锁文件
+
+	// CI/CD文件
+	"buildkite.yml":           true, // Buildkite
+	"azure-pipelines.yml":     true, // Azure DevOps
+	"bitbucket-pipelines.yml": true, // Bitbucket
 }
 
 // greenExtensions 绿色系文件扩展名映射表
@@ -104,6 +118,35 @@ var greenExtensions = map[string]bool{
 	".mdx":    true, // MDX
 	".svelte": true, // Svelte
 	".astro":  true, // Astro
+
+	// 新兴语言和框架
+	".zig":     true, // Zig语言
+	".nim":     true, // Nim语言
+	".crystal": true, // Crystal语言
+	".v":       true, // V语言
+	".odin":    true, // Odin语言
+	".gleam":   true, // Gleam语言
+	".roc":     true, // Roc语言
+
+	// Web开发相关
+	".mjs":        true, // ES模块
+	".cjs":        true, // CommonJS模块
+	".coffee":     true, // CoffeeScript
+	".livescript": true, // LiveScript
+	".elm":        true, // Elm语言
+	".purescript": true, // PureScript
+	".reason":     true, // ReasonML
+	".rescript":   true, // ReScript
+
+	// 移动开发
+	".xaml":       true, // XAML标记
+	".storyboard": true, // iOS Storyboard
+	".xib":        true, // iOS XIB文件
+
+	// 游戏开发
+	".gd":   true, // Godot脚本
+	".hlsl": true, // HLSL着色器
+	".glsl": true, // GLSL着色器
 }
 
 // yellowExtensions 黄色系文件扩展名映射表
@@ -233,6 +276,32 @@ var yellowExtensions = map[string]bool{
 	".lldbinit":     true, // LLDB
 	".clang-format": true, // Clang格式化
 	".clang-tidy":   true, // Clang静态分析
+
+	// 容器和虚拟化
+	".k8s.yml":     true, // Kubernetes配置
+	".helm.yml":    true, // Helm配置
+	".compose.yml": true, // Docker Compose简写
+
+	// 现代构建工具
+	".swcrc":      true, // SWC配置
+	".turbo.json": true, // Turbo配置
+	".nx.json":    true, // Nx配置
+	".rush.json":  true, // Rush配置
+
+	// 云服务配置
+	".serverless.yml": true, // Serverless配置
+	".tf":             true, // Terraform文件
+	".tfvars":         true, // Terraform变量
+
+	// 包管理器
+	".cargo.toml":   true, // Rust Cargo
+	".pubspec.yaml": true, // Dart/Flutter
+	".mix.exs":      true, // Elixir Mix
+	".shard.yml":    true, // Crystal Shards
+
+	// 文档格式
+	".rst":  true, // reStructuredText
+	".adoc": true, // AsciiDoc
 }
 
 // redExtensions 红色系文件扩展名映射表
@@ -319,6 +388,7 @@ var redExtensions = map[string]bool{
 	".pptx": true, // PowerPoint
 	".odt":  true, // OpenDocument文本
 	".odp":  true, // OpenDocument演示
+	// 图片文件
 	".jpg":  true, // JPEG图片
 	".jpeg": true, // JPEG图片
 	".png":  true, // PNG图片
@@ -334,6 +404,53 @@ var redExtensions = map[string]bool{
 	".ai":   true, // Adobe Illustrator文件
 	".ps":   true, // PostScript文件
 	".rtf":  true, // Rich Text Format
+
+	// 视频文件
+	".mp4":  true, // MP4视频
+	".avi":  true, // AVI视频
+	".mkv":  true, // MKV视频
+	".mov":  true, // QuickTime视频
+	".wmv":  true, // Windows Media视频
+	".webm": true, // WebM视频
+	".ogv":  true, // Ogg视频
+	".flv":  true, // Flash视频
+	".m4v":  true, // MPEG-4视频
+	".3gp":  true, // 3GP视频
+
+	// 音频文件
+	".mp3":  true, // MP3音频
+	".wav":  true, // WAV音频
+	".flac": true, // FLAC音频
+	".ogg":  true, // Ogg音频
+	".m4a":  true, // M4A音频
+	".aac":  true, // AAC音频
+	".wma":  true, // Windows Media音频
+	".opus": true, // Opus音频
+	".aiff": true, // AIFF音频
+	".au":   true, // AU音频
+
+	// 字体文件
+	".ttf":   true, // TrueType字体
+	".otf":   true, // OpenType字体
+	".woff":  true, // Web字体
+	".woff2": true, // Web字体2
+	".eot":   true, // Embedded OpenType字体
+
+	// 3D和设计文件
+	".blend":  true, // Blender文件
+	".fbx":    true, // FBX 3D模型
+	".obj":    true, // Wavefront OBJ
+	".dae":    true, // COLLADA
+	".sketch": true, // Sketch设计文件
+	".fig":    true, // Figma文件
+	".xd":     true, // Adobe XD文件
+
+	// 科学数据
+	".hdf5":   true, // HDF5数据
+	".h5":     true, // HDF5数据
+	".nc":     true, // NetCDF数据
+	".netcdf": true, // NetCDF数据
+	".mat":    true, // MATLAB数据
 }
 
 // magentaExtensions 品红系文件扩展名映射表
@@ -389,4 +506,15 @@ var magentaExtensions = map[string]bool{
 	".map": true, // 映射文件
 	".lst": true, // 列表文件
 	".d":   true, // 依赖文件
+
+	// 现代编译产物
+	".dSYM":     true, // macOS调试符号
+	".vsix":     true, // VS Code扩展
+	".nupkg":    true, // NuGet包
+	".gem":      true, // Ruby Gem
+	".crate":    true, // Rust Crate
+	".wheel":    true, // Python Wheel
+	".snap":     true, // Snap包
+	".flatpak":  true, // Flatpak包
+	".appimage": true, // AppImage包
 }
