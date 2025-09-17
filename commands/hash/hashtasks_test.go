@@ -16,6 +16,7 @@ func TestNewHashTaskManager(t *testing.T) {
 
 	if manager == nil {
 		t.Fatal("NewHashTaskManager() 返回 nil")
+		return
 	}
 
 	if len(manager.files) != len(files) {

@@ -21,6 +21,9 @@ func CheckCmdMain(cl *colorlib.ColorLib) error {
 		}
 	}
 
+	// 设置颜色输出
+	cl.SetColor(checkCmdColor.Get())
+
 	// 检查校验文件是否存在
 	if _, err := os.Stat(checkFile); err != nil {
 		return fmt.Errorf("指定的校验文件不存在: %s, 请确认文件路径是否正确", checkFile)

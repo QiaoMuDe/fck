@@ -14,6 +14,7 @@ func TestNewFileFormatter(t *testing.T) {
 
 	if formatter == nil {
 		t.Fatal("NewFileFormatter() 返回 nil")
+		return
 	}
 
 	if formatter.colorLib == nil {

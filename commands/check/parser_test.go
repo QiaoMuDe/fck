@@ -153,7 +153,7 @@ func TestHashFileParser_FileNotExists(t *testing.T) {
 		return
 	}
 
-	expectedMsg := "校验文件不存在: nonexistent.hash"
+	expectedMsg := "指定的校验文件不存在: nonexistent.hash, 请确认文件路径是否正确"
 	if err.Error() != expectedMsg {
 		t.Errorf("错误消息不匹配，期望: %s, 实际: %s", expectedMsg, err.Error())
 	}

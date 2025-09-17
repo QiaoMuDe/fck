@@ -14,6 +14,7 @@ func TestNewFileScanner(t *testing.T) {
 
 	if scanner == nil {
 		t.Fatal("NewFileScanner() 返回 nil")
+		return
 	}
 
 	if scanner.cache == nil {

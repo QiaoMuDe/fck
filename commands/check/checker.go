@@ -138,7 +138,10 @@ func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int)
 			c.cl.Redf("%s ✗ (哈希不匹配, 文件可能已经被篡改)\n", result.filePath)
 			mismatchCount++ // 哈希不匹配
 		} else {
-			//c.cl.Greenf("%s ✓\n", result.filePath)
+			if !checkCmdQuiet.Get() {
+				// 非静默模式输出
+				c.cl.Greenf("%s ✓\n", result.filePath)
+			}
 			passedCount++ // 校验通过
 		}
 	}
@@ -169,5 +172,5 @@ func (c *fileChecker) printSummary(passed, mismatched, notFound, errors, total i
 		c.cl.Redf("%d个错误", errors)
 	}
 
-	fmt.Printf(" (总计: %d个文件)\n", total)
+	c.cl.Whitef(" (总计: %d个文件)\n", total)
 }

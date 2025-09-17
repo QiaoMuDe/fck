@@ -13,6 +13,9 @@ import (
 )
 
 func TestFileChecker_CheckFiles(t *testing.T) {
+	// 初始化命令标志
+	InitCheckCmd()
+
 	cl := colorlib.New()
 	checker := newFileChecker(cl, "md5")
 
@@ -282,6 +285,9 @@ func TestNewFileChecker(t *testing.T) {
 }
 
 func TestFileChecker_CollectResults(t *testing.T) {
+	// 初始化命令标志
+	InitCheckCmd()
+
 	cl := colorlib.New()
 	checker := newFileChecker(cl, "md5")
 
