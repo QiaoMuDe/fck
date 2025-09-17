@@ -321,7 +321,7 @@ func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
 	}
 
 	// 写入文件头
-	if err := m.writeFileHeader(file, hashCmdType.Get(), types.TimestampFormat); err != nil {
+	if err := m.writeFileHeader(file, hashCmdType.Get()); err != nil {
 		_ = file.Close()
 		return nil, fmt.Errorf("写入文件头失败: %w", err)
 	}
@@ -337,7 +337,6 @@ func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
 // 参数:
 //   - file: 要写入的文件对象
 //   - hashType: 哈希类型标识
-//   - timestampFormat: 时间戳格式
 //
 // 返回:
 //   - error: 错误信息，如果写入失败
@@ -345,30 +344,34 @@ func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
 // 注意:
 //   - 便携模式文件头格式为: #hashType#timestamp#PORTABLE
 //   - 本地模式文件头格式为: #hashType#timestamp#LOCAL#basePath
-func (m *HashTaskManager) writeFileHeader(file *os.File, hashType string, timestampFormat string) error {
-	// 获取当前时间
-	now := time.Now()
+func (m *HashTaskManager) writeFileHeader(file *os.File, hashType string) error {
+	// 创建文件头结构体
+	header := &types.ChecksumHeader{
+		HashType:  hashType,                                 // 哈希类型
+		Timestamp: time.Now().Format("2006-01-02 15:04:05"), // 生成时间戳
+	}
 
-	var header string
 	if hashCmdLocal.Get() {
 		// 本地模式：记录基准路径
-		basePath := hashCmdBasePath.Get()
-		if basePath == "" {
+		header.Mode = types.ChecksumModeLocal
+		header.BasePath = hashCmdBasePath.Get()
+		if header.BasePath == "" {
 			// 默认使用当前工作目录
 			var err error
-			basePath, err = os.Getwd()
+			header.BasePath, err = os.Getwd()
 			if err != nil {
 				return fmt.Errorf("获取当前工作目录失败: %v", err)
 			}
 		}
-		header = fmt.Sprintf("#%s#%s#%s#%s\n", hashType, now.Format(timestampFormat), types.ChecksumModeLocal, basePath)
 	} else {
-		// 便携模式（默认）
-		header = fmt.Sprintf("#%s#%s#%s\n", hashType, now.Format(timestampFormat), types.ChecksumModePortable)
+		// 便携模式(默认)
+		header.Mode = types.ChecksumModePortable
 	}
 
+	headerStr := header.String()
+
 	// 写入文件头
-	if _, err := file.WriteString(header); err != nil {
+	if _, err := file.WriteString(headerStr); err != nil {
 		return fmt.Errorf("写入文件头失败: %v", err)
 	}
 	return nil

@@ -21,14 +21,6 @@ type hashFileParser struct {
 	cl        *colorlib.ColorLib
 }
 
-// HeaderInfo 文件头信息
-type HeaderInfo struct {
-	HashType  string
-	Timestamp string
-	Mode      string // PORTABLE, LOCAL, 或空（兼容旧格式）
-	BasePath  string // LOCAL模式的基准路径
-}
-
 // newHashFileParser 创建新的文件解析器
 func newHashFileParser(cl *colorlib.ColorLib) *hashFileParser {
 	return &hashFileParser{
@@ -138,7 +130,7 @@ func (p *hashFileParser) parseHeader(scanner *bufio.Scanner) (string, error) {
 }
 
 // parseHeaderEnhanced 解析校验文件头（增强版）
-func (p *hashFileParser) parseHeaderEnhanced(scanner *bufio.Scanner) (*HeaderInfo, error) {
+func (p *hashFileParser) parseHeaderEnhanced(scanner *bufio.Scanner) (*types.ChecksumHeader, error) {
 	if !scanner.Scan() {
 		return nil, fmt.Errorf("校验文件为空")
 	}
@@ -153,9 +145,9 @@ func (p *hashFileParser) parseHeaderEnhanced(scanner *bufio.Scanner) (*HeaderInf
 		return nil, fmt.Errorf("校验文件头格式错误")
 	}
 
-	headerInfo := &HeaderInfo{
-		HashType:  matches[1],
-		Timestamp: matches[2],
+	headerInfo := &types.ChecksumHeader{
+		HashType:  matches[1], // hashType
+		Timestamp: matches[2], // timestamp
 	}
 
 	// 检查哈希算法是否支持
@@ -229,7 +221,7 @@ func (p *hashFileParser) parseContent(scanner *bufio.Scanner, isRelPath bool) (t
 }
 
 // parseContentEnhanced 解析文件内容（增强版）
-func (p *hashFileParser) parseContentEnhanced(scanner *bufio.Scanner, headerInfo *HeaderInfo, userBaseDir string) (types.VirtualHashMap, error) {
+func (p *hashFileParser) parseContentEnhanced(scanner *bufio.Scanner, headerInfo *types.ChecksumHeader, userBaseDir string) (types.VirtualHashMap, error) {
 	hashMap := make(types.VirtualHashMap)
 	lineNum := 1 // 从第二行开始计数（第一行是头部）
 
@@ -270,7 +262,7 @@ func (p *hashFileParser) parseContentEnhanced(scanner *bufio.Scanner, headerInfo
 }
 
 // resolveFilePath 智能路径解析
-func (p *hashFileParser) resolveFilePath(filePath string, headerInfo *HeaderInfo, userBaseDir string) (string, error) {
+func (p *hashFileParser) resolveFilePath(filePath string, headerInfo *types.ChecksumHeader, userBaseDir string) (string, error) {
 	// 1. 绝对路径直接使用
 	if filepath.IsAbs(filePath) {
 		return filePath, nil

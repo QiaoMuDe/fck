@@ -99,11 +99,20 @@ func convertToRelativePaths(files []string) ([]string, error) {
 
 	var relativePaths []string
 	for _, file := range files {
-		// 将绝对路径转换为相对于basePath的相对路径
-		relPath, err := filepath.Rel(basePath, file)
-		if err != nil {
-			return nil, fmt.Errorf("无法转换路径 %s: %v", file, err)
+		var relPath string
+
+		// 如果已经是相对路径，直接使用
+		if !filepath.IsAbs(file) {
+			relPath = file
+		} else {
+			// 将绝对路径转换为相对于basePath的相对路径
+			var err error
+			relPath, err = filepath.Rel(basePath, file)
+			if err != nil {
+				return nil, fmt.Errorf("无法转换路径 %s: %v", file, err)
+			}
 		}
+
 		// 统一使用正斜杠作为分隔符（跨平台兼容）
 		relPath = filepath.ToSlash(relPath)
 		relativePaths = append(relativePaths, relPath)
