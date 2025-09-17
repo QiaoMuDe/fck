@@ -66,7 +66,7 @@ c34652066a18513105ac1ab96fcbef8e root/subdir/test.txt`,
 c34652066a18513105ac1ab96fcbef8e test.txt`,
 			isRelPath:   false,
 			expectError: true,
-			errorMsg:    "校验文件头格式错误, 格式应为 #hashType#timestamp",
+			errorMsg:    "校验文件头格式错误",
 		},
 		{
 			name: "不支持的哈希算法",
@@ -98,7 +98,11 @@ c34652066a18513105ac1ab96fcbef8e test.txt`,
 			}
 
 			// 执行解析
-			hashMap, hashType, err := parser.parseFile(testFile, tt.isRelPath)
+			var userBaseDir string
+			if tt.isRelPath {
+				userBaseDir = tempDir
+			}
+			hashMap, hashType, err := parser.parseFile(testFile, userBaseDir)
 
 			if tt.expectError {
 				if err == nil {
@@ -126,80 +130,13 @@ c34652066a18513105ac1ab96fcbef8e test.txt`,
 
 			// 验证相对路径处理
 			if tt.isRelPath && tt.expectCount > 0 {
-				for virtualPath := range hashMap {
-					// 检查是否包含虚拟根目录（考虑路径分隔符的差异）
-					if strings.Contains(virtualPath, "ROOTDIR") {
-						t.Logf("相对路径处理正确，虚拟路径: %s", virtualPath)
-					} else {
-						t.Errorf("相对路径模式下应该包含虚拟根目录，实际: %s", virtualPath)
+				for virtualPath, entry := range hashMap {
+					// 检查解析后的真实路径是否正确
+					if userBaseDir != "" && !strings.HasPrefix(entry.RealPath, userBaseDir) {
+						t.Errorf("相对路径模式下真实路径应该以基准目录开头，期望前缀: %s, 实际: %s", userBaseDir, entry.RealPath)
 					}
+					t.Logf("相对路径处理正确，虚拟路径: %s, 真实路径: %s", virtualPath, entry.RealPath)
 				}
-			}
-		})
-	}
-}
-
-func TestHashFileParser_ProcessRelativePath(t *testing.T) {
-	cl := colorlib.New()
-	parser := newHashFileParser(cl)
-
-	tests := []struct {
-		name        string
-		filePath    string
-		expectError bool
-		errorMsg    string
-	}{
-		{
-			name:        "正常的相对路径",
-			filePath:    "root/subdir/file.txt",
-			expectError: false,
-		},
-		{
-			name:        "单级路径",
-			filePath:    "root/file.txt",
-			expectError: false,
-		},
-		{
-			name:        "空路径",
-			filePath:    "",
-			expectError: true,
-			errorMsg:    "无效的文件路径",
-		},
-		{
-			name:        "只有根目录",
-			filePath:    "root",
-			expectError: true,
-			errorMsg:    "获取相对路径时出错",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			virtualPath, realPath, err := parser.processRelativePath(tt.filePath)
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("期望错误但没有发生错误")
-					return
-				}
-				if tt.errorMsg != "" && !contains(err.Error(), tt.errorMsg) {
-					t.Errorf("错误消息不匹配，期望包含: %s, 实际: %s", tt.errorMsg, err.Error())
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("不期望错误但发生了错误: %v", err)
-				return
-			}
-
-			// 检查虚拟路径是否包含虚拟根目录（考虑路径分隔符的差异）
-			if !strings.Contains(virtualPath, "ROOTDIR") {
-				t.Errorf("虚拟路径应该包含虚拟根目录，实际: %s", virtualPath)
-			}
-
-			if realPath != tt.filePath {
-				t.Errorf("真实路径不匹配，期望: %s, 实际: %s", tt.filePath, realPath)
 			}
 		})
 	}
@@ -210,7 +147,7 @@ func TestHashFileParser_FileNotExists(t *testing.T) {
 	parser := newHashFileParser(cl)
 
 	// 测试不存在的文件
-	_, _, err := parser.parseFile("nonexistent.hash", false)
+	_, _, err := parser.parseFile("nonexistent.hash", "")
 	if err == nil {
 		t.Errorf("期望错误但没有发生错误")
 		return

@@ -35,7 +35,7 @@ func CheckCmdMain(cl *colorlib.ColorLib) error {
 	userBaseDir := checkCmdBaseDir.Get()
 
 	// 解析校验文件
-	hashMap, hashFunc, err := parser.parseFileEnhanced(checkFile, userBaseDir)
+	hashMap, hashFunc, err := parser.parseFile(checkFile, userBaseDir)
 	if err != nil {
 		return fmt.Errorf("解析校验文件失败: %v", err)
 	}

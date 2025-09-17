@@ -34,7 +34,7 @@ c34652066a18513105ac1ab96fcbef8e ` + testFile
 
 	// 测试文件校验功能（直接调用内部函数）
 	parser := newHashFileParser(cl)
-	hashMap, hashType, err := parser.parseFile(validCheckFile, false)
+	hashMap, hashType, err := parser.parseFile(validCheckFile, "")
 	if err != nil {
 		t.Fatalf("解析校验文件失败: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestCheckCmdMain_ErrorCases(t *testing.T) {
 
 			// 直接测试解析器
 			parser := newHashFileParser(cl)
-			_, _, err := parser.parseFile(checkFile, false)
+			_, _, err := parser.parseFile(checkFile, "")
 
 			if tt.expectError {
 				if err == nil {
@@ -159,7 +159,11 @@ c34652066a18513105ac1ab96fcbef8e ` + testFile
 		t.Run(tt.name, func(t *testing.T) {
 			// 使用新的解析器
 			parser := newHashFileParser(cl)
-			hashMap, hashType, err := parser.parseFile(checkFile, tt.isRelPath)
+			var userBaseDir string
+			if tt.isRelPath {
+				userBaseDir = tempDir
+			}
+			hashMap, hashType, err := parser.parseFile(checkFile, userBaseDir)
 
 			if tt.expectError {
 				if err == nil {

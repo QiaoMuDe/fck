@@ -190,14 +190,23 @@ func TestFileChecker_WorkerWithNonexistentFile(t *testing.T) {
 	wg.Wait()
 	close(results)
 
-	// 检查结果数量 - 不存在的文件应该被跳过，不会发送到results通道
+	// 检查结果数量 - 不存在的文件应该发送一个包含错误的结果
 	resultCount := 0
-	for range results {
+	var lastResult checkResult
+	for result := range results {
 		resultCount++
+		lastResult = result
 	}
 
-	if resultCount != 0 {
-		t.Errorf("不存在的文件应该被跳过，但收到了%d个结果", resultCount)
+	if resultCount != 1 {
+		t.Errorf("期望收到1个结果（包含文件不存在错误），但收到了%d个结果", resultCount)
+	}
+
+	// 验证结果包含文件不存在错误
+	if lastResult.err == nil {
+		t.Errorf("期望结果包含错误，但错误为nil")
+	} else if !os.IsNotExist(lastResult.err) {
+		t.Errorf("期望文件不存在错误，但得到: %v", lastResult.err)
 	}
 }
 
