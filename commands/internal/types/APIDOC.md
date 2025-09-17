@@ -134,34 +134,6 @@ var (
 )
 ```
 
-### 禁止输入的路径map
-
-```go
-var ForbiddenPaths = map[string]bool{
-	"./":              true,
-	".":               true,
-	"..":              true,
-	"...":             true,
-	"....":            true,
-	"./.":             true,
-	"./..":            true,
-	"./...":           true,
-	"./....":          true,
-	"./*":             true,
-	"./**":            true,
-	"./../":           true,
-	"./../../":        true,
-	"../":             true,
-	"../../":          true,
-	"../../../":       true,
-	"../../../../":    true,
-	"../../../../../": true,
-	"../*":            true,
-	"../**":           true,
-	"../../*":         true,
-}
-```
-
 ### 自定义fck命令的logo
 
 ```go

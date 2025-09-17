@@ -43,33 +43,6 @@ type VirtualHashEntry struct {
 // 虚拟哈希表
 type VirtualHashMap map[string]VirtualHashEntry
 
-var (
-	// 禁止输入的路径map
-	ForbiddenPaths = map[string]bool{
-		"./":              true,
-		".":               true,
-		"..":              true,
-		"...":             true,
-		"....":            true,
-		"./.":             true,
-		"./..":            true,
-		"./...":           true,
-		"./....":          true,
-		"./*":             true,
-		"./**":            true,
-		"./../":           true,
-		"./../../":        true,
-		"../":             true,
-		"../../":          true,
-		"../../../":       true,
-		"../../../../":    true,
-		"../../../../../": true,
-		"../*":            true,
-		"../**":           true,
-		"../../*":         true,
-	}
-)
-
 // 定义文件类型标识符常量
 const (
 	DirType         = "d" // 目录类型
@@ -135,14 +108,14 @@ var TableStyles = []string{
 // 定义禁用样式
 var StyleNone = table.Style{
 	Box: table.BoxStyle{
-		PaddingLeft:      " ",  // 左边框
-		PaddingRight:     "  ", // 右边框
-		MiddleHorizontal: " ",  // 水平线
-		MiddleVertical:   " ",  // 垂直线
-		TopLeft:          " ",  // 左上角
-		TopRight:         " ",  // 右上角
-		BottomLeft:       " ",  // 左下角
-		BottomRight:      " ",  // 右下角
+		PaddingLeft:      " ", // 左边框
+		PaddingRight:     " ", // 右边框
+		MiddleHorizontal: " ", // 水平线
+		MiddleVertical:   " ", // 垂直线
+		TopLeft:          " ", // 左上角
+		TopRight:         " ", // 右上角
+		BottomLeft:       " ", // 左下角
+		BottomRight:      " ", // 右下角
 	},
 }
 
