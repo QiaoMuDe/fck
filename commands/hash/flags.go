@@ -13,11 +13,13 @@ import (
 var (
 	// fck hash 子命令
 	hashCmd          *cmd.Cmd
-	hashCmdType      *qflag.EnumFlag // type 标志
-	hashCmdRecursion *qflag.BoolFlag // recursion 标志
-	hashCmdWrite     *qflag.BoolFlag // write 标志
-	hashCmdHidden    *qflag.BoolFlag // hidden 标志
-	hashCmdProgress  *qflag.BoolFlag // progress 标志
+	hashCmdType      *qflag.EnumFlag   // type 标志
+	hashCmdRecursion *qflag.BoolFlag   // recursion 标志
+	hashCmdWrite     *qflag.BoolFlag   // write 标志
+	hashCmdHidden    *qflag.BoolFlag   // hidden 标志
+	hashCmdProgress  *qflag.BoolFlag   // progress 标志
+	hashCmdLocal     *qflag.BoolFlag   // local 标志
+	hashCmdBasePath  *qflag.StringFlag // base-path 标志
 )
 
 func InitHashCmd() *cmd.Cmd {
@@ -31,6 +33,8 @@ func InitHashCmd() *cmd.Cmd {
 	hashCmdWrite = hashCmd.Bool("write", "w", false, "将哈希值写入文件, 文件名为checksum.hash")
 	hashCmdHidden = hashCmd.Bool("hidden", "H", false, "启用计算隐藏文件/目录的哈希值，默认跳过")
 	hashCmdProgress = hashCmd.Bool("progress", "p", false, "显示文件哈希计算进度条, 推荐在大文件处理时使用")
+	hashCmdLocal = hashCmd.Bool("local", "l", false, "生成本地模式校验文件，记录绝对路径和基准目录")
+	hashCmdBasePath = hashCmd.String("base-path", "b", "", "指定基准路径(默认为当前工作目录)")
 
 	return hashCmd
 }

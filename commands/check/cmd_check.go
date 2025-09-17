@@ -13,9 +13,12 @@ import (
 // CheckCmdMain 是 check 命令的主函数
 func CheckCmdMain(cl *colorlib.ColorLib) error {
 	// 获取校验文件路径
-	checkFile := checkCmd.Arg(0)
+	checkFile := checkCmdFile.Get()
 	if checkFile == "" {
-		checkFile = types.OutputFileName
+		checkFile = checkCmd.Arg(0)
+		if checkFile == "" {
+			checkFile = types.OutputFileName
+		}
 	}
 
 	// 检查校验文件是否存在
@@ -28,8 +31,11 @@ func CheckCmdMain(cl *colorlib.ColorLib) error {
 	// 创建解析器
 	parser := newHashFileParser(cl)
 
+	// 获取用户指定的基准目录
+	userBaseDir := checkCmdBaseDir.Get()
+
 	// 解析校验文件
-	hashMap, hashFunc, err := parser.parseFile(checkFile, false)
+	hashMap, hashFunc, err := parser.parseFileEnhanced(checkFile, userBaseDir)
 	if err != nil {
 		return fmt.Errorf("解析校验文件失败: %v", err)
 	}

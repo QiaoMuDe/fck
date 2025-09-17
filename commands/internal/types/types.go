@@ -25,6 +25,10 @@ const (
 
 	// 虚拟基准目录 /ROOTDIR
 	VirtualRootDir = "/ROOTDIR"
+
+	// 校验文件模式
+	ChecksumModePortable = "PORTABLE"
+	ChecksumModeLocal    = "LOCAL"
 )
 
 // 虚拟哈希表条目

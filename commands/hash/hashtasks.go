@@ -343,13 +343,29 @@ func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
 //   - error: 错误信息，如果写入失败
 //
 // 注意:
-//   - 文件头格式为: #hashType#timestamp
+//   - 便携模式文件头格式为: #hashType#timestamp#PORTABLE
+//   - 本地模式文件头格式为: #hashType#timestamp#LOCAL#basePath
 func (m *HashTaskManager) writeFileHeader(file *os.File, hashType string, timestampFormat string) error {
 	// 获取当前时间
 	now := time.Now()
 
-	// 构造文件头内容, 格式为: #hashType#timestamp#targetPath
-	header := fmt.Sprintf("#%s#%s\n", hashType, now.Format(timestampFormat))
+	var header string
+	if hashCmdLocal.Get() {
+		// 本地模式：记录基准路径
+		basePath := hashCmdBasePath.Get()
+		if basePath == "" {
+			// 默认使用当前工作目录
+			var err error
+			basePath, err = os.Getwd()
+			if err != nil {
+				return fmt.Errorf("获取当前工作目录失败: %v", err)
+			}
+		}
+		header = fmt.Sprintf("#%s#%s#%s#%s\n", hashType, now.Format(timestampFormat), types.ChecksumModeLocal, basePath)
+	} else {
+		// 便携模式（默认）
+		header = fmt.Sprintf("#%s#%s#%s\n", hashType, now.Format(timestampFormat), types.ChecksumModePortable)
+	}
 
 	// 写入文件头
 	if _, err := file.WriteString(header); err != nil {

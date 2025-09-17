@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 
 	"gitee.com/MM-Q/colorlib"
@@ -83,9 +84,12 @@ func (c *fileChecker) worker(jobs <-chan types.VirtualHashEntry, results chan<- 
 			expectedHash: entry.Hash,
 		}
 
-		// 检查文件是否存在
+		// 检查文件是否存在，如果不存在则发送错误结果
 		if _, err := os.Stat(entry.RealPath); err != nil {
-			c.cl.PrintWarnf("文件 %s 不存在，跳过校验\n", entry.RealPath)
+			results <- checkResult{
+				filePath: entry.RealPath,
+				err:      err,
+			}
 			continue
 		}
 
@@ -104,37 +108,65 @@ func (c *fileChecker) worker(jobs <-chan types.VirtualHashEntry, results chan<- 
 // collectResults 收集校验结果
 func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int) error {
 	var (
-		errorCount     int
-		mismatchCount  int
-		processedCount int
+		passedCount    int // 校验通过的文件数
+		mismatchCount  int // 哈希不匹配的文件数
+		notFoundCount  int // 文件不存在的文件数
+		errorCount     int // 其他错误的文件数
+		processedCount int // 总处理文件数
 	)
 
 	for result := range results {
 		processedCount++
 
 		if result.err != nil {
-			c.cl.Redf("%s ✗\n", result.filePath)
-			errorCount++
+			// 检查是否是文件不存在错误
+			if os.IsNotExist(result.err) ||
+				strings.Contains(result.err.Error(), "不存在") ||
+				strings.Contains(result.err.Error(), "no such file") {
+				c.cl.Yellowf("文件 %s 不存在，跳过校验\n", result.filePath)
+				notFoundCount++
+			} else {
+				c.cl.Redf("%s ✗ (错误: %v)\n", result.filePath, result.err)
+				errorCount++
+			}
 			continue
 		}
 
 		// 比较哈希值
 		if result.actualHash != result.expectedHash {
-			c.cl.Redf("%s ✗\n", result.filePath)
+			c.cl.Redf("%s ✗ (哈希不匹配)\n", result.filePath)
 			mismatchCount++
 		} else {
-			c.cl.Greenf("%s ✓\n", result.filePath)
+			//c.cl.Greenf("%s ✓\n", result.filePath)
+			passedCount++
 		}
 	}
 
 	// 输出校验结果统计
-	c.printSummary(processedCount, mismatchCount, errorCount, totalFiles)
+	c.printSummary(passedCount, mismatchCount, notFoundCount, errorCount, totalFiles)
 
 	return nil
 }
 
 // printSummary 打印校验结果摘要
-func (c *fileChecker) printSummary(processed, mismatched, errors, total int) {
-	passedCount := processed - mismatched - errors
-	c.cl.Bluef("完成: %d/%d 通过\n", passedCount, total)
+func (c *fileChecker) printSummary(passed, mismatched, notFound, errors, total int) {
+	c.cl.Bluef("校验完成: ")
+	c.cl.Greenf("%d个通过", passed)
+
+	if mismatched > 0 {
+		fmt.Print(", ")
+		c.cl.Redf("%d个校验失败", mismatched)
+	}
+
+	if notFound > 0 {
+		fmt.Print(", ")
+		c.cl.Yellowf("%d个文件不存在", notFound)
+	}
+
+	if errors > 0 {
+		fmt.Print(", ")
+		c.cl.Redf("%d个错误", errors)
+	}
+
+	fmt.Printf(" (总计: %d个文件)\n", total)
 }

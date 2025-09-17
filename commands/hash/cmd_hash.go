@@ -4,6 +4,7 @@ package hash
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"gitee.com/MM-Q/colorlib"
@@ -56,6 +57,14 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, hashType string
 		return nil
 	}
 
+	// 如果是便携模式且需要写入文件，转换为相对路径
+	if hashCmdWrite.Get() && !hashCmdLocal.Get() {
+		files, err = convertToRelativePaths(files)
+		if err != nil {
+			return fmt.Errorf("转换相对路径失败: %w", err)
+		}
+	}
+
 	// 执行哈希任务
 	errors := hashRunTasksRefactored(files, hashType)
 
@@ -67,6 +76,39 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, hashType string
 	}
 
 	return nil
+}
+
+// convertToRelativePaths 将文件路径转换为相对路径
+//
+// 参数:
+//   - files: 文件路径列表
+//
+// 返回:
+//   - []string: 转换后的相对路径列表
+//   - error: 错误信息
+func convertToRelativePaths(files []string) ([]string, error) {
+	// 获取基准路径
+	basePath := hashCmdBasePath.Get()
+	if basePath == "" {
+		var err error
+		basePath, err = os.Getwd() // 默认使用当前工作目录
+		if err != nil {
+			return nil, fmt.Errorf("获取当前工作目录失败: %v", err)
+		}
+	}
+
+	var relativePaths []string
+	for _, file := range files {
+		// 将绝对路径转换为相对于basePath的相对路径
+		relPath, err := filepath.Rel(basePath, file)
+		if err != nil {
+			return nil, fmt.Errorf("无法转换路径 %s: %v", file, err)
+		}
+		// 统一使用正斜杠作为分隔符（跨平台兼容）
+		relPath = filepath.ToSlash(relPath)
+		relativePaths = append(relativePaths, relPath)
+	}
+	return relativePaths, nil
 }
 
 // printUniqueErrors 去重并打印错误信息

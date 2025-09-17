@@ -239,7 +239,7 @@ func TestFileChecker_PrintSummary(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// 这个测试主要验证函数不会panic
 			// 实际的输出验证需要捕获stdout，这里简化处理
-			checker.printSummary(tt.processed, tt.mismatched, tt.errors, tt.total)
+			checker.printSummary(tt.processed, tt.mismatched, tt.errors, tt.total, tt.total)
 		})
 	}
 }
