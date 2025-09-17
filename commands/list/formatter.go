@@ -297,7 +297,7 @@ func (f *FileFormatter) getFileNameStatsOptimized(fileNames []string) (median, m
 	sampleSize := len(fileNames)
 	step := 1
 
-	// 当文件数量超过1000时，进行采样
+	// 当文件数量超过1000时, 进行采样
 	if sampleSize > 1000 {
 		sampleSize = 1000 // 最多采样1000个文件
 		step = len(fileNames) / sampleSize
@@ -311,7 +311,7 @@ func (f *FileFormatter) getFileNameStatsOptimized(fileNames []string) (median, m
 	maxWidth := 0
 
 	for i := 0; i < len(fileNames); i += step {
-		// 计算实际显示宽度（去除ANSI颜色代码）
+		// 计算实际显示宽度(去除ANSI颜色代码)
 		width := text.RuneWidthWithoutEscSequences(fileNames[i])
 		lengths = append(lengths, width)
 
@@ -354,7 +354,7 @@ func (f *FileFormatter) calculateOptimalColumns(fileNames []string, width int) i
 	// 一次性获取中位数和最大宽度，避免重复计算
 	medianWidth, maxWidth := f.getFileNameStatsOptimized(fileNames)
 
-	// 考虑表格边框和间距，每列额外需要3个字符的空间
+	// 考虑表格边框和间距, 每列额外需要3个字符的空间
 	columnSpacing := 3
 	baseColumns := width / (medianWidth + columnSpacing)
 
@@ -362,8 +362,8 @@ func (f *FileFormatter) calculateOptimalColumns(fileNames []string, width int) i
 	if baseColumns < 1 {
 		return 1
 	}
-	if baseColumns > 8 { // 避免过于拥挤，最多8列
-		return 8
+	if baseColumns > 10 { // 避免过于拥挤, 最多10列
+		return 10
 	}
 
 	// 验证实际效果：检查是否有文件名会导致行过宽
