@@ -140,8 +140,11 @@ func TestFileChecker_Worker(t *testing.T) {
 
 	// 启动worker
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go checker.worker(jobs, results, &wg)
+	wg.Go(
+		func() {
+			checker.worker(jobs, results)
+		},
+	)
 
 	// 等待完成
 	wg.Wait()
@@ -183,8 +186,11 @@ func TestFileChecker_WorkerWithNonexistentFile(t *testing.T) {
 
 	// 启动worker
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go checker.worker(jobs, results, &wg)
+	wg.Go(
+		func() {
+			checker.worker(jobs, results)
+		},
+	)
 
 	// 等待完成
 	wg.Wait()

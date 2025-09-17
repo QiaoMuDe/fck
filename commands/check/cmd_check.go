@@ -23,7 +23,7 @@ func CheckCmdMain(cl *colorlib.ColorLib) error {
 
 	// 检查校验文件是否存在
 	if _, err := os.Stat(checkFile); err != nil {
-		return fmt.Errorf("校验文件不存在: %s", checkFile)
+		return fmt.Errorf("指定的校验文件不存在: %s, 请确认文件路径是否正确", checkFile)
 	}
 
 	cl.Blue("正在校验完整性...")

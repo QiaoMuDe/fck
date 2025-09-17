@@ -52,8 +52,11 @@ func (c *fileChecker) checkFiles(hashMap types.VirtualHashMap) error {
 	// 启动工作协程
 	var wg sync.WaitGroup
 	for i := 0; i < c.maxWorkers; i++ {
-		wg.Add(1)
-		go c.worker(jobs, results, &wg)
+		wg.Go(
+			func() {
+				c.worker(jobs, results)
+			},
+		)
 	}
 
 	// 发送任务
@@ -75,9 +78,7 @@ func (c *fileChecker) checkFiles(hashMap types.VirtualHashMap) error {
 }
 
 // worker 工作协程
-func (c *fileChecker) worker(jobs <-chan types.VirtualHashEntry, results chan<- checkResult, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (c *fileChecker) worker(jobs <-chan types.VirtualHashEntry, results chan<- checkResult) {
 	for entry := range jobs {
 		result := checkResult{
 			filePath:     entry.RealPath,
@@ -134,11 +135,11 @@ func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int)
 
 		// 比较哈希值
 		if result.actualHash != result.expectedHash {
-			c.cl.Redf("%s ✗ (哈希不匹配)\n", result.filePath)
-			mismatchCount++
+			c.cl.Redf("%s ✗ (哈希不匹配, 文件可能已经被篡改)\n", result.filePath)
+			mismatchCount++ // 哈希不匹配
 		} else {
 			//c.cl.Greenf("%s ✓\n", result.filePath)
-			passedCount++
+			passedCount++ // 校验通过
 		}
 	}
 

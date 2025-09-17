@@ -40,7 +40,7 @@ func newHashFileParser(cl *colorlib.ColorLib) *hashFileParser {
 func (p *hashFileParser) parseFile(checkFile string, userBaseDir string) (types.VirtualHashMap, string, error) {
 	// 检查文件是否存在
 	if _, err := os.Stat(checkFile); err != nil {
-		return nil, "", fmt.Errorf("校验文件不存在: %s", checkFile)
+		return nil, "", fmt.Errorf("指定的校验文件不存在: %s, 请确认文件路径是否正确", checkFile)
 	}
 
 	// 打开文件
@@ -48,11 +48,7 @@ func (p *hashFileParser) parseFile(checkFile string, userBaseDir string) (types.
 	if err != nil {
 		return nil, "", fmt.Errorf("无法打开校验文件: %v", err)
 	}
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			p.cl.PrintWarnf("关闭文件失败: %v\n", closeErr)
-		}
-	}()
+	defer func() { _ = file.Close() }()
 
 	scanner := bufio.NewScanner(file)
 
@@ -90,7 +86,7 @@ func (p *hashFileParser) parseHeader(scanner *bufio.Scanner) (*types.ChecksumHea
 
 	headerLine := scanner.Text()
 
-	// 尝试解析新格式：#hashType#timestamp#mode#basePath 或 #hashType#timestamp#mode
+	// 尝试解析新格式: #hashType#timestamp#mode#basePath 或 #hashType#timestamp#mode
 	headerRegex := regexp.MustCompile(`^#(\w+)#([^#]+)(?:#([^#]+)(?:#(.+))?)?$`)
 	matches := headerRegex.FindStringSubmatch(headerLine)
 
