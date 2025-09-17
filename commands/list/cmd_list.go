@@ -216,11 +216,6 @@ func validateArgs() error {
 		return fmt.Errorf("必须指定 %s 选项才能使用 %s 选项", listCmdAll.Name(), listCmdType.Name())
 	}
 
-	// 检查是否同时指定了 -c 和 --dev-color
-	if listCmdDevColor.Get() && !listCmdColor.Get() {
-		return fmt.Errorf("如果要使用 -%s, 必须要先启用 -%s", listCmdDevColor.ShortName(), listCmdColor.ShortName())
-	}
-
 	return nil
 }
 
@@ -232,7 +227,6 @@ func getFormatOptions() FormatOptions {
 	return FormatOptions{
 		LongFormat:    listCmdLongFormat.Get(),    // 是否长格式
 		UseColor:      listCmdColor.Get(),         // 是否使用颜色
-		DevColor:      listCmdDevColor.Get(),      // 是否使用开发者颜色
 		TableStyle:    listCmdTableStyle.Get(),    // 表格样式
 		QuoteNames:    listCmdQuoteNames.Get(),    // 是否引用名称
 		ShowUserGroup: listCmdShowUserGroup.Get(), // 是否显示用户和组

@@ -26,7 +26,6 @@ var (
 	listCmdRecursion     *qflag.BoolFlag // R 标志
 	listCmdShowUserGroup *qflag.BoolFlag // u 标志
 	listCmdTableStyle    *qflag.EnumFlag // ts 标志
-	listCmdDevColor      *qflag.BoolFlag // dev-color 标志
 	listCmdType          *qflag.EnumFlag // type 标志
 )
 
@@ -57,7 +56,6 @@ func InitListCmd() *cmd.Cmd {
 	listCmdQuoteNames = listCmd.Bool("quote-names", "q", false, "在输出时用双引号包裹条目")
 	listCmdRecursion = listCmd.Bool("recursion", "R", false, "递归列出目录及其子目录的内容")
 	listCmdShowUserGroup = listCmd.Bool("user-group", "u", false, "显示文件的用户和组信息")
-	listCmdDevColor = listCmd.Bool("dev-color", "dc", false, "启用开发环境下的颜色输出。注意：此选项需配合颜色输出选项 -c 一同使用")
 	listCmdTableStyle = listCmd.Enum("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\t\t[default] - 默认样式\n"+
 		"\t\t\t\t\t[l  ]     - 浅色样式\n"+

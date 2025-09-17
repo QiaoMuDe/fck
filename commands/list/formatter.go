@@ -270,7 +270,7 @@ func (f *FileFormatter) prepareFileNames(files FileInfoList, opts FormatOptions)
 				FileExt:        file.FileExt,        // 文件扩展名
 				LinkTargetPath: file.LinkTargetPath, // 符号链接目标路径
 			}
-			name = GetColorString(opts.DevColor, info, name, f.colorLib) // 添加颜色
+			name = GetColorString(info, name, f.colorLib) // 添加颜色
 		}
 
 		fileNames[i] = name
@@ -392,7 +392,7 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 	infoPerm := f.formatPermissionString(info)
 
 	// 文件类型
-	infoType := GetColorString(opts.DevColor, info, info.EntryType, f.colorLib)
+	infoType := GetColorString(info, info.EntryType, f.colorLib)
 
 	// 文件大小和单位
 	infoSize, infoSizeUnit := f.humanSize(info.Size)
@@ -430,7 +430,7 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 		}
 	} else {
 		// 普通文件
-		infoName = GetColorString(opts.DevColor, info, fmt.Sprintf(formatStr, fileName), f.colorLib)
+		infoName = GetColorString(info, fmt.Sprintf(formatStr, fileName), f.colorLib)
 	}
 
 	// 添加行
