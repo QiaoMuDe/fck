@@ -27,7 +27,7 @@ current_platform_only = true
 # --zip, -z: 将输出文件打包为zip
 zip_output = false
 # --timeout: 构建超时时间(支持单位: ns/us/ms/s/m/h)
-timeout = '30s'
+timeout = '60s'
 # 指定链接器标志
 ldflags = '-s -w'
 # 指定包含Git信息的链接器标志, 支持占位符: {{AppName}} (应用名称)、{{GitVersion}} (Git版本)、{{GitCommit}} (提交哈希)、{{GitCommitTime}} (提交时间)、{{BuildTime}} (构建时间)、{{GitTreeState}} (树状态)
