@@ -1,5 +1,5 @@
 // Package find 实现了文件查找结果的彩色输出功能。
-// 该文件提供了根据文件类型（目录、可执行文件、符号链接等）进行彩色显示的功能。
+// 该文件提供了根据文件类型(目录、可执行文件、符号链接等)进行彩色显示的功能。
 package find
 
 import (
@@ -14,30 +14,22 @@ import (
 
 const (
 	// 目录颜色常量
-	dirColor = "blue"
+	dirColor = ColorBlue
 )
 
-// isEmptyFile 检查DirEntry是否为空文件
-//
-// 参数:
-//   - d: 要检查的DirEntry对象
-//
-// 返回:
-//   - bool: 如果是空文件返回true，否则返回false
-func isEmptyFile(d os.DirEntry) bool {
-	// 空DirEntry对象直接返回false
-	if d == nil {
-		return false
-	}
+// ColorType 定义了颜色类型
+type ColorType uint8
 
-	info, err := d.Info()
-	// 如果获取文件信息失败或info为nil，返回false
-	if err != nil || info == nil {
-		return false
-	}
-
-	return info.Size() == 0
-}
+const (
+	ColorRed     ColorType = iota // 红色
+	ColorGreen                    // 绿色
+	ColorYellow                   // 黄色
+	ColorBlue                     // 蓝色
+	ColorCyan                     // 青色
+	ColorWhite                    // 白色
+	ColorGray                     // 灰色
+	ColorDefault                  // 默认颜色
+)
 
 // isWindowsSymlink 检查是否为Windows快捷方式
 func isWindowsSymlink(mode os.FileMode, ext string) bool {
@@ -63,7 +55,7 @@ func isSpecialDevice(mode os.FileMode) bool {
 //
 // 参数:
 //   - path: 要检查的路径，用于获取文件类型信息
-//   - cl: colorlib.ColorLib实例，用于彩色输出
+//   - cl: colorlib.ColorLib实例, 用于彩色输出
 //   - d: 匹配到的DirEntry对象
 //
 // 注意:
@@ -84,29 +76,26 @@ func printPathColor(path string, cl *colorlib.ColorLib, d os.DirEntry) {
 	ext := filepath.Ext(path) // 缓存扩展名，避免重复计算
 
 	// 确定文件颜色
-	var fileColor string
+	var fileColor ColorType
 	switch {
 	case mode&os.ModeSymlink != 0, isWindowsSymlink(mode, ext):
-		fileColor = "cyan" // 符号链接和Windows快捷方式
+		fileColor = ColorCyan // 符号链接和Windows快捷方式
 
 	case mode.IsDir():
 		cl.Blue(path) // 目录直接输出(蓝色)
 		return
 
 	case isSpecialDevice(mode):
-		fileColor = "yellow" // 各种设备文件
+		fileColor = ColorYellow // 各种设备文件
 
 	case isUnixExecutable(mode), isWindowsExecutable(mode, ext):
-		fileColor = "green" // 可执行文件
-
-	case isEmptyFile(d):
-		fileColor = "gray" // 空文件
+		fileColor = ColorGreen // 可执行文件
 
 	case mode.IsRegular():
-		fileColor = "white" // 普通文件
+		fileColor = ColorWhite // 普通文件
 
 	default:
-		fileColor = "white" // 其他类型文件
+		fileColor = ColorWhite // 其他类型文件
 	}
 
 	// 输出路径
@@ -117,10 +106,10 @@ func printPathColor(path string, cl *colorlib.ColorLib, d os.DirEntry) {
 //
 // 参数:
 //   - p: 文件路径
-//   - cl: colorlib.ColorLib实例，用于彩色输出
-//   - dirColor: 目录部分的颜色字符串
-//   - fileColor: 文件名部分的颜色字符串
-func printColor(p string, cl *colorlib.ColorLib, dirColor string, fileColor string) {
+//   - cl: colorlib.ColorLib实例, 用于彩色输出
+//   - dirColor: 目录部分的颜色类型
+//   - fileColor: 文件名部分的颜色类型
+func printColor(p string, cl *colorlib.ColorLib, dirColor ColorType, fileColor ColorType) {
 	// 获取路径的目录和文件名
 	dir, file := filepath.Split(p)
 
@@ -137,27 +126,27 @@ func printColor(p string, cl *colorlib.ColorLib, dirColor string, fileColor stri
 // getColoredString 根据颜色字符串调用对应的颜色方法
 //
 // 参数:
-//   - cl: colorlib.ColorLib实例，用于彩色输出
-//   - color: 颜色字符串，用于指定输出颜色
+//   - cl: colorlib.ColorLib实例, 用于彩色输出
+//   - color: 颜色类型, 用于指定输出颜色
 //   - text: 要输出的文本
 //
 // 返回:
 //   - string: 彩色文本
-func getColoredString(cl *colorlib.ColorLib, color string, text string) string {
+func getColoredString(cl *colorlib.ColorLib, color ColorType, text string) string {
 	switch color {
-	case "red":
+	case ColorRed:
 		return cl.Sred(text)
-	case "green":
+	case ColorGreen:
 		return cl.Sgreen(text)
-	case "yellow":
+	case ColorYellow:
 		return cl.Syellow(text)
-	case "blue":
+	case ColorBlue:
 		return cl.Sblue(text)
-	case "cyan":
+	case ColorCyan:
 		return cl.Scyan(text)
-	case "white":
+	case ColorWhite:
 		return cl.Swhite(text)
-	case "gray":
+	case ColorGray:
 		return cl.Sgray(text)
 	default:
 		return text
