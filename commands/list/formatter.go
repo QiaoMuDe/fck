@@ -125,12 +125,8 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 	// 准备文件名列表
 	fileNames := f.prepareFileNames(files, opts)
 
-	// 计算列数
-	maxWidth := f.getMaxWidth(fileNames)
-	columns := width / (maxWidth + 1)
-	if columns == 0 {
-		columns = 1
-	}
+	// 计算最优列数
+	columns := f.calculateOptimalColumns(fileNames, width)
 
 	// 创建表格
 	t := table.NewWriter()
@@ -283,15 +279,103 @@ func (f *FileFormatter) prepareFileNames(files FileInfoList, opts FormatOptions)
 	return fileNames
 }
 
-// getMaxWidth 获取最大宽度
+// getFileNameStatsOptimized 优化的文件名统计信息获取
+// 使用一次遍历 + 采样优化，适用于大量文件的场景
 //
 // 参数:
 //   - fileNames: 文件名列表
 //
 // 返回:
-//   - int: 最大宽度
-func (f *FileFormatter) getMaxWidth(fileNames []string) int {
-	return text.LongestLineLen(strings.Join(fileNames, "\n"))
+//   - median: 中位数宽度
+//   - max: 最大宽度
+func (f *FileFormatter) getFileNameStatsOptimized(fileNames []string) (median, max int) {
+	if len(fileNames) == 0 {
+		return 20, 20 // 默认宽度
+	}
+
+	// 采样优化：如果文件数量很大，使用采样来提高性能
+	sampleSize := len(fileNames)
+	step := 1
+
+	// 当文件数量超过1000时，进行采样
+	if sampleSize > 1000 {
+		sampleSize = 1000 // 最多采样1000个文件
+		step = len(fileNames) / sampleSize
+		if step == 0 {
+			step = 1
+		}
+	}
+
+	// 一次遍历计算所有统计信息
+	lengths := make([]int, 0, sampleSize)
+	maxWidth := 0
+
+	for i := 0; i < len(fileNames); i += step {
+		// 计算实际显示宽度（去除ANSI颜色代码）
+		width := text.RuneWidthWithoutEscSequences(fileNames[i])
+		lengths = append(lengths, width)
+
+		// 同时记录最大宽度
+		if width > maxWidth {
+			maxWidth = width
+		}
+	}
+
+	// 计算中位数
+	sort.Ints(lengths)
+	mid := len(lengths) / 2
+	var medianWidth int
+
+	if len(lengths)%2 == 0 {
+		// 偶数个元素，取中间两个的平均值
+		medianWidth = (lengths[mid-1] + lengths[mid]) / 2
+	} else {
+		// 奇数个元素，取中间值
+		medianWidth = lengths[mid]
+	}
+
+	return medianWidth, maxWidth
+}
+
+// calculateOptimalColumns 计算最优列数
+// 使用优化的统计信息获取方法
+//
+// 参数:
+//   - fileNames: 文件名列表
+//   - width: 终端宽度
+//
+// 返回:
+//   - int: 最优列数
+func (f *FileFormatter) calculateOptimalColumns(fileNames []string, width int) int {
+	if len(fileNames) == 0 {
+		return 1
+	}
+
+	// 一次性获取中位数和最大宽度，避免重复计算
+	medianWidth, maxWidth := f.getFileNameStatsOptimized(fileNames)
+
+	// 考虑表格边框和间距，每列额外需要3个字符的空间
+	columnSpacing := 3
+	baseColumns := width / (medianWidth + columnSpacing)
+
+	// 限制列数范围
+	if baseColumns < 1 {
+		return 1
+	}
+	if baseColumns > 8 { // 避免过于拥挤，最多8列
+		return 8
+	}
+
+	// 验证实际效果：检查是否有文件名会导致行过宽
+	if maxWidth > width/baseColumns {
+		// 如果最长的文件名在当前列数下会超出，适当减少列数
+		safeColumns := width / (maxWidth + columnSpacing)
+		if safeColumns > 0 && safeColumns < baseColumns {
+			return safeColumns
+		}
+	}
+
+	return baseColumns
 }
 
 // addTableRow 添加表格行

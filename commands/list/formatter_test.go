@@ -168,43 +168,6 @@ func TestFileFormatter_PrepareFileNames(t *testing.T) {
 	}
 }
 
-func TestFileFormatter_GetMaxWidth(t *testing.T) {
-	cl := colorlib.New()
-	formatter := NewFileFormatter(cl)
-
-	tests := []struct {
-		name      string
-		fileNames []string
-		expected  int
-	}{
-		{
-			name:      "单个短文件名",
-			fileNames: []string{"test.txt"},
-			expected:  8, // "test.txt" 长度
-		},
-		{
-			name:      "多个文件名",
-			fileNames: []string{"short.txt", "very_long_filename.txt"},
-			expected:  22, // "very_long_filename.txt" 长度
-		},
-		{
-			name:      "空列表",
-			fileNames: []string{},
-			expected:  0,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := formatter.getMaxWidth(tt.fileNames)
-
-			if result != tt.expected {
-				t.Errorf("getMaxWidth() = %v, 期望 %v", result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestFileFormatter_FormatPermissionString(t *testing.T) {
 	cl := colorlib.New()
 	formatter := NewFileFormatter(cl)
