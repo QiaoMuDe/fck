@@ -106,7 +106,7 @@ func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) er
 	return nil
 }
 
-// renderGrid 渲染网格格式（默认格式）
+// renderGrid 渲染网格格式 (默认格式)
 //
 // 参数:
 //   - files: 文件列表
@@ -127,7 +127,7 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 
 	// 计算列数
 	maxWidth := f.getMaxWidth(fileNames)
-	columns := width / (maxWidth + 2)
+	columns := width / (maxWidth + 1)
 	if columns == 0 {
 		columns = 1
 	}
@@ -169,8 +169,8 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 //   - int: 终端宽度
 func (f *FileFormatter) getSafeTerminalWidth() int {
 	defaultWidth := 80 // 默认宽度
-	minWidth := 20     // 最小宽度
-	maxWidth := 500    // 最大宽度
+	minWidth := 40     // 最小宽度
+	maxWidth := 1200   // 最大宽度
 
 	// 检查环境变量
 	if cols := os.Getenv("COLUMNS"); cols != "" {
@@ -197,7 +197,7 @@ func (f *FileFormatter) getSafeTerminalWidth() int {
 	return defaultWidth
 }
 
-// renderTable 渲染表格格式（长格式）
+// renderTable 渲染表格格式 (长格式)
 //
 // 参数:
 //   - files: 文件列表
