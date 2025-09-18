@@ -303,54 +303,6 @@ func TestFileScanner_ShouldSkipFile(t *testing.T) {
 	}
 }
 
-func TestFileScanner_BuildFileInfo(t *testing.T) {
-	// 创建临时测试文件
-	tempDir := t.TempDir()
-	testFile := filepath.Join(tempDir, "test.txt")
-
-	f, err := os.Create(testFile)
-	if err != nil {
-		t.Fatalf("创建测试文件失败: %v", err)
-	}
-	if closeErr := f.Close(); closeErr != nil {
-		t.Fatalf("关闭测试文件失败: %v", closeErr)
-	}
-
-	// 写入一些内容
-	content := "test content"
-	if writeErr := os.WriteFile(testFile, []byte(content), 0644); writeErr != nil {
-		t.Fatalf("写入测试文件失败: %v", writeErr)
-	}
-
-	scanner := NewFileScanner()
-	fileInfo, err := os.Stat(testFile)
-	if err != nil {
-		t.Fatalf("获取文件信息失败: %v", err)
-	}
-
-	// 初始化命令标志
-	InitListCmd()
-
-	result := scanner.buildFileInfo(fileInfo, testFile, tempDir)
-
-	// 验证结果
-	if result.Name != "test.txt" {
-		t.Errorf("buildFileInfo().Name = %v, 期望 %v", result.Name, "test.txt")
-	}
-
-	if result.Size != int64(len(content)) {
-		t.Errorf("buildFileInfo().Size = %v, 期望 %v", result.Size, len(content))
-	}
-
-	if result.EntryType != types.FileType {
-		t.Errorf("buildFileInfo().EntryType = %v, 期望 %v", result.EntryType, types.FileType)
-	}
-
-	if result.FileExt != ".txt" {
-		t.Errorf("buildFileInfo().FileExt = %v, 期望 %v", result.FileExt, ".txt")
-	}
-}
-
 func TestFileScanner_GetEntryType(t *testing.T) {
 	// 创建临时测试文件和目录
 	tempDir := t.TempDir()

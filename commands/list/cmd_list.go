@@ -43,7 +43,7 @@ func ListCmdMain(cl *colorlib.ColorLib) error {
 
 	// 4. 扫描文件
 	scanner := NewFileScanner()
-	files, err := scanner.Scan(expandedPaths, getScanOptions())
+	files, err := scanner.ScanWithOriginalPaths(paths, expandedPaths, getScanOptions())
 	if err != nil {
 		return err
 	}
@@ -242,22 +242,25 @@ func shouldGroupByPath(originalPaths, expandedPaths []string) bool {
 		return false
 	}
 
-	// 情况1：多个路径参数（优先检查，因为更常见且更快）
-	if len(expandedPaths) > 1 {
+	// 情况1：用户明确指定了多个路径参数（不是通配符展开的）
+	if len(originalPaths) > 1 {
 		return true
 	}
 
-	// 情况2：原始路径包含通配符（只有在单个展开路径时才需要检查）
-	if len(originalPaths) == 1 && len(expandedPaths) == 1 {
-		// 如果原始路径有通配符但只展开出一个路径，说明是单个文件/目录匹配
-		return false
-	}
-
-	// 情况3：原始路径检查是否有通配符（只在必要时检查）
-	for _, path := range originalPaths {
-		if strings.ContainsAny(path, "*?[]") {
-			return true
+	// 情况2：单个原始路径，通配符展开的情况
+	if len(originalPaths) == 1 && len(expandedPaths) > 1 {
+		// 检查原始路径是否包含通配符
+		hasWildcard := strings.ContainsAny(originalPaths[0], "*?[]")
+		if hasWildcard {
+			// 通配符展开的情况：检查是否包含目录
+			// 如果包含目录，需要分组显示（文件在当前目录组，目录单独分组）
+			for _, path := range expandedPaths {
+				if info, err := os.Stat(path); err == nil && info.IsDir() {
+					return true
+				}
+			}
 		}
+		return false
 	}
 
 	return false

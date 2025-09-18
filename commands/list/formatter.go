@@ -66,6 +66,7 @@ func (f *FileFormatter) Render(files FileInfoList, opts FormatOptions) error {
 func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) error {
 	// 按目录分组
 	dirFiles := make(map[string]FileInfoList)
+
 	for _, file := range files {
 		var groupKey string
 
@@ -76,11 +77,25 @@ func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) er
 				dir = "."
 			}
 			groupKey = dir
+
 		} else {
-			// 非递归模式：使用用户指定的原始路径
-			groupKey = file.OriginalPath
-			if groupKey == "" {
-				groupKey = "."
+			// 非递归模式：检查是否为通配符展开的情况
+			if strings.ContainsAny(file.OriginalPath, "*?[]") {
+				// 通配符展开的情况：根据文件类型分组
+				if file.EntryType == types.DirType {
+					// 目录：使用目录路径作为组键，显示目录内容
+					groupKey = file.Path
+				} else {
+					// 文件：放在当前目录组
+					groupKey = "."
+				}
+
+			} else {
+				// 非通配符：使用用户指定的原始路径
+				groupKey = file.OriginalPath
+				if groupKey == "" {
+					groupKey = "."
+				}
 			}
 		}
 

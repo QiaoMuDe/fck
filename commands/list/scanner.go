@@ -50,17 +50,91 @@ func (s *FileScanner) Scan(paths []string, opts ScanOptions) (FileInfoList, erro
 	return allFiles, nil
 }
 
-// scanSinglePath 扫描单个路径
+// ScanWithOriginalPaths 扫描指定路径的文件（保持原始路径和展开路径的对应关系）
 //
 // 参数:
-//   - path: 要扫描的路径
+//   - originalPaths: 用户输入的原始路径列表
+//   - expandedPaths: 展开后的路径列表
 //   - opts: 扫描选项
 //
 // 返回:
 //   - FileInfoList: 扫描到的文件信息列表
 //   - error: 扫描过程中的错误
-func (s *FileScanner) scanSinglePath(path string, opts ScanOptions) (FileInfoList, error) {
-	return s.scanSinglePathWithOriginal(path, path, opts)
+func (s *FileScanner) ScanWithOriginalPaths(originalPaths, expandedPaths []string, opts ScanOptions) (FileInfoList, error) {
+	var allFiles FileInfoList
+
+	// 创建原始路径到展开路径的映射
+	pathMapping := s.createPathMapping(originalPaths, expandedPaths)
+
+	for _, expandedPath := range expandedPaths {
+		// 找到对应的原始路径
+		originalPath := s.findOriginalPath(expandedPath, pathMapping)
+
+		// 检查是否为通配符展开的目录
+		isWildcardDir := strings.ContainsAny(originalPath, "*?[]")
+		if isWildcardDir {
+			if info, err := os.Stat(expandedPath); err == nil && info.IsDir() {
+				// 通配符展开的目录：扫描目录内容，但保持原始路径为目录路径
+				files, err := s.scanDirectoryWithOriginal(expandedPath, expandedPath, expandedPath, opts)
+				if err != nil {
+					return nil, fmt.Errorf("扫描目录 %s 失败: %v", expandedPath, err)
+				}
+				allFiles = append(allFiles, files...)
+				continue
+			}
+		}
+
+		files, err := s.scanSinglePathWithOriginal(expandedPath, originalPath, opts)
+		if err != nil {
+			return nil, fmt.Errorf("扫描路径 %s 失败: %v", expandedPath, err)
+		}
+		allFiles = append(allFiles, files...)
+	}
+
+	return allFiles, nil
+}
+
+// createPathMapping 创建原始路径到展开路径的映射关系
+func (s *FileScanner) createPathMapping(originalPaths, expandedPaths []string) map[string]string {
+	mapping := make(map[string]string)
+
+	// 如果原始路径和展开路径数量相同，则一一对应
+	if len(originalPaths) == len(expandedPaths) {
+		for i, expandedPath := range expandedPaths {
+			mapping[expandedPath] = originalPaths[i]
+		}
+		return mapping
+	}
+
+	// 处理通配符展开的情况
+	for _, originalPath := range originalPaths {
+		if strings.ContainsAny(originalPath, "*?[]") {
+			// 通配符路径，找到所有匹配的展开路径
+			matches, _ := filepath.Glob(originalPath)
+			for _, match := range matches {
+				// 找到在expandedPaths中的对应项
+				for _, expandedPath := range expandedPaths {
+					if match == expandedPath {
+						mapping[expandedPath] = originalPath
+					}
+				}
+			}
+		} else {
+			// 非通配符路径，直接映射
+			mapping[originalPath] = originalPath
+		}
+	}
+
+	return mapping
+}
+
+// findOriginalPath 根据展开路径找到对应的原始路径
+func (s *FileScanner) findOriginalPath(expandedPath string, mapping map[string]string) string {
+	if originalPath, exists := mapping[expandedPath]; exists {
+		return originalPath
+	}
+	// 如果找不到映射，返回展开路径本身
+	return expandedPath
 }
 
 // scanSinglePathWithOriginal 扫描单个路径（保存原始路径）
@@ -103,23 +177,9 @@ func (s *FileScanner) scanSinglePathWithOriginal(path string, originalPath strin
 	if pathInfo.IsDir() {
 		return s.scanDirectoryWithOriginal(absPath, absPath, originalPath, opts)
 	} else {
-		fileInfo := s.buildFileInfoWithOriginal(pathInfo, absPath, absPath, originalPath)
+		fileInfo := s.buildFileInfoWithOriginal(pathInfo, absPath, originalPath)
 		return FileInfoList{fileInfo}, nil
 	}
-}
-
-// scanDirectory 扫描目录
-//
-// 参数:
-//   - dirPath: 目录路径
-//   - rootDir: 根目录
-//   - opts: 扫描选项
-//
-// 返回:
-//   - FileInfoList: 扫描到的文件信息列表
-//   - error: 扫描过程中的错误
-func (s *FileScanner) scanDirectory(dirPath, rootDir string, opts ScanOptions) (FileInfoList, error) {
-	return s.scanDirectoryWithOriginal(dirPath, rootDir, rootDir, opts)
 }
 
 // scanDirectoryWithOriginal 扫描目录（保存原始路径）
@@ -142,7 +202,7 @@ func (s *FileScanner) scanDirectoryWithOriginal(dirPath, rootDir string, origina
 		if err != nil {
 			return nil, err
 		}
-		fileInfo := s.buildFileInfoWithOriginal(pathInfo, dirPath, dirPath, originalPath)
+		fileInfo := s.buildFileInfoWithOriginal(pathInfo, dirPath, originalPath)
 		return FileInfoList{fileInfo}, nil
 	}
 
@@ -186,7 +246,7 @@ func (s *FileScanner) scanDirectoryWithOriginal(dirPath, rootDir string, origina
 		}
 
 		// 添加当前文件信息
-		info := s.buildFileInfoWithOriginal(fileInfo, absEntryPath, rootDir, originalPath)
+		info := s.buildFileInfoWithOriginal(fileInfo, absEntryPath, originalPath)
 		files = append(files, info)
 	}
 
@@ -276,37 +336,22 @@ func (s *FileScanner) shouldSkipFile(path string, isDir bool, fileInfo os.FileIn
 	return false
 }
 
-// buildFileInfo 构建文件信息
-//
-// 参数:
-//   - fileInfo: 文件信息
-//   - absPath: 绝对路径
-//   - rootDir: 根目录
-//
-// 返回:
-//   - FileInfo: 文件信息
-func (s *FileScanner) buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) FileInfo {
-	return s.buildFileInfoWithOriginal(fileInfo, absPath, rootDir, rootDir)
-}
-
 // buildFileInfoWithOriginal 构建文件信息（包含原始路径）
 //
 // 参数:
 //   - fileInfo: 文件信息
 //   - absPath: 绝对路径
-//   - rootDir: 根目录
 //   - originalPath: 用户指定的原始路径
 //
 // 返回:
 //   - FileInfo: 文件信息
-func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath string, rootDir string, originalPath string) FileInfo {
+func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath string, originalPath string) FileInfo {
 	// 确定显示名称
 	var baseName string
 	if listCmdRecursion.Get() {
-		// 递归模式下显示绝对路径
-		baseName = absPath
+		baseName = absPath // 递归模式下显示绝对路径
 	} else {
-		baseName = filepath.Base(absPath)
+		baseName = filepath.Base(absPath) // 非递归模式下显示文件名
 	}
 
 	// 获取文件类型
@@ -316,10 +361,11 @@ func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath st
 	var fileExt string
 	if strings.HasPrefix(baseName, ".") && len(baseName) > 1 {
 		if strings.Contains(baseName[1:], ".") {
-			fileExt = filepath.Ext(baseName)
+			fileExt = filepath.Ext(baseName) // 隐藏文件扩展名
 		}
+
 	} else if strings.Contains(baseName, ".") {
-		fileExt = filepath.Ext(baseName)
+		fileExt = filepath.Ext(baseName) // 普通文件扩展名
 	}
 
 	// 获取符号链接目标
@@ -327,7 +373,7 @@ func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath st
 	if entryType == types.SymlinkType {
 		linkTargetPath, _ = os.Readlink(absPath)
 		if linkTargetPath == "" {
-			linkTargetPath = "?"
+			linkTargetPath = "?" // 读取失败或空链接时返回问号
 		}
 	}
 
@@ -395,12 +441,13 @@ func (s *FileScanner) getEntryType(fileInfo os.FileInfo) string {
 		case "windows":
 			ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
 			switch ext {
-			case ".exe", ".com", ".cmd", ".bat", ".ps1", ".psm1":
+			case ".exe", ".bat":
 				return types.ExecutableType
 			case ".lnk", ".url":
 				return types.SymlinkType
 			}
-		case "linux", "darwin":
+
+		default:
 			if mode&0111 != 0 {
 				return types.ExecutableType
 			}
