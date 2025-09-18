@@ -269,7 +269,6 @@ func TestFormatOptionsConstruction(t *testing.T) {
 			expected: FormatOptions{
 				LongFormat:    false,
 				UseColor:      false,
-				DevColor:      false,
 				TableStyle:    "none",
 				QuoteNames:    false,
 				ShowUserGroup: false,
@@ -280,7 +279,6 @@ func TestFormatOptionsConstruction(t *testing.T) {
 			expected: FormatOptions{
 				LongFormat:    true,
 				UseColor:      true,
-				DevColor:      true,
 				TableStyle:    "default",
 				QuoteNames:    true,
 				ShowUserGroup: true,
@@ -293,7 +291,6 @@ func TestFormatOptionsConstruction(t *testing.T) {
 			result := FormatOptions{
 				LongFormat:    tt.expected.LongFormat,
 				UseColor:      tt.expected.UseColor,
-				DevColor:      tt.expected.DevColor,
 				TableStyle:    tt.expected.TableStyle,
 				QuoteNames:    tt.expected.QuoteNames,
 				ShowUserGroup: tt.expected.ShowUserGroup,
@@ -305,10 +302,6 @@ func TestFormatOptionsConstruction(t *testing.T) {
 
 			if result.UseColor != tt.expected.UseColor {
 				t.Errorf("FormatOptions.UseColor = %v, 期望 %v", result.UseColor, tt.expected.UseColor)
-			}
-
-			if result.DevColor != tt.expected.DevColor {
-				t.Errorf("FormatOptions.DevColor = %v, 期望 %v", result.DevColor, tt.expected.DevColor)
 			}
 
 			if result.TableStyle != tt.expected.TableStyle {

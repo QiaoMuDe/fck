@@ -296,15 +296,16 @@ func (s *FileScanner) buildFileInfo(fileInfo os.FileInfo, absPath string, rootDi
 	owner, group := common.GetFileOwner(absPath)
 
 	return FileInfo{
-		EntryType:      entryType,
-		Name:           baseName,
-		Size:           fileInfo.Size(),
-		ModTime:        fileInfo.ModTime(),
-		Perm:           fileInfo.Mode().Perm().String(),
-		Owner:          owner,
-		Group:          group,
-		FileExt:        fileExt,
-		LinkTargetPath: linkTargetPath,
+		EntryType:      entryType,                       // 文件类型
+		Name:           baseName,                        // 显示名称
+		Path:           absPath,                         // 路径信息
+		Size:           fileInfo.Size(),                 // 文件大小
+		ModTime:        fileInfo.ModTime(),              // 修改时间
+		Perm:           fileInfo.Mode().Perm().String(), // 权限信息
+		Owner:          owner,                           // 文件所有者
+		Group:          group,                           // 文件所属组
+		FileExt:        fileExt,                         // 文件扩展名
+		LinkTargetPath: linkTargetPath,                  // 符号链接目标
 	}
 }
 

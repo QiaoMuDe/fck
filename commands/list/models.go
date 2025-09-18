@@ -16,19 +16,21 @@ type ScanOptions struct {
 
 // ProcessOptions 处理选项
 type ProcessOptions struct {
-	SortBy     string // 排序方式: "name", "time", "size"
-	Reverse    bool   // 是否反向排序
-	GroupByDir bool   // 是否按目录分组
+	SortBy      string // 排序方式: "name", "time", "size"
+	Reverse     bool   // 是否反向排序
+	GroupByDir  bool   // 是否按目录分组 (原有的递归分组)
+	GroupByPath bool   // 是否按路径分组 (新增：用于多路径/通配符场景)
+	IsMultiPath bool   // 是否为多路径场景 (新增：标识符)
 }
 
 // FormatOptions 格式化选项
 type FormatOptions struct {
 	LongFormat    bool   // 是否长格式显示
 	UseColor      bool   // 是否使用颜色
-	DevColor      bool   // 是否使用开发者颜色
 	TableStyle    string // 表格样式
 	QuoteNames    bool   // 是否引用文件名
 	ShowUserGroup bool   // 是否显示用户组
+	ShouldGroup   bool   // 是否应该分组显示 (新增：避免重复判断)
 }
 
 // list子命令用于存储文件信息的结构体
@@ -49,14 +51,22 @@ type FileInfo struct {
 type FileInfoList []FileInfo
 
 // 定义全局常量的颜色映射
-var permissionColorMap = map[int]string{
-	1: "green",  // 所有者-读-绿色
-	2: "yellow", // 所有者-写-黄色
-	3: "red",    // 所有者-执行-红色
-	4: "green",  // 组-读-绿色
-	5: "yellow", // 组-写-黄色
-	6: "red",    // 组-执行-红色
-	7: "green",  // 其他-读-绿色
-	8: "yellow", // 其他-写-黄色
-	9: "red",    // 其他-执行-红色
+var permissionColorMap = map[int]colorType{
+	1: colorTypeGreen,  // 所有者-读-绿色
+	2: colorTypeYellow, // 所有者-写-黄色
+	3: colorTypeRed,    // 所有者-执行-红色
+	4: colorTypeGreen,  // 组-读-绿色
+	5: colorTypeYellow, // 组-写-黄色
+	6: colorTypeRed,    // 组-执行-红色
+	7: colorTypeGreen,  // 其他-读-绿色
+	8: colorTypeYellow, // 其他-写-黄色
+	9: colorTypeRed,    // 其他-执行-红色
 }
+
+type colorType uint8
+
+const (
+	colorTypeGreen  colorType = iota // 绿色
+	colorTypeYellow                  // 黄色
+	colorTypeRed                     // 红色
+)

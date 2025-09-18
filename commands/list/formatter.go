@@ -43,8 +43,8 @@ func (f *FileFormatter) Render(files FileInfoList, opts FormatOptions) error {
 		return nil
 	}
 
-	// 根据是否递归分组显示
-	if listCmdRecursion.Get() {
+	// 使用预先计算的分组标识，避免重复判断
+	if opts.ShouldGroup {
 		return f.renderGrouped(files, opts)
 	}
 
@@ -66,15 +66,40 @@ func (f *FileFormatter) Render(files FileInfoList, opts FormatOptions) error {
 func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) error {
 	// 按目录分组
 	dirFiles := make(map[string]FileInfoList)
+
 	for _, file := range files {
-		dir, _ := filepath.Split(file.Name)
-		if dir == "" {
-			dir = "."
+		var groupKey string
+
+		if listCmdRecursion.Get() {
+			// 递归模式：使用相对路径的目录部分
+			dir, _ := filepath.Split(file.Name)
+			if dir == "" {
+				dir = "."
+			}
+			groupKey = dir
+		} else {
+			// 非递归模式：使用绝对路径的目录部分
+			dir := filepath.Dir(file.Path)
+			if dir == "" {
+				dir = "."
+			}
+			groupKey = dir
 		}
-		dirFiles[dir] = append(dirFiles[dir], file)
+
+		dirFiles[groupKey] = append(dirFiles[groupKey], file)
 	}
 
-	// 排序目录
+	// 如果只有一个分组且不是递归模式，直接显示内容
+	if len(dirFiles) == 1 && !listCmdRecursion.Get() {
+		for _, fileList := range dirFiles {
+			if opts.LongFormat {
+				return f.renderTable(fileList, opts)
+			}
+			return f.renderGrid(fileList, opts)
+		}
+	}
+
+	// 多分组显示
 	dirs := make([]string, 0, len(dirFiles))
 	for dir := range dirFiles {
 		dirs = append(dirs, dir)
@@ -460,15 +485,18 @@ func (f *FileFormatter) formatPermissionString(info FileInfo) string {
 	// 格式化权限字符串
 	var formattedPerm string
 	for i := 1; i < len(info.Perm); i++ {
-		colorName := permissionColorMap[i]
-		switch colorName {
-		case "green":
+		colorType := permissionColorMap[i]
+		switch colorType {
+		case colorTypeGreen: // 绿色
 			formattedPerm += f.colorLib.Sgreen(string(info.Perm[i]))
-		case "yellow":
+
+		case colorTypeYellow: // 黄色
 			formattedPerm += f.colorLib.Syellow(string(info.Perm[i]))
-		case "red":
+
+		case colorTypeRed: // 红色
 			formattedPerm += f.colorLib.Sred(string(info.Perm[i]))
-		default:
+
+		default: // 未知颜色类型，使用默认
 			formattedPerm += string(info.Perm[i])
 		}
 	}

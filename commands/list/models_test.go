@@ -56,7 +56,6 @@ func TestFormatOptions(t *testing.T) {
 	opts := FormatOptions{
 		LongFormat:    true,
 		UseColor:      false,
-		DevColor:      false,
 		TableStyle:    "default",
 		QuoteNames:    true,
 		ShowUserGroup: false,
@@ -167,16 +166,16 @@ func TestFileInfoList(t *testing.T) {
 
 func TestPermissionColorMap(t *testing.T) {
 	// 测试权限颜色映射是否正确初始化
-	expectedColors := map[int]string{
-		1: "green",  // 所有者-读-绿色
-		2: "yellow", // 所有者-写-黄色
-		3: "red",    // 所有者-执行-红色
-		4: "green",  // 组-读-绿色
-		5: "yellow", // 组-写-黄色
-		6: "red",    // 组-执行-红色
-		7: "green",  // 其他-读-绿色
-		8: "yellow", // 其他-写-黄色
-		9: "red",    // 其他-执行-红色
+	expectedColors := map[int]colorType{
+		1: colorTypeGreen,  // 所有者-读-绿色
+		2: colorTypeYellow, // 所有者-写-黄色
+		3: colorTypeRed,    // 所有者-执行-红色
+		4: colorTypeGreen,  // 组-读-绿色
+		5: colorTypeYellow, // 组-写-黄色
+		6: colorTypeRed,    // 组-执行-红色
+		7: colorTypeGreen,  // 其他-读-绿色
+		8: colorTypeYellow, // 其他-写-黄色
+		9: colorTypeRed,    // 其他-执行-红色
 	}
 
 	for pos, expectedColor := range expectedColors {

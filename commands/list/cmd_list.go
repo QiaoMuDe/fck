@@ -38,6 +38,9 @@ func ListCmdMain(cl *colorlib.ColorLib) error {
 		return err
 	}
 
+	// 新增：判断是否为多路径场景
+	isMultiPath := shouldGroupByPath(paths, expandedPaths)
+
 	// 4. 扫描文件
 	scanner := NewFileScanner()
 	files, err := scanner.Scan(expandedPaths, getScanOptions())
@@ -45,13 +48,13 @@ func ListCmdMain(cl *colorlib.ColorLib) error {
 		return err
 	}
 
-	// 5. 处理数据
+	// 5. 处理数据 - 传递多路径标识
 	processor := NewFileProcessor()
-	processed := processor.Process(files, getProcessOptions())
+	processed := processor.Process(files, getProcessOptions(isMultiPath))
 
 	// 6. 格式化输出
 	formatter := NewFileFormatter(cl)
-	return formatter.Render(processed, getFormatOptions())
+	return formatter.Render(processed, getFormatOptions(isMultiPath))
 }
 
 // getPaths 获取路径列表
@@ -169,9 +172,12 @@ func getScanOptions() ScanOptions {
 
 // getProcessOptions 获取处理选项
 //
+// 参数:
+//   - isMultiPath: 是否为多路径场景
+//
 // 返回:
 //   - ProcessOptions: 处理选项
-func getProcessOptions() ProcessOptions {
+func getProcessOptions(isMultiPath bool) ProcessOptions {
 	var sortBy string // 排序方式
 
 	if listCmdSortByTime.Get() {
@@ -185,9 +191,11 @@ func getProcessOptions() ProcessOptions {
 	}
 
 	return ProcessOptions{
-		SortBy:     sortBy,                   // 排序方式
-		Reverse:    listCmdReverseSort.Get(), // 是否反向排序
-		GroupByDir: listCmdRecursion.Get(),   // 是否按目录分组
+		SortBy:      sortBy,                   // 排序方式
+		Reverse:     listCmdReverseSort.Get(), // 是否反向排序
+		GroupByDir:  listCmdRecursion.Get(),   // 原有的递归分组
+		GroupByPath: isMultiPath,              // 新增的路径分组
+		IsMultiPath: isMultiPath,              // 多路径标识
 	}
 }
 
@@ -219,16 +227,59 @@ func validateArgs() error {
 	return nil
 }
 
+// shouldGroupByPath 判断是否应该按路径分组
+// 优化版本：减少不必要的循环和提前返回
+//
+// 参数:
+//   - originalPaths: 原始路径列表
+//   - expandedPaths: 展开后的路径列表
+//
+// 返回:
+//   - bool: 是否应该按路径分组
+func shouldGroupByPath(originalPaths, expandedPaths []string) bool {
+	// 如果已经是递归模式，不需要额外分组
+	if listCmdRecursion.Get() {
+		return false
+	}
+
+	// 情况1：多个路径参数（优先检查，因为更常见且更快）
+	if len(expandedPaths) > 1 {
+		return true
+	}
+
+	// 情况2：原始路径包含通配符（只有在单个展开路径时才需要检查）
+	if len(originalPaths) == 1 && len(expandedPaths) == 1 {
+		// 如果原始路径有通配符但只展开出一个路径，说明是单个文件/目录匹配
+		return false
+	}
+
+	// 情况3：原始路径检查是否有通配符（只在必要时检查）
+	for _, path := range originalPaths {
+		if strings.ContainsAny(path, "*?[]") {
+			return true
+		}
+	}
+
+	return false
+}
+
 // getFormatOptions 获取格式化选项
+//
+// 参数:
+//   - isMultiPath: 是否为多路径场景
 //
 // 返回:
 //   - FormatOptions: 格式化选项
-func getFormatOptions() FormatOptions {
+func getFormatOptions(isMultiPath bool) FormatOptions {
+	// 预先计算是否应该分组，避免在渲染时重复判断
+	shouldGroup := listCmdRecursion.Get() || isMultiPath
+
 	return FormatOptions{
 		LongFormat:    listCmdLongFormat.Get(),    // 是否长格式
 		UseColor:      listCmdColor.Get(),         // 是否使用颜色
 		TableStyle:    listCmdTableStyle.Get(),    // 表格样式
 		QuoteNames:    listCmdQuoteNames.Get(),    // 是否引用名称
 		ShowUserGroup: listCmdShowUserGroup.Get(), // 是否显示用户和组
+		ShouldGroup:   shouldGroup,                // 是否应该分组显示
 	}
 }
