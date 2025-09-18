@@ -376,7 +376,7 @@ func (f *FileFormatter) getFileNameStatsOptimized(fileNames []string) (median, m
 }
 
 // calculateOptimalColumns 计算最优列数
-// 使用优化的统计信息获取方法
+// 基于终端宽度和文件名长度分布动态计算最优列数
 //
 // 参数:
 //   - fileNames: 文件名列表
@@ -400,8 +400,25 @@ func (f *FileFormatter) calculateOptimalColumns(fileNames []string, width int) i
 	if baseColumns < 1 {
 		return 1
 	}
-	if baseColumns > 10 { // 避免过于拥挤, 最多10列
-		return 10
+
+	// 动态计算最大列数，基于终端宽度和文件名长度分布
+	// 1. 基础限制：宽终端允许更多列，窄终端限制更少列
+	maxColumns := width / (medianWidth * 2)
+	if maxColumns < 3 {
+		maxColumns = 3 // 最少允许3列
+	} else if maxColumns > 12 {
+		maxColumns = 12 // 最多允许12列
+	}
+
+	// 2. 根据文件名长度分布调整
+	// 如果最大宽度远大于中位数宽度，适当减少最大列数
+	if maxWidth > medianWidth*3 {
+		maxColumns = int(float64(maxColumns) * 0.8) // 减少20%的列数
+	}
+
+	// 3. 应用动态计算的最大列数限制
+	if baseColumns > maxColumns {
+		baseColumns = maxColumns
 	}
 
 	// 验证实际效果：检查是否有文件名会导致行过宽
