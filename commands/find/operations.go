@@ -180,29 +180,6 @@ func (o *FileOperator) Execute(cmdStr, path string) error {
 	}
 }
 
-// quotePath 安全地引用文件路径，防止路径中的特殊字符导致问题
-//
-// 参数:
-//   - path: 文件路径
-//
-// 返回:
-//   - string: 引用后的安全路径
-func (o *FileOperator) quotePath(path string) string {
-	// 清理路径
-	cleanPath := filepath.Clean(path)
-
-	// 根据系统类型选择引用方式
-	if runtime.GOOS == "windows" {
-		// Windows使用双引号，并转义内部的双引号
-		escapedPath := strings.ReplaceAll(cleanPath, "\"", "\\\"")
-		return fmt.Sprintf("\"%s\"", escapedPath)
-	} else {
-		// Unix系统使用单引号，并处理内部的单引号
-		escapedPath := strings.ReplaceAll(cleanPath, "'", "'\"'\"'")
-		return fmt.Sprintf("'%s'", escapedPath)
-	}
-}
-
 // executeDirect 直接执行命令（默认模式）
 //
 // 参数:
@@ -213,8 +190,7 @@ func (o *FileOperator) quotePath(path string) string {
 //   - error: 错误信息
 func (o *FileOperator) executeDirect(cmdStr, path string) error {
 	// 安全地替换{}为实际的文件路径
-	safePath := o.quotePath(path)
-	finalCmd := strings.ReplaceAll(cmdStr, "{}", safePath)
+	finalCmd := strings.ReplaceAll(cmdStr, "{}", filepath.Clean(path))
 
 	// 解析命令参数
 	args, err := o.parseCommand(finalCmd)
@@ -250,7 +226,7 @@ func (o *FileOperator) executeDirect(cmdStr, path string) error {
 	return nil
 }
 
-// executeWithShell 通过shell执行命令（--use-shell模式）
+// executeWithShell 通过shell执行命令 (--use-shell/-us模式)
 //
 // 参数:
 //   - cmdStr: 要执行的命令字符串
@@ -260,8 +236,7 @@ func (o *FileOperator) executeDirect(cmdStr, path string) error {
 //   - error: 错误信息
 func (o *FileOperator) executeWithShell(cmdStr, path string) error {
 	// 安全地替换{}为实际的文件路径
-	safePath := o.quotePath(path)
-	finalCmd := strings.ReplaceAll(cmdStr, "{}", safePath)
+	finalCmd := strings.ReplaceAll(cmdStr, "{}", filepath.Clean(path))
 
 	// 根据操作系统选择shell和参数
 	shell, args := o.getShellCommand(finalCmd)
@@ -290,7 +265,7 @@ func (o *FileOperator) executeWithShell(cmdStr, path string) error {
 	return nil
 }
 
-// initShellDetection 初始化shell检测，只执行一次
+// initShellDetection 初始化shell检测, 只执行一次
 func initShellDetection() {
 	if runtime.GOOS == "windows" {
 		// Windows 平台按优先级检测: pwsh -> powershell -> cmd
@@ -311,7 +286,7 @@ func initShellDetection() {
 			}
 		}
 
-		// 如果都找不到，使用默认的 cmd（理论上不会发生）
+		// 如果都找不到，使用默认的 cmd (理论上不会发生)
 		detectedShell = "cmd"
 		detectedShellArgs = []string{"/C"}
 	} else {
@@ -326,7 +301,7 @@ func initShellDetection() {
 			}
 		}
 
-		// 如果都找不到，使用默认的 sh（理论上不会发生）
+		// 如果都找不到，使用默认的 sh (理论上不会发生)
 		detectedShell = "sh"
 		detectedShellArgs = []string{"-c"}
 	}

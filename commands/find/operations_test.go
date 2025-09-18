@@ -221,42 +221,6 @@ func TestFileOperator_Execute(t *testing.T) {
 	}
 }
 
-func TestFileOperator_QuotePath(t *testing.T) {
-	cl := colorlib.NewColorLib()
-	operator := NewFileOperator(cl)
-
-	tests := []struct {
-		name     string
-		path     string
-		expected string
-	}{
-		{
-			name:     "简单路径",
-			path:     "test.txt",
-			expected: "'test.txt'", // Unix系统使用单引号
-		},
-		{
-			name:     "包含空格的路径",
-			path:     "test file.txt",
-			expected: "'test file.txt'",
-		},
-		{
-			name:     "包含特殊字符的路径",
-			path:     "test$file.txt",
-			expected: "'test$file.txt'",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := operator.quotePath(tt.path)
-			// 由于quotePath是私有方法，我们无法直接测试
-			// 这里只是示例，实际测试中需要通过公共方法间接测试
-			_ = result
-		})
-	}
-}
-
 // 基准测试
 func BenchmarkFileOperator_Delete(b *testing.B) {
 	cl := colorlib.NewColorLib()
