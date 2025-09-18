@@ -40,7 +40,7 @@ func (s *FileScanner) Scan(paths []string, opts ScanOptions) (FileInfoList, erro
 	var allFiles FileInfoList
 
 	for _, path := range paths {
-		files, err := s.scanSinglePath(path, opts)
+		files, err := s.scanSinglePathWithOriginal(path, path, opts)
 		if err != nil {
 			return nil, fmt.Errorf("扫描路径 %s 失败: %v", path, err)
 		}
@@ -60,6 +60,20 @@ func (s *FileScanner) Scan(paths []string, opts ScanOptions) (FileInfoList, erro
 //   - FileInfoList: 扫描到的文件信息列表
 //   - error: 扫描过程中的错误
 func (s *FileScanner) scanSinglePath(path string, opts ScanOptions) (FileInfoList, error) {
+	return s.scanSinglePathWithOriginal(path, path, opts)
+}
+
+// scanSinglePathWithOriginal 扫描单个路径（保存原始路径）
+//
+// 参数:
+//   - path: 要扫描的路径
+//   - originalPath: 用户输入的原始路径
+//   - opts: 扫描选项
+//
+// 返回:
+//   - FileInfoList: 扫描到的文件信息列表
+//   - error: 扫描过程中的错误
+func (s *FileScanner) scanSinglePathWithOriginal(path string, originalPath string, opts ScanOptions) (FileInfoList, error) {
 	// 清理路径
 	path = filepath.Clean(path)
 
@@ -87,9 +101,9 @@ func (s *FileScanner) scanSinglePath(path string, opts ScanOptions) (FileInfoLis
 
 	// 根据是否为目录进行处理
 	if pathInfo.IsDir() {
-		return s.scanDirectory(absPath, absPath, opts)
+		return s.scanDirectoryWithOriginal(absPath, absPath, originalPath, opts)
 	} else {
-		fileInfo := s.buildFileInfo(pathInfo, absPath, absPath)
+		fileInfo := s.buildFileInfoWithOriginal(pathInfo, absPath, absPath, originalPath)
 		return FileInfoList{fileInfo}, nil
 	}
 }
@@ -105,6 +119,21 @@ func (s *FileScanner) scanSinglePath(path string, opts ScanOptions) (FileInfoLis
 //   - FileInfoList: 扫描到的文件信息列表
 //   - error: 扫描过程中的错误
 func (s *FileScanner) scanDirectory(dirPath, rootDir string, opts ScanOptions) (FileInfoList, error) {
+	return s.scanDirectoryWithOriginal(dirPath, rootDir, rootDir, opts)
+}
+
+// scanDirectoryWithOriginal 扫描目录（保存原始路径）
+//
+// 参数:
+//   - dirPath: 目录路径
+//   - rootDir: 根目录
+//   - originalPath: 用户输入的原始路径
+//   - opts: 扫描选项
+//
+// 返回:
+//   - FileInfoList: 扫描到的文件信息列表
+//   - error: 扫描过程中的错误
+func (s *FileScanner) scanDirectoryWithOriginal(dirPath, rootDir string, originalPath string, opts ScanOptions) (FileInfoList, error) {
 	var files FileInfoList
 
 	// 如果只显示目录本身
@@ -113,7 +142,7 @@ func (s *FileScanner) scanDirectory(dirPath, rootDir string, opts ScanOptions) (
 		if err != nil {
 			return nil, err
 		}
-		fileInfo := s.buildFileInfo(pathInfo, dirPath, dirPath)
+		fileInfo := s.buildFileInfoWithOriginal(pathInfo, dirPath, dirPath, originalPath)
 		return FileInfoList{fileInfo}, nil
 	}
 
@@ -149,7 +178,7 @@ func (s *FileScanner) scanDirectory(dirPath, rootDir string, opts ScanOptions) (
 
 		// 如果是递归模式且当前是目录
 		if opts.Recursive && entry.IsDir() {
-			subFiles, err := s.scanDirectory(absEntryPath, rootDir, opts)
+			subFiles, err := s.scanDirectoryWithOriginal(absEntryPath, rootDir, originalPath, opts)
 			if err != nil {
 				return nil, fmt.Errorf("递归扫描目录 %s 失败: %v", absEntryPath, err)
 			}
@@ -157,7 +186,7 @@ func (s *FileScanner) scanDirectory(dirPath, rootDir string, opts ScanOptions) (
 		}
 
 		// 添加当前文件信息
-		info := s.buildFileInfo(fileInfo, absEntryPath, rootDir)
+		info := s.buildFileInfoWithOriginal(fileInfo, absEntryPath, rootDir, originalPath)
 		files = append(files, info)
 	}
 
@@ -257,15 +286,25 @@ func (s *FileScanner) shouldSkipFile(path string, isDir bool, fileInfo os.FileIn
 // 返回:
 //   - FileInfo: 文件信息
 func (s *FileScanner) buildFileInfo(fileInfo os.FileInfo, absPath string, rootDir string) FileInfo {
+	return s.buildFileInfoWithOriginal(fileInfo, absPath, rootDir, rootDir)
+}
+
+// buildFileInfoWithOriginal 构建文件信息（包含原始路径）
+//
+// 参数:
+//   - fileInfo: 文件信息
+//   - absPath: 绝对路径
+//   - rootDir: 根目录
+//   - originalPath: 用户指定的原始路径
+//
+// 返回:
+//   - FileInfo: 文件信息
+func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath string, rootDir string, originalPath string) FileInfo {
 	// 确定显示名称
 	var baseName string
 	if listCmdRecursion.Get() {
-		relPath, err := filepath.Rel(rootDir, absPath)
-		if err != nil {
-			baseName = absPath
-		} else {
-			baseName = relPath
-		}
+		// 递归模式下显示绝对路径
+		baseName = absPath
 	} else {
 		baseName = filepath.Base(absPath)
 	}
@@ -298,7 +337,8 @@ func (s *FileScanner) buildFileInfo(fileInfo os.FileInfo, absPath string, rootDi
 	return FileInfo{
 		EntryType:      entryType,                       // 文件类型
 		Name:           baseName,                        // 显示名称
-		Path:           absPath,                         // 路径信息
+		Path:           absPath,                         // 绝对路径
+		OriginalPath:   originalPath,                    // 用户指定的原始路径
 		Size:           fileInfo.Size(),                 // 文件大小
 		ModTime:        fileInfo.ModTime(),              // 修改时间
 		Perm:           fileInfo.Mode().Perm().String(), // 权限信息

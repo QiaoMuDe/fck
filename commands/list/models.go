@@ -37,6 +37,7 @@ type FormatOptions struct {
 type FileInfo struct {
 	Name           string    // 文件名 - BaseName
 	Path           string    // 文件路径 - 绝对路径
+	OriginalPath   string    // 原始路径 - 用户指定的路径（用于分组显示）
 	EntryType      string    // 类型 - 文件/目录/软链接
 	Size           int64     // 大小 - 字节数
 	ModTime        time.Time // 修改时间 - time.Time

@@ -66,7 +66,6 @@ func (f *FileFormatter) Render(files FileInfoList, opts FormatOptions) error {
 func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) error {
 	// 按目录分组
 	dirFiles := make(map[string]FileInfoList)
-
 	for _, file := range files {
 		var groupKey string
 
@@ -78,12 +77,11 @@ func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) er
 			}
 			groupKey = dir
 		} else {
-			// 非递归模式：使用绝对路径的目录部分
-			dir := filepath.Dir(file.Path)
-			if dir == "" {
-				dir = "."
+			// 非递归模式：使用用户指定的原始路径
+			groupKey = file.OriginalPath
+			if groupKey == "" {
+				groupKey = "."
 			}
-			groupKey = dir
 		}
 
 		dirFiles[groupKey] = append(dirFiles[groupKey], file)
