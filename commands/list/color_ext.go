@@ -440,10 +440,13 @@ var redExtensions = map[string]bool{
 	".blend":  true, // Blender文件
 	".fbx":    true, // FBX 3D模型
 	".obj":    true, // Wavefront OBJ
-	".dae":    true, // COLLADA
+	".dae":    true, // COLLADA 3D模型
 	".sketch": true, // Sketch设计文件
 	".fig":    true, // Figma文件
 	".xd":     true, // Adobe XD文件
+	".vsd":    true, // Visio文件
+	".vsdx":   true, // Visio文件
+	".xmind":  true, // XMind文件"
 
 	// 科学数据
 	".hdf5":   true, // HDF5数据
