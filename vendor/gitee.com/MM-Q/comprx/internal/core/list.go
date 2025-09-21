@@ -57,7 +57,7 @@ import (
 //   - error: 错误信息
 func List(archivePath string) (*types.ArchiveInfo, error) {
 	// 智能检测压缩文件格式
-	compressType, err := types.DetectCompressFormat(archivePath)
+	compressType, err := utils.DetectCompressFormat(archivePath)
 	if err != nil {
 		return nil, fmt.Errorf("检测压缩格式失败: %v", err)
 	}
@@ -103,7 +103,7 @@ func List(archivePath string) (*types.ArchiveInfo, error) {
 //   - error: 错误信息
 func ListLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 	// 智能检测压缩文件格式
-	compressType, err := types.DetectCompressFormat(archivePath)
+	compressType, err := utils.DetectCompressFormat(archivePath)
 	if err != nil {
 		return nil, fmt.Errorf("检测压缩格式失败: %v", err)
 	}
@@ -149,7 +149,7 @@ func ListLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 //   - error: 错误信息
 func ListMatch(archivePath string, pattern string) (*types.ArchiveInfo, error) {
 	// 智能检测压缩文件格式
-	compressType, err := types.DetectCompressFormat(archivePath)
+	compressType, err := utils.DetectCompressFormat(archivePath)
 	if err != nil {
 		return nil, fmt.Errorf("检测压缩格式失败: %v", err)
 	}

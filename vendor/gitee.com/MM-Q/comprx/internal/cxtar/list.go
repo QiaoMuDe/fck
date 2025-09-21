@@ -71,7 +71,7 @@ func ListTar(archivePath string) (*types.ArchiveInfo, error) {
 	tarReader := tar.NewReader(file)
 
 	// 根据文件名检测压缩格式类型
-	compressType, err := types.DetectCompressFormat(absPath)
+	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
 		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
 	}
@@ -96,7 +96,7 @@ func ListTar(archivePath string) (*types.ArchiveInfo, error) {
 		fileInfo := types.FileInfo{
 			Name:           header.Name,
 			Size:           header.Size,
-			CompressedSize: header.Size, // TAR不压缩，压缩大小等于原始大小
+			CompressedSize: header.Size, // TAR禁用压缩，压缩大小等于原始大小
 			ModTime:        header.ModTime,
 			Mode:           header.FileInfo().Mode(),
 			IsDir:          header.FileInfo().IsDir(),
@@ -141,7 +141,7 @@ func ListTarLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 	tarReader := tar.NewReader(file)
 
 	// 根据文件名检测压缩格式类型
-	compressType, err := types.DetectCompressFormat(absPath)
+	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
 		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
 	}
@@ -172,7 +172,7 @@ func ListTarLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 		fileInfo := types.FileInfo{
 			Name:           header.Name,
 			Size:           header.Size,
-			CompressedSize: header.Size, // TAR不压缩，压缩大小等于原始大小
+			CompressedSize: header.Size, // TAR禁用压缩，压缩大小等于原始大小
 			ModTime:        header.ModTime,
 			Mode:           header.FileInfo().Mode(),
 			IsDir:          header.FileInfo().IsDir(),

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/comprx"
-	cxtypes "gitee.com/MM-Q/comprx/types"
 	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
@@ -24,7 +23,7 @@ func UnpackCmdMain() error {
 	}
 
 	// 过滤器配置
-	filter := cxtypes.FilterOptions{
+	filter := comprx.FilterOptions{
 		Include: includePatterns.Get(), // 包含的文件或目录
 		Exclude: excludePatterns.Get(), // 排除的文件或目录
 		MinSize: minSize.Get(),         // 最小文件大小
@@ -39,12 +38,12 @@ func UnpackCmdMain() error {
 
 	// 压缩配置
 	opts := comprx.Options{
-		CompressionLevel:      cxtypes.CompressionLevelDefault, // 压缩级别（解压时使用默认值）
-		OverwriteExisting:     overwrite.Get(),                 // 覆盖已存在的文件
-		ProgressEnabled:       progress.Get(),                  // 显示进度
-		ProgressStyle:         progressStyleVal,                // 进度样式
-		DisablePathValidation: noValidate.Get(),                // 是否禁用路径验证
-		Filter:                filter,                          // 过滤器
+		CompressionLevel:      comprx.CompressionLevelDefault, // 压缩级别（解压时使用默认值）
+		OverwriteExisting:     overwrite.Get(),                // 覆盖已存在的文件
+		ProgressEnabled:       progress.Get(),                 // 显示进度
+		ProgressStyle:         progressStyleVal,               // 进度样式
+		DisablePathValidation: noValidate.Get(),               // 是否禁用路径验证
+		Filter:                filter,                         // 过滤器
 	}
 
 	// 解压

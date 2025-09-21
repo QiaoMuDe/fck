@@ -15,6 +15,9 @@ import (
 // NewCmd 导出cmd包中的NewCmd函数
 var NewCmd = cmd.NewCmd
 
+// Cmd 导出cmd包中的Cmd结构体
+type Cmd = cmd.Cmd
+
 // 导出标志类型 //
 
 // Flag 导出flag包中的Flag结构体

@@ -120,7 +120,7 @@ opts := comprx.Options{
     CompressionLevel: config.CompressionLevelBest,
     OverwriteExisting: true,
     ProgressEnabled: true,
-    ProgressStyle: types.ProgressStyleUnicode,
+    ProgressStyle: ProgressStyleUnicode,
 }
 err := comprx.PackOptions("output.zip", "input_dir", opts)
 ```
@@ -207,7 +207,7 @@ compressed, err := GzipBytes([]byte("hello world"))
 ### GzipBytesWithLevel
 
 ```go
-func GzipBytesWithLevel(data []byte, level types.CompressionLevel) ([]byte, error)
+func GzipBytesWithLevel(data []byte, level CompressionLevel) ([]byte, error)
 ```
 
 - **描述**: 压缩字节数据（指定压缩等级）
@@ -220,7 +220,7 @@ func GzipBytesWithLevel(data []byte, level types.CompressionLevel) ([]byte, erro
 - **使用示例**:
 
 ```go
-compressed, err := GzipBytesWithLevel([]byte("hello world"), types.CompressionLevelBest)
+compressed, err := GzipBytesWithLevel([]byte("hello world"), CompressionLevelBest)
 ```
 
 ### GzipStream
@@ -248,7 +248,7 @@ err := GzipStream(&buf, file)
 ### GzipStreamWithLevel
 
 ```go
-func GzipStreamWithLevel(dst io.Writer, src io.Reader, level types.CompressionLevel) error
+func GzipStreamWithLevel(dst io.Writer, src io.Reader, level CompressionLevel) error
 ```
 
 - **描述**: 流式压缩数据（指定压缩等级）
@@ -267,7 +267,7 @@ defer file.Close()
 output, _ := os.Create("output.gz")
 defer output.Close()
 
-err := GzipStreamWithLevel(output, file, types.CompressionLevelBest)
+err := GzipStreamWithLevel(output, file, CompressionLevelBest)
 ```
 
 ### GzipString
@@ -291,7 +291,7 @@ compressed, err := GzipString("hello world")
 ### GzipStringWithLevel
 
 ```go
-func GzipStringWithLevel(text string, level types.CompressionLevel) ([]byte, error)
+func GzipStringWithLevel(text string, level CompressionLevel) ([]byte, error)
 ```
 
 - **描述**: 压缩字符串（指定压缩等级）
@@ -304,26 +304,26 @@ func GzipStringWithLevel(text string, level types.CompressionLevel) ([]byte, err
 - **使用示例**:
 
 ```go
-compressed, err := GzipStringWithLevel("hello world", types.CompressionLevelBest)
+compressed, err := GzipStringWithLevel("hello world", CompressionLevelBest)
 ```
 
 ### List
 
 ```go
-func List(archivePath string) (*types.ArchiveInfo, error)
+func List(archivePath string) (*ArchiveInfo, error)
 ```
 
 - **描述**: 列出压缩包的所有文件信息
 - **参数**:
   - `archivePath`: 压缩包文件路径
 - **返回**:
-  - `*types.ArchiveInfo`: 压缩包信息
+  - `*ArchiveInfo`: 压缩包信息
   - `error`: 错误信息
 
 ### ListLimit
 
 ```go
-func ListLimit(archivePath string, limit int) (*types.ArchiveInfo, error)
+func ListLimit(archivePath string, limit int) (*ArchiveInfo, error)
 ```
 
 - **描述**: 列出指定数量的文件信息
@@ -331,13 +331,13 @@ func ListLimit(archivePath string, limit int) (*types.ArchiveInfo, error)
   - `archivePath`: 压缩包文件路径
   - `limit`: 限制返回的文件数量
 - **返回**:
-  - `*types.ArchiveInfo`: 压缩包信息
+  - `*ArchiveInfo`: 压缩包信息
   - `error`: 错误信息
 
 ### ListMatch
 
 ```go
-func ListMatch(archivePath string, pattern string) (*types.ArchiveInfo, error)
+func ListMatch(archivePath string, pattern string) (*ArchiveInfo, error)
 ```
 
 - **描述**: 列出匹配指定模式的文件信息
@@ -345,7 +345,7 @@ func ListMatch(archivePath string, pattern string) (*types.ArchiveInfo, error)
   - `archivePath`: 压缩包文件路径
   - `pattern`: 文件名匹配模式 (支持通配符 `*` 和 `?`)
 - **返回**:
-  - `*types.ArchiveInfo`: 压缩包信息
+  - `*ArchiveInfo`: 压缩包信息
   - `error`: 错误信息
 
 ### LoadExcludeFromFile
@@ -428,7 +428,7 @@ opts := Options{
     CompressionLevel: config.CompressionLevelBest,
     OverwriteExisting: true,
     ProgressEnabled: true,
-    ProgressStyle: types.ProgressStyleUnicode,
+    ProgressStyle: ProgressStyleUnicode,
 }
 err := PackOptions("output.zip", "input_dir", opts)
 ```
@@ -851,7 +851,7 @@ func UnpackOptions(src string, dst string, opts Options) error
 opts := Options{
     OverwriteExisting: true,
     ProgressEnabled: true,
-    ProgressStyle: types.ProgressStyleASCII,
+    ProgressStyle: ProgressStyleASCII,
 }
 err := UnpackOptions("archive.zip", "output_dir", opts)
 ```
@@ -955,7 +955,7 @@ compressed, err := ZlibBytes([]byte("hello world"))
 ### ZlibBytesWithLevel
 
 ```go
-func ZlibBytesWithLevel(data []byte, level types.CompressionLevel) ([]byte, error)
+func ZlibBytesWithLevel(data []byte, level CompressionLevel) ([]byte, error)
 ```
 
 - **描述**: 压缩字节数据（指定压缩等级）
@@ -968,7 +968,7 @@ func ZlibBytesWithLevel(data []byte, level types.CompressionLevel) ([]byte, erro
 - **使用示例**:
 
 ```go
-compressed, err := ZlibBytesWithLevel([]byte("hello world"), types.CompressionLevelBest)
+compressed, err := ZlibBytesWithLevel([]byte("hello world"), CompressionLevelBest)
 ```
 
 ### ZlibStream
@@ -996,7 +996,7 @@ err := ZlibStream(&buf, file)
 ### ZlibStreamWithLevel
 
 ```go
-func ZlibStreamWithLevel(dst io.Writer, src io.Reader, level types.CompressionLevel) error
+func ZlibStreamWithLevel(dst io.Writer, src io.Reader, level CompressionLevel) error
 ```
 
 - **描述**: 流式压缩数据（指定压缩等级）
@@ -1015,7 +1015,7 @@ defer file.Close()
 output, _ := os.Create("output.zlib")
 defer output.Close()
 
-err := ZlibStreamWithLevel(output, file, types.CompressionLevelBest)
+err := ZlibStreamWithLevel(output, file, CompressionLevelBest)
 ```
 
 ### ZlibString
@@ -1039,7 +1039,7 @@ compressed, err := ZlibString("hello world")
 ### ZlibStringWithLevel
 
 ```go
-func ZlibStringWithLevel(text string, level types.CompressionLevel) ([]byte, error)
+func ZlibStringWithLevel(text string, level CompressionLevel) ([]byte, error)
 ```
 
 - **描述**: 压缩字符串（指定压缩等级）
@@ -1052,21 +1052,184 @@ func ZlibStringWithLevel(text string, level types.CompressionLevel) ([]byte, err
 - **使用示例**:
 
 ```go
-compressed, err := ZlibStringWithLevel("hello world", types.CompressionLevelBest)
+compressed, err := ZlibStringWithLevel("hello world", CompressionLevelBest)
 ```
 
 ## TYPES
+
+### ArchiveInfo
+
+```go
+type ArchiveInfo = types.ArchiveInfo
+```
+
+- **描述**: 压缩包整体信息
+- **字段**:
+  - `Type`: 压缩包类型
+  - `TotalFiles`: 总文件数
+  - `TotalSize`: 总原始大小
+  - `CompressedSize`: 总压缩大小
+  - `Files`: 文件列表
+- **使用示例**:
+
+```go
+info, err := comprx.List("archive.zip")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("压缩格式: %s\n", info.Type)
+fmt.Printf("文件总数: %d\n", info.TotalFiles)
+```
+
+### CompressionLevel
+
+```go
+type CompressionLevel = types.CompressionLevel
+```
+
+- **描述**: 压缩等级类型
+- **支持的压缩等级**:
+  - `CompressionLevelDefault`: 默认压缩等级
+  - `CompressionLevelNone`: 禁用压缩
+  - `CompressionLevelFast`: 快速压缩
+  - `CompressionLevelBest`: 最佳压缩
+  - `CompressionLevelHuffmanOnly`: 仅使用Huffman编码
+
+### CompressType
+
+```go
+type CompressType = types.CompressType
+```
+
+- **描述**: 压缩格式类型
+- **支持的压缩格式**:
+  - `CompressTypeZip`: zip 压缩格式
+  - `CompressTypeTar`: tar 压缩格式
+  - `CompressTypeTgz`: tgz 压缩格式
+  - `CompressTypeTarGz`: tar.gz 压缩格式
+  - `CompressTypeGz`: gz 压缩格式
+  - `CompressTypeBz2`: bz2 压缩格式
+  - `CompressTypeBzip2`: bzip2 压缩格式
+  - `CompressTypeZlib`: zlib 压缩格式
+
+### FileInfo
+
+```go
+type FileInfo = types.FileInfo
+```
+
+- **描述**: 压缩包内文件信息
+- **字段**:
+  - `Name`: 文件名/路径
+  - `Size`: 原始大小
+  - `CompressedSize`: 压缩后大小
+  - `ModTime`: 修改时间
+  - `Mode`: 文件权限
+  - `IsDir`: 是否为目录
+  - `IsSymlink`: 是否为符号链接
+  - `LinkTarget`: 符号链接目标(如果是符号链接)
+- **使用示例**:
+
+```go
+info, err := comprx.List("archive.zip")
+for _, file := range info.Files {
+    fmt.Printf("文件: %s, 大小: %d\n", file.Name, file.Size)
+}
+```
+
+### FilterOptions
+
+```go
+type FilterOptions = types.FilterOptions
+```
+
+- **描述**: 过滤配置选项
+- **字段**:
+  - `Include`: 包含模式列表，支持 glob 语法
+  - `Exclude`: 排除模式列表，支持 glob 语法
+  - `MaxSize`: 最大文件大小限制(字节)，0 表示无限制
+  - `MinSize`: 最小文件大小限制(字节)，默认为 0
+- **使用示例**:
+
+```go
+filter := &comprx.FilterOptions{
+    Include: []string{"*.go", "*.md"},
+    Exclude: []string{"*_test.go"},
+    MaxSize: 10 * 1024 * 1024, // 10MB
+}
+```
+
+### ProgressStyle
+
+```go
+type ProgressStyle = types.ProgressStyle
+```
+
+- **描述**: 进度条样式类型
+- **支持的进度条样式**:
+  - `ProgressStyleText`: 文本样式进度条 - 使用文字描述进度
+  - `ProgressStyleDefault`: 默认进度条样式 - progress库的默认进度条样式
+  - `ProgressStyleUnicode`: Unicode样式进度条 - 使用Unicode字符绘制精美进度条
+  - `ProgressStyleASCII`: ASCII样式进度条 - 使用基础ASCII字符绘制兼容性最好的进度条
+- **使用示例**:
+
+```go
+opts := comprx.Options{
+    ProgressStyle: comprx.ProgressStyleUnicode,
+    ProgressEnabled: true,
+}
+```
+
+## CONSTANTS
+
+### 压缩等级常量
+
+```go
+const (
+    CompressionLevelDefault     = types.CompressionLevelDefault     // 默认压缩等级
+    CompressionLevelNone        = types.CompressionLevelNone        // 禁用压缩
+    CompressionLevelFast        = types.CompressionLevelFast        // 快速压缩
+    CompressionLevelBest        = types.CompressionLevelBest        // 最佳压缩
+    CompressionLevelHuffmanOnly = types.CompressionLevelHuffmanOnly // 仅使用Huffman编码
+)
+```
+
+### 压缩格式常量
+
+```go
+const (
+    CompressTypeZip    = types.CompressTypeZip    // zip 压缩格式
+    CompressTypeTar    = types.CompressTypeTar    // tar 压缩格式
+    CompressTypeTgz    = types.CompressTypeTgz    // tgz 压缩格式
+    CompressTypeTarGz  = types.CompressTypeTarGz  // tar.gz 压缩格式
+    CompressTypeGz     = types.CompressTypeGz     // gz 压缩格式
+    CompressTypeBz2    = types.CompressTypeBz2    // bz2 压缩格式
+    CompressTypeBzip2  = types.CompressTypeBzip2  // bzip2 压缩格式
+    CompressTypeZlib   = types.CompressTypeZlib   // zlib 压缩格式
+)
+```
+
+### 进度条样式常量
+
+```go
+const (
+    ProgressStyleText    = types.ProgressStyleText    // 文本样式进度条
+    ProgressStyleDefault = types.ProgressStyleDefault // 默认进度条样式
+    ProgressStyleUnicode = types.ProgressStyleUnicode // Unicode样式进度条
+    ProgressStyleASCII   = types.ProgressStyleASCII   // ASCII样式进度条
+)
+```
 
 ### Options
 
 ```go
 type Options struct {
-    CompressionLevel      types.CompressionLevel // 压缩等级
+    CompressionLevel      CompressionLevel // 压缩等级
     OverwriteExisting     bool                   // 是否覆盖已存在的文件
     ProgressEnabled       bool                   // 是否启用进度显示
-    ProgressStyle         types.ProgressStyle    // 进度条样式
+    ProgressStyle         ProgressStyle    // 进度条样式
     DisablePathValidation bool                   // 是否禁用路径验证
-    Filter                types.FilterOptions    // 过滤选项
+    Filter                FilterOptions    // 过滤选项
 }
 ```
 
@@ -1159,7 +1322,7 @@ err := PackOptions("output.zip", "input_dir", NoCompressionOptions())
 ### NoCompressionProgressOptions
 
 ```go
-func NoCompressionProgressOptions(style types.ProgressStyle) Options
+func NoCompressionProgressOptions(style ProgressStyle) Options
 ```
 
 - **描述**: 返回禁用压缩且启用指定样式进度条的配置选项
@@ -1174,13 +1337,13 @@ func NoCompressionProgressOptions(style types.ProgressStyle) Options
 - **使用示例**:
 
 ```go
-err := PackOptions("output.zip", "input_dir", NoCompressionProgressOptions(types.ProgressStyleUnicode))
+err := PackOptions("output.zip", "input_dir", NoCompressionProgressOptions(ProgressStyleUnicode))
 ```
 
 ### ProgressOptions
 
 ```go
-func ProgressOptions(style types.ProgressStyle) Options
+func ProgressOptions(style ProgressStyle) Options
 ```
 
 - **描述**: 返回带进度显示的配置选项
@@ -1217,416 +1380,4 @@ func UnicodeProgressOptions() Options
 
 ```go
 err := PackOptions("output.zip", "input_dir", UnicodeProgressOptions())
-```
-
-### Options 方法
-
-#### SetCompressionLevel
-
-```go
-func (o *Options) SetCompressionLevel(level types.CompressionLevel)
-```
-
-- **描述**: 设置压缩等级
-- **参数**:
-  - `level`: 压缩等级
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetCompressionLevel(types.CompressionLevelBest)
-```
-
-#### SetDisablePathValidation
-
-```go
-func (o *Options) SetDisablePathValidation(disable bool)
-```
-
-- **描述**: 设置是否禁用路径验证
-- **参数**:
-  - `disable`: 是否禁用路径验证
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetDisablePathValidation(true)
-```
-
-#### SetExclude
-
-```go
-func (o *Options) SetExclude(patterns []string)
-```
-
-- **描述**: 设置排除模式
-- **参数**:
-  - `patterns`: 排除模式列表
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetExclude([]string{"*_test.go", "vendor/*"})
-```
-
-#### SetFilter
-
-```go
-func (o *Options) SetFilter(filter types.FilterOptions)
-```
-
-- **描述**: 设置过滤配置
-- **参数**:
-  - `filter`: 过滤选项
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-filter := types.FilterOptions{
-    Include: []string{"*.go", "*.md"},
-    Exclude: []string{"*_test.go"},
-}
-opts.SetFilter(filter)
-```
-
-#### SetInclude
-
-```go
-func (o *Options) SetInclude(patterns []string)
-```
-
-- **描述**: 设置包含模式
-- **参数**:
-  - `patterns`: 包含模式列表
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetInclude([]string{"*.go", "*.md"})
-```
-
-#### SetMaxSize
-
-```go
-func (o *Options) SetMaxSize(maxSize int64)
-```
-
-- **描述**: 设置最大文件大小
-- **参数**:
-  - `maxSize`: 最大文件大小（字节）
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetMaxSize(10 * 1024 * 1024) // 10MB
-```
-
-#### SetMinSize
-
-```go
-func (o *Options) SetMinSize(minSize int64)
-```
-
-- **描述**: 设置最小文件大小
-- **参数**:
-  - `minSize`: 最小文件大小（字节）
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetMinSize(1024) // 1KB
-```
-
-#### SetOverwriteExisting
-
-```go
-func (o *Options) SetOverwriteExisting(overwrite bool)
-```
-
-- **描述**: 设置是否覆盖已存在的文件
-- **参数**:
-  - `overwrite`: 是否覆盖已存在文件
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetOverwriteExisting(true)
-```
-
-#### SetProgress
-
-```go
-func (o *Options) SetProgress(enabled bool)
-```
-
-- **描述**: 设置是否启用进度显示
-- **参数**:
-  - `enabled`: 是否启用进度显示
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetProgress(true)
-```
-
-#### SetProgressAndStyle
-
-```go
-func (o *Options) SetProgressAndStyle(enabled bool, style types.ProgressStyle)
-```
-
-- **描述**: 设置进度显示和样式
-- **参数**:
-  - `enabled`: 是否启用进度显示
-  - `style`: 进度条样式
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetProgressAndStyle(true, types.ProgressStyleUnicode)
-```
-
-#### SetProgressStyle
-
-```go
-func (o *Options) SetProgressStyle(style types.ProgressStyle)
-```
-
-- **描述**: 设置进度条样式
-- **参数**:
-  - `style`: 进度条样式
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetProgressStyle(types.ProgressStyleUnicode)
-```
-
-#### SetSizeFilter
-
-```go
-func (o *Options) SetSizeFilter(minSize, maxSize int64)
-```
-
-- **描述**: 设置文件大小过滤
-- **参数**:
-  - `minSize`: 最小文件大小（字节）
-  - `maxSize`: 最大文件大小（字节）
-- **使用示例**:
-
-```go
-opts := DefaultOptions()
-opts.SetSizeFilter(1024, 10*1024*1024) // 1KB - 10MB
-```
-
-### Options 链式调用方法
-
-#### WithCompressionLevel
-
-```go
-func (o Options) WithCompressionLevel(level types.CompressionLevel) Options
-```
-
-- **描述**: 设置压缩等级
-- **参数**:
-  - `level`: 压缩等级
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithCompressionLevel(types.CompressionLevelBest)
-```
-
-#### WithDisablePathValidation
-
-```go
-func (o Options) WithDisablePathValidation(disable bool) Options
-```
-
-- **描述**: 设置是否禁用路径验证
-- **参数**:
-  - `disable`: 是否禁用路径验证
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithDisablePathValidation(true)
-```
-
-#### WithExclude
-
-```go
-func (o Options) WithExclude(patterns []string) Options
-```
-
-- **描述**: 设置排除模式
-- **参数**:
-  - `patterns`: 排除模式列表
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithExclude([]string{"*_test.go", "vendor/*"})
-```
-
-#### WithFilter
-
-```go
-func (o Options) WithFilter(filter types.FilterOptions) Options
-```
-
-- **描述**: 设置过滤配置
-- **参数**:
-  - `filter`: 过滤选项
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-filter := types.FilterOptions{
-    Include: []string{"*.go", "*.md"},
-    Exclude: []string{"*_test.go"},
-}
-opts := DefaultOptions().WithFilter(filter)
-```
-
-#### WithInclude
-
-```go
-func (o Options) WithInclude(patterns []string) Options
-```
-
-- **描述**: 设置包含模式
-- **参数**:
-  - `patterns`: 包含模式列表
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithInclude([]string{"*.go", "*.md"})
-```
-
-#### WithMaxSize
-
-```go
-func (o Options) WithMaxSize(maxSize int64) Options
-```
-
-- **描述**: 设置最大文件大小
-- **参数**:
-  - `maxSize`: 最大文件大小（字节）
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithMaxSize(10 * 1024 * 1024) // 10MB
-```
-
-#### WithMinSize
-
-```go
-func (o Options) WithMinSize(minSize int64) Options
-```
-
-- **描述**: 设置最小文件大小
-- **参数**:
-  - `minSize`: 最小文件大小（字节）
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithMinSize(1024) // 1KB
-```
-
-#### WithOverwriteExisting
-
-```go
-func (o Options) WithOverwriteExisting(overwrite bool) Options
-```
-
-- **描述**: 设置是否覆盖已存在的文件
-- **参数**:
-  - `overwrite`: 是否覆盖已存在文件
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithOverwriteExisting(true)
-```
-
-#### WithProgress
-
-```go
-func (o Options) WithProgress(enabled bool) Options
-```
-
-- **描述**: 设置是否启用进度显示
-- **参数**:
-  - `enabled`: 是否启用进度显示
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithProgress(true)
-```
-
-#### WithProgressAndStyle
-
-```go
-func (o Options) WithProgressAndStyle(enabled bool, style types.ProgressStyle) Options
-```
-
-- **描述**: 设置进度显示和样式
-- **参数**:
-  - `enabled`: 是否启用进度显示
-  - `style`: 进度条样式
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithProgressAndStyle(true, types.ProgressStyleUnicode)
-```
-
-#### WithProgressStyle
-
-```go
-func (o Options) WithProgressStyle(style types.ProgressStyle) Options
-```
-
-- **描述**: 设置进度条样式
-- **参数**:
-  - `style`: 进度条样式
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithProgressStyle(types.ProgressStyleUnicode)
-```
-
-#### WithSizeFilter
-
-```go
-func (o Options) WithSizeFilter(minSize, maxSize int64) Options
-```
-
-- **描述**: 设置文件大小过滤
-- **参数**:
-  - `minSize`: 最小文件大小（字节）
-  - `maxSize`: 最大文件大小（字节）
-- **返回**:
-  - `Options`: 配置选项（支持链式调用）
-- **使用示例**:
-
-```go
-opts := DefaultOptions().WithSizeFilter(1024, 10*1024*1024) // 1KB - 10MB
 ```

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/comprx"
-	cxtypes "gitee.com/MM-Q/comprx/types"
 	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
@@ -23,7 +22,7 @@ func PackCmdMain() error {
 	}
 
 	// 过滤器配置
-	filter := cxtypes.FilterOptions{
+	filter := comprx.FilterOptions{
 		Include: includePatterns.Get(), // 包含的文件或目录
 		Exclude: excludePatterns.Get(), // 排除的文件或目录
 		MinSize: minSize.Get(),         // 最小文件大小

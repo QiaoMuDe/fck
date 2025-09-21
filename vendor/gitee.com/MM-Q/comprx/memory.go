@@ -24,7 +24,6 @@ import (
 
 	"gitee.com/MM-Q/comprx/internal/cxgzip"
 	"gitee.com/MM-Q/comprx/internal/cxzlib"
-	"gitee.com/MM-Q/comprx/types"
 )
 
 // ==================== gzip内存压缩API ====================
@@ -42,7 +41,7 @@ import (
 //
 //	compressed, err := GzipBytes([]byte("hello world"))
 func GzipBytes(data []byte) ([]byte, error) {
-	return cxgzip.CompressBytes(data, types.CompressionLevelDefault)
+	return cxgzip.CompressBytes(data, CompressionLevelDefault)
 }
 
 // GzipBytesWithLevel 压缩字节数据（指定压缩等级）
@@ -57,8 +56,8 @@ func GzipBytes(data []byte) ([]byte, error) {
 //
 // 使用示例:
 //
-//	compressed, err := GzipBytesWithLevel([]byte("hello world"), types.CompressionLevelBest)
-func GzipBytesWithLevel(data []byte, level types.CompressionLevel) ([]byte, error) {
+//	compressed, err := GzipBytesWithLevel([]byte("hello world"), CompressionLevelBest)
+func GzipBytesWithLevel(data []byte, level CompressionLevel) ([]byte, error) {
 	return cxgzip.CompressBytes(data, level)
 }
 
@@ -91,7 +90,7 @@ func UngzipBytes(compressedData []byte) ([]byte, error) {
 //
 //	compressed, err := GzipString("hello world")
 func GzipString(text string) ([]byte, error) {
-	return cxgzip.CompressString(text, types.CompressionLevelDefault)
+	return cxgzip.CompressString(text, CompressionLevelDefault)
 }
 
 // GzipStringWithLevel 压缩字符串（指定压缩等级）
@@ -106,8 +105,8 @@ func GzipString(text string) ([]byte, error) {
 //
 // 使用示例:
 //
-//	compressed, err := GzipStringWithLevel("hello world", types.CompressionLevelBest)
-func GzipStringWithLevel(text string, level types.CompressionLevel) ([]byte, error) {
+//	compressed, err := GzipStringWithLevel("hello world", CompressionLevelBest)
+func GzipStringWithLevel(text string, level CompressionLevel) ([]byte, error) {
 	return cxgzip.CompressString(text, level)
 }
 
@@ -146,7 +145,7 @@ func UngzipString(compressedData []byte) (string, error) {
 //	var buf bytes.Buffer
 //	err := GzipStream(&buf, file)
 func GzipStream(dst io.Writer, src io.Reader) error {
-	return cxgzip.CompressStream(dst, src, types.CompressionLevelDefault)
+	return cxgzip.CompressStream(dst, src, CompressionLevelDefault)
 }
 
 // GzipStreamWithLevel 流式压缩数据（指定压缩等级）
@@ -167,8 +166,8 @@ func GzipStream(dst io.Writer, src io.Reader) error {
 //	output, _ := os.Create("output.gz")
 //	defer output.Close()
 //
-//	err := GzipStreamWithLevel(output, file, types.CompressionLevelBest)
-func GzipStreamWithLevel(dst io.Writer, src io.Reader, level types.CompressionLevel) error {
+//	err := GzipStreamWithLevel(output, file, CompressionLevelBest)
+func GzipStreamWithLevel(dst io.Writer, src io.Reader, level CompressionLevel) error {
 	return cxgzip.CompressStream(dst, src, level)
 }
 
@@ -209,7 +208,7 @@ func UngzipStream(dst io.Writer, src io.Reader) error {
 //
 //	compressed, err := ZlibBytes([]byte("hello world"))
 func ZlibBytes(data []byte) ([]byte, error) {
-	return cxzlib.CompressBytes(data, types.CompressionLevelDefault)
+	return cxzlib.CompressBytes(data, CompressionLevelDefault)
 }
 
 // ZlibBytesWithLevel 压缩字节数据（指定压缩等级）
@@ -224,8 +223,8 @@ func ZlibBytes(data []byte) ([]byte, error) {
 //
 // 使用示例:
 //
-//	compressed, err := ZlibBytesWithLevel([]byte("hello world"), types.CompressionLevelBest)
-func ZlibBytesWithLevel(data []byte, level types.CompressionLevel) ([]byte, error) {
+//	compressed, err := ZlibBytesWithLevel([]byte("hello world"), CompressionLevelBest)
+func ZlibBytesWithLevel(data []byte, level CompressionLevel) ([]byte, error) {
 	return cxzlib.CompressBytes(data, level)
 }
 
@@ -258,7 +257,7 @@ func UnzlibBytes(compressedData []byte) ([]byte, error) {
 //
 //	compressed, err := ZlibString("hello world")
 func ZlibString(text string) ([]byte, error) {
-	return cxzlib.CompressString(text, types.CompressionLevelDefault)
+	return cxzlib.CompressString(text, CompressionLevelDefault)
 }
 
 // ZlibStringWithLevel 压缩字符串（指定压缩等级）
@@ -273,8 +272,8 @@ func ZlibString(text string) ([]byte, error) {
 //
 // 使用示例:
 //
-//	compressed, err := ZlibStringWithLevel("hello world", types.CompressionLevelBest)
-func ZlibStringWithLevel(text string, level types.CompressionLevel) ([]byte, error) {
+//	compressed, err := ZlibStringWithLevel("hello world", CompressionLevelBest)
+func ZlibStringWithLevel(text string, level CompressionLevel) ([]byte, error) {
 	return cxzlib.CompressString(text, level)
 }
 
@@ -313,7 +312,7 @@ func UnzlibString(compressedData []byte) (string, error) {
 //	var buf bytes.Buffer
 //	err := ZlibStream(&buf, file)
 func ZlibStream(dst io.Writer, src io.Reader) error {
-	return cxzlib.CompressStream(dst, src, types.CompressionLevelDefault)
+	return cxzlib.CompressStream(dst, src, CompressionLevelDefault)
 }
 
 // ZlibStreamWithLevel 流式压缩数据（指定压缩等级）
@@ -334,8 +333,8 @@ func ZlibStream(dst io.Writer, src io.Reader) error {
 //	output, _ := os.Create("output.zlib")
 //	defer output.Close()
 //
-//	err := ZlibStreamWithLevel(output, file, types.CompressionLevelBest)
-func ZlibStreamWithLevel(dst io.Writer, src io.Reader, level types.CompressionLevel) error {
+//	err := ZlibStreamWithLevel(output, file, CompressionLevelBest)
+func ZlibStreamWithLevel(dst io.Writer, src io.Reader, level CompressionLevel) error {
 	return cxzlib.CompressStream(dst, src, level)
 }
 

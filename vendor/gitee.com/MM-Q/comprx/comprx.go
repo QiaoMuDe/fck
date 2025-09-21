@@ -26,7 +26,6 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/comprx/internal/core"
-	"gitee.com/MM-Q/comprx/types"
 )
 
 // ==============================================
@@ -132,7 +131,7 @@ func UnpackFile(archivePath string, fileName string, outputDir string) error {
 
 	// 创建过滤器选项
 	opts := DefaultOptions()
-	opts.Filter = types.FilterOptions{
+	opts.Filter = FilterOptions{
 		Include: []string{fileName},
 		Exclude: []string{},
 		MaxSize: 0,
@@ -169,7 +168,7 @@ func UnpackDir(archivePath string, dirName string, outputDir string) error {
 
 	// 创建过滤器选项
 	opts := DefaultOptions()
-	opts.Filter = types.FilterOptions{
+	opts.Filter = FilterOptions{
 		Include: []string{
 			dirName,        // 匹配目录本身
 			dirName + "/*", // 匹配目录下所有内容
@@ -209,7 +208,7 @@ func UnpackMatch(archivePath string, keyword string, outputDir string) error {
 
 	// 创建过滤器选项
 	opts := DefaultOptions()
-	opts.Filter = types.FilterOptions{
+	opts.Filter = FilterOptions{
 		Include: []string{"*" + keyword + "*"},
 		Exclude: []string{},
 		MaxSize: 0,
@@ -239,7 +238,7 @@ func UnpackMatch(archivePath string, keyword string, outputDir string) error {
 //	    CompressionLevel: config.CompressionLevelBest,
 //	    OverwriteExisting: true,
 //	    ProgressEnabled: true,
-//	    ProgressStyle: types.ProgressStyleUnicode,
+//	    ProgressStyle: ProgressStyleUnicode,
 //	}
 //	err := PackOptions("output.zip", "input_dir", opts)
 func PackOptions(dst string, src string, opts Options) error {
@@ -264,7 +263,7 @@ func PackOptions(dst string, src string, opts Options) error {
 	if err := opts.Filter.Validate(); err != nil {
 		return err
 	}
-	comprx.Config.Filter = &types.FilterOptions{
+	comprx.Config.Filter = &FilterOptions{
 		Include: opts.Filter.Include,
 		Exclude: opts.Filter.Exclude,
 		MaxSize: opts.Filter.MaxSize,
@@ -289,7 +288,7 @@ func PackOptions(dst string, src string, opts Options) error {
 //	opts := Options{
 //	    OverwriteExisting: true,
 //	    ProgressEnabled: true,
-//	    ProgressStyle: types.ProgressStyleASCII,
+//	    ProgressStyle: ProgressStyleASCII,
 //	}
 //	err := UnpackOptions("archive.zip", "output_dir", opts)
 func UnpackOptions(src string, dst string, opts Options) error {
@@ -310,7 +309,7 @@ func UnpackOptions(src string, dst string, opts Options) error {
 	if err := opts.Filter.Validate(); err != nil {
 		return err
 	}
-	comprx.Config.Filter = &types.FilterOptions{
+	comprx.Config.Filter = &FilterOptions{
 		Include: opts.Filter.Include,
 		Exclude: opts.Filter.Exclude,
 		MaxSize: opts.Filter.MaxSize,

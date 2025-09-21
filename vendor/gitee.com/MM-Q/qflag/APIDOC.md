@@ -13,7 +13,7 @@ Package qflag 全局标志函数定义文件。本文件提供了全局默认命
 ```go
 var (
     // qCommandLine 全局默认Command实例（保持原名，与标准库flag对齐）
-    qCommandLine *cmd.Cmd
+    qCommandLine *Cmd
 )
 ```
 
@@ -67,7 +67,7 @@ AddNotes 添加注意事项。该函数用于添加命令行标志的注意事�
 ### AddSubCmd
 
 ```go
-func AddSubCmd(subCmds ...*cmd.Cmd) error
+func AddSubCmd(subCmds ...*Cmd) error
 ```
 
 AddSubCmd 向全局默认命令实例 `QCommandLine` 添加一个或多个子命令。该函数会调用全局默认命令实例的 `AddSubCmd` 方法，支持批量添加子命令。在添加过程中，会检查子命令是否为 `nil` 以及是否存在循环引用，若有异常则返回错误信息。
@@ -81,7 +81,7 @@ AddSubCmd 向全局默认命令实例 `QCommandLine` 添加一个或多个子命
 ### AddSubCmds
 
 ```go
-func AddSubCmds(subCmds []*cmd.Cmd) error
+func AddSubCmds(subCmds []*Cmd) error
 ```
 
 AddSubCmds 向全局默认命令实例 `QCommandLine` 添加子命令切片的便捷函数。该函数是 AddSubCmd 的便捷包装，专门用于处理子命令切片，内部直接调用全局默认命令实例的 `AddSubCmds` 方法，具有相同的验证逻辑和并发安全特性。
@@ -880,7 +880,7 @@ StringVar 函数的作用是将一个字符串类型的命令行标志绑定到�
 ### SubCmdMap
 
 ```go
-func SubCmdMap() map[string]*cmd.Cmd
+func SubCmdMap() map[string]*Cmd
 ```
 
 SubCmdMap 获取所有已注册的子命令映射。
@@ -888,7 +888,7 @@ SubCmdMap 获取所有已注册的子命令映射。
 ### SubCmds
 
 ```go
-func SubCmds() []*cmd.Cmd
+func SubCmds() []*Cmd
 ```
 
 SubCmds 获取所有已注册的子命令列表。
@@ -1038,7 +1038,7 @@ Uint64Var 为全局默认命令将一个无符号64位整数类型的命令行�
 ### WithDescription
 
 ```go
-func WithDescription(desc string) *cmd.Cmd
+func WithDescription(desc string) *Cmd
 ```
 
 WithDescription 设置命令描述（链式调用）。
@@ -1047,12 +1047,12 @@ WithDescription 设置命令描述（链式调用）。
 - `desc`: 命令描述
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithEnableCompletion
 
 ```go
-func WithEnableCompletion(enable bool) *cmd.Cmd
+func WithEnableCompletion(enable bool) *Cmd
 ```
 
 WithEnableCompletion 设置是否启用自动补全（链式调用）。
@@ -1061,12 +1061,12 @@ WithEnableCompletion 设置是否启用自动补全（链式调用）。
 - `enable`: true表示启用补全，false表示禁用
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithExample
 
 ```go
-func WithExample(desc, usage string) *cmd.Cmd
+func WithExample(desc, usage string) *Cmd
 ```
 
 WithExample 为命令添加使用示例（链式调用）。
@@ -1076,12 +1076,12 @@ WithExample 为命令添加使用示例（链式调用）。
 - `usage`: 示例用法
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithExamples
 
 ```go
-func WithExamples(examples []cmd.ExampleInfo) *cmd.Cmd
+func WithExamples(examples []cmd.ExampleInfo) *Cmd
 ```
 
 WithExamples 添加使用示例列表到命令（链式调用）。
@@ -1090,12 +1090,12 @@ WithExamples 添加使用示例列表到命令（链式调用）。
 - `examples`: 示例信息列表，每个元素为 ExampleInfo 类型
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithExitOnBuiltinFlags
 
 ```go
-func WithExitOnBuiltinFlags(exit bool) *cmd.Cmd
+func WithExitOnBuiltinFlags(exit bool) *Cmd
 ```
 
 WithExitOnBuiltinFlags 设置是否在解析内置参数时退出（链式调用）。
@@ -1104,12 +1104,12 @@ WithExitOnBuiltinFlags 设置是否在解析内置参数时退出（链式调用
 - `exit`: 是否退出
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithHelp
 
 ```go
-func WithHelp(help string) *cmd.Cmd
+func WithHelp(help string) *Cmd
 ```
 
 WithHelp 设置用户自定义命令帮助信息（链式调用）。
@@ -1118,12 +1118,12 @@ WithHelp 设置用户自定义命令帮助信息（链式调用）。
 - `help`: 用户自定义命令帮助信息
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithLogoText
 
 ```go
-func WithLogoText(logoText string) *cmd.Cmd
+func WithLogoText(logoText string) *Cmd
 ```
 
 WithLogoText 设置logo文本（链式调用）。
@@ -1132,12 +1132,12 @@ WithLogoText 设置logo文本（链式调用）。
 - `logoText`: logo文本字符串
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithModuleHelps
 
 ```go
-func WithModuleHelps(moduleHelps string) *cmd.Cmd
+func WithModuleHelps(moduleHelps string) *Cmd
 ```
 
 WithModuleHelps 设置自定义模块帮助信息（链式调用）。
@@ -1146,12 +1146,12 @@ WithModuleHelps 设置自定义模块帮助信息（链式调用）。
 - `moduleHelps`: 自定义模块帮助信息
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithNote
 
 ```go
-func WithNote(note string) *cmd.Cmd
+func WithNote(note string) *Cmd
 ```
 
 WithNote 添加备注信息到命令（链式调用）。
@@ -1160,12 +1160,12 @@ WithNote 添加备注信息到命令（链式调用）。
 - `note`: 备注信息
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithNotes
 
 ```go
-func WithNotes(notes []string) *cmd.Cmd
+func WithNotes(notes []string) *Cmd
 ```
 
 WithNotes 添加备注信息切片到命令（链式调用）。
@@ -1174,12 +1174,12 @@ WithNotes 添加备注信息切片到命令（链式调用）。
 - `notes`: 备注信息列表
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithUsageSyntax
 
 ```go
-func WithUsageSyntax(usageSyntax string) *cmd.Cmd
+func WithUsageSyntax(usageSyntax string) *Cmd
 ```
 
 WithUsageSyntax 设置自定义命令用法（链式调用）。
@@ -1188,12 +1188,12 @@ WithUsageSyntax 设置自定义命令用法（链式调用）。
 - `usageSyntax`: 自定义命令用法
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithUseChinese
 
 ```go
-func WithUseChinese(useChinese bool) *cmd.Cmd
+func WithUseChinese(useChinese bool) *Cmd
 ```
 
 WithUseChinese 设置是否使用中文帮助信息（链式调用）。
@@ -1202,12 +1202,12 @@ WithUseChinese 设置是否使用中文帮助信息（链式调用）。
 - `useChinese`: 是否使用中文帮助信息
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithVersion
 
 ```go
-func WithVersion(version string) *cmd.Cmd
+func WithVersion(version string) *Cmd
 ```
 
 WithVersion 设置版本信息（链式调用）。
@@ -1216,12 +1216,12 @@ WithVersion 设置版本信息（链式调用）。
 - `version`: 版本信息
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ### WithVersionf
 
 ```go
-func WithVersionf(format string, args ...any) *cmd.Cmd
+func WithVersionf(format string, args ...any) *Cmd
 ```
 
 WithVersionf 设置版本信息（链式调用，支持格式化）。
@@ -1231,7 +1231,7 @@ WithVersionf 设置版本信息（链式调用，支持格式化）。
 - `args`: 格式化参数
 
 **返回值:**
-- `*cmd.Cmd`: 返回命令实例，支持链式调用
+- `*Cmd`: 返回命令实例，支持链式调用
 
 ## Types
 
@@ -1370,3 +1370,11 @@ type Uint64Flag = flags.Uint64Flag
 ```
 
 Uint64Flag 导出flag包中的Uint64Flag结构体。
+
+### Cmd
+
+```go
+type Cmd = cmd.Cmd
+```
+
+Cmd 导出cmd包中的Cmd结构体。

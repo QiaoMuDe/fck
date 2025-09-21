@@ -19,7 +19,7 @@ import (
 
 var (
 	// qCommandLine 全局默认Command实例（保持原名，与标准库flag对齐）
-	qCommandLine *cmd.Cmd
+	qCommandLine *Cmd
 
 	// qCommandLineOnce 确保全局默认Cmd实例只被初始化一次
 	qCommandLineOnce sync.Once
@@ -27,7 +27,7 @@ var (
 
 // getQCommandLine 获取全局默认命令实例（延迟初始化）
 // 内部函数, 确保QCommandLine只会被初始化一次, 线程安全
-func getQCommandLine() *cmd.Cmd {
+func getQCommandLine() *Cmd {
 	qCommandLineOnce.Do(func() {
 		// 使用一致的命令名生成逻辑
 		cmdName := "myapp"
@@ -94,7 +94,7 @@ func ParseFlagsOnly() error {
 //
 // 返回值:
 //   - error: 若添加子命令过程中出现错误（如子命令为 `nil` 或存在循环引用），则返回错误信息；否则返回 `nil`。
-func AddSubCmd(subCmds ...*cmd.Cmd) error {
+func AddSubCmd(subCmds ...*Cmd) error {
 	return getQCommandLine().AddSubCmd(subCmds...)
 }
 
@@ -118,7 +118,7 @@ func AddSubCmd(subCmds ...*cmd.Cmd) error {
 //	if err := qflag.AddSubCmds(subCmds); err != nil {
 //	    log.Fatal(err)
 //	}
-func AddSubCmds(subCmds []*cmd.Cmd) error {
+func AddSubCmds(subCmds []*Cmd) error {
 	return getQCommandLine().AddSubCmds(subCmds)
 }
 
@@ -196,12 +196,12 @@ func ShortName() string {
 }
 
 // SubCmds 获取所有已注册的子命令列表
-func SubCmds() []*cmd.Cmd {
+func SubCmds() []*Cmd {
 	return getQCommandLine().SubCmds()
 }
 
 // SubCmdMap 获取所有已注册的子命令映射
-func SubCmdMap() map[string]*cmd.Cmd {
+func SubCmdMap() map[string]*Cmd {
 	return getQCommandLine().SubCmdMap()
 }
 
@@ -439,8 +439,8 @@ func SetEnableCompletion(enable bool) {
 //   - desc: 命令描述
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithDescription(desc string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithDescription(desc string) *Cmd {
 	return getQCommandLine().WithDescription(desc)
 }
 
@@ -450,8 +450,8 @@ func WithDescription(desc string) *cmd.Cmd {
 //   - version: 版本信息
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithVersion(version string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithVersion(version string) *Cmd {
 	return getQCommandLine().WithVersion(version)
 }
 
@@ -462,8 +462,8 @@ func WithVersion(version string) *cmd.Cmd {
 //   - args: 格式化参数
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithVersionf(format string, args ...any) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithVersionf(format string, args ...any) *Cmd {
 	return getQCommandLine().WithVersionf(format, args...)
 }
 
@@ -473,8 +473,8 @@ func WithVersionf(format string, args ...any) *cmd.Cmd {
 //   - useChinese: 是否使用中文帮助信息
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithUseChinese(useChinese bool) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithUseChinese(useChinese bool) *Cmd {
 	return getQCommandLine().WithUseChinese(useChinese)
 }
 
@@ -484,8 +484,8 @@ func WithUseChinese(useChinese bool) *cmd.Cmd {
 //   - usageSyntax: 自定义命令用法
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithUsageSyntax(usageSyntax string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithUsageSyntax(usageSyntax string) *Cmd {
 	return getQCommandLine().WithUsageSyntax(usageSyntax)
 }
 
@@ -495,8 +495,8 @@ func WithUsageSyntax(usageSyntax string) *cmd.Cmd {
 //   - logoText: logo文本字符串
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithLogoText(logoText string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithLogoText(logoText string) *Cmd {
 	return getQCommandLine().WithLogoText(logoText)
 }
 
@@ -506,8 +506,8 @@ func WithLogoText(logoText string) *cmd.Cmd {
 //   - help: 用户自定义命令帮助信息
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithHelp(help string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithHelp(help string) *Cmd {
 	return getQCommandLine().WithHelp(help)
 }
 
@@ -517,8 +517,8 @@ func WithHelp(help string) *cmd.Cmd {
 //   - note: 备注信息
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithNote(note string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithNote(note string) *Cmd {
 	return getQCommandLine().WithNote(note)
 }
 
@@ -528,8 +528,8 @@ func WithNote(note string) *cmd.Cmd {
 //   - notes: 备注信息列表
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithNotes(notes []string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithNotes(notes []string) *Cmd {
 	return getQCommandLine().WithNotes(notes)
 }
 
@@ -540,8 +540,8 @@ func WithNotes(notes []string) *cmd.Cmd {
 //   - usage: 示例用法
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithExample(desc, usage string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithExample(desc, usage string) *Cmd {
 	return getQCommandLine().WithExample(desc, usage)
 }
 
@@ -551,8 +551,8 @@ func WithExample(desc, usage string) *cmd.Cmd {
 //   - examples: 示例信息列表，每个元素为 ExampleInfo 类型。
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithExamples(examples []cmd.ExampleInfo) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithExamples(examples []cmd.ExampleInfo) *Cmd {
 	return getQCommandLine().WithExamples(examples)
 }
 
@@ -562,8 +562,8 @@ func WithExamples(examples []cmd.ExampleInfo) *cmd.Cmd {
 //   - exit: 是否退出
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithExitOnBuiltinFlags(exit bool) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithExitOnBuiltinFlags(exit bool) *Cmd {
 	return getQCommandLine().WithExitOnBuiltinFlags(exit)
 }
 
@@ -573,8 +573,8 @@ func WithExitOnBuiltinFlags(exit bool) *cmd.Cmd {
 //   - enable: true表示启用补全,false表示禁用
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithEnableCompletion(enable bool) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithEnableCompletion(enable bool) *Cmd {
 	return getQCommandLine().WithEnableCompletion(enable)
 }
 
@@ -584,7 +584,7 @@ func WithEnableCompletion(enable bool) *cmd.Cmd {
 //   - moduleHelps: 自定义模块帮助信息
 //
 // 返回值:
-//   - *cmd.Cmd: 返回命令实例，支持链式调用
-func WithModuleHelps(moduleHelps string) *cmd.Cmd {
+//   - *Cmd: 返回命令实例，支持链式调用
+func WithModuleHelps(moduleHelps string) *Cmd {
 	return getQCommandLine().WithModuleHelps(moduleHelps)
 }

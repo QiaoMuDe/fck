@@ -86,7 +86,7 @@ func (c *Comprx) Pack(dst string, src string) error {
 	}
 
 	// 智能检测压缩文件格式
-	compressType, err := types.DetectCompressFormat(dst)
+	compressType, err := utils.DetectCompressFormat(dst)
 	if err != nil {
 		return fmt.Errorf("检测压缩格式失败: %v", err)
 	}
@@ -150,7 +150,7 @@ func (c *Comprx) Unpack(src string, dst string) error {
 	}
 
 	// 智能检测压缩文件格式
-	compressType, err := types.DetectCompressFormat(src)
+	compressType, err := utils.DetectCompressFormat(src)
 	if err != nil {
 		return fmt.Errorf("检测压缩格式失败: %v", err)
 	}

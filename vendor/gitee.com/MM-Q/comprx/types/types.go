@@ -17,8 +17,6 @@ package types
 
 import (
 	"fmt"
-	"path/filepath"
-	"strings"
 )
 
 // ProgressStyle 进度条样式类型
@@ -138,46 +136,20 @@ func SupportedCompressTypes() []string {
 	return compressTypes
 }
 
-// DetectCompressFormat 智能检测压缩文件格式
-//
-// 参数:
-//   - filename: 文件名
-//
-// 返回:
-//   - types.CompressType: 检测到的压缩格式
-//   - error: 错误信息
-func DetectCompressFormat(filename string) (CompressType, error) {
-	// 转换为小写进行处理
-	lowerFilename := strings.ToLower(filename)
-
-	// 处理.tar.gz特殊情况
-	if strings.HasSuffix(lowerFilename, ".tar.gz") {
-		return CompressTypeTarGz, nil
-	}
-
-	// 获取文件扩展名并转换为小写
-	ext := strings.ToLower(filepath.Ext(filename))
-	if !IsSupportedCompressType(ext) {
-		return "", fmt.Errorf("不支持的压缩文件格式: %s, 支持的格式: %v", ext, SupportedCompressTypes())
-	}
-
-	return CompressType(ext), nil
-}
-
 // CompressionLevel 压缩等级类型
 //
 // 支持的压缩等级：
-//   - CompressionLevelDefault: 默认压缩等级(zip仅支持该等级)
-//   - CompressionLevelNone: 不压缩(zip仅支持该等级)
-//   - CompressionLevelFast: 快速压缩
-//   - CompressionLevelBest: 最佳压缩
-//   - CompressionLevelHuffmanOnly: 仅使用Huffman编码
+//   - CompressionLevelDefault: 默认压缩等级(支持该等级的类型: zip, tgz, tar.gz, zlib, gz)
+//   - CompressionLevelNone: 禁用压缩(支持该等级的类型: zip, tgz, tar.gz, zlib, gz)
+//   - CompressionLevelFast: 快速压缩(支持该等级的类型: tgz, tar.gz, zlib, gz)
+//   - CompressionLevelBest: 最佳压缩(支持该等级的类型: tgz, tar.gz, zlib, gz)
+//   - CompressionLevelHuffmanOnly: 仅使用Huffman编码(支持该等级的类型: tgz, tar.gz, zlib, gz)
 type CompressionLevel int
 
 const (
 	// 压缩等级常量
-	CompressionLevelDefault     CompressionLevel = -1 // 默认压缩等级(zip仅支持该等级)
-	CompressionLevelNone        CompressionLevel = 0  // 不压缩(zip仅支持该等级)
+	CompressionLevelDefault     CompressionLevel = -1 // 默认压缩等级
+	CompressionLevelNone        CompressionLevel = 0  // 禁用压缩
 	CompressionLevelFast        CompressionLevel = 1  // 快速压缩
 	CompressionLevelBest        CompressionLevel = 9  // 最佳压缩
 	CompressionLevelHuffmanOnly CompressionLevel = -2 // 仅使用Huffman编码

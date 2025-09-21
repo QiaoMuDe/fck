@@ -146,6 +146,19 @@ const (
 
 ## FUNCTIONS
 
+### DetectCompressFormat
+
+```go
+func DetectCompressFormat(filename string) (types.CompressType, error)
+```
+
+- **描述**: 智能检测压缩文件格式
+- **参数**:
+  - `filename`: 文件名
+- **返回**:
+  - `types.CompressType`: 检测到的压缩格式
+  - `error`: 错误信息
+
 ### EnsureAbsPath
 
 ```go

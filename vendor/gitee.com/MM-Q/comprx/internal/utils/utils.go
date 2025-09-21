@@ -38,6 +38,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gitee.com/MM-Q/comprx/types"
 )
 
 // Exists 检查指定路径的文件或目录是否存在
@@ -176,4 +178,30 @@ func ValidatePathSimple(targetDir, filePath string, skipValidation bool) (string
 	// === 第三阶段：构建最终安全路径 ===
 	finalPath := filepath.Join(targetDir, cleanPath)
 	return finalPath, nil
+}
+
+// DetectCompressFormat 智能检测压缩文件格式
+//
+// 参数:
+//   - filename: 文件名
+//
+// 返回:
+//   - types.CompressType: 检测到的压缩格式
+//   - error: 错误信息
+func DetectCompressFormat(filename string) (types.CompressType, error) {
+	// 转换为小写进行处理
+	lowerFilename := strings.ToLower(filename)
+
+	// 处理.tar.gz特殊情况
+	if strings.HasSuffix(lowerFilename, ".tar.gz") {
+		return types.CompressTypeTarGz, nil
+	}
+
+	// 获取文件扩展名并转换为小写
+	ext := strings.ToLower(filepath.Ext(filename))
+	if !types.IsSupportedCompressType(ext) {
+		return "", fmt.Errorf("不支持的压缩文件格式: %s, 支持的格式: %v", ext, types.SupportedCompressTypes())
+	}
+
+	return types.CompressType(ext), nil
 }

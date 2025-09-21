@@ -191,7 +191,7 @@ func processDirectory(zipWriter *zip.Writer, headerName string, info os.FileInfo
 	}
 	// 设置目录名
 	header.Name = headerName + "/" // 目录名后添加斜杠
-	header.Method = zip.Store      // 使用不压缩的方法
+	header.Method = zip.Store      // 使用禁用压缩的方法
 
 	// 创建目录文件头
 	if _, err := zipWriter.CreateHeader(header); err != nil {
@@ -266,7 +266,7 @@ func processSpecialFile(zipWriter *zip.Writer, headerName string, mode fs.FileMo
 // getCompressionMethod 根据配置返回对应的压缩方法
 func getCompressionMethod(cfg *config.Config) uint16 {
 	if cfg.CompressionLevel == types.CompressionLevelNone {
-		return zip.Store // 不压缩，只存储
+		return zip.Store // 禁用压缩，只存储
 	}
 
 	return zip.Deflate // 使用默认的压缩方法

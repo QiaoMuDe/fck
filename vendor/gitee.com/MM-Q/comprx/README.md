@@ -75,10 +75,10 @@ import (
 
 // 创建自定义配置
 opts := comprx.Options{
-    CompressionLevel:  types.CompressionLevelBest,  // 最佳压缩
+    CompressionLevel:  CompressionLevelBest,  // 最佳压缩
     OverwriteExisting: true,                        // 覆盖已存在文件
     ProgressEnabled:   true,                        // 启用进度条
-    ProgressStyle:     types.ProgressStyleUnicode,  // Unicode 样式进度条
+    ProgressStyle:     ProgressStyleUnicode,  // Unicode 样式进度条
 }
 
 // 使用自定义配置压缩
@@ -106,7 +106,7 @@ err := comprx.PackOptions("filtered.zip", "project_dir", opts)
 opts := comprx.DefaultOptions().
     WithInclude([]string{"*.jpg", "*.png", "*.gif"}). // 只包含图片文件
     WithMaxSize(5 * 1024 * 1024).                     // 最大 5MB
-    WithProgressAndStyle(true, types.ProgressStyleUnicode)
+    WithProgressAndStyle(true, ProgressStyleUnicode)
 
 err := comprx.PackOptions("images.zip", "photos", opts)
 
@@ -115,7 +115,7 @@ opts := comprx.DefaultOptions()
 opts.SetInclude([]string{"src/*", "docs/*"})        // 只包含 src 和 docs 目录
 opts.SetExclude([]string{"*.tmp", "*.log"})         // 排除临时文件和日志
 opts.SetMinSize(100)                                // 最小 100 字节
-opts.SetProgressAndStyle(true, types.ProgressStyleASCII)
+opts.SetProgressAndStyle(true, ProgressStyleASCII)
 
 err := comprx.PackOptions("source.tar.gz", "project", opts)
 ```
@@ -124,7 +124,7 @@ err := comprx.PackOptions("source.tar.gz", "project", opts)
 
 ```go
 // 从 .gitignore 文件加载排除模式
-excludePatterns := types.LoadExcludeFromFileOrEmpty(".gitignore")
+excludePatterns := LoadExcludeFromFileOrEmpty(".gitignore")
 
 opts := comprx.DefaultOptions().
     WithExclude(excludePatterns).
@@ -133,8 +133,8 @@ opts := comprx.DefaultOptions().
 err := comprx.PackOptions("clean.zip", "project", opts)
 
 // 组合多个忽略文件
-gitignore := types.LoadExcludeFromFileOrEmpty(".gitignore")
-dockerignore := types.LoadExcludeFromFileOrEmpty(".dockerignore")
+gitignore := LoadExcludeFromFileOrEmpty(".gitignore")
+dockerignore := LoadExcludeFromFileOrEmpty(".dockerignore")
 
 allExcludes := append(gitignore, dockerignore...)
 allExcludes = append(allExcludes, "*.tmp", "build/*") // 添加额外排除模式
@@ -183,7 +183,7 @@ opts := comprx.DefaultOptions().
     WithProgress(true)
 
 // 场景2：备份项目，排除依赖和缓存
-gitignore := types.LoadExcludeFromFileOrEmpty(".gitignore")
+gitignore := LoadExcludeFromFileOrEmpty(".gitignore")
 opts := comprx.DefaultOptions().
     WithExclude(append(gitignore, "node_modules/*", ".git/*", "*.log")).
     WithMaxSize(100 * 1024 * 1024) // 排除超过100MB的文件
@@ -206,7 +206,7 @@ opts := comprx.DefaultOptions().
 ```go
 // 压缩字节数据
 data := []byte("Hello, World!")
-compressed, err := comprx.GzipBytes(data, types.CompressionLevelDefault)
+compressed, err := comprx.GzipBytes(data, CompressionLevelDefault)
 
 // 解压字节数据
 decompressed, err := comprx.UngzipBytes(compressed)
@@ -217,7 +217,7 @@ decompressed, err := comprx.UngzipBytes(compressed)
 ```go
 // 压缩字符串
 text := "这是一个测试字符串"
-compressed, err := comprx.GzipString(text, types.CompressionLevelBest)
+compressed, err := comprx.GzipString(text, CompressionLevelBest)
 
 // 解压为字符串
 decompressed, err := comprx.UngzipString(compressed)
@@ -242,7 +242,7 @@ err := comprx.GzipStream(&buf, file)
 output, _ := os.Create("output.gz")
 defer output.Close()
 
-err := comprx.GzipStreamWithLevel(output, file, types.CompressionLevelBest)
+err := comprx.GzipStreamWithLevel(output, file, CompressionLevelBest)
 
 // 流式解压
 compressedFile, _ := os.Open("input.gz")
@@ -270,20 +270,20 @@ err := comprx.UngzipStream(outputFile, compressedFile)
 ### 压缩级别
 
 ```go
-types.CompressionLevelDefault     // 默认压缩级别
-types.CompressionLevelNone        // 不压缩
-types.CompressionLevelFast        // 快速压缩
-types.CompressionLevelBest        // 最佳压缩
-types.CompressionLevelHuffmanOnly // 仅使用 Huffman 编码
+CompressionLevelDefault     // 默认压缩级别
+CompressionLevelNone        // 禁用压缩
+CompressionLevelFast        // 快速压缩
+CompressionLevelBest        // 最佳压缩
+CompressionLevelHuffmanOnly // 仅使用 Huffman 编码
 ```
 
 ### 进度条样式
 
 ```go
-types.ProgressStyleText     // 文本样式
-types.ProgressStyleDefault  // 默认样式
-types.ProgressStyleUnicode  // Unicode 样式: ████████████░░░░░░░░ 60%
-types.ProgressStyleASCII    // ASCII 样式: [##########          ] 50%
+ProgressStyleText     // 文本样式
+ProgressStyleDefault  // 默认样式
+ProgressStyleUnicode  // Unicode 样式: ████████████░░░░░░░░ 60%
+ProgressStyleASCII    // ASCII 样式: [##########          ] 50%
 ```
 
 ### 过滤器选项
@@ -326,8 +326,8 @@ comprx.ASCIIProgressOptions()    // ASCII 样式进度条
 comprx.DefaultProgressOptions()  // 默认样式进度条
 
 // 自定义进度条样式
-comprx.ProgressOptions(types.ProgressStyleUnicode)
-comprx.NoCompressionProgressOptions(types.ProgressStyleASCII)
+comprx.ProgressOptions(ProgressStyleUnicode)
+comprx.NoCompressionProgressOptions(ProgressStyleASCII)
 ```
 
 ## 🏗️ 项目结构
@@ -370,17 +370,6 @@ for _, file := range files {
     fmt.Printf("文件: %s, 大小: %d 字节, 修改时间: %s\n", 
         file.Name, file.Size, file.ModTime.Format("2006-01-02 15:04:05"))
 }
-```
-
-### 智能格式检测
-
-```go
-// 自动检测压缩格式
-format, err := types.DetectCompressFormat("unknown_file.tgz")
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Printf("检测到格式: %s\n", format) // 输出: .tgz
 ```
 
 ## 🧪 测试

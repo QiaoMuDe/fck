@@ -1,7 +1,7 @@
 package types
 
 import (
-	"gitee.com/MM-Q/comprx/types"
+	"gitee.com/MM-Q/comprx"
 )
 
 // 进度条样式
@@ -21,11 +21,11 @@ var SupportedProgressStyles = []string{
 }
 
 // 进度条样式映射
-var ProgressStyleMap = map[string]types.ProgressStyle{
-	ProgressStyleText:    types.ProgressStyleText,    // 文本
-	ProgressStyleDefault: types.ProgressStyleDefault, // 默认
-	ProgressStyleUnicode: types.ProgressStyleUnicode, // unicode
-	ProgressStyleAscii:   types.ProgressStyleASCII,   // ascii
+var ProgressStyleMap = map[string]comprx.ProgressStyle{
+	ProgressStyleText:    comprx.ProgressStyleText,    // 文本
+	ProgressStyleDefault: comprx.ProgressStyleDefault, // 默认
+	ProgressStyleUnicode: comprx.ProgressStyleUnicode, // unicode
+	ProgressStyleAscii:   comprx.ProgressStyleASCII,   // ascii
 }
 
 // 压缩级别
@@ -47,12 +47,12 @@ var SupportedCompressionLevels = []string{
 }
 
 // 压缩级别映射
-var CompressionLevelMap = map[string]types.CompressionLevel{
-	CompressionLevelDefault: types.CompressionLevelDefault,     // 默认
-	CompressionLevelNone:    types.CompressionLevelNone,        // 不压缩
-	CompressionLevelFast:    types.CompressionLevelFast,        // 快速
-	CompressionLevelBest:    types.CompressionLevelBest,        // 最佳
-	CompressionLevelHuffman: types.CompressionLevelHuffmanOnly, //  Huffman
+var CompressionLevelMap = map[string]comprx.CompressionLevel{
+	CompressionLevelDefault: comprx.CompressionLevelDefault,     // 默认
+	CompressionLevelNone:    comprx.CompressionLevelNone,        // 不压缩
+	CompressionLevelFast:    comprx.CompressionLevelFast,        // 快速
+	CompressionLevelBest:    comprx.CompressionLevelBest,        // 最佳
+	CompressionLevelHuffman: comprx.CompressionLevelHuffmanOnly, //  Huffman
 }
 
 // GetCompressionLevel 获取压缩级别，如果无效则返回默认级别
@@ -61,12 +61,12 @@ var CompressionLevelMap = map[string]types.CompressionLevel{
 //   - level: 压缩级别字符串
 //
 // 返回值:
-//   - types.CompressionLevel: 压缩级别枚举值
+//   - comprx.CompressionLevel: 压缩级别枚举值
 //   - bool: 是否成功获取到压缩级别
-func GetCompressionLevel(level string) (types.CompressionLevel, bool) {
+func GetCompressionLevel(level string) (comprx.CompressionLevel, bool) {
 	compressionLevel, ok := CompressionLevelMap[level]
 	if !ok {
-		return types.CompressionLevelDefault, false
+		return comprx.CompressionLevelDefault, false
 	}
 	return compressionLevel, true
 }
@@ -77,12 +77,12 @@ func GetCompressionLevel(level string) (types.CompressionLevel, bool) {
 //   - style: 进度条样式字符串
 //
 // 返回值:
-//   - types.ProgressStyle: 进度条样式枚举值
+//   - comprx.ProgressStyle: 进度条样式枚举值
 //   - bool: 是否成功获取到进度条样式
-func GetProgressStyle(style string) (types.ProgressStyle, bool) {
+func GetProgressStyle(style string) (comprx.ProgressStyle, bool) {
 	progressStyle, ok := ProgressStyleMap[style]
 	if !ok {
-		return types.ProgressStyleDefault, false
+		return comprx.ProgressStyleDefault, false
 	}
 	return progressStyle, true
 }

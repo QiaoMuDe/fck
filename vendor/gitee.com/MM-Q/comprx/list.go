@@ -25,7 +25,6 @@ package comprx
 import (
 	"gitee.com/MM-Q/comprx/internal/core"
 	"gitee.com/MM-Q/comprx/internal/utils"
-	"gitee.com/MM-Q/comprx/types"
 )
 
 // ==============================================
@@ -38,9 +37,9 @@ import (
 //   - archivePath: 压缩包文件路径
 //
 // 返回:
-//   - *types.ArchiveInfo: 压缩包信息
+//   - *ArchiveInfo: 压缩包信息
 //   - error: 错误信息
-func List(archivePath string) (*types.ArchiveInfo, error) {
+func List(archivePath string) (*ArchiveInfo, error) {
 	return core.List(archivePath)
 }
 
@@ -51,9 +50,9 @@ func List(archivePath string) (*types.ArchiveInfo, error) {
 //   - limit: 限制返回的文件数量
 //
 // 返回:
-//   - *types.ArchiveInfo: 压缩包信息
+//   - *ArchiveInfo: 压缩包信息
 //   - error: 错误信息
-func ListLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
+func ListLimit(archivePath string, limit int) (*ArchiveInfo, error) {
 	return core.ListLimit(archivePath, limit)
 }
 
@@ -64,9 +63,9 @@ func ListLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 //   - pattern: 文件名匹配模式 (支持通配符 * 和 ?)
 //
 // 返回:
-//   - *types.ArchiveInfo: 压缩包信息
+//   - *ArchiveInfo: 压缩包信息
 //   - error: 错误信息
-func ListMatch(archivePath string, pattern string) (*types.ArchiveInfo, error) {
+func ListMatch(archivePath string, pattern string) (*ArchiveInfo, error) {
 	return core.ListMatch(archivePath, pattern)
 }
 

@@ -163,19 +163,6 @@ const (
 )
 ```
 
-### DetectCompressFormat
-
-```go
-func DetectCompressFormat(filename string) (CompressType, error)
-```
-
-- **描述**: 智能检测压缩文件格式
-- **参数**:
-  - `filename`: 文件名
-- **返回**:
-  - `types.CompressType`: 检测到的压缩格式
-  - `error`: 错误信息
-
 ### String
 
 ```go
@@ -194,8 +181,8 @@ type CompressionLevel int
 
 - **描述**: 压缩等级类型
 - **支持的压缩等级**:
-  - `CompressionLevelDefault`: 默认压缩等级(zip仅支持该等级)
-  - `CompressionLevelNone`: 不压缩(zip仅支持该等级)
+  - `CompressionLevelDefault`: 默认压缩等级
+  - `CompressionLevelNone`: 禁用压缩
   - `CompressionLevelFast`: 快速压缩
   - `CompressionLevelBest`: 最佳压缩
   - `CompressionLevelHuffmanOnly`: 仅使用Huffman编码
@@ -205,7 +192,7 @@ type CompressionLevel int
 ```go
 const (
     CompressionLevelDefault     CompressionLevel = -1 // 默认压缩等级(zip仅支持该等级)
-    CompressionLevelNone        CompressionLevel = 0  // 不压缩(zip仅支持该等级)
+    CompressionLevelNone        CompressionLevel = 0  // 禁用压缩(zip仅支持该等级)
     CompressionLevelFast        CompressionLevel = 1  // 快速压缩
     CompressionLevelBest        CompressionLevel = 9  // 最佳压缩
     CompressionLevelHuffmanOnly CompressionLevel = -2 // 仅使用Huffman编码
@@ -266,7 +253,7 @@ type FilterOptions struct {
 ```
 
 - **描述**: 过滤配置选项
-- **用于指定压缩时的文件过滤条件**:
+- **用于指定压缩时或解压时的文件过滤条件**:
   - `Include`: 包含模式列表，支持 glob 语法，只有匹配的文件才会被处理
   - `Exclude`: 排除模式列表，支持 glob 语法，匹配的文件会被跳过
   - `MaxSize`: 最大文件大小限制（字节），0 表示无限制，超过此大小的文件会被跳过

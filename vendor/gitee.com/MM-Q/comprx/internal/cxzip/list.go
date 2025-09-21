@@ -70,7 +70,7 @@ func ListZip(archivePath string) (*types.ArchiveInfo, error) {
 	}
 
 	// 根据文件名检测压缩格式类型
-	compressType, err := types.DetectCompressFormat(absPath)
+	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
 		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
 	}
@@ -138,7 +138,7 @@ func ListZipLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 	}
 
 	// 根据文件名检测压缩格式类型
-	compressType, err := types.DetectCompressFormat(absPath)
+	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
 		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
 	}
