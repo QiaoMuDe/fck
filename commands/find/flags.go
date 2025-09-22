@@ -35,7 +35,6 @@ var (
 	findCmdOr            *qflag.BoolFlag        // or 标志
 	findCmdMaxDepthLimit *qflag.IntFlag         // max-depth-limit 标志
 	findCmdCount         *qflag.BoolFlag        // count 标志
-	findCmdX             *qflag.BoolFlag        // x 标志
 	findCmdType          *qflag.EnumFlag        // type 标志
 	findCmdWholeWord     *qflag.BoolFlag        // whole-word 标志
 	findCmdUseShell      *qflag.BoolFlag        // use-shell 标志
@@ -75,7 +74,6 @@ func InitFindCmd() *cmd.Cmd {
 	findCmdOr = findCmd.Bool("or", "", false, "用于在-n和-p参数中组合条件, 默认为false, 表示只要满足任一条件即可")
 	findCmdMaxDepthLimit = findCmd.Int("max-depth-limit", "mdl", 32, "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析")
 	findCmdCount = findCmd.Bool("count", "ct", false, "仅统计匹配项的数量而不显示具体路径")
-	findCmdX = findCmd.Bool("xmode", "X", false, "启用并发模式(在某些情况可能默认单线程模式会更快)")
 	findCmdType = findCmd.Enum("type", "t", "all", "指定要查找的类型，支持以下选项：\n"+
 		"\t\t\t\t\t[f | file]       - 只查找文件\n"+
 		"\t\t\t\t\t[d | dir]        - 只查找目录\n"+

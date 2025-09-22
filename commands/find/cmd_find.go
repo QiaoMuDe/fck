@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"sync/atomic"
 
@@ -48,18 +47,9 @@ func FindCmdMain(cl *colorlib.ColorLib) error {
 	// 创建搜索器
 	searcher := NewFileSearcher(config, matcher, operator)
 
-	// 根据是否启用并发模式选择搜索方式
-	if findCmdX.Get() {
-		// 并发搜索
-		concurrentSearcher := NewConcurrentSearcher(searcher, runtime.NumCPU()*2)
-		if err := concurrentSearcher.SearchConcurrent(findPath); err != nil {
-			return err
-		}
-	} else {
-		// 单线程搜索
-		if err := searcher.Search(findPath); err != nil {
-			return err
-		}
+	// 单线程搜索
+	if err := searcher.Search(findPath); err != nil {
+		return err
 	}
 
 	// 如果启用了count标志, 只输出匹配数量

@@ -1,8 +1,6 @@
 package find
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -247,126 +245,6 @@ func TestProcessExtensions(t *testing.T) {
 					return true
 				})
 				t.Errorf("扩展名处理验证失败")
-			}
-		})
-	}
-}
-
-func TestFindCmdMainWithTempDir(t *testing.T) {
-	initTestFlags() // 确保标志变量已初始化
-
-	// 创建临时测试目录
-	tempDir, err := os.MkdirTemp("", "find_test")
-	if err != nil {
-		t.Fatalf("创建临时目录失败: %v", err)
-	}
-	defer func() { _ = os.RemoveAll(tempDir) }()
-
-	// 创建测试文件
-	testFiles := []string{
-		"test.go",
-		"main.go",
-		"readme.txt",
-		"config.json",
-	}
-
-	for _, file := range testFiles {
-		filePath := filepath.Join(tempDir, file)
-		if err := os.WriteFile(filePath, []byte("test content"), 0644); err != nil {
-			t.Fatalf("创建测试文件失败: %v", err)
-		}
-	}
-
-	tests := []struct {
-		name        string
-		setupFlags  func()
-		testPath    string
-		expectError bool
-	}{
-		{
-			name: "默认搜索",
-			setupFlags: func() {
-				_ = findCmdRegex.Set("false")
-				_ = findCmdName.Set("")
-				_ = findCmdX.Set("false")
-				_ = findCmdCount.Set("false")
-			},
-			testPath:    tempDir,
-			expectError: false,
-		},
-		{
-			name: "搜索Go文件",
-			setupFlags: func() {
-				_ = findCmdRegex.Set("false")
-				_ = findCmdName.Set("*.go")
-				_ = findCmdX.Set("false")
-				_ = findCmdCount.Set("true")
-			},
-			testPath:    tempDir,
-			expectError: false,
-		},
-		{
-			name: "并发搜索",
-			setupFlags: func() {
-				_ = findCmdRegex.Set("false")
-				_ = findCmdName.Set("")
-				_ = findCmdX.Set("true")
-				_ = findCmdCount.Set("false")
-			},
-			testPath:    tempDir,
-			expectError: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.setupFlags()
-
-			// 模拟命令行参数 - 直接调用函数而不是修改os.Args
-			cl := colorlib.NewColorLib()
-
-			// 创建验证器并验证参数
-			validator := NewConfigValidator()
-			if err := validator.ValidateArgs(tt.testPath); err != nil && !tt.expectError {
-				t.Errorf("参数验证失败: %v", err)
-				return
-			}
-
-			// 创建配置
-			config, err := createFindConfig(cl)
-			if err != nil && !tt.expectError {
-				t.Errorf("创建配置失败: %v", err)
-				return
-			}
-
-			if config != nil {
-				// 创建模式匹配器
-				matcher := NewPatternMatcher(100)
-
-				// 创建文件操作器
-				operator := NewFileOperator(cl)
-
-				// 创建搜索器
-				searcher := NewFileSearcher(config, matcher, operator)
-
-				// 执行搜索
-				var searchErr error
-				if findCmdX.Get() {
-					// 并发搜索
-					concurrentSearcher := NewConcurrentSearcher(searcher, 2)
-					searchErr = concurrentSearcher.SearchConcurrent(tt.testPath)
-				} else {
-					// 单线程搜索
-					searchErr = searcher.Search(tt.testPath)
-				}
-
-				if tt.expectError && searchErr == nil {
-					t.Errorf("期望错误但没有返回错误")
-				}
-
-				if !tt.expectError && searchErr != nil {
-					t.Errorf("意外错误: %v", searchErr)
-				}
 			}
 		})
 	}

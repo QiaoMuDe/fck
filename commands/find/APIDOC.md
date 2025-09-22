@@ -8,10 +8,6 @@ Package find 实现了文件查找命令的主要逻辑和配置管理。该文�
 
 Package find 实现了文件查找结果的彩色输出功能。该文件提供了根据文件类型（目录、可执行文件、符号链接等）进行彩色显示的功能。
 
-### 并发搜索功能
-
-Package find 实现了文件查找的并发搜索功能。该文件提供了多线程并发搜索器，用于提高大目录结构的搜索性能。
-
 ### 命令参数配置
 
 Package find 定义了文件查找命令的标志和参数配置。该文件负责初始化 find 子命令的所有命令行参数、选项和帮助信息设置。
@@ -57,43 +53,6 @@ func TestMain(m *testing.M)
 ```
 
 ## TYPES
-
-### ConcurrentSearcher
-
-ConcurrentSearcher 负责并发搜索协调。
-
-```go
-type ConcurrentSearcher struct {
-	// Has unexported fields.
-}
-```
-
-#### NewConcurrentSearcher
-
-NewConcurrentSearcher 创建新的并发搜索器。
-
-```go
-func NewConcurrentSearcher(searcher *FileSearcher, maxWorkers int) *ConcurrentSearcher
-```
-
-- 参数：
-  - `searcher`: 基础搜索器
-  - `maxWorkers`: 最大并发worker数量
-- 返回：
-  - `ConcurrentSearcher`: 并发搜索器对象
-
-#### SearchConcurrent
-
-SearchConcurrent 执行并发搜索。
-
-```go
-func (cs *ConcurrentSearcher) SearchConcurrent(findPath string) error
-```
-
-- 参数：
-  - `findPath`: 搜索路径
-- 返回：
-  - `error`: 错误信息
 
 ### ConfigValidator
 
