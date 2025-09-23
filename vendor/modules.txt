@@ -34,10 +34,10 @@ gitee.com/MM-Q/qflag/internal/types
 gitee.com/MM-Q/qflag/internal/validator
 gitee.com/MM-Q/qflag/qerr
 gitee.com/MM-Q/qflag/validator
-# gitee.com/MM-Q/shellx v1.0.8
+# gitee.com/MM-Q/shellx v1.0.10
 ## explicit; go 1.25.0
 gitee.com/MM-Q/shellx
-# gitee.com/MM-Q/verman v0.0.16
+# gitee.com/MM-Q/verman v0.0.18
 ## explicit; go 1.24.2
 gitee.com/MM-Q/verman
 # github.com/jedib0t/go-pretty/v6 v6.6.8

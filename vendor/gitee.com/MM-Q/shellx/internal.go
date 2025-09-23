@@ -83,28 +83,17 @@ func (c *Command) cleanup() {
 //
 // 返回:
 //   - string: 命令字符串
-//
-// 注意:
-//   - 返回的命令字符串会被单引号包裹, 作为整体传递给shell执行.
 func (c *Command) getCmdStr() string {
 	if c == nil {
 		return ""
 	}
 
-	// 构建基础命令字符串
-	var cmdStr string
+	// 构建命令字符串
 	if c.raw != "" {
-		cmdStr = c.raw
+		return c.raw
 	} else if len(c.args) == 0 {
-		cmdStr = c.name
+		return c.name
 	} else {
-		cmdStr = fmt.Sprintf("%s %s", c.name, strings.Join(c.args, " "))
+		return fmt.Sprintf("%s %s", c.name, strings.Join(c.args, " "))
 	}
-
-	// CMD 不使用引号包围，其他shell使用单引号包围
-	if c.shellType == ShellCmd || (c.shellType == ShellDefault && c.shellType.String() == "cmd") {
-		return cmdStr
-	}
-
-	return fmt.Sprintf("'%s'", cmdStr)
 }
