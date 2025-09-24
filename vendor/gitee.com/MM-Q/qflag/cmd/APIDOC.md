@@ -79,13 +79,13 @@ AddExamples 为命令添加使用示例列表
 **参数:**
 - `examples`: 示例信息列表
 
-##### GetExamples
+##### Examples
 
 ```go
-func (c *Cmd) GetExamples() []ExampleInfo
+func (c *Cmd) Examples() []ExampleInfo
 ```
 
-GetExamples 获取所有使用示例
+Examples 获取所有使用示例
 
 **返回:**
 - `[]ExampleInfo`: 使用示例列表
@@ -114,13 +114,13 @@ AddNotes 添加备注信息切片到命令
 **参数:**
 - `notes`: 备注信息列表
 
-##### GetNotes
+##### Notes
 
 ```go
-func (c *Cmd) GetNotes() []string
+func (c *Cmd) Notes() []string
 ```
 
-GetNotes 获取所有备注信息
+Notes 获取所有备注信息
 
 **返回:**
 - 备注信息列表
@@ -833,79 +833,79 @@ NFlag 获取标志的数量
 
 #### 命令信息方法
 
-##### GetDescription
+##### Description
 
 ```go
-func (c *Cmd) GetDescription() string
+func (c *Cmd) Desc() string
 ```
 
-GetDescription 返回命令描述
+Description 返回命令描述
 
 **返回值:**
 - `string`: 命令描述
 
-##### GetHelp
+##### Help
 
 ```go
-func (c *Cmd) GetHelp() string
+func (c *Cmd) Help() string
 ```
 
-GetHelp 返回命令用法帮助信息
+Help 返回命令用法帮助信息
 
 **返回值:**
 - `string`: 命令用法帮助信息
 
-##### GetLogoText
+##### Logo
 
 ```go
-func (c *Cmd) GetLogoText() string
+func (c *Cmd) Logo() string
 ```
 
-GetLogoText 获取logo文本
+Logo 获取logo文本
 
 **返回值:**
 - `string`: logo文本字符串
 
-##### GetModuleHelps
+##### Modules
 
 ```go
-func (c *Cmd) GetModuleHelps() string
+func (c *Cmd) Modules() string
 ```
 
-GetModuleHelps 获取自定义模块帮助信息
+Modules 获取自定义模块帮助信息
 
 **返回值:**
 - `string`: 自定义模块帮助信息
 
-##### GetUsageSyntax
+##### Usage
 
 ```go
-func (c *Cmd) GetUsageSyntax() string
+func (c *Cmd) Usage() string
 ```
 
-GetUsageSyntax 获取自定义命令用法
+Usage 获取自定义命令用法
 
 **返回值:**
 - `string`: 自定义命令用法
 
-##### GetUseChinese
+##### Chinese
 
 ```go
-func (c *Cmd) GetUseChinese() bool
+func (c *Cmd) Chinese() bool
 ```
 
-GetUseChinese 获取是否使用中文帮助信息
+Chinese 获取是否使用中文帮助信息
 
 **返回值:**
 - `bool`: 是否使用中文帮助信息
 
-##### GetVersion
+##### Version
 
 ```go
-func (c *Cmd) GetVersion() string
+func (c *Cmd) Version() string
 ```
 
-GetVersion 获取版本信息
+Version 获取版本信息
 
 **返回值:**
 - `string`: 版本信息
@@ -1020,35 +1020,35 @@ PrintHelp 打印命令的帮助信息, 优先打印用户的帮助信息, 否则
 **注意:**
 - 打印帮助信息时, 不会自动退出程序
 
-##### SetDescription
+##### SetDesc
 
 ```go
-func (c *Cmd) SetDescription(desc string)
+func (c *Cmd) SetDesc(desc string)
 ```
 
-SetDescription 设置命令描述
+SetDesc 设置命令描述
 
 **参数:**
 - `desc`: 命令描述
 
-##### SetEnableCompletion
+##### SetCompletion
 
 ```go
-func (c *Cmd) SetEnableCompletion(enable bool)
+func (c *Cmd) SetCompletion(enable bool)
 ```
 
-SetEnableCompletion 设置是否启用自动补全, 只能在根命令上启用
+SetCompletion 设置是否启用自动补全, 只能在根命令上启用
 
 **参数:**
 - `enable`: true表示启用补全,false表示禁用
 
-##### SetExitOnBuiltinFlags
+##### SetExit
 
 ```go
-func (c *Cmd) SetExitOnBuiltinFlags(exit bool)
+func (c *Cmd) SetExit(exit bool)
 ```
 
-SetExitOnBuiltinFlags 设置是否在解析内置参数时退出。默认情况下为true, 当解析到内置参数时, QFlag将退出程序
+SetExit 设置是否在解析内置参数时退出。默认情况下为true, 当解析到内置参数时, QFlag将退出程序
 
 **参数:**
 - `exit`: 是否退出
@@ -1064,46 +1064,46 @@ SetHelp 设置用户自定义命令帮助信息
 **参数:**
 - `help`: 用户自定义命令帮助信息
 
-##### SetLogoText
+##### SetLogo
 
 ```go
-func (c *Cmd) SetLogoText(logoText string)
+func (c *Cmd) SetLogo(logoText string)
 ```
 
-SetLogoText 设置logo文本
+SetLogo 设置logo文本
 
 **参数:**
 - `logoText`: logo文本字符串
 
-##### SetModuleHelps
+##### SetModules
 
 ```go
-func (c *Cmd) SetModuleHelps(moduleHelps string)
+func (c *Cmd) SetModules(moduleHelps string)
 ```
 
-SetModuleHelps 设置自定义模块帮助信息
+SetModules 设置自定义模块帮助信息
 
 **参数:**
 - `moduleHelps`: 自定义模块帮助信息
 
-##### SetUsageSyntax
+##### SetUsage
 
 ```go
-func (c *Cmd) SetUsageSyntax(usageSyntax string)
+func (c *Cmd) SetUsage(usageSyntax string)
 ```
 
-SetUsageSyntax 设置自定义命令用法
+SetUsage 设置自定义命令用法
 
 **参数:**
 - `usageSyntax`: 自定义命令用法
 
-##### SetUseChinese
+##### SetChinese
 
 ```go
-func (c *Cmd) SetUseChinese(useChinese bool)
+func (c *Cmd) SetChinese(useChinese bool)
 ```
 
-SetUseChinese 设置是否使用中文帮助信息
+SetChinese 设置是否使用中文帮助信息
 
 **参数:**
 - `useChinese`: 是否使用中文帮助信息
@@ -1133,13 +1133,13 @@ SetVersionf 设置版本信息
 
 #### 链式调用方法
 
-##### WithDescription
+##### WithDesc
 
 ```go
-func (c *Cmd) WithDescription(desc string) *Cmd
+func (c *Cmd) WithDesc(desc string) *Cmd
 ```
 
-WithDescription 设置命令描述（链式调用）
+WithDesc 设置命令描述（链式调用）
 
 **参数:**
 - `desc`: 命令描述
@@ -1147,13 +1147,13 @@ WithDescription 设置命令描述（链式调用）
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-##### WithEnableCompletion
+##### WithCompletion
 
 ```go
-func (c *Cmd) WithEnableCompletion(enable bool) *Cmd
+func (c *Cmd) WithCompletion(enable bool) *Cmd
 ```
 
-WithEnableCompletion 设置是否启用自动补全（链式调用）
+WithCompletion 设置是否启用自动补全（链式调用）
 
 **参数:**
 - `enable`: true表示启用补全,false表示禁用
@@ -1190,13 +1190,13 @@ WithExamples 添加使用示例列表到命令（链式调用）
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-##### WithExitOnBuiltinFlags
+##### WithExit
 
 ```go
-func (c *Cmd) WithExitOnBuiltinFlags(exit bool) *Cmd
+func (c *Cmd) WithExit(exit bool) *Cmd
 ```
 
-WithExitOnBuiltinFlags 设置是否在解析内置参数时退出（链式调用）
+WithExit 设置是否在解析内置参数时退出（链式调用）
 
 **参数:**
 - `exit`: 是否退出
@@ -1218,13 +1218,13 @@ WithHelp 设置用户自定义命令帮助信息（链式调用）
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-##### WithLogoText
+##### WithLogo
 
 ```go
-func (c *Cmd) WithLogoText(logoText string) *Cmd
+func (c *Cmd) WithLogo(logoText string) *Cmd
 ```
 
-WithLogoText 设置logo文本（链式调用）
+WithLogo 设置logo文本（链式调用）
 
 **参数:**
 - `logoText`: logo文本字符串
@@ -1232,13 +1232,13 @@ WithLogoText 设置logo文本（链式调用）
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-##### WithModuleHelps
+##### WithModules
 
 ```go
-func (c *Cmd) WithModuleHelps(moduleHelps string) *Cmd
+func (c *Cmd) WithModules(moduleHelps string) *Cmd
 ```
 
-WithModuleHelps 设置自定义模块帮助信息（链式调用）
+WithModules 设置自定义模块帮助信息（链式调用）
 
 **参数:**
 - `moduleHelps`: 自定义模块帮助信息
@@ -1274,13 +1274,13 @@ WithNotes 添加备注信息切片到命令（链式调用）
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-##### WithUsageSyntax
+##### WithUsage
 
 ```go
-func (c *Cmd) WithUsageSyntax(usageSyntax string) *Cmd
+func (c *Cmd) WithUsage(usageSyntax string) *Cmd
 ```
 
-WithUsageSyntax 设置自定义命令用法（链式调用）
+WithUsage 设置自定义命令用法（链式调用）
 
 **参数:**
 - `usageSyntax`: 自定义命令用法
@@ -1288,13 +1288,13 @@ WithUsageSyntax 设置自定义命令用法（链式调用）
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-##### WithUseChinese
+##### WithChinese
 
 ```go
-func (c *Cmd) WithUseChinese(useChinese bool) *Cmd
+func (c *Cmd) WithChinese(useChinese bool) *Cmd
 ```
 
-WithUseChinese 设置是否使用中文帮助信息（链式调用）
+WithChinese 设置是否使用中文帮助信息（链式调用）
 
 **参数:**
 - `useChinese`: 是否使用中文帮助信息
@@ -1367,9 +1367,9 @@ if *verbose {
 
 ```go
 cmd := NewCmd("myapp", "app", flag.ExitOnError).
-    WithDescription("我的应用程序").
+    WithDesc("我的应用程序").
     WithVersion("1.0.0").
-    WithUseChinese(true).
+    WithChinese(true).
     WithExample("基本用法", "myapp --verbose --output result.txt")
 ```
 
@@ -1401,7 +1401,7 @@ logLevel := cmd.Enum("log-level", "l", "info", "设置日志级别",
 startTime := cmd.Time("start-time", "s", "now", "设置开始时间")
 
 // 切片类型
-tags := cmd.Slice("tags", "t", []string{}, "设置标签列表")
+tags := cmd.StringSlice("tags", "t", []string{}, "设置标签列表")
 
 // 映射类型
 env := cmd.Map("env", "e", map[string]string{}, "设置环境变量")

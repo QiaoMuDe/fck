@@ -4,7 +4,7 @@
 
 **功能强大的 Go 语言命令行参数解析库**
 
-[![Go Version](https://img.shields.io/badge/Go-1.24.4-blue.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.25.0-blue.svg)](https://golang.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Gitee](https://img.shields.io/badge/Gitee-qflag-red.svg)](https://gitee.com/MM-Q/qflag)
 [![GitHub](https://img.shields.io/badge/GitHub-qflag-black.svg)](https://github.com/QiaoMuDe/qflag)
@@ -48,10 +48,10 @@ qflag 是一个基于 Go 泛型的现代化命令行参数解析库，对标准�
 
 该项目同时托管在 Gitee 和 GitHub 上，您可以选择合适的平台访问：
 
-| 平台 | 地址 | 描述 |
-|------|------|------|
-| 🔴 **Gitee** | [gitee.com/MM-Q/qflag](https://gitee.com/MM-Q/qflag) | 国内访问更快，主要开发仓库 |
-| ⚫ **GitHub** | [github.com/QiaoMuDe/qflag](https://github.com/QiaoMuDe/qflag) | 国际化平台，同步更新 |
+| 平台               | 地址                                                        | 描述                       |
+| ------------------ | ----------------------------------------------------------- | -------------------------- |
+| 🔴**Gitee**  | [gitee.com/MM-Q/qflag](https://gitee.com/MM-Q/qflag)           | 国内访问更快，主要开发仓库 |
+| ⚫**GitHub** | [github.com/QiaoMuDe/qflag](https://github.com/QiaoMuDe/qflag) | 国际化平台，同步更新       |
 
 ## 安装
 
@@ -73,53 +73,58 @@ import "gitee.com/MM-Q/qflag/validator"
 ## 核心特性
 
 ### 🚀 丰富的数据类型支持
+
 - **基础类型**：字符串、整数（int/int64/uint16/uint32/uint64）、布尔值、浮点数
 - **高级类型**：枚举、时间间隔、时间、切片([]string, []int64, []int)、映射、大小
 - **泛型设计**：基于 Go 泛型的类型安全标志系统
 
 ### 🎯 强大的命令管理
+
 - **子命令支持**：构建复杂的命令树结构
 - **命令嵌套**：支持多层级子命令
 - **命令别名**：长短名称支持，提升用户体验
 
 ### ✅ 完善的参数验证
+
 - **内置验证器**：字符串长度、数值范围、正则表达式、路径验证等
 - **自定义验证器**：实现 `Validator` 接口，支持复杂业务逻辑验证
 - **类型安全**：编译时类型检查，运行时验证保障
 
 ### 🔧 便捷的开发体验
+
 - **自动补全**：支持 Bash 和 PowerShell 的自动补全脚本生成
 - **环境变量绑定**：标志可自动从环境变量加载默认值
 - **帮助信息生成**：自动生成格式化的帮助文档，支持中英文
 - **错误处理**：详细的错误类型和信息，便于调试
 
 ### 🛡️ 企业级特性
+
 - **并发安全**：使用 `sync.RWMutex` 保证线程安全
 - **内存优化**：高效的内存使用和垃圾回收友好设计
 - **扩展性**：模块化架构，易于扩展和定制
 
 ## 支持的标志类型
 
-| 标志类型 | 创建函数 | 绑定函数 | 描述 | 示例 |
-|----------|----------|----------|------|------|
-| **基础类型** |
-| `StringFlag` | `String()` | `StringVar()` | 字符串类型 | `--name "example"` |
-| `IntFlag` | `Int()` | `IntVar()` | 32位整数 | `--port 8080` |
-| `Int64Flag` | `Int64()` | `Int64Var()` | 64位整数 | `--size 1073741824` |
-| `Uint16Flag` | `Uint16()` | `Uint16Var()` | 16位无符号整数 | `--timeout 300` |
-| `Uint32Flag` | `Uint32()` | `Uint32Var()` | 32位无符号整数 | `--max-conn 1000` |
-| `Uint64Flag` | `Uint64()` | `Uint64Var()` | 64位无符号整数 | `--max-size 9223372036854775807` |
-| `BoolFlag` | `Bool()` | `BoolVar()` | 布尔类型 | `--debug` |
-| `Float64Flag` | `Float64()` | `Float64Var()` | 64位浮点数 | `--threshold 0.95` |
-| **高级类型** |
-| `EnumFlag` | `Enum()` | `EnumVar()` | 枚举类型 | `--mode "debug"` |
-| `StringSliceFlag` | `StringSlice()` | `StringSliceVar()` | 字符串切片 | `--files file1,file2` |
-| `IntSliceFlag` | `IntSlice()` | `IntSliceVar()` | 整数切片 | `--ports 8080,9000,3000` |
-| `Int64SliceFlag` | `Int64Slice()` | `Int64SliceVar()` | 64位整数切片 | `--sizes 1024,2048,4096` |
-| `DurationFlag` | `Duration()` | `DurationVar()` | 时间间隔 | `--timeout 30s` |
-| `TimeFlag` | `Time()` | `TimeVar()` | 时间类型 | `--start "2024-01-01T00:00:00"` |
-| `MapFlag` | `Map()` | `MapVar()` | 键值对映射 | `--config key=value,key2=value2` |
-| `SizeFlag` | `Size()` | `SizeVar()` | 大小类型 | `--max-size 1024MB` |
+| 标志类型            | 创建函数          | 绑定函数             | 描述           | 示例                               |
+| ------------------- | ----------------- | -------------------- | -------------- | ---------------------------------- |
+| **基础类型**  |                   |                      |                |                                    |
+| `StringFlag`      | `String()`      | `StringVar()`      | 字符串类型     | `--name "example"`               |
+| `IntFlag`         | `Int()`         | `IntVar()`         | 32位整数       | `--port 8080`                    |
+| `Int64Flag`       | `Int64()`       | `Int64Var()`       | 64位整数       | `--size 1073741824`              |
+| `Uint16Flag`      | `Uint16()`      | `Uint16Var()`      | 16位无符号整数 | `--timeout 300`                  |
+| `Uint32Flag`      | `Uint32()`      | `Uint32Var()`      | 32位无符号整数 | `--max-conn 1000`                |
+| `Uint64Flag`      | `Uint64()`      | `Uint64Var()`      | 64位无符号整数 | `--max-size 9223372036854775807` |
+| `BoolFlag`        | `Bool()`        | `BoolVar()`        | 布尔类型       | `--debug`                        |
+| `Float64Flag`     | `Float64()`     | `Float64Var()`     | 64位浮点数     | `--threshold 0.95`               |
+| **高级类型**  |                   |                      |                |                                    |
+| `EnumFlag`        | `Enum()`        | `EnumVar()`        | 枚举类型       | `--mode "debug"`                 |
+| `StringSliceFlag` | `StringSlice()` | `StringSliceVar()` | 字符串切片     | `--files file1,file2`            |
+| `IntSliceFlag`    | `IntSlice()`    | `IntSliceVar()`    | 整数切片       | `--ports 8080,9000,3000`         |
+| `Int64SliceFlag`  | `Int64Slice()`  | `Int64SliceVar()`  | 64位整数切片   | `--sizes 1024,2048,4096`         |
+| `DurationFlag`    | `Duration()`    | `DurationVar()`    | 时间间隔       | `--timeout 30s`                  |
+| `TimeFlag`        | `Time()`        | `TimeVar()`        | 时间类型       | `--start "2024-01-01T00:00:00"`  |
+| `MapFlag`         | `Map()`         | `MapVar()`         | 键值对映射     | `--config key=value,key2=value2` |
+| `SizeFlag`        | `Size()`        | `SizeVar()`        | 大小类型       | `--max-size 1024MB`              |
 
 ## 快速开始
 
@@ -139,13 +144,13 @@ func main() {
     name := qflag.String("name", "n", "world", "要问候的名称")
     count := qflag.Int("count", "c", 1, "问候次数")
     verbose := qflag.Bool("verbose", "v", false, "详细输出")
-    
+  
     // 解析命令行参数
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-    
+  
     // 使用参数值
     for i := 0; i < count.Get(); i++ {
         if verbose.Get() {
@@ -157,6 +162,7 @@ func main() {
 ```
 
 使用方式：
+
 ```bash
 ./app --name "Alice" --count 3 --verbose
 ./app -n "Bob" -c 2 -v
@@ -177,30 +183,30 @@ import (
 func main() {
     // 全局标志
     verbose := qflag.Bool("verbose", "v", false, "详细输出")
-    
+  
     // 创建子命令
     startCmd := qflag.NewCmd("start", "s", flag.ExitOnError)
-    startCmd.SetDescription("启动服务")
-    
+    startCmd.SetDesc("启动服务")
+  
     // 为子命令添加标志
     port := startCmd.Int("port", "p", 8080, "服务端口")
     host := startCmd.String("host", "h", "localhost", "服务主机")
-    
+  
     // 创建另一个子命令
     stopCmd := qflag.NewCmd("stop", "st", flag.ExitOnError)
-    stopCmd.SetDescription("停止服务")
-    
+    stopCmd.SetDesc("停止服务")
+  
     pidFile := stopCmd.String("pid-file", "f", "/var/run/app.pid", "PID文件路径")
-    
+  
     // 注册子命令
     qflag.AddSubCmd(startCmd, stopCmd)
-    
+  
     // 解析参数
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-    
+  
     // 处理命令逻辑
     if startCmd.IsParsed() {
         if verbose.Get() {
@@ -217,6 +223,7 @@ func main() {
 ```
 
 使用方式：
+
 ```bash
 ./app start --port 9000 --host 0.0.0.0 --verbose
 ./app stop --pid-file /tmp/app.pid -v
@@ -239,15 +246,15 @@ func main() {
     // 创建枚举标志
     logLevel := qflag.Enum("log-level", "l", "info", 
         "日志级别", []string{"debug", "info", "warn", "error"})
-    
+  
     // 设置大小写敏感（可选）
     logLevel.SetCaseSensitive(false)
-    
+  
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-    
+  
     fmt.Printf("当前日志级别: %s\n", logLevel.Get())
 }
 ```
@@ -266,22 +273,22 @@ import (
 func main() {
     // 创建字符串切片标志
     files := qflag.StringSlice("files", "f", []string{}, "要处理的文件列表")
-    
+  
     // 创建整数切片标志
     ports := qflag.IntSlice("ports", "p", []int{8080}, "服务端口列表")
-    
+  
     // 创建64位整数切片标志
     sizes := qflag.Int64Slice("sizes", "s", []int64{}, "文件大小列表")
-    
+  
     // 自定义分隔符（默认为逗号）
     files.SetDelimiters([]string{";"})
     ports.SetDelimiters([]string{","})
-    
+  
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-    
+  
     fmt.Printf("要处理的文件: %v\n", files.Get())
     fmt.Printf("服务端口: %v\n", ports.Get())
     fmt.Printf("文件大小: %v\n", sizes.Get())
@@ -289,6 +296,7 @@ func main() {
 ```
 
 使用方式：
+
 ```bash
 ./app --files file1.txt;file2.txt;file3.txt --ports 8080,9000,3000 --sizes 1024,2048,4096
 ```
@@ -307,15 +315,15 @@ import (
 func main() {
     // 创建映射标志
     config := qflag.Map("config", "c", map[string]string{}, "配置键值对")
-    
+  
     // 设置分隔符（键值对分隔符，键值分隔符）
     config.SetDelimiters(",", ":")
-    
+  
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-    
+  
     fmt.Printf("配置: %v\n", config.Get())
 }
 ```
@@ -337,25 +345,25 @@ import (
 func main() {
     // 创建带验证的标志
     port := qflag.Int("port", "p", 8080, "服务端口")
-    
+  
     // 设置端口范围验证器
     port.SetValidator(&validator.IntRangeValidator{
         Min: 1024,
         Max: 65535,
     })
-    
+  
     // 字符串长度验证
     name := qflag.String("name", "n", "", "服务名称")
     name.SetValidator(&validator.StringLengthValidator{
         Min: 3,
         Max: 20,
     })
-    
+  
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-    
+  
     fmt.Printf("服务 %s 将在端口 %d 启动\n", name.Get(), port.Get())
 }
 ```
@@ -375,20 +383,21 @@ func main() {
     // 创建标志并绑定环境变量
     dbHost := qflag.String("db-host", "", "localhost", "数据库主机")
     dbHost.BindEnv("DATABASE_HOST")
-    
+  
     dbPort := qflag.Int("db-port", "", 5432, "数据库端口")
     dbPort.BindEnv("DATABASE_PORT")
-    
+  
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-    
+  
     fmt.Printf("连接数据库: %s:%d\n", dbHost.Get(), dbPort.Get())
 }
 ```
 
 使用方式：
+
 ```bash
 export DATABASE_HOST=prod-db.example.com
 export DATABASE_PORT=3306
@@ -418,23 +427,23 @@ func (v *EmailValidator) Validate(value any) error {
     if !ok {
         return errors.New("value is not a string")
     }
-    
+  
     if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
         return errors.New("invalid email format")
     }
-    
+  
     return nil
 }
 
 func main() {
     email := qflag.String("email", "e", "", "用户邮箱")
     email.SetValidator(&EmailValidator{})
-    
+  
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-    
+  
     fmt.Printf("用户邮箱: %s\n", email.Get())
 }
 ```
@@ -447,7 +456,7 @@ qflag 支持为 Bash 和 PowerShell 生成自动补全脚本：
 
 ```bash
 # 生成 Bash 补全脚本
-./your-app --generate-shell-completion bash > your-app-completion.sh
+./your-app --completion bash > your-app-completion.sh
 
 # 安装补全脚本
 sudo cp your-app-completion.sh /etc/profile.d/
@@ -458,7 +467,7 @@ source /etc/profile.d/your-app-completion.sh
 
 ```powershell
 # 生成 PowerShell 补全脚本
-./your-app.exe --generate-shell-completion pwsh > your-app-completion.ps1
+./your-app.exe --completion pwsh > your-app-completion.ps1
 
 # 安装补全脚本
 . ./your-app-completion.ps1
@@ -476,27 +485,27 @@ import (
 func main() {
     // 设置应用信息
     qflag.SetVersion("1.0.0")
-    qflag.SetDescription("这是一个示例应用程序")
-    qflag.SetUsageSyntax("myapp [选项] <命令> [参数...]")
-    
+    qflag.SetDesc("这是一个示例应用程序")
+    qflag.SetUsage("myapp [选项] <命令> [参数...]")
+  
     // 添加使用示例
     qflag.AddExample("启动服务", "myapp start --port 8080")
     qflag.AddExample("查看状态", "myapp status --verbose")
-    
+  
     // 添加注意事项
     qflag.AddNote("配置文件默认位置: ~/.myapp/config.yaml")
     qflag.AddNote("日志文件位置: /var/log/myapp.log")
-    
+  
     // 设置中文帮助信息
-    qflag.SetUseChinese(true)
-    
+    qflag.SetChinese(true)
+  
     // 定义标志...
     name := qflag.String("name", "n", "world", "要问候的名称")
-    
+  
     if err := qflag.Parse(); err != nil {
         return
     }
-    
+  
     // 应用逻辑...
 }
 ```
@@ -532,7 +541,7 @@ qflag 采用模块化设计，主要包含以下包：
 
 ## 兼容性
 
-- **Go 版本**：要求 Go 1.24+ （支持泛型）
+- **Go 版本**：要求 Go 1.25+ （支持泛型）
 - **操作系统**：支持 Windows、Linux、macOS
 - **Shell 支持**：Bash、PowerShell
 

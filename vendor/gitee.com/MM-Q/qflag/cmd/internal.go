@@ -200,11 +200,10 @@ func (c *Cmd) registerBuiltinFlags() {
 		}
 
 		// 注册补全标志
-		c.EnumVar(c.ctx.BuiltinFlags.Completion, flags.CompletionShellFlagLongName, flags.CompletionShellFlagShortName, flags.ShellNone, langConfig.shellDesc, flags.ShellSlice)
+		c.EnumVar(c.ctx.BuiltinFlags.Completion, flags.CompletionShellFlagLongName, "", flags.ShellNone, langConfig.shellDesc, flags.ShellSlice)
 
 		// 注册到内置的标志名称映射
 		c.ctx.BuiltinFlags.NameMap.Store(flags.CompletionShellFlagLongName, true)
-		c.ctx.BuiltinFlags.NameMap.Store(flags.CompletionShellFlagShortName, true)
 
 		// 添加自动补全子命令的注意事项
 		c.ctx.Config.Notes = append(c.ctx.Config.Notes, langConfig.notes...)
@@ -233,7 +232,7 @@ func (c *Cmd) registerBuiltinFlags() {
 	}
 }
 
-// handleBuiltinFlags 处理内置标志(-h/--help, -v/--version, --generate-shell-completion/-gsc等)的逻辑
+// handleBuiltinFlags 处理内置标志(-h/--help, -v/--version, --completion等)的逻辑
 //
 // 返回值:
 //   - 是否需要退出程序

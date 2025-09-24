@@ -104,7 +104,7 @@ var EnglishTemplate = HelpTemplate{
 	CmdNameWithShort:     "Name: %s, %s\n\n",                                                                                                                    // 命令名称带短名称模板
 	CmdDescription:       "Desc: %s\n\n",                                                                                                                        // 命令描述模板
 	OptionsHeader:        "Options:\n",                                                                                                                          // 选项头部模板
-	Option1:              "  --%s, -%s %s",                                                                                                                      // 选项模板(带短选项)
+	Option1:              "  -%s, --%s %s",                                                                                                                      // 选项模板(带短选项)
 	Option2:              "  --%s %s",                                                                                                                           // 选项模板(无短选项)
 	Option3:              "  -%s %s",                                                                                                                            // 新增：仅短选项的模板
 	OptionDefault:        "%s%*s%s (default: %s)\n",                                                                                                             // 选项模板默认值
@@ -128,7 +128,7 @@ var ChineseTemplate = HelpTemplate{
 	CmdNameWithShort:     "名称: %s, %s\n\n",              // 命令名称带短名称模板
 	CmdDescription:       "描述: %s\n\n",                  // 命令描述模板
 	OptionsHeader:        "选项:\n",                       // 选项头部模板
-	Option1:              "  --%s, -%s %s",              // 选项模板(带短选项)
+	Option1:              "  -%s, --%s %s",              // 选项模板(带短选项)
 	Option2:              "  --%s %s",                   // 选项模板(无短选项)
 	Option3:              "  -%s %s",                    // 新增：仅短选项的模板
 	OptionDefault:        "%s%*s%s (默认值: %s)\n",         // 选项模板默认值

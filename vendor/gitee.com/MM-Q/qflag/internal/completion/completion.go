@@ -54,18 +54,18 @@ var (
 
 // 内置自动补全命令的示例使用(中文)
 var CompletionExamplesCN = []types.ExampleInfo{
-	{Description: "Linux 临时启用", Usage: "source <(%s --generate-shell-completion bash)"},
-	{Description: "Linux 永久启用", Usage: "echo \"source <(%s --generate-shell-completion bash)\" >> ~/.bashrc"},
-	{Description: "Windows 临时启用", Usage: "%s --generate-shell-completion powershell | Out-String | Invoke-Expression"},
-	{Description: "Windows 永久启用", Usage: "echo \"%s --generate-shell-completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
+	{Description: "Linux 临时启用", Usage: "source <(%s --completion bash)"},
+	{Description: "Linux 永久启用", Usage: "echo \"source <(%s --completion bash)\" >> ~/.bashrc"},
+	{Description: "Windows 临时启用", Usage: "%s --completion powershell | Out-String | Invoke-Expression"},
+	{Description: "Windows 永久启用", Usage: "echo \"%s --completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
 }
 
 // 内置自动补全命令的示例使用（英文）
 var CompletionExamplesEN = []types.ExampleInfo{
-	{Description: "Linux Temporary", Usage: "source <(%s --generate-shell-completion bash)"},
-	{Description: "Linux Permanent", Usage: "echo \"source <(%s --generate-shell-completion bash)\" >> ~/.bashrc"},
-	{Description: "Windows Temporary", Usage: "%s --generate-shell-completion powershell | Out-String | Invoke-Expression"},
-	{Description: "Windows Permanent", Usage: "echo \"%s --generate-shell-completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
+	{Description: "Linux Temporary", Usage: "source <(%s --completion bash)"},
+	{Description: "Linux Permanent", Usage: "echo \"source <(%s --completion bash)\" >> ~/.bashrc"},
+	{Description: "Windows Temporary", Usage: "%s --completion powershell | Out-String | Invoke-Expression"},
+	{Description: "Windows Permanent", Usage: "echo \"%s --completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
 }
 
 // GenerateShellCompletion 生成shell自动补全脚本

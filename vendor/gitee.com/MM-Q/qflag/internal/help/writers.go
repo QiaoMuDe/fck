@@ -182,7 +182,7 @@ func writeOptions(ctx *types.CmdContext, tpl HelpTemplate, buf *bytes.Buffer) {
 		// 根据标志生成选项部分
 		if flag.longFlag != "" && flag.shortFlag != "" {
 			// 同时有长短选项
-			optPart = fmt.Sprintf(tpl.Option1, flag.longFlag, flag.shortFlag, flag.typeStr)
+			optPart = fmt.Sprintf(tpl.Option1, flag.shortFlag, flag.longFlag, flag.typeStr)
 		} else if flag.longFlag != "" {
 			// 只有长选项
 			optPart = fmt.Sprintf(tpl.Option2, flag.longFlag, flag.typeStr)

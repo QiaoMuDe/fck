@@ -44,9 +44,9 @@ var (
 func InitFindCmd() *cmd.Cmd {
 	// fck find 子命令
 	findCmd = qflag.NewCmd("find", "f", flag.ExitOnError).
-		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " find [options] <path>\n")).
-		WithUseChinese(true).
-		WithDescription("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")
+		WithUsage(fmt.Sprint(qflag.LongName(), " find [options] <path>\n")).
+		WithChinese(true).
+		WithDesc("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")
 	findCmd.AddNote("大小单位支持B/K/M/G/b/k/m/g")
 	findCmd.AddNote("时间参数以天为单位")
 	findCmd.AddNote("不能同时执行-exec和-delete以及-move标志")

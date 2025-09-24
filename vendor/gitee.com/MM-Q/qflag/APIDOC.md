@@ -296,95 +296,101 @@ Float64Var 为全局默认命令绑定一个浮点数类型的命令行标志到
 - `defValue`: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值
 - `usage`: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户，用于解释该标志的用途
 
-### GetDescription
+### Desc
 
 ```go
-func GetDescription() string
+func Desc() string
 ```
 
-GetDescription 获取命令描述信息。
+Desc 获取命令描述信息。
 
-### GetExamples
+**返回值:**
+- `string`: 命令描述信息
+
+### Examples
 
 ```go
-func GetExamples() []cmd.ExampleInfo
+func Examples() []cmd.ExampleInfo
 ```
 
-GetExamples 获取示例信息。该函数用于获取命令行标志的示例信息列表。
+Examples 获取示例信息。该函数用于获取命令行标志的示例信息列表。
 
 **返回值:**
 - `[]cmd.ExampleInfo`: 示例信息列表，每个元素为 ExampleInfo 类型
 
-### GetHelp
+### Help
 
 ```go
-func GetHelp() string
+func Help() string
 ```
 
-GetHelp 返回全局默认命令实例 `QCommandLine` 的帮助信息。
+Help 返回全局默认命令实例 `QCommandLine` 的帮助信息。
 
 **返回值:**
 - `string`: 命令行帮助信息
 
-### GetLogoText
+### Logo
 
 ```go
-func GetLogoText() string
+func Logo() string
 ```
 
-GetLogoText 获取全局默认命令实例 `QCommandLine` 的 logo 文本。
+Logo 获取全局默认命令实例 `QCommandLine` 的 logo 文本。
 
 **返回值:**
 - `string`: 配置的 logo 文本
 
-### GetModuleHelps
+### Modules
 
 ```go
-func GetModuleHelps() string
+func Modules() string
 ```
 
-GetModuleHelps 获取模块帮助信息。
+Modules 获取模块帮助信息。
 
 **返回值:**
 - `string`: 模块帮助信息
 
-### GetNotes
+### Notes
 
 ```go
-func GetNotes() []string
+func Notes() []string
 ```
 
-GetNotes 获取所有备注信息。
+Notes 获取所有备注信息。
 
-### GetUsageSyntax
+**返回值:**
+- `[]string`: 备注信息列表
+
+### Usage
 
 ```go
-func GetUsageSyntax() string
+func Usage() string
 ```
 
-GetUsageSyntax 获取全局默认命令实例 `QCommandLine` 的用法信息。
+Usage 获取全局默认命令实例 `QCommandLine` 的用法信息。
 
 **返回值:**
 - `string`: 命令行用法信息
 
-### GetUseChinese
+### Chinese
 
 ```go
-func GetUseChinese() bool
+func Chinese() bool
 ```
 
-GetUseChinese 获取是否使用中文。该函数用于获取当前命令行标志是否使用中文。
+Chinese 获取是否使用中文。该函数用于获取当前命令行标志是否使用中文。
 
 **返回值:**
 - `bool`: 如果使用中文，则返回true；否则返回false
 
-### GetVersion
+### Version
 
 ```go
-func GetVersion() string
+func Version() string
 ```
 
-GetVersion 获取全局默认命令的版本信息。
+Version 获取全局默认命令的版本信息。
 
 **返回值:**
 - `string`: 版本信息字符串
@@ -593,32 +599,35 @@ func PrintHelp()
 
 PrintHelp 输出全局默认命令实例 `QCommandLine` 的帮助信息。帮助信息通常包含命令的名称、可用的标志及其描述等内容。
 
-### SetDescription
+### SetDesc
 
 ```go
-func SetDescription(desc string)
+func SetDesc(desc string)
 ```
 
-SetDescription 设置命令描述信息。
+SetDesc 设置命令描述信息。
 
-### SetEnableCompletion
+**参数:**
+- `desc`: 命令描述信息
+
+### SetCompletion
 
 ```go
-func SetEnableCompletion(enable bool)
+func SetCompletion(enable bool)
 ```
 
-SetEnableCompletion 设置是否启用自动完成功能。
+SetCompletion 设置是否启用自动完成功能。
 
 **参数:**
 - `enable`: 是否启用自动完成功能
 
-### SetExitOnBuiltinFlags
+### SetAutoExit
 
 ```go
-func SetExitOnBuiltinFlags(exit bool)
+func SetAutoExit(exit bool)
 ```
 
-SetExitOnBuiltinFlags 设置是否在解析内置参数时退出。默认情况下为true，当解析到内置参数时，QFlag将退出程序。
+SetAutoExit 设置是否在解析内置参数时退出。默认情况下为true，当解析到内置参数时，QFlag将退出程序。
 
 **参数:**
 - `exit`: 是否退出
@@ -634,51 +643,51 @@ SetHelp 配置全局默认命令实例 `QCommandLine` 的帮助信息。
 **参数:**
 - `help`: 新的帮助信息，字符串类型
 
-### SetLogoText
+### SetLogo
 
 ```go
-func SetLogoText(logoText string)
+func SetLogo(logoText string)
 ```
 
-SetLogoText 配置全局默认命令实例 `QCommandLine` 的 logo 文本。
+SetLogo 配置全局默认命令实例 `QCommandLine` 的 logo 文本。
 
 **参数:**
 - `logoText`: 配置的 logo 文本，字符串类型
 
-### SetModuleHelps
+### SetModules
 
 ```go
-func SetModuleHelps(moduleHelps string)
+func SetModules(moduleHelps string)
 ```
 
-SetModuleHelps 配置模块帮助信息。
+SetModules 配置模块帮助信息。
 
 **参数:**
 - `moduleHelps`: 模块帮助信息，字符串类型
 
-### SetUsageSyntax
+### SetUsage
 
 ```go
-func SetUsageSyntax(usageSyntax string)
+func SetUsage(usageSyntax string)
 ```
 
-SetUsageSyntax 配置全局默认命令实例 `QCommandLine` 的用法信息。
+SetUsage 配置全局默认命令实例 `QCommandLine` 的用法信息。
 
 **参数:**
 - `usage`: 新的用法信息，字符串类型
 
 **示例:**
 ```go
-qflag.SetUsageSyntax("Usage: qflag [options]")
+qflag.SetUsage("Usage: qflag [options]")
 ```
 
-### SetUseChinese
+### SetChinese
 
 ```go
-func SetUseChinese(useChinese bool)
+func SetChinese(useChinese bool)
 ```
 
-SetUseChinese 设置是否使用中文。该函数用于设置当前命令行标志是否使用中文。
+SetChinese 设置是否使用中文。该函数用于设置当前命令行标志是否使用中文。
 
 **参数:**
 - `useChinese`: 如果使用中文，则传入true；否则传入false
@@ -1035,13 +1044,13 @@ Uint64Var 为全局默认命令将一个无符号64位整数类型的命令行�
 - `defValue`: 该命令行标志的默认值，当用户在命令行中未指定该标志时，会使用此默认值
 - `usage`: 该命令行标志的帮助说明信息，会在显示帮助信息时展示给用户
 
-### WithDescription
+### WithDesc
 
 ```go
-func WithDescription(desc string) *Cmd
+func WithDesc(desc string) *Cmd
 ```
 
-WithDescription 设置命令描述（链式调用）。
+WithDesc 设置命令描述（链式调用）。
 
 **参数:**
 - `desc`: 命令描述
@@ -1049,13 +1058,13 @@ WithDescription 设置命令描述（链式调用）。
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-### WithEnableCompletion
+### WithCompletion
 
 ```go
-func WithEnableCompletion(enable bool) *Cmd
+func WithCompletion(enable bool) *Cmd
 ```
 
-WithEnableCompletion 设置是否启用自动补全（链式调用）。
+WithCompletion 设置是否启用自动补全（链式调用）。
 
 **参数:**
 - `enable`: true表示启用补全，false表示禁用
@@ -1092,13 +1101,13 @@ WithExamples 添加使用示例列表到命令（链式调用）。
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-### WithExitOnBuiltinFlags
+### WithAutoExit
 
 ```go
-func WithExitOnBuiltinFlags(exit bool) *Cmd
+func WithAutoExit(exit bool) *Cmd
 ```
 
-WithExitOnBuiltinFlags 设置是否在解析内置参数时退出（链式调用）。
+WithAutoExit 设置是否在解析内置参数时退出（链式调用）。
 
 **参数:**
 - `exit`: 是否退出
@@ -1120,13 +1129,13 @@ WithHelp 设置用户自定义命令帮助信息（链式调用）。
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-### WithLogoText
+### WithLogo
 
 ```go
-func WithLogoText(logoText string) *Cmd
+func WithLogo(logoText string) *Cmd
 ```
 
-WithLogoText 设置logo文本（链式调用）。
+WithLogo 设置logo文本（链式调用）。
 
 **参数:**
 - `logoText`: logo文本字符串
@@ -1134,13 +1143,13 @@ WithLogoText 设置logo文本（链式调用）。
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-### WithModuleHelps
+### WithModules
 
 ```go
-func WithModuleHelps(moduleHelps string) *Cmd
+func WithModules(moduleHelps string) *Cmd
 ```
 
-WithModuleHelps 设置自定义模块帮助信息（链式调用）。
+WithModules 设置自定义模块帮助信息（链式调用）。
 
 **参数:**
 - `moduleHelps`: 自定义模块帮助信息
@@ -1176,13 +1185,13 @@ WithNotes 添加备注信息切片到命令（链式调用）。
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-### WithUsageSyntax
+### WithUsage
 
 ```go
-func WithUsageSyntax(usageSyntax string) *Cmd
+func WithUsage(usageSyntax string) *Cmd
 ```
 
-WithUsageSyntax 设置自定义命令用法（链式调用）。
+WithUsage 设置自定义命令用法（链式调用）。
 
 **参数:**
 - `usageSyntax`: 自定义命令用法
@@ -1190,13 +1199,13 @@ WithUsageSyntax 设置自定义命令用法（链式调用）。
 **返回值:**
 - `*Cmd`: 返回命令实例，支持链式调用
 
-### WithUseChinese
+### WithChinese
 
 ```go
-func WithUseChinese(useChinese bool) *Cmd
+func WithChinese(useChinese bool) *Cmd
 ```
 
-WithUseChinese 设置是否使用中文帮助信息（链式调用）。
+WithChinese 设置是否使用中文帮助信息（链式调用）。
 
 **参数:**
 - `useChinese`: 是否使用中文帮助信息

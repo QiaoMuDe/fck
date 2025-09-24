@@ -154,7 +154,7 @@ func (c *Cmd) AddSubCmd(subCmds ...*Cmd) error {
 	var errors []error
 	validCmds := make([]*Cmd, 0, len(subCmds)) // 预分配空间
 
-	// 验证所有子命令（无锁操作）
+	// 验证所有子命令(无锁操作)
 	for cmdIndex, cmd := range subCmds {
 		// 检查子命令是否为nil
 		if cmd == nil {
@@ -162,7 +162,7 @@ func (c *Cmd) AddSubCmd(subCmds ...*Cmd) error {
 			continue
 		}
 
-		// 执行子命令的验证方法（无锁操作）
+		// 执行子命令的验证方法(无锁操作)
 		if err := validator.ValidateSubCommand(c.ctx, cmd.ctx); err != nil {
 			errors = append(errors, fmt.Errorf("invalid subcommand %s: %w", validator.GetCmdIdentifier(cmd.ctx), err))
 			continue
@@ -409,7 +409,7 @@ func (c *Cmd) FlagExists(name string) bool {
 //   - 打印帮助信息时, 不会自动退出程序
 func (c *Cmd) PrintHelp() {
 	// 打印帮助信息
-	fmt.Println(c.GetHelp())
+	fmt.Println(c.Help())
 }
 
 // CmdExists 检查子命令是否存在
@@ -442,54 +442,54 @@ func (c *Cmd) IsParsed() bool {
 }
 
 // ================================================================================
-// Get 方法 - 获取配置信息(9个)
+// 获取配置信息方法(9个)
 // ================================================================================
 
-// GetVersion 获取版本信息
+// Version 获取版本信息
 //
 // 返回值:
 // - string: 版本信息
-func (c *Cmd) GetVersion() string {
+func (c *Cmd) Version() string {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	return c.ctx.Config.Version
 }
 
-// GetModuleHelps 获取自定义模块帮助信息
+// Modules 获取自定义模块帮助信息
 //
 // 返回值:
 //   - string: 自定义模块帮助信息
-func (c *Cmd) GetModuleHelps() string {
+func (c *Cmd) Modules() string {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	return c.ctx.Config.ModuleHelps
 }
 
-// GetLogoText 获取logo文本
+// Logo 获取logo文本
 //
 // 返回值:
 //   - string: logo文本字符串
-func (c *Cmd) GetLogoText() string {
+func (c *Cmd) Logo() string {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	return c.ctx.Config.LogoText
 }
 
-// GetUseChinese 获取是否使用中文帮助信息
+// Chinese 获取是否使用中文帮助信息
 //
 // 返回值:
 //   - bool: 是否使用中文帮助信息
-func (c *Cmd) GetUseChinese() bool {
+func (c *Cmd) Chinese() bool {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	return c.ctx.Config.UseChinese
 }
 
-// GetNotes 获取所有备注信息
+// Notes 获取所有备注信息
 //
 // 返回:
 //   - 备注信息列表
-func (c *Cmd) GetNotes() []string {
+func (c *Cmd) Notes() []string {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	// 返回切片副本而非原始引用
@@ -498,21 +498,21 @@ func (c *Cmd) GetNotes() []string {
 	return notes
 }
 
-// GetDescription 返回命令描述
+// Description 返回命令描述
 //
 // 返回值:
 //   - string: 命令描述
-func (c *Cmd) GetDescription() string {
+func (c *Cmd) Desc() string {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	return c.ctx.Config.Description
 }
 
-// GetHelp 返回命令用法帮助信息
+// Help 返回命令用法帮助信息
 //
 // 返回值:
 //   - string: 命令用法帮助信息
-func (c *Cmd) GetHelp() string {
+func (c *Cmd) Help() string {
 	// 获取读锁
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
@@ -521,21 +521,21 @@ func (c *Cmd) GetHelp() string {
 	return help.GenerateHelp(c.ctx)
 }
 
-// GetUsageSyntax 获取自定义命令用法
+// Usage 获取自定义命令用法
 //
 // 返回值:
 //   - string: 自定义命令用法
-func (c *Cmd) GetUsageSyntax() string {
+func (c *Cmd) Usage() string {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	return c.ctx.Config.UsageSyntax
 }
 
-// GetExamples 获取所有使用示例
+// Examples 获取所有使用示例
 //
 // 返回:
 //   - []ExampleInfo: 使用示例列表
-func (c *Cmd) GetExamples() []ExampleInfo {
+func (c *Cmd) Examples() []ExampleInfo {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	examples := make([]ExampleInfo, len(c.ctx.Config.Examples))
@@ -551,22 +551,22 @@ func (c *Cmd) GetExamples() []ExampleInfo {
 // Set 方法 - 设置配置信息(15个)
 // ================================================================================
 
-// SetExitOnBuiltinFlags 设置是否在解析内置参数时退出
+// SetAutoExit 设置是否在解析内置参数时退出
 // 默认情况下为true, 当解析到内置参数时, QFlag将退出程序
 //
 // 参数:
 //   - exit: 是否退出
-func (c *Cmd) SetExitOnBuiltinFlags(exit bool) {
+func (c *Cmd) SetAutoExit(exit bool) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 	c.ctx.Config.ExitOnBuiltinFlags = exit
 }
 
-// SetEnableCompletion 设置是否启用自动补全, 只能在根命令上启用
+// SetCompletion 设置是否启用自动补全, 只能在根命令上启用
 //
 // 参数:
 //   - enable: true表示启用补全,false表示禁用
-func (c *Cmd) SetEnableCompletion(enable bool) {
+func (c *Cmd) SetCompletion(enable bool) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -605,41 +605,41 @@ func (c *Cmd) SetVersionf(format string, args ...any) {
 	c.SetVersion(fmt.Sprintf(format, args...))
 }
 
-// SetModuleHelps 设置自定义模块帮助信息
+// SetModules 设置自定义模块帮助信息
 //
 // 参数:
 //   - moduleHelps: 自定义模块帮助信息
-func (c *Cmd) SetModuleHelps(moduleHelps string) {
+func (c *Cmd) SetModules(moduleHelps string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 	c.ctx.Config.ModuleHelps = moduleHelps
 }
 
-// SetLogoText 设置logo文本
+// SetLogo 设置logo文本
 //
 // 参数:
 //   - logoText: logo文本字符串
-func (c *Cmd) SetLogoText(logoText string) {
+func (c *Cmd) SetLogo(logoText string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 	c.ctx.Config.LogoText = logoText
 }
 
-// SetUseChinese 设置是否使用中文帮助信息
+// SetChinese 设置是否使用中文帮助信息
 //
 // 参数:
 //   - useChinese: 是否使用中文帮助信息
-func (c *Cmd) SetUseChinese(useChinese bool) {
+func (c *Cmd) SetChinese(useChinese bool) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 	c.ctx.Config.UseChinese = useChinese
 }
 
-// SetDescription 设置命令描述
+// SetDesc 设置命令描述
 //
 // 参数:
 //   - desc: 命令描述
-func (c *Cmd) SetDescription(desc string) {
+func (c *Cmd) SetDesc(desc string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 	c.ctx.Config.Description = desc
@@ -655,11 +655,11 @@ func (c *Cmd) SetHelp(help string) {
 	c.ctx.Config.Help = help
 }
 
-// SetUsageSyntax 设置自定义命令用法
+// SetUsage 设置自定义命令用法
 //
 // 参数:
 //   - usageSyntax: 自定义命令用法
-func (c *Cmd) SetUsageSyntax(usageSyntax string) {
+func (c *Cmd) SetUsage(usageSyntax string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 	c.ctx.Config.UsageSyntax = usageSyntax
@@ -730,19 +730,19 @@ func (c *Cmd) AddExamples(examples []ExampleInfo) {
 // 链式调用方法 - 用于构建器模式，提供更流畅的API体验(14个)
 // ================================================================================
 
-// WithDescription 设置命令描述（链式调用）
+// WithDesc 设置命令描述(链式调用)
 //
 // 参数:
 //   - desc: 命令描述
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithDescription(desc string) *Cmd {
-	c.SetDescription(desc)
+func (c *Cmd) WithDesc(desc string) *Cmd {
+	c.SetDesc(desc)
 	return c
 }
 
-// WithVersion 设置版本信息（链式调用）
+// WithVersion 设置版本信息(链式调用)
 //
 // 参数:
 //   - version: 版本信息
@@ -754,7 +754,7 @@ func (c *Cmd) WithVersion(version string) *Cmd {
 	return c
 }
 
-// WithVersionf 设置版本信息（链式调用，支持格式化）
+// WithVersionf 设置版本信息(链式调用，支持格式化)
 //
 // 参数:
 //   - format: 版本信息格式字符串
@@ -767,43 +767,43 @@ func (c *Cmd) WithVersionf(format string, args ...any) *Cmd {
 	return c
 }
 
-// WithUseChinese 设置是否使用中文帮助信息（链式调用）
+// WithChinese 设置是否使用中文帮助信息(链式调用)
 //
 // 参数:
 //   - useChinese: 是否使用中文帮助信息
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithUseChinese(useChinese bool) *Cmd {
-	c.SetUseChinese(useChinese)
+func (c *Cmd) WithChinese(useChinese bool) *Cmd {
+	c.SetChinese(useChinese)
 	return c
 }
 
-// WithUsageSyntax 设置自定义命令用法（链式调用）
+// WithUsage 设置自定义命令用法(链式调用)
 //
 // 参数:
 //   - usageSyntax: 自定义命令用法
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithUsageSyntax(usageSyntax string) *Cmd {
-	c.SetUsageSyntax(usageSyntax)
+func (c *Cmd) WithUsage(usageSyntax string) *Cmd {
+	c.SetUsage(usageSyntax)
 	return c
 }
 
-// WithLogoText 设置logo文本（链式调用）
+// WithLogo 设置logo文本(链式调用)
 //
 // 参数:
 //   - logoText: logo文本字符串
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithLogoText(logoText string) *Cmd {
-	c.SetLogoText(logoText)
+func (c *Cmd) WithLogo(logoText string) *Cmd {
+	c.SetLogo(logoText)
 	return c
 }
 
-// WithHelp 设置用户自定义命令帮助信息（链式调用）
+// WithHelp 设置用户自定义命令帮助信息(链式调用)
 //
 // 参数:
 //   - help: 用户自定义命令帮助信息
@@ -815,7 +815,7 @@ func (c *Cmd) WithHelp(help string) *Cmd {
 	return c
 }
 
-// WithNote 添加备注信息到命令（链式调用）
+// WithNote 添加备注信息到命令(链式调用)
 //
 // 参数:
 //   - note: 备注信息
@@ -827,7 +827,7 @@ func (c *Cmd) WithNote(note string) *Cmd {
 	return c
 }
 
-// WithNotes 添加备注信息切片到命令（链式调用）
+// WithNotes 添加备注信息切片到命令(链式调用)
 //
 // 参数:
 //   - notes: 备注信息列表
@@ -839,7 +839,7 @@ func (c *Cmd) WithNotes(notes []string) *Cmd {
 	return c
 }
 
-// WithExample 为命令添加使用示例（链式调用）
+// WithExample 为命令添加使用示例(链式调用)
 //
 // 参数:
 //   - desc: 示例描述
@@ -852,7 +852,7 @@ func (c *Cmd) WithExample(desc, usage string) *Cmd {
 	return c
 }
 
-// WithExamples 添加使用示例列表到命令（链式调用）
+// WithExamples 添加使用示例列表到命令(链式调用)
 //
 // 参数:
 //   - examples: 示例信息列表
@@ -864,38 +864,38 @@ func (c *Cmd) WithExamples(examples []ExampleInfo) *Cmd {
 	return c
 }
 
-// WithExitOnBuiltinFlags 设置是否在解析内置参数时退出（链式调用）
+// WithAutoExit 设置是否在解析内置参数时退出(链式调用)
 //
 // 参数:
 //   - exit: 是否退出
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithExitOnBuiltinFlags(exit bool) *Cmd {
-	c.SetExitOnBuiltinFlags(exit)
+func (c *Cmd) WithAutoExit(exit bool) *Cmd {
+	c.SetAutoExit(exit)
 	return c
 }
 
-// WithEnableCompletion 设置是否启用自动补全（链式调用）
+// WithCompletion 设置是否启用自动补全(链式调用)
 //
 // 参数:
 //   - enable: true表示启用补全,false表示禁用
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithEnableCompletion(enable bool) *Cmd {
-	c.SetEnableCompletion(enable)
+func (c *Cmd) WithCompletion(enable bool) *Cmd {
+	c.SetCompletion(enable)
 	return c
 }
 
-// WithModuleHelps 设置自定义模块帮助信息（链式调用）
+// WithModules 设置自定义模块帮助信息(链式调用)
 //
 // 参数:
 //   - moduleHelps: 自定义模块帮助信息
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithModuleHelps(moduleHelps string) *Cmd {
-	c.SetModuleHelps(moduleHelps)
+func (c *Cmd) WithModules(moduleHelps string) *Cmd {
+	c.SetModules(moduleHelps)
 	return c
 }

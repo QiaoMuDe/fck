@@ -60,8 +60,7 @@ var (
     HelpFlagShortName            = "h"                         // 帮助标志短名称
     VersionFlagLongName          = "version"                   // 版本标志名称
     VersionFlagShortName         = "v"                         // 版本标志短名称
-    CompletionShellFlagLongName  = "generate-shell-completion" // 生成 shell 补全标志长名称
-    CompletionShellFlagShortName = "gsc"                       // 生成 shell 补全标志短名称
+    CompletionShellFlagLongName  = "completion"                // 生成 shell 补全标志长名称
 )
 ```
 

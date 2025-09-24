@@ -22,8 +22,8 @@ gitee.com/MM-Q/comprx/types
 ## explicit; go 1.25.0
 gitee.com/MM-Q/go-kit/hash
 gitee.com/MM-Q/go-kit/pool
-# gitee.com/MM-Q/qflag v0.3.1
-## explicit; go 1.24.4
+# gitee.com/MM-Q/qflag v0.3.2
+## explicit; go 1.25.0
 gitee.com/MM-Q/qflag
 gitee.com/MM-Q/qflag/cmd
 gitee.com/MM-Q/qflag/flags

@@ -32,9 +32,9 @@ var (
 func InitListCmd() *cmd.Cmd {
 	// fck list 子命令
 	listCmd = qflag.NewCmd("list", "ls", flag.ExitOnError).
-		WithDescription("文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项").
-		WithUseChinese(true).
-		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " list [options] <path>\n"))
+		WithDesc("文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项").
+		WithChinese(true).
+		WithUsage(fmt.Sprint(qflag.LongName(), " list [options] <path>\n"))
 	listCmd.AddNote("如果不指定路径，默认为当前目录")
 	listCmd.AddNote("排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个")
 

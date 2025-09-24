@@ -28,9 +28,9 @@ var (
 // InitUnpackCmd 初始化unpack命令及其所有标志
 func InitUnpackCmd() *cmd.Cmd {
 	unpackCmd = qflag.NewCmd("unpack", "up", flag.ExitOnError).
-		WithUseChinese(true).
-		WithUsageSyntax(fmt.Sprint(qflag.LongName(), " unpack [options] <archive> [dst]")).
-		WithDescription("智能解压缩工具, 智能识别压缩文件格式并解压")
+		WithChinese(true).
+		WithUsage(fmt.Sprint(qflag.LongName(), " unpack [options] <archive> [dst]")).
+		WithDesc("智能解压缩工具, 智能识别压缩文件格式并解压")
 	unpackCmd.AddNote("支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib")
 
 	// 添加过滤器配置标志

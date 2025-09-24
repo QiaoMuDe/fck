@@ -236,72 +236,72 @@ func FlagRegistry() *flags.FlagRegistry {
 // Get 方法 - 获取配置信息
 // ================================================================================
 
-// GetVersion 获取全局默认命令的版本信息
+// Version 获取全局默认命令的版本信息
 //
 // 返回值：
 //   - string: 版本信息字符串。
-func GetVersion() string {
-	return getQCommandLine().GetVersion()
+func Version() string {
+	return getQCommandLine().Version()
 }
 
-// GetDescription 获取命令描述信息
-func GetDescription() string {
-	return getQCommandLine().GetDescription()
+// Description 获取命令描述信息
+func Desc() string {
+	return getQCommandLine().Desc()
 }
 
-// GetNotes 获取所有备注信息
-func GetNotes() []string {
-	return getQCommandLine().GetNotes()
+// Notes 获取所有备注信息
+func Notes() []string {
+	return getQCommandLine().Notes()
 }
 
-// GetUseChinese 获取是否使用中文
+// Chinese 获取是否使用中文
 // 该函数用于获取当前命令行标志是否使用中文
 //
 // 返回值:
 //   - bool: 如果使用中文, 则返回true; 否则返回false。
-func GetUseChinese() bool {
-	return getQCommandLine().GetUseChinese()
+func Chinese() bool {
+	return getQCommandLine().Chinese()
 }
 
-// GetExamples 获取示例信息
+// Examples 获取示例信息
 // 该函数用于获取命令行标志的示例信息列表
 //
 // 返回值:
 //   - []cmd.ExampleInfo: 示例信息列表，每个元素为 ExampleInfo 类型。
-func GetExamples() []cmd.ExampleInfo {
-	return getQCommandLine().GetExamples()
+func Examples() []cmd.ExampleInfo {
+	return getQCommandLine().Examples()
 }
 
-// GetHelp 返回全局默认命令实例 `QCommandLine` 的帮助信息
+// Help 返回全局默认命令实例 `QCommandLine` 的帮助信息
 //
 // 返回值:
 //   - string: 命令行帮助信息。
-func GetHelp() string {
-	return getQCommandLine().GetHelp()
+func Help() string {
+	return getQCommandLine().Help()
 }
 
-// GetLogoText 获取全局默认命令实例 `QCommandLine` 的 logo 文本
+// Logo 获取全局默认命令实例 `QCommandLine` 的 logo 文本
 //
 // 返回值:
 //   - string: 配置的 logo 文本。
-func GetLogoText() string {
-	return getQCommandLine().GetLogoText()
+func Logo() string {
+	return getQCommandLine().Logo()
 }
 
-// GetUsageSyntax 获取全局默认命令实例 `QCommandLine` 的用法信息
+// Usage 获取全局默认命令实例 `QCommandLine` 的用法信息
 //
 // 返回值:
 //   - string: 命令行用法信息。
-func GetUsageSyntax() string {
-	return getQCommandLine().GetUsageSyntax()
+func Usage() string {
+	return getQCommandLine().Usage()
 }
 
-// GetModuleHelps 获取模块帮助信息
+// Modules 获取模块帮助信息
 //
 // 返回值:
 //   - string: 模块帮助信息。
-func GetModuleHelps() string {
-	return getQCommandLine().GetModuleHelps()
+func Modules() string {
+	return getQCommandLine().Modules()
 }
 
 // ================================================================================
@@ -325,18 +325,18 @@ func SetVersionf(format string, args ...any) {
 	getQCommandLine().SetVersionf(format, args...)
 }
 
-// SetDescription 设置命令描述信息
-func SetDescription(desc string) {
-	getQCommandLine().SetDescription(desc)
+// SetDesc 设置命令描述信息
+func SetDesc(desc string) {
+	getQCommandLine().SetDesc(desc)
 }
 
-// SetUseChinese 设置是否使用中文
+// SetChinese 设置是否使用中文
 // 该函数用于设置当前命令行标志是否使用中文
 //
 // 参数:
 //   - useChinese: 如果使用中文,则传入true;否则传入false。
-func SetUseChinese(useChinese bool) {
-	getQCommandLine().SetUseChinese(useChinese)
+func SetChinese(useChinese bool) {
+	getQCommandLine().SetChinese(useChinese)
 }
 
 // AddNote 添加注意事项
@@ -384,64 +384,64 @@ func SetHelp(help string) {
 	getQCommandLine().SetHelp(help)
 }
 
-// SetUsageSyntax 配置全局默认命令实例 `QCommandLine` 的用法信息
+// SetUsage 配置全局默认命令实例 `QCommandLine` 的用法信息
 //
 // 参数:
 //   - usage: 新的用法信息，字符串类型。
 //
 // 示例:
 //
-//	qflag.SetUsageSyntax("Usage: qflag [options]")
-func SetUsageSyntax(usageSyntax string) {
-	getQCommandLine().SetUsageSyntax(usageSyntax)
+//	qflag.SetUsage("Usage: qflag [options]")
+func SetUsage(usageSyntax string) {
+	getQCommandLine().SetUsage(usageSyntax)
 }
 
-// SetLogoText 配置全局默认命令实例 `QCommandLine` 的 logo 文本
+// SetLogo 配置全局默认命令实例 `QCommandLine` 的 logo 文本
 //
 // 参数:
 //   - logoText: 配置的 logo 文本，字符串类型。
-func SetLogoText(logoText string) {
-	getQCommandLine().SetLogoText(logoText)
+func SetLogo(logoText string) {
+	getQCommandLine().SetLogo(logoText)
 }
 
-// SetModuleHelps 配置模块帮助信息
+// SetModules 配置模块帮助信息
 //
 // 参数:
 //   - moduleHelps: 模块帮助信息，字符串类型。
-func SetModuleHelps(moduleHelps string) {
-	getQCommandLine().SetModuleHelps(moduleHelps)
+func SetModules(moduleHelps string) {
+	getQCommandLine().SetModules(moduleHelps)
 }
 
-// SetExitOnBuiltinFlags 设置是否在解析内置参数时退出
+// SetAutoExit 设置是否在解析内置参数时退出
 // 默认情况下为true，当解析到内置参数时，QFlag将退出程序
 //
 // 参数:
 //   - exit: 是否退出
-func SetExitOnBuiltinFlags(exit bool) {
-	getQCommandLine().SetExitOnBuiltinFlags(exit)
+func SetAutoExit(exit bool) {
+	getQCommandLine().SetAutoExit(exit)
 }
 
-// SetEnableCompletion 设置是否启用自动完成功能
+// SetCompletion 设置是否启用自动完成功能
 //
 // 参数:
 //   - enable: 是否启用自动完成功能
-func SetEnableCompletion(enable bool) {
-	getQCommandLine().SetEnableCompletion(enable)
+func SetCompletion(enable bool) {
+	getQCommandLine().SetCompletion(enable)
 }
 
 // ================================================================================
 // 链式调用方法 - 用于构建器模式，提供更流畅的API体验 (14个)
 // ================================================================================
 
-// WithDescription 设置命令描述（链式调用）
+// WithDesc 设置命令描述（链式调用）
 //
 // 参数:
 //   - desc: 命令描述
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func WithDescription(desc string) *Cmd {
-	return getQCommandLine().WithDescription(desc)
+func WithDesc(desc string) *Cmd {
+	return getQCommandLine().WithDesc(desc)
 }
 
 // WithVersion 设置版本信息（链式调用）
@@ -467,37 +467,37 @@ func WithVersionf(format string, args ...any) *Cmd {
 	return getQCommandLine().WithVersionf(format, args...)
 }
 
-// WithUseChinese 设置是否使用中文帮助信息（链式调用）
+// WithChinese 设置是否使用中文帮助信息（链式调用）
 //
 // 参数:
 //   - useChinese: 是否使用中文帮助信息
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func WithUseChinese(useChinese bool) *Cmd {
-	return getQCommandLine().WithUseChinese(useChinese)
+func WithChinese(useChinese bool) *Cmd {
+	return getQCommandLine().WithChinese(useChinese)
 }
 
-// WithUsageSyntax 设置自定义命令用法（链式调用）
+// WithUsage 设置自定义命令用法（链式调用）
 //
 // 参数:
 //   - usageSyntax: 自定义命令用法
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func WithUsageSyntax(usageSyntax string) *Cmd {
-	return getQCommandLine().WithUsageSyntax(usageSyntax)
+func WithUsage(usageSyntax string) *Cmd {
+	return getQCommandLine().WithUsage(usageSyntax)
 }
 
-// WithLogoText 设置logo文本（链式调用）
+// WithLogo 设置logo文本（链式调用）
 //
 // 参数:
 //   - logoText: logo文本字符串
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func WithLogoText(logoText string) *Cmd {
-	return getQCommandLine().WithLogoText(logoText)
+func WithLogo(logoText string) *Cmd {
+	return getQCommandLine().WithLogo(logoText)
 }
 
 // WithHelp 设置用户自定义命令帮助信息（链式调用）
@@ -556,35 +556,35 @@ func WithExamples(examples []cmd.ExampleInfo) *Cmd {
 	return getQCommandLine().WithExamples(examples)
 }
 
-// WithExitOnBuiltinFlags 设置是否在解析内置参数时退出（链式调用）
+// WithAutoExit 设置是否在解析内置参数时退出（链式调用）
 //
 // 参数:
 //   - exit: 是否退出
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func WithExitOnBuiltinFlags(exit bool) *Cmd {
-	return getQCommandLine().WithExitOnBuiltinFlags(exit)
+func WithAutoExit(exit bool) *Cmd {
+	return getQCommandLine().WithAutoExit(exit)
 }
 
-// WithEnableCompletion 设置是否启用自动补全（链式调用）
+// WithCompletion 设置是否启用自动补全（链式调用）
 //
 // 参数:
 //   - enable: true表示启用补全,false表示禁用
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func WithEnableCompletion(enable bool) *Cmd {
-	return getQCommandLine().WithEnableCompletion(enable)
+func WithCompletion(enable bool) *Cmd {
+	return getQCommandLine().WithCompletion(enable)
 }
 
-// WithModuleHelps 设置自定义模块帮助信息（链式调用）
+// WithModules 设置自定义模块帮助信息（链式调用）
 //
 // 参数:
 //   - moduleHelps: 自定义模块帮助信息
 //
 // 返回值:
 //   - *Cmd: 返回命令实例，支持链式调用
-func WithModuleHelps(moduleHelps string) *Cmd {
-	return getQCommandLine().WithModuleHelps(moduleHelps)
+func WithModules(moduleHelps string) *Cmd {
+	return getQCommandLine().WithModules(moduleHelps)
 }
