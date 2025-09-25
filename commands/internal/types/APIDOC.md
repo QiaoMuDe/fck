@@ -287,7 +287,7 @@ var TableStyleMap = map[string]table.Style{
 
 ```go
 var TableStyles = []string{
-	"default",
+	"def",
 	"l",
 	"r",
 	"bd",

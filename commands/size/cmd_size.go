@@ -137,29 +137,24 @@ func addPathToList(path string, itemList *items, cl *colorlib.ColorLib) {
 //   - int64: 路径大小
 //   - error: 如果发生错误，返回错误信息，否则返回 nil
 func getPathSize(path string) (int64, error) {
-	// 如果是隐藏文件且未启用-H选项，则跳过
-	if !sizeCmdHidden.Get() {
-		if common.IsHidden(path) {
-			return 0, nil
-		}
+	// 统一的隐藏文件处理逻辑
+	includeHidden := sizeCmdHidden.Get()
+	if !includeHidden && common.IsHidden(path) {
+		return 0, nil
 	}
 
 	// 获取文件信息
-	info, statErr := os.Lstat(path)
-	if statErr != nil {
-		// 检查是否为权限错误
-		if os.IsPermission(statErr) {
-			// 如果是权限错误, 则忽略该错误并给出更友好的提示信息
+	info, err := os.Lstat(path)
+	if err != nil {
+		// 统一的错误处理
+		switch {
+		case os.IsPermission(err):
 			return 0, fmt.Errorf("权限不足: 路径 %s", path)
-		}
-		// 检查是否为文件不存在错误
-		if os.IsNotExist(statErr) {
-			// 如果是文件不存在错误, 则忽略该错误并给出更友好的提示信息
+		case os.IsNotExist(err):
 			return 0, fmt.Errorf("文件不存在: 路径 %s", path)
+		default:
+			return 0, fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", path, err)
 		}
-
-		// 如果获取文件信息失败, 返回错误
-		return 0, fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", path, statErr)
 	}
 
 	// 如果不是目录, 则直接返回文件大小
@@ -167,14 +162,11 @@ func getPathSize(path string) (int64, error) {
 		return info.Size(), nil
 	}
 
-	// 定义总大小和跳过文件计数
+	// 目录大小计算
 	var totalSize int64
 	var skippedFiles int
 
-	// 获取是否跳过隐藏文件
-	skipHidden := sizeCmdHidden.Get()
-
-	// 创建进度条
+	// 创建进度条(只有目录才有进度条)
 	bar := progressbar.NewOptions64(
 		-1,                                // 总进度
 		progressbar.OptionClearOnFinish(), // 完成后清除进度条
@@ -198,54 +190,46 @@ func getPathSize(path string) (int64, error) {
 			return nil
 		}
 
-		// 如果是当前指定的路径, 则跳过
+		// 跳过根目录本身
 		if filePath == path {
 			return nil
 		}
 
-		// 如果是隐藏文件且未启用-H选项，则跳过
-		if !skipHidden {
-			if common.IsHidden(filePath) {
-				return nil
-			}
+		// 统一的隐藏文件检查逻辑
+		if !includeHidden && common.IsHidden(filePath) {
+			return nil
 		}
 
-		// 直接累加文件大小
+		// 只处理文件，累加文件大小
 		if !dirEntry.IsDir() {
-			// 获取文件信息
-			info, err := dirEntry.Info()
-			if err != nil {
+			fileInfo, infoErr := dirEntry.Info()
+			if infoErr != nil {
 				skippedFiles++
 				return nil
 			}
-			totalSize += info.Size()
-			_ = bar.Add64(info.Size())
+
+			fileSize := fileInfo.Size()
+			totalSize += fileSize
+			_ = bar.Add64(fileSize)
 		}
+
 		return nil
 	})
 
 	// 处理遍历错误
 	if walkErr != nil {
-		// 如果遍历目录遇到权限错误, 则忽略该错误并给出更友好的提示信息
-		if os.IsPermission(walkErr) {
+		switch {
+		case os.IsPermission(walkErr):
 			return 0, fmt.Errorf("权限不足: 路径 %s", path)
-		}
-
-		// 检查是否为文件不存在错误
-		if os.IsNotExist(walkErr) {
+		case os.IsNotExist(walkErr):
 			return 0, fmt.Errorf("文件不存在: 路径 %s", path)
+		default:
+			return 0, fmt.Errorf("遍历目录失败: %v", walkErr)
 		}
-
-		// 如果遍历目录失败, 返回错误
-		return 0, fmt.Errorf("遍历目录失败: %v", walkErr)
 	}
 
-	// 如果有跳过的文件，给出简单提示
-	if skippedFiles > 0 {
-		return totalSize, fmt.Errorf("已跳过 %d 个无法访问的文件", skippedFiles)
-	}
-
-	// 无错误时只返回大小
+	// 注意: 跳过的文件不作为错误处理，这是正常的操作行为
+	// 如果需要了解跳过的文件数量，可以通过日志或其他方式输出
 	return totalSize, nil
 }
 
