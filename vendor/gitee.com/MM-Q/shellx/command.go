@@ -62,6 +62,11 @@ type Command struct {
 //
 // 返回：
 //   - *Command: 命令对象
+//
+// 注意:
+//   - 默认通过shell执行, 可以通过WithShell方法指定shell类型
+//   - 默认为ShellDef1, 根据操作系统自动选择shell(Windows系统默认为cmd, 其他系统默认为sh)
+//   - 默认继承父进程的环境变量, 可以通过WithEnv方法设置环境变量
 func NewCmd(name string, args ...string) *Command {
 	if name == "" {
 		panic("name cannot be empty")
@@ -71,7 +76,7 @@ func NewCmd(name string, args ...string) *Command {
 		name:      name,
 		args:      args,
 		envs:      os.Environ(), // 默认继承父进程的环境变量
-		shellType: ShellDefault, // 默认根据操作系统自动选择shell
+		shellType: ShellDef1,    // 默认根据操作系统自动选择shell
 		mu:        sync.RWMutex{},
 	}
 }
@@ -83,6 +88,11 @@ func NewCmd(name string, args ...string) *Command {
 //
 // 返回：
 //   - *Command: 命令对象
+//
+// 注意:
+//   - 默认通过shell执行, 可以通过WithShell方法指定shell类型
+//   - 默认为ShellDef1, 根据操作系统自动选择shell(Windows系统默认为cmd, 其他系统默认为sh)
+//   - 默认继承父进程的环境变量, 可以通过WithEnv方法设置环境变量
 func NewCmds(cmdArgs []string) *Command {
 	if len(cmdArgs) == 0 {
 		panic("cmdArgs cannot be empty")
@@ -104,6 +114,11 @@ func NewCmds(cmdArgs []string) *Command {
 //
 // 返回：
 //   - *Command: 命令对象
+//
+// 注意:
+//   - 默认通过shell执行, 可以通过WithShell方法指定shell类型
+//   - 默认为ShellDef1, 根据操作系统自动选择shell(Windows系统默认为cmd, 其他系统默认为sh)
+//   - 默认继承父进程的环境变量, 可以通过WithEnv方法设置环境变量
 func NewCmdStr(cmdStr string) *Command {
 	cmds := ParseCmd(cmdStr) // 使用命令解析器解析命令字符串
 	cmd := NewCmds(cmds)

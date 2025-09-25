@@ -59,26 +59,26 @@ const (
 
 // Table样式映射表
 var TableStyleMap = map[string]table.Style{
-	"default": table.StyleDefault,                    // 默认样式
-	"l":       table.StyleLight,                      // 浅色样式
-	"r":       table.StyleRounded,                    // 圆角样式
-	"bd":      table.StyleBold,                       // 粗体样式
-	"cb":      table.StyleColoredBright,              // 彩色亮色样式
-	"cd":      table.StyleColoredDark,                // 彩色暗色样式
-	"db":      table.StyleDouble,                     // 双线样式
-	"cbb":     table.StyleColoredBlackOnBlueWhite,    // 黑色背景蓝色字体样式
-	"cbc":     table.StyleColoredBlackOnCyanWhite,    // 青色背景蓝色字体样式
-	"cbg":     table.StyleColoredBlackOnGreenWhite,   // 绿色背景蓝色字体样式
-	"cbm":     table.StyleColoredBlackOnMagentaWhite, // 紫色背景蓝色字体样式
-	"cby":     table.StyleColoredBlackOnYellowWhite,  // 黄色背景蓝色字体样式
-	"cbr":     table.StyleColoredBlackOnRedWhite,     // 红色背景蓝色字体样式
-	"cwb":     table.StyleColoredBlueWhiteOnBlack,    // 蓝色背景白色字体样式
-	"ccw":     table.StyleColoredCyanWhiteOnBlack,    // 青色背景白色字体样式
-	"cgw":     table.StyleColoredGreenWhiteOnBlack,   // 绿色背景白色字体样式
-	"cmw":     table.StyleColoredMagentaWhiteOnBlack, // 紫色背景白色字体样式
-	"crw":     table.StyleColoredRedWhiteOnBlack,     // 红色背景白色字体样式
-	"cyw":     table.StyleColoredYellowWhiteOnBlack,  // 黄色背景白色字体样式
-	"none":    StyleNone,                             // 禁用样式
+	"def":  table.StyleDefault,                    // 默认样式
+	"l":    table.StyleLight,                      // 浅色样式
+	"r":    table.StyleRounded,                    // 圆角样式
+	"bd":   table.StyleBold,                       // 粗体样式
+	"cb":   table.StyleColoredBright,              // 彩色亮色样式
+	"cd":   table.StyleColoredDark,                // 彩色暗色样式
+	"db":   table.StyleDouble,                     // 双线样式
+	"cbb":  table.StyleColoredBlackOnBlueWhite,    // 黑色背景蓝色字体样式
+	"cbc":  table.StyleColoredBlackOnCyanWhite,    // 青色背景蓝色字体样式
+	"cbg":  table.StyleColoredBlackOnGreenWhite,   // 绿色背景蓝色字体样式
+	"cbm":  table.StyleColoredBlackOnMagentaWhite, // 紫色背景蓝色字体样式
+	"cby":  table.StyleColoredBlackOnYellowWhite,  // 黄色背景蓝色字体样式
+	"cbr":  table.StyleColoredBlackOnRedWhite,     // 红色背景蓝色字体样式
+	"cwb":  table.StyleColoredBlueWhiteOnBlack,    // 蓝色背景白色字体样式
+	"ccw":  table.StyleColoredCyanWhiteOnBlack,    // 青色背景白色字体样式
+	"cgw":  table.StyleColoredGreenWhiteOnBlack,   // 绿色背景白色字体样式
+	"cmw":  table.StyleColoredMagentaWhiteOnBlack, // 紫色背景白色字体样式
+	"crw":  table.StyleColoredRedWhiteOnBlack,     // 红色背景白色字体样式
+	"cyw":  table.StyleColoredYellowWhiteOnBlack,  // 黄色背景白色字体样式
+	"none": StyleNone,                             // 禁用样式
 }
 
 // Table样式切片

@@ -8,7 +8,7 @@ require (
 	gitee.com/MM-Q/comprx v0.1.5
 	gitee.com/MM-Q/go-kit v0.0.8
 	gitee.com/MM-Q/qflag v0.3.2
-	gitee.com/MM-Q/shellx v1.0.10
+	gitee.com/MM-Q/shellx v1.0.11
 	gitee.com/MM-Q/verman v0.0.18
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/schollz/progressbar/v3 v3.18.0

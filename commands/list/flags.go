@@ -57,26 +57,26 @@ func InitListCmd() *cmd.Cmd {
 	listCmdRecursion = listCmd.Bool("recursion", "R", false, "递归列出目录及其子目录的内容")
 	listCmdShowUserGroup = listCmd.Bool("user-group", "u", false, "显示文件的用户和组信息")
 	listCmdTableStyle = listCmd.Enum("table-style", "ts", "none", "指定表格样式，支持以下选项：\n"+
-		"\t\t\t\t\t[default] - 默认样式\n"+
-		"\t\t\t\t\t[l  ]     - 浅色样式\n"+
-		"\t\t\t\t\t[r  ]     - 圆角样式\n"+
-		"\t\t\t\t\t[bd ]     - 粗体样式\n"+
-		"\t\t\t\t\t[cb ]     - 亮色彩色样式\n"+
-		"\t\t\t\t\t[cd ]     - 暗色彩色样式\n"+
-		"\t\t\t\t\t[db ]     - 双线样式\n"+
-		"\t\t\t\t\t[cbb]     - 黑色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbc]     - 青色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbg]     - 绿色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbm]     - 紫色背景蓝色字体\n"+
-		"\t\t\t\t\t[cby]     - 黄色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbr]     - 红色背景蓝色字体\n"+
-		"\t\t\t\t\t[cwb]     - 蓝色背景白色字体\n"+
-		"\t\t\t\t\t[ccw]     - 青色背景白色字体\n"+
-		"\t\t\t\t\t[cgw]     - 绿色背景白色字体\n"+
-		"\t\t\t\t\t[cmw]     - 紫色背景白色字体\n"+
-		"\t\t\t\t\t[crw]     - 红色背景白色字体\n"+
-		"\t\t\t\t\t[cyw]     - 黄色背景白色字体\n"+
-		"\t\t\t\t\t[none]    - 禁用边框样式", types.TableStyles)
+		"\t\t\t\t\t[def ]   - 默认样式\n"+
+		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
+		"\t\t\t\t\t[r   ]   - 圆角样式\n"+
+		"\t\t\t\t\t[bd  ]   - 粗体样式\n"+
+		"\t\t\t\t\t[cb  ]   - 亮色彩色样式\n"+
+		"\t\t\t\t\t[cd  ]   - 暗色彩色样式\n"+
+		"\t\t\t\t\t[db  ]   - 双线样式\n"+
+		"\t\t\t\t\t[cbb ]   - 黑色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbc ]   - 青色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbg ]   - 绿色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbm ]   - 紫色背景蓝色字体\n"+
+		"\t\t\t\t\t[cby ]   - 黄色背景蓝色字体\n"+
+		"\t\t\t\t\t[cbr ]   - 红色背景蓝色字体\n"+
+		"\t\t\t\t\t[cwb ]   - 蓝色背景白色字体\n"+
+		"\t\t\t\t\t[ccw ]   - 青色背景白色字体\n"+
+		"\t\t\t\t\t[cgw ]   - 绿色背景白色字体\n"+
+		"\t\t\t\t\t[cmw ]   - 紫色背景白色字体\n"+
+		"\t\t\t\t\t[crw ]   - 红色背景白色字体\n"+
+		"\t\t\t\t\t[cyw ]   - 黄色背景白色字体\n"+
+		"\t\t\t\t\t[none]   - 禁用边框样式", types.TableStyles)
 
 	// 返回子命令
 	return listCmd

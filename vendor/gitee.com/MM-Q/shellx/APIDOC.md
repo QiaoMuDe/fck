@@ -99,7 +99,7 @@ func (c *Command) CmdStr() string
 | **powershell** | `ShellPowerShell` | Windows | Windows PowerShell |
 | **pwsh** | `ShellPwsh` | 跨平台 | PowerShell Core |
 | **none** | `ShellNone` | 跨平台 | 直接执行，不使用 shell |
-| **default** | `ShellDefault` | 跨平台 | 根据操作系统自动选择 |
+| **default** | `ShellDef1` | 跨平台 | 根据操作系统自动选择 |
 
 ---
 
@@ -256,7 +256,8 @@ shellx.ShellCmd        // Windows cmd
 shellx.ShellPowerShell // Windows PowerShell
 shellx.ShellPwsh       // PowerShell Core
 shellx.ShellNone       // 直接执行，不使用shell
-shellx.ShellDefault    // 根据操作系统自动选择
+shellx.ShellDef1       // 默认shell, 根据操作系统自动选择(Windows系统默认为cmd, 其他系统默认为sh)
+shellx.ShellDef2       // 默认shell, 根据操作系统自动选择(Windows系统默认为powershell, 其他系统默认为sh)
 ```
 
 ## 注意事项
@@ -948,7 +949,8 @@ const (
 	ShellPowerShell                  // powershell (Windows PowerShell)
 	ShellCmd                         // cmd (Windows Command Prompt)
 	ShellNone                        // 无shell, 直接原生的执行命令
-	ShellDefault                     // 默认shell, 根据操作系统自动选择(Windows系统默认为cmd, 其他系统默认为sh)
+	ShellDef1                        // 默认shell, 根据操作系统自动选择(Windows系统默认为cmd, 其他系统默认为sh)
+	ShellDef2                        // 默认shell, 根据操作系统自动选择(Windows系统默认为powershell, 其他系统默认为sh)
 )
 ```
 

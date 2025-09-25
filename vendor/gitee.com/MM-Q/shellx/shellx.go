@@ -110,7 +110,7 @@
 //	shellx.ShellPowerShell // Windows PowerShell
 //	shellx.ShellPwsh       // PowerShell Core
 //	shellx.ShellNone       // 直接执行，不使用shell
-//	shellx.ShellDefault    // 根据操作系统自动选择
+//	shellx.ShellDef1    // 根据操作系统自动选择
 //
 // 注意事项：
 //   - 每个Command对象只能执行一次，重复执行会返回错误

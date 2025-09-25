@@ -182,14 +182,10 @@ func getPathSize(path string) (int64, error) {
 	)
 	defer func() {
 		// 完成进度条
-		if err := bar.Finish(); err != nil {
-			fmt.Printf("finish progress bar failed: %v\n", err)
-		}
+		_ = bar.Finish()
 
 		// 关闭进度条
-		if err := bar.Close(); err != nil {
-			fmt.Printf("close progress bar failed: %v\n", err)
-		}
+		_ = bar.Close()
 	}()
 
 	// 遍历目录 (使用更高效的 WalkDir)

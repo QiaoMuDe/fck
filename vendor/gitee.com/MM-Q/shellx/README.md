@@ -207,11 +207,12 @@ func advancedExample() {
 ```go
 // 使用不同的 Shell 类型
 examples := map[string]shellx.ShellType{
-    "Bash":       shellx.ShellBash,
-    "PowerShell": shellx.ShellPwsh,
-    "CMD":        shellx.ShellCmd,
-    "直接执行":      shellx.ShellNone,
-    "系统默认":      shellx.ShellDefault,
+    "Bash":        shellx.ShellBash,
+    "PowerShell":  shellx.ShellPwsh,
+    "CMD":         shellx.ShellCmd,
+    "直接执行":    shellx.ShellNone,
+    "系统默认1":   shellx.ShellDef1,
+    "系统默认2":   shellx.ShellDef2,
 }
 
 for name, shellType := range examples {
@@ -237,7 +238,9 @@ for name, shellType := range examples {
 - **powershell** - Windows PowerShell
 - **pwsh** - PowerShell Core (跨平台)
 - **none** - 直接执行，不使用 shell
-- **default** - 根据操作系统自动选择
+- **def1** - 根据操作系统自动选择(Windows系统默认为cmd, 其他系统默认为sh)
+- **def2** - 根据操作系统自动选择(Windows系统默认为powershell, 其他系统默认为sh)
+
 
 ### 命令解析特性
 
