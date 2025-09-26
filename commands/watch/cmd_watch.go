@@ -48,22 +48,28 @@ var shellMap = map[string]shellx.ShellType{
 //   - error: 如果发生错误，返回错误信息，否则返回 nil
 func WatchCmdMain() error {
 	// 获取命令参数
-	command := watchCmdCommand.Get()     // 命令
-	interval := watchCmdInterval.Get()   // 间隔
-	times := watchCmdTimes.Get()         // 运行次数
-	exitOnError := watchCmdExitErr.Get() // 是否在错误时退出
-	noTitle := watchCmdNoTitle.Get()     // 是否禁用标题
-	timeout := watchCmdTimeout.Get()     // 超时时间
-	shell := watchCmdShell.Get()         // shell类型
+	args := watchCmd.Args()                // 执行的命令
+	interval := watchCmdInterval.Get()     // 间隔时间
+	maxCount := watchCmdMaxCount.Get()     // 最大执行次数
+	exitOnError := watchCmdExitErr.Get()   // 是否在错误时退出
+	noTitle := watchCmdNoTitle.Get()       // 是否禁用标题
+	timeout := watchCmdTimeout.Get()       // 超时时间
+	shell := watchCmdShell.Get()           // shell类型
+	clearLines := watchCmdClearLines.Get() // 清屏行数
 
 	// 验证命令参数
-	if command == "" {
+	var command string
+	if len(args) == 0 {
 		return errors.New("command is empty")
+	} else if len(args) == 1 {
+		command = args[0]
+	} else {
+		command = strings.Join(args, " ")
 	}
 
-	// 验证运行次数参数
-	if times < 0 {
-		return errors.New("times must be greater than or equal to 0")
+	// 验证最大执行次数参数
+	if maxCount < -1 || maxCount == 0 {
+		return errors.New("maxCount must be -1 (unlimited) or a positive number")
 	}
 
 	// 验证超时时间参数
@@ -96,8 +102,8 @@ func WatchCmdMain() error {
 		default:
 		}
 
-		// 检查执行次数限制
-		if times > 0 && executionCount >= times {
+		// 检查最大执行次数限制
+		if maxCount > 0 && executionCount >= maxCount {
 			break
 		}
 		executionCount++
@@ -116,10 +122,14 @@ func WatchCmdMain() error {
 				break
 			}
 		}
-		fmt.Printf("\n\n\n\n\n")
+
+		// 清屏(如果指定了清屏行数)
+		if clearLines > 0 {
+			fmt.Print(strings.Repeat("\n", clearLines))
+		}
 
 		// 等待间隔时间(如果不是最后一次执行)
-		if interval > 0 && (times <= 0 || executionCount < times) {
+		if interval > 0 && (maxCount <= 0 || executionCount < maxCount) {
 			select {
 			case <-ctx.Done():
 				return nil
