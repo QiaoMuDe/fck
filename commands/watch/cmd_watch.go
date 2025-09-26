@@ -41,9 +41,6 @@ var shellMap = map[string]shellx.ShellType{
 
 // WatchCmdMain 是 watch 子命令的主函数
 //
-// 参数:
-//   - cl: 用于打印输出的 ColorLib 对象
-//
 // 返回:
 //   - error: 如果发生错误，返回错误信息，否则返回 nil
 func WatchCmdMain() error {
@@ -123,7 +120,7 @@ func WatchCmdMain() error {
 			}
 		}
 
-		// 清屏(如果指定了清屏行数)
+		// 清屏(如果指定了清屏行数) - 在命令执行前清屏
 		if clearLines > 0 {
 			fmt.Print(strings.Repeat("\n", clearLines))
 		}
