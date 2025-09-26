@@ -17,6 +17,7 @@ import (
 	"gitee.com/MM-Q/fck/commands/preview"
 	"gitee.com/MM-Q/fck/commands/size"
 	"gitee.com/MM-Q/fck/commands/unpack"
+	"gitee.com/MM-Q/fck/commands/watch"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -60,8 +61,11 @@ func Run() {
 	// 获取previewCmd子命令
 	previewCmd := preview.InitPreviewCmd()
 
+	// 获取watchCmd子命令
+	watchCmd := watch.InitWatchCmd()
+
 	// 添加子命令到全局根命令
-	if addCmdErr := qflag.AddSubCmd(sizeCmd, listCmd, checkCmd, hashCmd, findCmd, packCmd, unpackCmd, previewCmd); addCmdErr != nil {
+	if addCmdErr := qflag.AddSubCmd(sizeCmd, listCmd, checkCmd, hashCmd, findCmd, packCmd, unpackCmd, previewCmd, watchCmd); addCmdErr != nil {
 		fmt.Printf("err: %v\n", addCmdErr)
 		os.Exit(1)
 	}
@@ -136,6 +140,13 @@ func Run() {
 	case previewCmd.LongName(), previewCmd.ShortName(): // preview 子命令
 		// 执行 preview 子命令
 		if err := preview.PreviewCmdMain(); err != nil {
+			fmt.Printf("err: %v\n", err)
+			os.Exit(1)
+		}
+
+	case watchCmd.LongName(), watchCmd.ShortName(): // watch 子命令
+		// 执行 watch 子命令
+		if err := watch.WatchCmdMain(cmdCL); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
