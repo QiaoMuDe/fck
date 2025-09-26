@@ -3,10 +3,41 @@
 package watch
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/shellx"
 )
+
+// 定义一个支持的shell类型列表
+var supportedShells = []string{
+	"bash",
+	"cmd",
+	"pwsh",
+	"powershell",
+	"sh",
+	"none",
+	"def1",
+	"def2",
+}
+
+// 定义一个支持的shell类型映射
+var shellMap = map[string]shellx.ShellType{
+	"bash":       shellx.ShellBash,
+	"cmd":        shellx.ShellCmd,
+	"pwsh":       shellx.ShellPwsh,
+	"powershell": shellx.ShellPowerShell,
+	"sh":         shellx.ShellSh,
+	"none":       shellx.ShellNone,
+	"def1":       shellx.ShellDef1,
+	"def2":       shellx.ShellDef2,
+}
 
 // WatchCmdMain 是 watch 子命令的主函数
 //
@@ -15,32 +46,87 @@ import (
 //
 // 返回:
 //   - error: 如果发生错误，返回错误信息，否则返回 nil
-func WatchCmdMain(cl *colorlib.ColorLib) error {
-	// 根据watchCmdColor设置颜色模式
-	cl.SetColor(watchCmdColor.Get())
-
+func WatchCmdMain() error {
 	// 获取命令参数
-	command := watchCmdCommand.Get()
-	interval := watchCmdInterval.Get()
-	times := watchCmdTimes.Get()
-	exitOnError := watchCmdExitErr.Get()
-	noTitle := watchCmdNoTitle.Get()
-	timeout := watchCmdTimeout.Get()
-	shell := watchCmdShell.Get()
+	command := watchCmdCommand.Get()     // 命令
+	interval := watchCmdInterval.Get()   // 间隔
+	times := watchCmdTimes.Get()         // 运行次数
+	exitOnError := watchCmdExitErr.Get() // 是否在错误时退出
+	noTitle := watchCmdNoTitle.Get()     // 是否禁用标题
+	timeout := watchCmdTimeout.Get()     // 超时时间
+	shell := watchCmdShell.Get()         // shell类型
 
-	// 临时实现：打印配置信息
-	fmt.Printf("Watch 命令配置:\n")
-	fmt.Printf("  命令: %s\n", command)
-	fmt.Printf("  间隔: %.1f秒\n", interval)
-	fmt.Printf("  次数: %d\n", times)
-	fmt.Printf("  失败退出: %t\n", exitOnError)
-	fmt.Printf("  无标题: %t\n", noTitle)
-	fmt.Printf("  超时: %d秒\n", timeout)
-	fmt.Printf("  Shell: %s\n", shell)
-	fmt.Printf("  颜色: %t\n", watchCmdColor.Get())
+	// 验证命令参数
+	if command == "" {
+		return errors.New("command is empty")
+	}
 
-	// TODO: 实现实际的watch功能
-	fmt.Println("\n[提示] Watch命令功能正在开发中...")
+	// 验证运行次数参数
+	if times < 0 {
+		return errors.New("times must be greater than or equal to 0")
+	}
+
+	// 验证超时时间参数
+	if timeout <= 0 {
+		return errors.New("timeout must be greater than 0")
+	}
+
+	// 设置信号处理
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// 创建上下文
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// 启动信号监听
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
+	// 执行计数器
+	executionCount := 0
+
+	// 主监控循环
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		// 检查执行次数限制
+		if times > 0 && executionCount >= times {
+			break
+		}
+		executionCount++
+
+		// 显示标题(如果未禁用)
+		if !noTitle {
+			fmt.Printf("%s\n", strings.Repeat("-", 50))
+			fmt.Printf("Every %gs: %s [%s]\n\n", interval.Seconds(), time.Now().Format("2006-01-02 15:04:05"), command)
+		}
+
+		// 执行命令
+		err := shellx.NewCmdStr(command).WithShell(shellMap[strings.ToLower(shell)]).WithTimeout(timeout).WithStderr(os.Stderr).WithStdout(os.Stdout).Exec()
+		if err != nil {
+			fmt.Println(err)
+			if exitOnError {
+				break
+			}
+		}
+		fmt.Printf("\n\n\n\n\n")
+
+		// 等待间隔时间(如果不是最后一次执行)
+		if interval > 0 && (times <= 0 || executionCount < times) {
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-time.After(interval): // 等待指定时间
+			}
+		}
+	}
 
 	return nil
 }

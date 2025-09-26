@@ -146,7 +146,7 @@ func Run() {
 
 	case watchCmd.LongName(), watchCmd.ShortName(): // watch 子命令
 		// 执行 watch 子命令
-		if err := watch.WatchCmdMain(cmdCL); err != nil {
+		if err := watch.WatchCmdMain(); err != nil {
 			fmt.Printf("err: %v\n", err)
 			os.Exit(1)
 		}
