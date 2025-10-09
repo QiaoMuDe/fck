@@ -6,7 +6,8 @@ package list
 //  2) getIcon(info FileInfo)：选择策略为：
 //     - 普通文件优先按扩展名匹配（如 ".zip"/"zip"）；
 //     - 非普通文件直接按 EntryType 匹配；
-//     - 若未命中扩展名或类型映射，将返回对应类型在 ByType 中的值（可能为空字符串）；
+
+//     - 若未命中扩展名或类型映射，将返回对应类型在 ByType 中的值；若为空则回退到 Default；
 //
 // 说明：
 //  - 图标编码默认使用 Nerd Font 私有区字符；若终端未安装对应字体，可能显示为方块，可在后续增加 emoji/纯文本降级。
@@ -18,6 +19,8 @@ type IconMap struct {
 	ByExt map[string]string
 	// 按文件类型映射
 	ByType map[EntryType]string
+	// 默认图标
+	Default string
 }
 
 // DefaultIcons 默认图标映射表
@@ -40,6 +43,8 @@ var DefaultIcons = IconMap{
 		// 压缩/归档
 		".zip": "\uf410", "zip": "\uf410", // 󰐐 nf-oct-file_zip
 	},
+
+	Default: "\uF413", // 默认图标
 }
 
 // getIcon 根据文件信息返回图标编码。
@@ -68,9 +73,15 @@ func getIcon(info FileInfo) string {
 		icon = DefaultIcons.ByType[info.EntryType]
 	}
 
+	// 若未匹配到或映射值为空，回退到默认图标
+	if icon == "" {
+		icon = DefaultIcons.Default
+	}
+
 	// 有图标则追加空格返回；没有则返回空字符串
 	if icon != "" {
 		return icon + " "
 	}
+
 	return ""
 }
