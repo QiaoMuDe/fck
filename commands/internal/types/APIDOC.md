@@ -22,23 +22,6 @@ const (
 )
 ```
 
-### 文件类型标识符常量
-
-```go
-const (
-	DirType         = "d" // 目录类型
-	SymlinkType     = "l" // 符号链接类型
-	SocketType      = "s" // 套接字类型
-	PipeType        = "p" // 管道类型
-	BlockDeviceType = "b" // 块设备类型
-	CharDeviceType  = "c" // 字符设备类型
-	ExecutableType  = "x" // 可执行文件类型
-	EmptyType       = "e" // 空文件类型
-	FileType        = "f" // 普通文件类型
-	UnknownType     = "?" // 未知类型
-)
-```
-
 ### 查找类型常量定义
 
 ```go

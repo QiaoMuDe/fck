@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
 func TestNewFileFormatter(t *testing.T) {
@@ -110,14 +109,14 @@ func TestFileFormatter_PrepareFileNames(t *testing.T) {
 	files := FileInfoList{
 		{
 			Name:      "test1.txt",
-			EntryType: types.FileType,
+			EntryType: FileType,
 			Size:      100,
 			ModTime:   time.Now(),
 			FileExt:   ".txt",
 		},
 		{
 			Name:      "test2.log",
-			EntryType: types.FileType,
+			EntryType: FileType,
 			Size:      200,
 			ModTime:   time.Now(),
 			FileExt:   ".log",
@@ -230,7 +229,7 @@ func TestFileFormatter_Render(t *testing.T) {
 	files := FileInfoList{
 		{
 			Name:      "test.txt",
-			EntryType: types.FileType,
+			EntryType: FileType,
 			Size:      100,
 			ModTime:   time.Now(),
 			Perm:      "-rw-r--r--",
@@ -318,7 +317,7 @@ func BenchmarkFileFormatter_PrepareFileNames(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		files[i] = FileInfo{
 			Name:      "test_file_" + string(rune(i)) + ".txt",
-			EntryType: types.FileType,
+			EntryType: FileType,
 			Size:      int64(i * 100),
 			ModTime:   now,
 			FileExt:   ".txt",

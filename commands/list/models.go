@@ -38,7 +38,7 @@ type FileInfo struct {
 	Name           string    // 文件名 - BaseName
 	Path           string    // 文件路径 - 绝对路径
 	OriginalPath   string    // 原始路径 - 用户指定的路径（用于分组显示）
-	EntryType      string    // 类型 - 文件/目录/软链接
+	EntryType      EntryType // 类型 - 文件/目录/软链接
 	Size           int64     // 大小 - 字节数
 	ModTime        time.Time // 修改时间 - time.Time
 	Perm           string    // 权限 - 类型-所有者-组-其他用户
@@ -71,3 +71,25 @@ const (
 	colorTypeYellow                  // 黄色
 	colorTypeRed                     // 红色
 )
+
+// EntryType 定义文件类型
+type EntryType string
+
+// 定义文件类型标识符常量
+const (
+	DirType         EntryType = "d" // 目录类型
+	SymlinkType     EntryType = "l" // 符号链接类型
+	SocketType      EntryType = "s" // 套接字类型
+	PipeType        EntryType = "p" // 管道类型
+	BlockDeviceType EntryType = "b" // 块设备类型
+	CharDeviceType  EntryType = "c" // 字符设备类型
+	ExecutableType  EntryType = "x" // 可执行文件类型
+	EmptyType       EntryType = "e" // 空文件类型
+	FileType        EntryType = "f" // 普通文件类型
+	UnknownType     EntryType = "?" // 未知类型
+)
+
+// String 返回文件类型对应的字符串
+func (e EntryType) String() string {
+	return string(e)
+}

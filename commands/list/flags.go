@@ -27,6 +27,7 @@ var (
 	listCmdShowUserGroup *qflag.BoolFlag // u 标志
 	listCmdTableStyle    *qflag.EnumFlag // ts 标志
 	listCmdType          *qflag.EnumFlag // type 标志
+	listIcon             *qflag.BoolFlag // icon 标志
 )
 
 func InitListCmd() *cmd.Cmd {
@@ -77,6 +78,7 @@ func InitListCmd() *cmd.Cmd {
 		"\t\t\t\t\t[crw ]   - 红色背景白色字体\n"+
 		"\t\t\t\t\t[cyw ]   - 黄色背景白色字体\n"+
 		"\t\t\t\t\t[none]   - 禁用边框样式", types.TableStyles)
+	listIcon = listCmd.Bool("icon", "i", false, "显示文件图标")
 
 	// 返回子命令
 	return listCmd

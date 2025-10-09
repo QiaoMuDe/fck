@@ -7,14 +7,12 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
 // GetColorString 根据文件信息返回带有相应颜色的路径字符串
 //
 // 参数:
-//   - devColor: 保留参数以兼容现有调用，但不再使用
-//   - info: 包含文件类型和文件后缀名等信息的FileInfo结构体实例
+//   - info: 文件信息，包含文件类型和扩展名等信息
 //   - path: 要处理的路径字符串
 //   - cl: 用于彩色输出的colorlib.ColorLib实例
 //
@@ -33,22 +31,22 @@ import (
 func GetColorString(info FileInfo, path string, cl *colorlib.ColorLib) string {
 	// 1. 基础文件类型优先处理（跨平台统一）
 	switch info.EntryType {
-	case types.DirType:
+	case DirType:
 		// 目录使用蓝色
 		return cl.Sblue(path)
-	case types.SymlinkType:
+	case SymlinkType:
 		// 符号链接使用青色
 		return cl.Scyan(path)
-	case types.ExecutableType:
+	case ExecutableType:
 		// 可执行文件使用绿色
 		return cl.Sgreen(path)
-	case types.SocketType, types.PipeType, types.BlockDeviceType, types.CharDeviceType:
+	case SocketType, PipeType, BlockDeviceType, CharDeviceType:
 		// 设备文件使用黄色
 		return cl.Syellow(path)
-	case types.EmptyType:
+	case EmptyType:
 		// 空文件使用灰色
 		return cl.Sgray(path)
-	case types.FileType:
+	case FileType:
 		// 2. 普通文件按扩展名分类
 		return getFileColorByExtension(info.FileExt, path, cl)
 	default:

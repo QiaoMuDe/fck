@@ -82,7 +82,7 @@ func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) er
 			// 非递归模式：检查是否为通配符展开的情况
 			if strings.ContainsAny(file.OriginalPath, "*?[]") {
 				// 通配符展开的情况：根据文件类型分组
-				if file.EntryType == types.DirType {
+				if file.EntryType == DirType {
 					// 目录：使用目录路径作为组键，显示目录内容
 					groupKey = file.Path
 				} else {
@@ -297,20 +297,15 @@ func (f *FileFormatter) prepareFileNames(files FileInfoList, opts FormatOptions)
 
 		// 处理颜色
 		if opts.UseColor {
-			info := FileInfo{
-				EntryType:      file.EntryType,      // 文件类型
-				Name:           file.Name,           // 文件名
-				Size:           file.Size,           // 文件大小
-				ModTime:        file.ModTime,        // 修改时间
-				Perm:           file.Perm,           // 权限
-				Owner:          file.Owner,          // 所有者
-				Group:          file.Group,          // 所属组
-				FileExt:        file.FileExt,        // 文件扩展名
-				LinkTargetPath: file.LinkTargetPath, // 符号链接目标路径
-			}
-			name = GetColorString(info, name, f.colorLib) // 添加颜色
+			name = GetColorString(file, name, f.colorLib) // 添加颜色
 		}
 
+		// 处理图标
+		if listIcon.Get() {
+			name = getIcon(file) + name
+		}
+
+		// 添加到文件名列表
 		fileNames[i] = name
 	}
 
@@ -433,6 +428,9 @@ func (f *FileFormatter) calculateOptimalColumns(fileNames []string, width int) i
 	return baseColumns
 }
 
+// timeFormat 时间格式化字符串
+const timeFormat = "2006-01-02 15:04:05"
+
 // addTableRow 添加表格行
 //
 // 参数:
@@ -447,7 +445,7 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 	infoPerm := f.formatPermissionString(info)
 
 	// 文件类型
-	infoType := GetColorString(info, info.EntryType, f.colorLib)
+	infoType := GetColorString(info, info.EntryType.String(), f.colorLib)
 
 	// 文件大小和单位
 	infoSize, infoSizeUnit := f.humanSize(info.Size)
@@ -456,7 +454,6 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 	infoSizeUnit = f.colorLib.Syellow(infoSizeUnit)
 
 	// 修改时间
-	const timeFormat = "2006-01-02 15:04:05"
 	infoModTime := f.colorLib.Sblue(info.ModTime.Format(timeFormat))
 	f.colorLib.SetBold(true)
 
@@ -468,17 +465,20 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 	}
 
 	// 符号链接特殊处理
-	if info.EntryType == types.SymlinkType {
+	if info.EntryType == SymlinkType {
 		arrow := " -> "                                  // 软链接箭头
 		arrowColor := f.colorLib.Swhite(arrow)           // 软链接箭头颜色
 		linkFormat := formatStr + arrowColor + formatStr // 软链接格式化占位符
 
 		// 检查软连接目标是否存在
 		if _, err := os.Stat(info.LinkTargetPath); os.IsNotExist(err) {
+			// 目标不存在
 			linkPath := f.colorLib.Sred(fileName)               // 软链接文件名颜色
 			sourcePath := f.colorLib.Sgray(info.LinkTargetPath) // 软链接目标路径颜色
 			infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath)
+
 		} else {
+			// 目标存在
 			linkPath := f.colorLib.Scyan(fileName)
 			sourcePath := common.SprintStringColor(info.LinkTargetPath, info.LinkTargetPath, f.colorLib)
 			infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath)
@@ -488,11 +488,15 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 		infoName = GetColorString(info, fmt.Sprintf(formatStr, fileName), f.colorLib)
 	}
 
-	// 添加行
+	// 添加行，根据是否显示用户组信息与是否显示图标
+	nameCol := infoName
+	if listIcon.Get() {
+		nameCol = getIcon(info) + infoName
+	}
 	if opts.ShowUserGroup {
-		t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, infoName})
+		t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, nameCol})
 	} else {
-		t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, infoName})
+		t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, nameCol})
 	}
 }
 

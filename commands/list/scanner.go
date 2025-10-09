@@ -370,7 +370,7 @@ func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath st
 
 	// 获取符号链接目标
 	var linkTargetPath string
-	if entryType == types.SymlinkType {
+	if entryType == SymlinkType {
 		linkTargetPath, _ = os.Readlink(absPath)
 		if linkTargetPath == "" {
 			linkTargetPath = "?" // 读取失败或空链接时返回问号
@@ -401,39 +401,39 @@ func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath st
 //   - fileInfo: 文件信息
 //
 // 返回:
-//   - string: 文件类型
-func (s *FileScanner) getEntryType(fileInfo os.FileInfo) string {
+//   - EntryType: 文件类型
+func (s *FileScanner) getEntryType(fileInfo os.FileInfo) EntryType {
 	mode := fileInfo.Mode()
 
 	// 检查符号链接
 	if mode&os.ModeSymlink != 0 {
-		return types.SymlinkType
+		return SymlinkType
 	}
 
 	// 检查目录
 	if mode.IsDir() {
-		return types.DirType
+		return DirType
 	}
 
 	// 检查特殊文件类型
 	if mode&os.ModeSocket != 0 {
-		return types.SocketType
+		return SocketType
 	}
 	if mode&os.ModeNamedPipe != 0 {
-		return types.PipeType
+		return PipeType
 	}
 	if mode&os.ModeDevice != 0 {
 		if mode&os.ModeCharDevice != 0 {
-			return types.CharDeviceType
+			return CharDeviceType
 		}
-		return types.BlockDeviceType
+		return BlockDeviceType
 	}
 
 	// 检查普通文件
 	if mode.IsRegular() {
 		// 空文件
 		if fileInfo.Size() == 0 {
-			return types.EmptyType
+			return EmptyType
 		}
 
 		// 可执行文件检查
@@ -442,19 +442,19 @@ func (s *FileScanner) getEntryType(fileInfo os.FileInfo) string {
 			ext := strings.ToLower(filepath.Ext(fileInfo.Name()))
 			switch ext {
 			case ".exe", ".bat":
-				return types.ExecutableType
+				return ExecutableType
 			case ".lnk", ".url":
-				return types.SymlinkType
+				return SymlinkType
 			}
 
 		default:
 			if mode&0111 != 0 {
-				return types.ExecutableType
+				return ExecutableType
 			}
 		}
 
-		return types.FileType
+		return FileType
 	}
 
-	return types.UnknownType
+	return UnknownType
 }

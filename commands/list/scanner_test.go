@@ -346,17 +346,17 @@ func TestFileScanner_GetEntryType(t *testing.T) {
 		{
 			name:     "普通文件",
 			filePath: testFile,
-			expected: types.FileType,
+			expected: string(FileType),
 		},
 		{
 			name:     "空文件",
 			filePath: emptyFile,
-			expected: types.EmptyType,
+			expected: string(EmptyType),
 		},
 		{
 			name:     "目录",
 			filePath: testDir,
-			expected: types.DirType,
+			expected: string(DirType),
 		},
 	}
 
@@ -369,7 +369,7 @@ func TestFileScanner_GetEntryType(t *testing.T) {
 
 			result := scanner.getEntryType(fileInfo)
 
-			if result != tt.expected {
+			if result != EntryType(tt.expected) {
 				t.Errorf("getEntryType() = %v, 期望 %v", result, tt.expected)
 			}
 		})

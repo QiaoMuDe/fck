@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
 func TestNewFileProcessor(t *testing.T) {
@@ -25,19 +23,19 @@ func TestFileProcessor_Process(t *testing.T) {
 			Name:      "file3.txt",
 			Size:      300,
 			ModTime:   time.Now().Add(-3 * time.Hour),
-			EntryType: types.FileType,
+			EntryType: FileType,
 		},
 		{
 			Name:      "file1.txt",
 			Size:      100,
 			ModTime:   time.Now().Add(-1 * time.Hour),
-			EntryType: types.FileType,
+			EntryType: FileType,
 		},
 		{
 			Name:      "file2.txt",
 			Size:      200,
 			ModTime:   time.Now().Add(-2 * time.Hour),
-			EntryType: types.FileType,
+			EntryType: FileType,
 		},
 	}
 

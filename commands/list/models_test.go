@@ -83,7 +83,7 @@ func TestFileInfo(t *testing.T) {
 	fileInfo := FileInfo{
 		Name:           "test.txt",
 		Path:           "/path/to/test.txt",
-		EntryType:      types.FileType,
+		EntryType:      FileType,
 		Size:           1024,
 		ModTime:        now,
 		Perm:           "-rw-r--r--",
@@ -101,8 +101,8 @@ func TestFileInfo(t *testing.T) {
 		t.Errorf("FileInfo.Path = %v, 期望 /path/to/test.txt", fileInfo.Path)
 	}
 
-	if fileInfo.EntryType != types.FileType {
-		t.Errorf("FileInfo.EntryType = %v, 期望 %v", fileInfo.EntryType, types.FileType)
+	if fileInfo.EntryType != FileType {
+		t.Errorf("FileInfo.EntryType = %v, 期望 %v", fileInfo.EntryType, FileType)
 	}
 
 	if fileInfo.Size != 1024 {
@@ -139,13 +139,13 @@ func TestFileInfoList(t *testing.T) {
 	files := FileInfoList{
 		{
 			Name:      "file1.txt",
-			EntryType: types.FileType,
+			EntryType: FileType,
 			Size:      100,
 			ModTime:   now,
 		},
 		{
 			Name:      "file2.txt",
-			EntryType: types.FileType,
+			EntryType: FileType,
 			Size:      200,
 			ModTime:   now.Add(time.Hour),
 		},
@@ -235,7 +235,7 @@ func TestStructCopy(t *testing.T) {
 	original := FileInfo{
 		Name:      "original.txt",
 		Size:      1024,
-		EntryType: types.FileType,
+		EntryType: FileType,
 	}
 
 	// 值复制
