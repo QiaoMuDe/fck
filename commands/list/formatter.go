@@ -272,7 +272,7 @@ func (f *FileFormatter) renderTable(files FileInfoList, opts FormatOptions) erro
 	return nil
 }
 
-// prepareFileNames 准备文件名列表
+// prepareFileNames 准备文件名列表(用于默认网格格式)
 //
 // 参数:
 //   - files: 文件列表
@@ -285,24 +285,20 @@ func (f *FileFormatter) prepareFileNames(files FileInfoList, opts FormatOptions)
 
 	// 遍历所有文件
 	for i, file := range files {
-		_, fileName := filepath.Split(file.Name)
-
 		// 处理引号
-		var name string
+		name := file.Name
 		if opts.QuoteNames {
-			name = fmt.Sprintf("%q", fileName)
-		} else {
-			name = fileName
-		}
-
-		// 处理颜色
-		if opts.UseColor {
-			name = GetColorString(file, name, f.colorLib) // 添加颜色
+			name = fmt.Sprintf("%q", file.Name)
 		}
 
 		// 处理图标
 		if listIcon.Get() {
 			name = getIcon(file) + name
+		}
+
+		// 处理颜色
+		if opts.UseColor {
+			name = GetColorString(file, name, f.colorLib) // 添加颜色
 		}
 
 		// 添加到文件名列表
@@ -431,7 +427,7 @@ func (f *FileFormatter) calculateOptimalColumns(fileNames []string, width int) i
 // timeFormat 时间格式化字符串
 const timeFormat = "2006-01-02 15:04:05"
 
-// addTableRow 添加表格行
+// addTableRow 添加表格行(用于长格式)
 //
 // 参数:
 //   - t: 表格写入器
@@ -458,11 +454,20 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 	f.colorLib.SetBold(true)
 
 	// 文件名处理
-	var infoName string
 	formatStr := "%s"
 	if opts.QuoteNames {
 		formatStr = "\"%s\""
 	}
+
+	// 图标前缀（在着色/加引号阶段合入）
+	var nameCol string
+	iconPrefix := ""
+	if listIcon.Get() {
+		iconPrefix = getIcon(info) // 带一个尾部空格
+	}
+
+	// 生成带引号的文件名，再着色并在前面拼接图标
+	fileNameQuoted := fmt.Sprintf(formatStr, fileName)
 
 	// 符号链接特殊处理
 	if info.EntryType == SymlinkType {
@@ -473,26 +478,27 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 		// 检查软连接目标是否存在
 		if _, err := os.Stat(info.LinkTargetPath); os.IsNotExist(err) {
 			// 目标不存在
-			linkPath := f.colorLib.Sred(fileName)               // 软链接文件名颜色
-			sourcePath := f.colorLib.Sgray(info.LinkTargetPath) // 软链接目标路径颜色
-			infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath)
+			linkPath := f.colorLib.Sred(iconPrefix + fileNameQuoted)                    // 源路径颜色（含图标、含引号）
+			sourcePath := f.colorLib.Sgray(fmt.Sprintf(formatStr, info.LinkTargetPath)) // 目标路径颜色（含引号）
+			nameCol = fmt.Sprintf(linkFormat, linkPath, sourcePath)                     // 软链接格式化字符串
 
 		} else {
 			// 目标存在
-			linkPath := f.colorLib.Scyan(fileName)
-			sourcePath := common.SprintStringColor(info.LinkTargetPath, info.LinkTargetPath, f.colorLib)
-			infoName = fmt.Sprintf(linkFormat, linkPath, sourcePath)
+			linkPath := f.colorLib.Scyan(iconPrefix + fileNameQuoted) // 源路径颜色（含图标、含引号）
+			sourcePath := common.SprintStringColor(
+				info.LinkTargetPath,
+				fmt.Sprintf(formatStr, info.LinkTargetPath), // 显示字符串（含引号）
+				f.colorLib,
+			)
+			nameCol = fmt.Sprintf(linkFormat, linkPath, sourcePath)
 		}
+
 	} else {
-		// 普通文件
-		infoName = GetColorString(info, fmt.Sprintf(formatStr, fileName), f.colorLib)
+		// 普通类型: 图标和名称合并着色
+		nameCol = GetColorString(info, iconPrefix+fileNameQuoted, f.colorLib)
 	}
 
-	// 添加行，根据是否显示用户组信息与是否显示图标
-	nameCol := infoName
-	if listIcon.Get() {
-		nameCol = getIcon(info) + infoName
-	}
+	// 添加行，根据是否显示用户组信息
 	if opts.ShowUserGroup {
 		t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, nameCol})
 	} else {

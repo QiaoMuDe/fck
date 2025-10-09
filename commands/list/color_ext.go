@@ -329,6 +329,7 @@ var redExtensions = map[string]bool{
 	".zstd":    true, // Zstandard
 	".br":      true, // Brotli
 	".zlib":    true, // Zlib
+	".wal":     true, // python wal
 
 	// 应用程序包
 	".jar":  true, // Java归档
