@@ -33,7 +33,7 @@ var DefaultIcons = IconMap{
 		PipeType:        "\uf4d6", // 管道
 		BlockDeviceType: "\uf4d6", // 块设备
 		CharDeviceType:  "\uf4d6", // 字符设备
-		ExecutableType:  "\uf4d3", // 可执行文件
+		ExecutableType:  "\uea85", // 可执行文件
 		EmptyType:       "\uf4d3", // 空文件
 		FileType:        "\uf4d3", // 普通文件
 		UnknownType:     "\uf4d3", // 未知类型
@@ -88,8 +88,8 @@ var DefaultIcons = IconMap{
 		".sql":    "\uf472", // SQL
 		".ps1":    "\ue86c", // PowerShell
 		".psm1":   "\ue86c", // PowerShell 模块
-		".bat":    "\uebc4", // Windows 批处理
-		".cmd":    "\uebc4", // Windows 命令
+		".bat":    "\uea85", // Windows 批处理
+		".cmd":    "\uea85", // Windows 命令
 		".vbs":    "\ueae9", // VBScript
 		".asm":    "\ueae9", // 汇编
 		".s":      "\ueae9", // 汇编
@@ -421,8 +421,8 @@ var DefaultIcons = IconMap{
 		".lib": "\ueb9c", // Windows静态库
 
 		// 可执行文件
-		".exe": "\uebc4", // Windows可执行文件
-		".com": "\uebc4", // DOS命令文件
+		".exe": "\uea85", // Windows可执行文件
+		".com": "\uea85", // DOS命令文件
 		".bin": "\ueb9c", // 二进制文件
 		".elf": "\ueb9c", // Linux可执行文件
 		".out": "\ueb9c", // 编译输出文件
