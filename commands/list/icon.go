@@ -23,20 +23,20 @@ type IconMap struct {
 	Default string
 }
 
-// DefaultIcons 默认图标映射表
+// defaultIcons 默认图标映射表
 // 注：编码均为字符串，可直接拼接到名称前；是否加空格/着色由调用方决定。
-var DefaultIcons = IconMap{
+var defaultIcons = IconMap{
 	ByType: map[EntryType]string{
-		DirType:         "\uf4d4", // 目录
+		DirType:         "\uf115", // 目录
 		SymlinkType:     "\uF482", // 软链接
 		SocketType:      "\uf4d6", // 套接字
 		PipeType:        "\uf4d6", // 管道
 		BlockDeviceType: "\uf4d6", // 块设备
 		CharDeviceType:  "\uf4d6", // 字符设备
 		ExecutableType:  "\uea85", // 可执行文件
-		EmptyType:       "\uf4d3", // 空文件
-		FileType:        "\uf4d3", // 普通文件
-		UnknownType:     "\uf4d3", // 未知类型
+		EmptyType:       "\uf4a5", // 空文件
+		FileType:        "\uf4a5", // 普通文件
+		UnknownType:     "\uf4a5", // 未知类型
 	},
 
 	ByExt: map[string]string{
@@ -474,7 +474,7 @@ var DefaultIcons = IconMap{
 		".appimage": "\ueb9c", // AppImage包
 	},
 
-	Default: "\uf4d3", // 默认图标
+	Default: "\uf4a5", // 默认图标
 }
 
 // getIcon 根据文件信息返回图标编码。
@@ -494,18 +494,18 @@ func getIcon(info FileInfo) string {
 	// 先确定图标
 	var icon string
 	if info.EntryType == FileType || info.EntryType == ExecutableType {
-		if v, ok := DefaultIcons.ByExt[info.FileExt]; ok {
+		if v, ok := defaultIcons.ByExt[info.FileExt]; ok {
 			icon = v
 		} else {
-			icon = DefaultIcons.ByType[info.EntryType]
+			icon = defaultIcons.ByType[info.EntryType]
 		}
 	} else {
-		icon = DefaultIcons.ByType[info.EntryType]
+		icon = defaultIcons.ByType[info.EntryType]
 	}
 
 	// 若未匹配到或映射值为空，回退到默认图标
 	if icon == "" {
-		icon = DefaultIcons.Default
+		icon = defaultIcons.Default
 	}
 
 	// 有图标则追加空格返回；没有则返回空字符串

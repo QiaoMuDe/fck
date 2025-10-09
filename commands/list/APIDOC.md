@@ -16,22 +16,6 @@ Package list 实现了文件列表的数据处理功能。该文件提供了文�
 
 Package list 实现了文件系统扫描功能。该文件提供了文件和目录的扫描、过滤、类型识别等核心功能，支持递归扫描和多种文件类型过滤。
 
-## VARIABLES
-
-```go
-var DefaultIcons = IconMap{
-	ByType: map[EntryType]string{
-		...
-	},
-	ByExt: map[string]string{
-		...
-	},
-	Default: "\uf4d3",
-}
-```
-
-DefaultIcons 默认图标映射表。注：编码均为字符串，可直接拼接到名称前；是否加空格/着色由调用方决定。
-
 ## FUNCTIONS
 
 ### GetColorString
