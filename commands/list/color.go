@@ -3,10 +3,8 @@
 package list
 
 import (
-	"path/filepath"
-	"strings"
-
 	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/fck/commands/internal/common"
 )
 
 // GetColorString 根据文件信息返回带有相应颜色的路径字符串
@@ -48,47 +46,9 @@ func GetColorString(info FileInfo, path string, cl *colorlib.ColorLib) string {
 		return cl.Sgray(path)
 	case FileType:
 		// 2. 普通文件按扩展名分类
-		return getFileColorByExtension(info.FileExt, path, cl)
+		return common.GetFileColorByExtension(info.FileExt, path, cl)
 	default:
 		// 未知类型使用白色
 		return cl.Swhite(path)
 	}
-}
-
-// getFileColorByExtension 根据文件扩展名返回相应颜色
-func getFileColorByExtension(ext, path string, cl *colorlib.ColorLib) string {
-	// 处理特殊的macOS系统文件
-	base := filepath.Base(path)
-	if base == ".DS_Store" || base == ".localized" || strings.HasPrefix(base, "._") {
-		return cl.Sgray(path) // macOS系统文件使用灰色
-	}
-
-	// 处理特殊的无扩展名配置文件
-	if ext == "" && isSpecialConfigFile(base) {
-		return cl.Syellow(path)
-	}
-
-	// 统一转换为小写进行匹配
-	lowerExt := strings.ToLower(ext)
-
-	// 根据扩展名分类着色
-	switch {
-	case greenExtensions[lowerExt]:
-		return cl.Sgreen(path) // 绿色系文件
-	case yellowExtensions[lowerExt]:
-		return cl.Syellow(path) // 黄色系文件
-	case redExtensions[lowerExt]:
-		return cl.Sred(path) // 红色系文件
-	case magentaExtensions[lowerExt]:
-		return cl.Smagenta(path) // 紫色系文件
-	default:
-		return cl.Swhite(path) // 其他文件使用白色
-	}
-}
-
-// isSpecialConfigFile 检查是否为特殊的配置文件(无扩展名)
-func isSpecialConfigFile(filename string) bool {
-	// 转换为小写进行匹配
-	lower := strings.ToLower(filename)
-	return specialConfigFiles[lower]
 }

@@ -9,6 +9,7 @@ import (
 	"runtime"
 
 	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/fck/commands/internal/common"
 	"gitee.com/MM-Q/fck/commands/internal/types"
 )
 
@@ -92,7 +93,9 @@ func printPathColor(path string, cl *colorlib.ColorLib, d os.DirEntry) {
 		fileColor = ColorGreen // 可执行文件
 
 	case mode.IsRegular():
-		fileColor = ColorWhite // 普通文件
+		// 普通文件：分段渲染（目录蓝 + 文件名按扩展名着色）并直接打印
+		printColorByExtension(path, ext, cl)
+		return
 
 	default:
 		fileColor = ColorWhite // 其他类型文件
@@ -121,6 +124,21 @@ func printColor(p string, cl *colorlib.ColorLib, dirColor ColorType, fileColor C
 
 	// 打印渐进式颜色
 	fmt.Printf("%s%s\n", getColoredString(cl, dirColor, dir), getColoredString(cl, fileColor, file))
+}
+
+// printColorByExtension 分段渲染：目录部分使用既有 dirColor（蓝色），文件名部分使用按扩展名配色
+func printColorByExtension(p string, ext string, cl *colorlib.ColorLib) {
+	if p == "" || cl == nil {
+		return
+	}
+	dir, file := filepath.Split(p)
+	// 仅对文件名部分着色，目录部分保持蓝色
+	coloredFile := common.GetFileColorByExtension(ext, file, cl)
+	if dir == "" {
+		fmt.Println(coloredFile)
+		return
+	}
+	fmt.Printf("%s%s\n", getColoredString(cl, dirColor, dir), coloredFile)
 }
 
 // getColoredString 根据颜色字符串调用对应的颜色方法

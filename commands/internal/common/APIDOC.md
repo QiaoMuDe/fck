@@ -239,3 +239,27 @@ func WriteFileHeader(file *os.File, hashType string, timestampFormat string) err
   - `error`：错误信息，如果写入失败
 - 注意：
   - 文件头格式为：`#hashType#timestamp`
+
+### GetFileColorByExtension
+
+GetFileColorByExtension 根据文件扩展名返回相应颜色（统一的按扩展名配色规则）。该函数会处理 macOS 系统文件、无扩展名的特殊配置文件，并基于扩展名集合返回相应的颜色化字符串。
+
+```go
+func GetFileColorByExtension(ext, path string, cl *colorlib.ColorLib) string
+```
+
+- 参数：
+  - `ext`：文件扩展名（建议以包含点的形式传入，如“.go”，内部会统一转小写）
+  - `path`：文件路径（用于提取文件名以及处理特殊文件名）
+  - `cl`：`colorlib.ColorLib` 实例，用于输出对应颜色的字符串
+- 返回：
+  - `string`：根据规则着色后的整条路径字符串
+- 规则说明：
+  - 特殊的 macOS 系统文件（如 `.DS_Store`、`.localized`、以 `._` 开头）统一使用灰色
+  - 无扩展名但属于特殊配置文件的名称统一使用黄色
+  - 扩展名命中预定义集合时，返回：
+    - 绿色：代码/脚本/可执行相关扩展
+    - 黄色：配置/日志等
+    - 红色：数据/压缩包等
+    - 紫色：库文件/编译产物等
+  - 未命中任何集合时，使用白色

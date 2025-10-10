@@ -1,6 +1,6 @@
-// Package list 扩展名映射表定义
+// Package common 扩展名映射表定义
 // 该文件定义了各种文件类型的扩展名映射表，用于颜色分类
-package list
+package common
 
 // 特殊配置文件名映射表（无扩展名）
 var specialConfigFiles = map[string]bool{
