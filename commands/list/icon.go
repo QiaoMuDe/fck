@@ -73,7 +73,7 @@ var defaultIcons = IconMap{
 		".rs":     "\uE7A8", // Rust
 		".rb":     "\ueae9", // Ruby
 		".php":    "\uE73D", // PHP
-		".java":   "\ue66d", // Java
+		".java":   "\uec15", // Java
 		".c":      "\ue649", // C
 		".cpp":    "\ue649", // C++
 		".h":      "\ue649", // C/C++ 头文件
@@ -162,6 +162,7 @@ var defaultIcons = IconMap{
 		".properties": "\ue5fc",
 		".config":     "\ue5fc",
 		".settings":   "\ue5fc",
+		".service":    "\ue5fc",
 
 		// 文档文件
 		".md":        "\uf48a", // Markdown
@@ -169,85 +170,40 @@ var defaultIcons = IconMap{
 		".txt":       "\ue5fc", // 文本文件
 		".readme":    "\ueda4", // README文件
 		".license":   "\uf4d1", // LICENSE文件
+		".lic":       "\uf4d1", // LIC文件
 		".changelog": "\ue5fc", // CHANGELOG文件
 
 		// 项目配置文件
-		".mod":                 "\ue5fc", // Go模块
-		".sum":                 "\ue5fc", // Go校验和
-		".lock":                "\uf023", // 依赖锁定
-		".npmrc":               "\ue5fc", // npm配置
-		".yarnrc":              "\ue5fc", // yarn配置
-		".pnpmrc":              "\ue5fc", // pnpm配置
-		".nvmrc":               "\ue5fc", // nvm配置
-		".editorconfig":        "\ue5fc", // 编辑器配置
-		".gitconfig":           "\ue5fc", // Git配置
-		".gitignore":           "\ue5fc", // Git忽略
-		".gitattributes":       "\ue5fc", // Git属性
-		".dockerignore":        "\uf21f", // Docker忽略
-		".dockerfile":          "\uf21f", // Dockerfile
-		".docker-compose.yml":  "\uf21f", // Docker Compose
-		".docker-compose.yaml": "\uf21f", // Docker Compose
+		".mod":           "\ue5fc", // Go模块
+		".sum":           "\ue5fc", // Go校验和
+		".lock":          "\uf023", // 依赖锁定
+		".npmrc":         "\ue5fc", // npm配置
+		".yarnrc":        "\ue5fc", // yarn配置
+		".pnpmrc":        "\ue5fc", // pnpm配置
+		".nvmrc":         "\ue5fc", // nvm配置
+		".editorconfig":  "\ue5fc", // 编辑器配置
+		".gitconfig":     "\ue5fc", // Git配置
+		".gitignore":     "\ue5fc", // Git忽略
+		".gitattributes": "\ue5fc", // Git属性
+		".dockerignore":  "\uf21f", // Docker忽略
+		".dockerfile":    "\uf21f", // Dockerfile
 
 		// 开发工具配置
-		".eslintrc":         "\ue5fc", // ESLint
-		".eslintrc.json":    "\ue5fc",
-		".eslintrc.js":      "\ue5fc",
-		".eslintrc.yml":     "\ue5fc",
-		".eslintignore":     "\ue5fc",
-		".prettierrc":       "\ue5fc", // Prettier
-		".prettierrc.json":  "\ue5fc",
-		".prettierrc.js":    "\ue5fc",
-		".prettierrc.yml":   "\ue5fc",
-		".prettierignore":   "\ue5fc",
-		".stylelintrc":      "\ue5fc", // Stylelint
-		".stylelintrc.json": "\ue5fc",
-		".stylelintrc.js":   "\ue5fc",
-		".stylelintrc.yml":  "\ue5fc",
-		".stylelintignore":  "\ue5fc",
-		".babelrc":          "\ue5fc", // Babel
-		".babelrc.json":     "\ue5fc",
-		".babelrc.js":       "\ue5fc",
-
-		// 构建工具配置
-		".webpack.config.js":  "\ue5fc", // Webpack
-		".rollup.config.js":   "\ue5fc", // Rollup
-		".vite.config.js":     "\ue5fc", // Vite
-		".vite.config.ts":     "\ue5fc",
-		".tsconfig.json":      "\ue5fc", // TypeScript
-		".jsconfig.json":      "\ue5fc", // JavaScript
-		".vue.config.js":      "\ue5fc", // Vue
-		".nuxt.config.js":     "\ue5fc", // Nuxt
-		".nuxt.config.ts":     "\ue5fc",
-		".next.config.js":     "\ue5fc", // Next.js
-		".gatsby-config.js":   "\ue5fc", // Gatsby
-		".postcss.config.js":  "\ue5fc", // PostCSS
-		".tailwind.config.js": "\ue5fc", // Tailwind
-		".jest.config.js":     "\ue5fc", // Jest
-		".cypress.json":       "\ue5fc", // Cypress
-
-		// 环境配置
-		".env.development":       "\ue5fc",
-		".env.production":        "\ue5fc",
-		".env.test":              "\ue5fc",
-		".env.local":             "\ue5fc",
-		".env.development.local": "\ue5fc",
-		".env.production.local":  "\ue5fc",
-		".env.test.local":        "\ue5fc",
-		".env.example":           "\ue5fc",
-		".env.sample":            "\ue5fc",
-		".env.dist":              "\ue5fc",
-		".env.template":          "\ue5fc",
+		".eslintrc":        "\ue5fc", // ESLint
+		".eslintignore":    "\ue5fc",
+		".prettierrc":      "\ue5fc", // Prettier
+		".prettierignore":  "\ue5fc",
+		".stylelintrc":     "\ue5fc", // Stylelint
+		".stylelintignore": "\ue5fc",
+		".babelrc":         "\ue5fc", // Babel
 
 		// 服务器配置
-		".htaccess":   "\ue5fc", // Apache
-		".nginx.conf": "\ue5fc", // Nginx
-		".vhost":      "\ue5fc", // 虚拟主机
-		".htpasswd":   "\ue5fc", // Apache认证
+		".htaccess": "\ue5fc", // Apache
+		".vhost":    "\ue5fc", // 虚拟主机
+		".htpasswd": "\ue5fc", // Apache认证
 
 		// CI/CD配置
-		".travis.yml":    "\ue5fc", // Travis CI
-		".gitlab-ci.yml": "\ue5fc", // GitLab CI
-		".jenkinsfile":   "\ue5fc", // Jenkins
+		".jenkinsfile": "\ue5fc", // Jenkins
 
 		// 构建配置
 		".makefile": "\ue5fc", // Makefile
@@ -274,27 +230,12 @@ var defaultIcons = IconMap{
 		".clang-format": "\ue5fc", // Clang格式化
 		".clang-tidy":   "\ue5fc", // Clang静态分析
 
-		// 容器和虚拟化
-		".k8s.yml":     "\ue81d", // Kubernetes配置
-		".helm.yml":    "\ue7fb", // Helm配置
-		".compose.yml": "\uf21f", // Docker Compose简写
-
 		// 现代构建工具
-		".swcrc":      "\ue5fc", // SWC配置
-		".turbo.json": "\ue5fc", // Turbo配置
-		".nx.json":    "\ue5fc", // Nx配置
-		".rush.json":  "\ue5fc", // Rush配置
+		".swcrc": "\ue5fc", // SWC配置
 
 		// 云服务配置
-		".serverless.yml": "\ue5fc", // Serverless配置
-		".tf":             "\ue5fc", // Terraform文件
-		".tfvars":         "\ue5fc", // Terraform变量
-
-		// 包管理器
-		".cargo.toml":   "\ue5fc", // Rust Cargo
-		".pubspec.yaml": "\ue5fc", // Dart/Flutter
-		".mix.exs":      "\ue5fc", // Elixir Mix
-		".shard.yml":    "\ue5fc", // Crystal Shards
+		".tf":     "\ue5fc", // Terraform文件
+		".tfvars": "\ue5fc", // Terraform变量
 
 		// 文档格式
 		".rst":  "\ue5fc", // reStructuredText
@@ -325,9 +266,9 @@ var defaultIcons = IconMap{
 		".wal":     "\ued1b", // python wal
 
 		// 应用程序包
-		".jar":  "\ue66d", // Java归档
-		".war":  "\ue66d", // Java Web应用
-		".ear":  "\ue66d", // Java企业应用
+		".jar":  "\uec15", // Java归档
+		".war":  "\uec15", // Java Web应用
+		".ear":  "\uec15", // Java企业应用
 		".apk":  "\uf410", // Android应用
 		".ipa":  "\uf410", // iOS应用
 		".whl":  "\uf410", // Python wheel
@@ -355,6 +296,7 @@ var defaultIcons = IconMap{
 		".frm":     "\uf472", // MySQL表结构
 		".myd":     "\uf472", // MySQL数据
 		".myi":     "\uf472", // MySQL索引
+		".dump":    "\uf472", // sql备份"
 
 		// 其他数据文件
 		".csv":  "\ueefc", // CSV数据
@@ -365,6 +307,11 @@ var defaultIcons = IconMap{
 		".docx": "\uf1c2", // Word文档
 		".ppt":  "\uf1c4", // PowerPoint
 		".pptx": "\uf1c4", // PowerPoint
+		".tsv":  "\ueefc", // TSV数据 (Tab Separated Values)
+		".odt":  "\uf1c2", // OpenDocument Text (与Word文档图标一致)
+		".ods":  "\uf1c3", // OpenDocument Spreadsheet (与Excel图标一致)
+		".odp":  "\uf1c4", // OpenDocument Presentation (与PowerPoint图标一致)
+		".rtf":  "\uf1c2", // rtf文档
 
 		// 图片文件
 		".jpg":  "\uf03e", // JPEG图片
@@ -375,14 +322,20 @@ var defaultIcons = IconMap{
 		".ico":  "\uf03e", // 图标
 		".svg":  "\uf03e", // SVG图片
 		".webp": "\uf03e", // WebP图片
+		".heic": "\uf03e", // HEIC图片
+		".avif": "\uf03e", // AVIF图片
+		".raw":  "\uf03e", // 相机原始图片
+		".cr2":  "\uf03e", // Canon Raw
+		".nef":  "\uf03e", // Nikon Raw
 		".tif":  "\uf03e", // TIFF图片
 		".tiff": "\uf03e", // TIFF图片
 		".psd":  "\uf03e", // Photoshop文件
 		".eps":  "\uf03e", // EPS文件
 		".ai":   "\uf03e", // Adobe Illustrator文件
 		".ps":   "\uf03e", // PostScript文件
-		".rtf":  "\uf03e", // Rich Text Format
+		".helf": "\uf03e", // HEIF图片
 
+		// 视频文件
 		// 视频文件
 		".mp4":  "\uf03d", // MP4视频
 		".avi":  "\uf03d", // AVI视频
@@ -394,6 +347,13 @@ var defaultIcons = IconMap{
 		".flv":  "\uf03d", // Flash视频
 		".m4v":  "\uf03d", // MPEG-4视频
 		".3gp":  "\uf03d", // 3GP视频
+		".vob":  "\uf03d", // DVD Video Object
+		".mpg":  "\uf03d", // MPEG
+		".mpeg": "\uf03d", // MPEG
+		".rm":   "\uf03d", // RealMedia
+		".rmvb": "\uf03d", // RealMedia Variable Bitrate
+		".asf":  "\uf03d", // Advanced Systems Format
+		".m3u8": "\uf03d", // M3U8视频
 
 		// 音频文件
 		".mp3":  "\ue638", // MP3音频
@@ -406,6 +366,12 @@ var defaultIcons = IconMap{
 		".opus": "\ue638", // Opus音频
 		".aiff": "\ue638", // AIFF音频
 		".au":   "\ue638", // AU音频
+		".mid":  "\ue638", // MIDI文件
+		".midi": "\ue638", // MIDI文件
+		".ape":  "\ue638", // Monkey's Audio (无损)
+		".wv":   "\ue638", // WavPack (无损)
+		".dsf":  "\ue638", // DSD Stream File
+		".dff":  "\ue638", // DSD Interchange File Format
 
 		// 字体文件
 		".ttf":   "\ue659", // TrueType字体
@@ -446,11 +412,11 @@ var defaultIcons = IconMap{
 		".pyc":   "\ued1b", // Python字节码
 		".pyo":   "\ued1b", // Python优化字节码
 		".pyd":   "\ued1b", // Python扩展模块
-		".class": "\ue66d", // Java字节码
+		".class": "\uec15", // Java字节码
 
 		// 包文件
 		".egg":  "\ued1b", // Python包
-		".jmod": "\ue66d", // Java模块
+		".jmod": "\uec15", // Java模块
 
 		// 现代编译产物
 		".wasm":        "\ue8e0", // WebAssembly
@@ -475,6 +441,9 @@ var defaultIcons = IconMap{
 		".snap":     "\uf471", // Snap包
 		".flatpak":  "\uf471", // Flatpak包
 		".appimage": "\uf471", // AppImage包
+
+		// 日志文件
+		".log": "\uf4ed", // 日志文件
 	},
 
 	Default: "\uf4a5", // 默认图标
