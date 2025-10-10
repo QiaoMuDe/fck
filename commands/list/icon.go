@@ -28,7 +28,7 @@ type IconMap struct {
 var defaultIcons = IconMap{
 	ByType: map[EntryType]string{
 		DirType:         "\uf115", // 目录
-		SymlinkType:     "\uf481", // 软链接
+		SymlinkType:     "\uF08E", // 软链接
 		SocketType:      "\uf4d6", // 套接字
 		PipeType:        "\uf4d6", // 管道
 		BlockDeviceType: "\uf4d6", // 块设备
@@ -360,40 +360,40 @@ var defaultIcons = IconMap{
 		".csv":  "\ueefc", // CSV数据
 		".xlsx": "\uf1c3", // Excel
 		".xls":  "\uf1c3", // Excel旧版
-		".pdf":  "\ueaeb", // PDF文档
+		".pdf":  "\uf1c1", // PDF文档
 		".doc":  "\uf1c2", // Word文档
 		".docx": "\uf1c2", // Word文档
 		".ppt":  "\uf1c4", // PowerPoint
 		".pptx": "\uf1c4", // PowerPoint
 
 		// 图片文件
-		".jpg":  "\uf1c5", // JPEG图片
-		".jpeg": "\uf1c5", // JPEG图片
-		".png":  "\uf1c5", // PNG图片
-		".gif":  "\uf1c5", // GIF图片
-		".bmp":  "\uf1c5", // BMP图片
-		".ico":  "\uf1c5", // 图标
-		".svg":  "\uf1c5", // SVG图片
-		".webp": "\uf1c5", // WebP图片
-		".tif":  "\uf1c5", // TIFF图片
-		".tiff": "\uf1c5", // TIFF图片
-		".psd":  "\uf1c5", // Photoshop文件
-		".eps":  "\uf1c5", // EPS文件
-		".ai":   "\uf1c5", // Adobe Illustrator文件
-		".ps":   "\uf1c5", // PostScript文件
-		".rtf":  "\uf1c5", // Rich Text Format
+		".jpg":  "\uf03e", // JPEG图片
+		".jpeg": "\uf03e", // JPEG图片
+		".png":  "\uf03e", // PNG图片
+		".gif":  "\uf03e", // GIF图片
+		".bmp":  "\uf03e", // BMP图片
+		".ico":  "\uf03e", // 图标
+		".svg":  "\uf03e", // SVG图片
+		".webp": "\uf03e", // WebP图片
+		".tif":  "\uf03e", // TIFF图片
+		".tiff": "\uf03e", // TIFF图片
+		".psd":  "\uf03e", // Photoshop文件
+		".eps":  "\uf03e", // EPS文件
+		".ai":   "\uf03e", // Adobe Illustrator文件
+		".ps":   "\uf03e", // PostScript文件
+		".rtf":  "\uf03e", // Rich Text Format
 
 		// 视频文件
-		".mp4":  "\uf52c", // MP4视频
-		".avi":  "\uf52c", // AVI视频
-		".mkv":  "\uf52c", // MKV视频
-		".mov":  "\uf52c", // QuickTime视频
-		".wmv":  "\uf52c", // Windows Media视频
-		".webm": "\uf52c", // WebM视频
-		".ogv":  "\uf52c", // Ogg视频
-		".flv":  "\uf52c", // Flash视频
-		".m4v":  "\uf52c", // MPEG-4视频
-		".3gp":  "\uf52c", // 3GP视频
+		".mp4":  "\uf03d", // MP4视频
+		".avi":  "\uf03d", // AVI视频
+		".mkv":  "\uf03d", // MKV视频
+		".mov":  "\uf03d", // QuickTime视频
+		".wmv":  "\uf03d", // Windows Media视频
+		".webm": "\uf03d", // WebM视频
+		".ogv":  "\uf03d", // Ogg视频
+		".flv":  "\uf03d", // Flash视频
+		".m4v":  "\uf03d", // MPEG-4视频
+		".3gp":  "\uf03d", // 3GP视频
 
 		// 音频文件
 		".mp3":  "\ue638", // MP3音频
@@ -415,32 +415,32 @@ var defaultIcons = IconMap{
 		".eot":   "\ue659", // Embedded OpenType字体
 
 		// 动态链接库
-		".so":    "\ueb9c", // Linux共享对象
-		".dll":   "\ueb9c", // Windows动态链接库
-		".dylib": "\ueb9c", // macOS动态链接库
+		".so":    "\uf471", // Linux共享对象
+		".dll":   "\uf471", // Windows动态链接库
+		".dylib": "\uf471", // macOS动态链接库
 
 		// 静态库
-		".a":   "\ueb9c", // Linux静态库
-		".lib": "\ueb9c", // Windows静态库
+		".a":   "\uf471", // Linux静态库
+		".lib": "\uf471", // Windows静态库
 
 		// 可执行文件
 		".exe": "\uf489", // Windows可执行文件
 		".com": "\uf489", // DOS命令文件
-		".bin": "\ueb9c", // 二进制文件
-		".elf": "\ueb9c", // Linux可执行文件
-		".out": "\ueb9c", // 编译输出文件
+		".bin": "\uf471", // 二进制文件
+		".elf": "\uf471", // Linux可执行文件
+		".out": "\uf471", // 编译输出文件
 
 		// 目标文件
-		".o":   "\ueb9c", // 目标文件
-		".obj": "\ueb9c", // Windows目标文件
+		".o":   "\uf471", // 目标文件
+		".obj": "\uf471", // Windows目标文件
 
 		// 调试和符号文件
-		".pdb": "\ueb9c", // Windows调试符号
-		".exp": "\ueb9c", // Windows导出文件
-		".ilk": "\ueb9c", // Windows增量链接
-		".pch": "\ueb9c", // 预编译头文件
-		".sbr": "\ueb9c", // 源代码浏览器
-		".idb": "\ueb9c", // Visual Studio增量调试
+		".pdb": "\uf471", // Windows调试符号
+		".exp": "\uf471", // Windows导出文件
+		".ilk": "\uf471", // Windows增量链接
+		".pch": "\uf471", // 预编译头文件
+		".sbr": "\uf471", // 源代码浏览器
+		".idb": "\uf471", // Visual Studio增量调试
 
 		// 字节码文件
 		".pyc":   "\ued1b", // Python字节码
@@ -453,28 +453,28 @@ var defaultIcons = IconMap{
 		".jmod": "\ue66d", // Java模块
 
 		// 现代编译产物
-		".wasm":        "\ueb9c", // WebAssembly
-		".bc":          "\ueb9c", // LLVM位码
-		".ll":          "\ueb9c", // LLVM中间表示
-		".node":        "\ueb9c", // Node.js原生插件
-		".rlib":        "\ueb9c", // Rust库
-		".swiftmodule": "\ueb9c", // Swift模块
+		".wasm":        "\ue8e0", // WebAssembly
+		".bc":          "\uf471", // LLVM位码
+		".ll":          "\uf471", // LLVM中间表示
+		".node":        "\uf471", // Node.js原生插件
+		".rlib":        "\uf471", // Rust库
+		".swiftmodule": "\uf471", // Swift模块
 
 		// 映射和列表文件
-		".map": "\ueb9c", // 映射文件
-		".lst": "\ueb9c", // 列表文件
-		".d":   "\ueb9c", // 依赖文件
+		".map": "\uf471", // 映射文件
+		".lst": "\uf471", // 列表文件
+		".d":   "\uf471", // 依赖文件
 
 		// 现代编译产物
-		".dSYM":     "\ueb9c", // macOS调试符号
-		".vsix":     "\ueb9c", // VS Code扩展
-		".nupkg":    "\ueb9c", // NuGet包
-		".gem":      "\ueb9c", // Ruby Gem
-		".crate":    "\ueb9c", // Rust Crate
-		".wheel":    "\ueb9c", // Python Wheel
-		".snap":     "\ueb9c", // Snap包
-		".flatpak":  "\ueb9c", // Flatpak包
-		".appimage": "\ueb9c", // AppImage包
+		".dSYM":     "\uf471", // macOS调试符号
+		".vsix":     "\uf471", // VS Code扩展
+		".nupkg":    "\uf471", // NuGet包
+		".gem":      "\uf471", // Ruby Gem
+		".crate":    "\uf471", // Rust Crate
+		".wheel":    "\uf471", // Python Wheel
+		".snap":     "\uf471", // Snap包
+		".flatpak":  "\uf471", // Flatpak包
+		".appimage": "\uf471", // AppImage包
 	},
 
 	Default: "\uf4a5", // 默认图标

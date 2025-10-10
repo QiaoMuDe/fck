@@ -471,26 +471,26 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 
 	// 符号链接特殊处理
 	if info.EntryType == SymlinkType {
-		arrow := " -> "                                  // 软链接箭头
-		arrowColor := f.colorLib.Swhite(arrow)           // 软链接箭头颜色
-		linkFormat := formatStr + arrowColor + formatStr // 软链接格式化占位符
+		arrow := " -> "                        // 软链接箭头
+		arrowColor := f.colorLib.Swhite(arrow) // 软链接箭头颜色
+		//linkFormat := formatStr + arrowColor + formatStr // 软链接格式化占位符
 
 		// 检查软连接目标是否存在
 		if _, err := os.Stat(info.LinkTargetPath); os.IsNotExist(err) {
 			// 目标不存在
 			linkPath := f.colorLib.Sred(iconPrefix + fileNameQuoted)                    // 源路径颜色（含图标、含引号）
 			sourcePath := f.colorLib.Sgray(fmt.Sprintf(formatStr, info.LinkTargetPath)) // 目标路径颜色（含引号）
-			nameCol = fmt.Sprintf(linkFormat, linkPath, sourcePath)                     // 软链接格式化字符串
+			nameCol = fmt.Sprint(linkPath, arrowColor, sourcePath)                      // 软链接格式化字符串
 
 		} else {
 			// 目标存在
 			linkPath := f.colorLib.Scyan(iconPrefix + fileNameQuoted) // 源路径颜色（含图标、含引号）
 			sourcePath := common.SprintStringColor(
 				info.LinkTargetPath,
-				fmt.Sprintf(formatStr, info.LinkTargetPath), // 显示字符串（含引号）
+				fmt.Sprintf(formatStr, info.LinkTargetPath),
 				f.colorLib,
-			)
-			nameCol = fmt.Sprintf(linkFormat, linkPath, sourcePath)
+			) // 目标路径颜色（含引号）
+			nameCol = fmt.Sprint(linkPath, arrowColor, sourcePath) // 软链接格式化字符串
 		}
 
 	} else {
