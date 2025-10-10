@@ -28,12 +28,12 @@ type IconMap struct {
 var defaultIcons = IconMap{
 	ByType: map[EntryType]string{
 		DirType:         "\uf115", // 目录
-		SymlinkType:     "\uF482", // 软链接
+		SymlinkType:     "\uf481", // 软链接
 		SocketType:      "\uf4d6", // 套接字
 		PipeType:        "\uf4d6", // 管道
 		BlockDeviceType: "\uf4d6", // 块设备
 		CharDeviceType:  "\uf4d6", // 字符设备
-		ExecutableType:  "\uea85", // 可执行文件
+		ExecutableType:  "\uf489", // 可执行文件
 		EmptyType:       "\uf4a5", // 空文件
 		FileType:        "\uf4a5", // 普通文件
 		UnknownType:     "\uf4a5", // 未知类型
@@ -47,10 +47,13 @@ var defaultIcons = IconMap{
 		".py":  "\uED1B",
 		".pyw": "\uED1B",
 
-		// Shell脚本
-		".sh":   "\uE691",
-		".bash": "\uE691",
-		".zsh":  "\uE691",
+		// 脚本
+		".sh":   "\uf489",
+		".bash": "\uf489",
+		".zsh":  "\uf489",
+		".fsh":  "\uf489",
+		".fish": "\uf489",
+		".run":  "\uf489",
 
 		// JavaScript/TypeScript
 		".js":  "\uf2ee",
@@ -86,10 +89,10 @@ var defaultIcons = IconMap{
 		".pm":     "\ueae9", // Perl 模块
 		".r":      "\ueae9", // R语言
 		".sql":    "\uf472", // SQL
-		".ps1":    "\ue86c", // PowerShell
-		".psm1":   "\ue86c", // PowerShell 模块
-		".bat":    "\uea85", // Windows 批处理
-		".cmd":    "\uea85", // Windows 命令
+		".ps1":    "\uf489", // PowerShell
+		".psm1":   "\uf489", // PowerShell 模块
+		".bat":    "\uf489", // Windows 批处理
+		".cmd":    "\uf489", // Windows 命令
 		".vbs":    "\ueae9", // VBScript
 		".asm":    "\ueae9", // 汇编
 		".s":      "\ueae9", // 汇编
@@ -357,28 +360,28 @@ var defaultIcons = IconMap{
 		".csv":  "\ueefc", // CSV数据
 		".xlsx": "\uf1c3", // Excel
 		".xls":  "\uf1c3", // Excel旧版
-		".pdf":  "\uf1c1", // PDF文档
+		".pdf":  "\ueaeb", // PDF文档
 		".doc":  "\uf1c2", // Word文档
 		".docx": "\uf1c2", // Word文档
 		".ppt":  "\uf1c4", // PowerPoint
 		".pptx": "\uf1c4", // PowerPoint
 
 		// 图片文件
-		".jpg":  "\uf03e", // JPEG图片
-		".jpeg": "\uf03e", // JPEG图片
-		".png":  "\uf03e", // PNG图片
-		".gif":  "\uf03e", // GIF图片
-		".bmp":  "\uf03e", // BMP图片
-		".ico":  "\uf03e", // 图标
-		".svg":  "\uf03e", // SVG图片
-		".webp": "\uf03e", // WebP图片
-		".tif":  "\uf03e", // TIFF图片
-		".tiff": "\uf03e", // TIFF图片
-		".psd":  "\uf03e", // Photoshop文件
-		".eps":  "\uf03e", // EPS文件
-		".ai":   "\uf03e", // Adobe Illustrator文件
-		".ps":   "\uf03e", // PostScript文件
-		".rtf":  "\uf03e", // Rich Text Format
+		".jpg":  "\uf1c5", // JPEG图片
+		".jpeg": "\uf1c5", // JPEG图片
+		".png":  "\uf1c5", // PNG图片
+		".gif":  "\uf1c5", // GIF图片
+		".bmp":  "\uf1c5", // BMP图片
+		".ico":  "\uf1c5", // 图标
+		".svg":  "\uf1c5", // SVG图片
+		".webp": "\uf1c5", // WebP图片
+		".tif":  "\uf1c5", // TIFF图片
+		".tiff": "\uf1c5", // TIFF图片
+		".psd":  "\uf1c5", // Photoshop文件
+		".eps":  "\uf1c5", // EPS文件
+		".ai":   "\uf1c5", // Adobe Illustrator文件
+		".ps":   "\uf1c5", // PostScript文件
+		".rtf":  "\uf1c5", // Rich Text Format
 
 		// 视频文件
 		".mp4":  "\uf52c", // MP4视频
@@ -393,16 +396,16 @@ var defaultIcons = IconMap{
 		".3gp":  "\uf52c", // 3GP视频
 
 		// 音频文件
-		".mp3":  "\uec1b", // MP3音频
-		".wav":  "\uec1b", // WAV音频
-		".flac": "\uec1b", // FLAC音频
-		".ogg":  "\uec1b", // Ogg音频
-		".m4a":  "\uec1b", // M4A音频
-		".aac":  "\uec1b", // AAC音频
-		".wma":  "\uec1b", // Windows Media音频
-		".opus": "\uec1b", // Opus音频
-		".aiff": "\uec1b", // AIFF音频
-		".au":   "\uec1b", // AU音频
+		".mp3":  "\ue638", // MP3音频
+		".wav":  "\ue638", // WAV音频
+		".flac": "\ue638", // FLAC音频
+		".ogg":  "\ue638", // Ogg音频
+		".m4a":  "\ue638", // M4A音频
+		".aac":  "\ue638", // AAC音频
+		".wma":  "\ue638", // Windows Media音频
+		".opus": "\ue638", // Opus音频
+		".aiff": "\ue638", // AIFF音频
+		".au":   "\ue638", // AU音频
 
 		// 字体文件
 		".ttf":   "\ue659", // TrueType字体
@@ -421,8 +424,8 @@ var defaultIcons = IconMap{
 		".lib": "\ueb9c", // Windows静态库
 
 		// 可执行文件
-		".exe": "\uea85", // Windows可执行文件
-		".com": "\uea85", // DOS命令文件
+		".exe": "\uf489", // Windows可执行文件
+		".com": "\uf489", // DOS命令文件
 		".bin": "\ueb9c", // 二进制文件
 		".elf": "\ueb9c", // Linux可执行文件
 		".out": "\ueb9c", // 编译输出文件
