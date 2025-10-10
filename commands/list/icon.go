@@ -19,6 +19,8 @@ type IconMap struct {
 	ByExt map[string]string
 	// 按文件类型映射
 	ByType map[EntryType]string
+	// 按特殊文件名映射
+	BySpecial map[string]string
 	// 默认图标
 	Default string
 }
@@ -171,6 +173,9 @@ var defaultIcons = IconMap{
 		".readme":    "\ueda4", // README文件
 		".license":   "\uf4d1", // LICENSE文件
 		".lic":       "\uf4d1", // LIC文件
+		".crt":       "\uf4d1", // 证书文件
+		".cer":       "\uf4d1", // 证书文件
+		".pem":       "\uf4d1", // 证书文件
 		".changelog": "\ue5fc", // CHANGELOG文件
 
 		// 项目配置文件
@@ -336,7 +341,6 @@ var defaultIcons = IconMap{
 		".helf": "\uf03e", // HEIF图片
 
 		// 视频文件
-		// 视频文件
 		".mp4":  "\uf03d", // MP4视频
 		".avi":  "\uf03d", // AVI视频
 		".mkv":  "\uf03d", // MKV视频
@@ -447,12 +451,46 @@ var defaultIcons = IconMap{
 	},
 
 	Default: "\uf4a5", // 默认图标
+
+	BySpecial: map[string]string{
+		"Makefile":            "\ue673", // Makefile文件
+		"makefile":            "\ue673", // Makefile文件
+		"Dockerfile":          "\uf21f", // Dockerfile文件
+		"docker-compose.yml":  "\uf21f", // Docker Compose文件
+		"docker-compose.yaml": "\uf21f", // Docker Compose文件
+		"compose.yml":         "\uf21f", // Docker Compose v2 推荐简写
+		"compose.yaml":        "\uf21f", // Docker Compose v2 推荐简写
+		"LICENSE":             "\uf4d1", // 许可证文件
+		"LICENCE":             "\uf4d1", // 许可证文件
+		"Jenkinsfile":         "\uf2ec", // Jenkinsfile文件
+		"README.md":           "\uEDA4", // README文件
+		"API.md":              "\uEDA4", // API文档文件
+		"APIDOC.md":           "\uEDA4", // API文档文件
+		"APIDoc.md":           "\uEDA4", // API文档文件
+		".env":                "\ue5fc", // 环境变量文件
+		".gitignore":          "\uf1d3", // Git忽略文件
+		".gitattributes":      "\uf1d3", // Git属性配置
+		"access.log":          "\uE776", // 访问日志
+		"error.log":           "\uE776", // 错误日志
+		"nginx.conf":          "\uE776", // Nginx配置文件
+		"Taskfile.yml":        "\uf0ae", // 任务文件
+		"taskfile.yml":        "\uf0ae", // 任务文件
+		"Taskfile.yaml":       "\uf0ae", // 任务文件
+		"taskfile.yaml":       "\uf0ae", // 任务文件
+		"Taskfile.dist.yml":   "\uf0ae", // 默认任务文件
+		"taskfile.dist.yml":   "\uf0ae", // 默认任务文件
+		"Taskfile.dist.yaml":  "\uf0ae", // 默认任务文件
+		"taskfile.dist.yaml":  "\uf0ae", // 默认任务文件
+		"gob.toml":            "\uf0ae", // gob配置文件
+		"go.mod":              "\uE627", // go模块文件
+		"go.sum":              "\uE627", // go模块文件
+		".bashrc":             "\ue760", // bash配置文件
+		".bash_profile":       "\ue760", // bash配置文件
+		".bash_history":       "\ue760", // bash历史文件
+	},
 }
 
 // getIcon 根据文件信息返回图标编码。
-//
-// 规则：
-//   - 优先按普通文件类型映射，若未命中则按文件扩展名映射，最后使用默认图标。
 //
 // 参数：
 //   - info: 文件信息结构体，包含文件类型、扩展名等。
@@ -463,24 +501,55 @@ var defaultIcons = IconMap{
 // 注意：
 //   - 仅在存在图标时在末尾追加一个空格，避免无图标时产生多余空格。
 func getIcon(info FileInfo) string {
-	// 先确定图标
 	var icon string
-	if info.EntryType == FileType || info.EntryType == ExecutableType {
-		if v, ok := defaultIcons.ByExt[info.FileExt]; ok {
-			icon = v
-		} else {
-			icon = defaultIcons.ByType[info.EntryType]
+
+	// 1. 最优先：按特殊文件名匹配
+	//    例如 "Makefile", "Dockerfile", "README", "LICENSE" 等
+	if v, ok := defaultIcons.BySpecial[info.Name]; ok {
+		return addSpace(v) // 找到即返回
+	}
+
+	// 2. 其次：按文件类型匹配
+	//    这包括目录、软链接等非普通文件，以及普通文件的通用类型图标
+	if v, ok := defaultIcons.ByType[info.EntryType]; ok {
+		// 对于非普通文件，ByType 的图标通常是最终的
+		if info.EntryType != FileType {
+			return addSpace(v) // 找到即返回
 		}
-	} else {
-		icon = defaultIcons.ByType[info.EntryType]
+
+		// 如果是普通文件，先暂存ByType的通用图标，继续尝试ByExt
+		icon = v
 	}
 
-	// 若未匹配到或映射值为空，回退到默认图标
-	if icon == "" {
-		icon = defaultIcons.Default
+	// 3. 再次：按文件扩展名匹配 (仅对普通文件有效)
+	//    如果文件是普通文件，并且之前没有找到更具体的图标（例如特殊文件名），
+	//    则尝试通过扩展名来获取更具体的图标。
+	if info.EntryType == FileType {
+		if v, ok := defaultIcons.ByExt[info.FileExt]; ok {
+			return addSpace(v) // 找到即返回
+		}
 	}
 
-	// 有图标则追加空格返回；没有则返回空字符串
+	// 4. 如果前面都没有匹配到，但ByType为普通文件提供了通用图标，则使用它
+	if icon != "" {
+		return addSpace(icon)
+	}
+
+	// 5. 最后：回退到默认图标
+	return addSpace(defaultIcons.Default)
+}
+
+// addSpace 用于给图标添加空格的函数
+//
+// 参数：
+//   - icon: 图标编码字符串，若为空则不添加空格。
+//
+// 返回值：
+//   - string: 图标编码字符串，若为空则返回空字符串。
+//
+// 注意：
+//   - 仅在图标非空时在末尾追加一个空格，避免无图标时产生多余空格。
+func addSpace(icon string) string {
 	if icon != "" {
 		return icon + " "
 	}
