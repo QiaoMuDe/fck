@@ -73,83 +73,83 @@ var defaultIcons = IconMap{
 
 		// 其他编程语言
 		".rs":     "\uE7A8", // Rust
-		".rb":     "\uf1c9", // Ruby
+		".rb":     "\uf121", // Ruby
 		".php":    "\uE73D", // PHP
 		".java":   "\uec15", // Java
 		".c":      "\ue649", // C
 		".cpp":    "\ue649", // C++
 		".h":      "\ue649", // C/C++ 头文件
 		".hpp":    "\ue649", // C++ 头文件
-		".m":      "\uf1c9", // Objective-C
-		".mm":     "\uf1c9", // Objective-C++
-		".swift":  "\uf1c9", // Swift
-		".kt":     "\uf1c9", // Kotlin
-		".kts":    "\uf1c9", // Kotlin 脚本
-		".scala":  "\uf1c9", // Scala
-		".lua":    "\uf1c9", // Lua
-		".pl":     "\uf1c9", // Perl
-		".pm":     "\uf1c9", // Perl 模块
-		".r":      "\uf1c9", // R语言
+		".m":      "\uf121", // Objective-C
+		".mm":     "\uf121", // Objective-C++
+		".swift":  "\uf121", // Swift
+		".kt":     "\uf121", // Kotlin
+		".kts":    "\uf121", // Kotlin 脚本
+		".scala":  "\uf121", // Scala
+		".lua":    "\uf121", // Lua
+		".pl":     "\uf121", // Perl
+		".pm":     "\uf121", // Perl 模块
+		".r":      "\uf121", // R语言
 		".sql":    "\uf472", // SQL
 		".ps1":    "\uf489", // PowerShell
 		".psm1":   "\uf489", // PowerShell 模块
 		".bat":    "\uf489", // Windows 批处理
 		".cmd":    "\uf489", // Windows 命令
-		".vbs":    "\uf1c9", // VBScript
-		".asm":    "\uf1c9", // 汇编
-		".s":      "\uf1c9", // 汇编
+		".vbs":    "\uf121", // VBScript
+		".asm":    "\uf121", // 汇编
+		".s":      "\uf121", // 汇编
 		".cs":     "\ue649", // C#
-		".vb":     "\uf1c9", // Visual Basic
-		".fs":     "\uf1c9", // F#
-		".hs":     "\uf1c9", // Haskell
-		".dart":   "\uf1c9", // Dart
-		".ex":     "\uf1c9", // Elixir
-		".exs":    "\uf1c9", // Elixir 脚本
-		".groovy": "\uf1c9", // Groovy
+		".vb":     "\uf121", // Visual Basic
+		".fs":     "\uf121", // F#
+		".hs":     "\uf121", // Haskell
+		".dart":   "\uf121", // Dart
+		".ex":     "\uf121", // Elixir
+		".exs":    "\uf121", // Elixir 脚本
+		".groovy": "\uf121", // Groovy
 
 		// 模板文件
-		".pug":      "\uf1c9", // Pug
-		".jade":     "\uf1c9", // Jade
-		".haml":     "\uf1c9", // Haml
-		".erb":      "\uf1c9", // ERB
-		".tpl":      "\uf1c9", // 模板
-		".hbs":      "\uf1c9", // Handlebars
-		".mustache": "\uf1c9", // Mustache
-		".ejs":      "\uf1c9", // EJS
+		".pug":      "\uf121", // Pug
+		".jade":     "\uf121", // Jade
+		".haml":     "\uf121", // Haml
+		".erb":      "\uf121", // ERB
+		".tpl":      "\uf121", // 模板
+		".hbs":      "\uf121", // Handlebars
+		".mustache": "\uf121", // Mustache
+		".ejs":      "\uf121", // EJS
 
 		// 其他代码相关
-		".mdx":    "\uf1c9", // MDX
-		".svelte": "\uf1c9", // Svelte
-		".astro":  "\uf1c9", // Astro
+		".mdx":    "\uf121", // MDX
+		".svelte": "\uf121", // Svelte
+		".astro":  "\uf121", // Astro
 
 		// 新兴语言和框架
-		".zig":     "\uf1c9", // Zig语言
-		".nim":     "\uf1c9", // Nim语言
-		".crystal": "\uf1c9", // Crystal语言
+		".zig":     "\uf121", // Zig语言
+		".nim":     "\uf121", // Nim语言
+		".crystal": "\uf121", // Crystal语言
 		".v":       "\ue6ac", // V语言
-		".odin":    "\uf1c9", // Odin语言
-		".gleam":   "\uf1c9", // Gleam语言
-		".roc":     "\uf1c9", // Roc语言
+		".odin":    "\uf121", // Odin语言
+		".gleam":   "\uf121", // Gleam语言
+		".roc":     "\uf121", // Roc语言
 
 		// Web开发相关
-		".mjs":        "\uf1c9", // ES模块
-		".cjs":        "\uf1c9", // CommonJS模块
-		".coffee":     "\uf1c9", // CoffeeScript
-		".livescript": "\uf1c9", // LiveScript
-		".elm":        "\uf1c9", // Elm语言
-		".purescript": "\uf1c9", // PureScript
-		".reason":     "\uf1c9", // ReasonML
-		".rescript":   "\uf1c9", // ReScript
+		".mjs":        "\uf121", // ES模块
+		".cjs":        "\uf121", // CommonJS模块
+		".coffee":     "\uf121", // CoffeeScript
+		".livescript": "\uf121", // LiveScript
+		".elm":        "\uf121", // Elm语言
+		".purescript": "\uf121", // PureScript
+		".reason":     "\uf121", // ReasonML
+		".rescript":   "\uf121", // ReScript
 
 		// 移动开发
-		".xaml":       "\uf1c9", // XAML标记
-		".storyboard": "\uf1c9", // iOS Storyboard
-		".xib":        "\uf1c9", // iOS XIB文件
+		".xaml":       "\uf121", // XAML标记
+		".storyboard": "\uf121", // iOS Storyboard
+		".xib":        "\uf121", // iOS XIB文件
 
 		// 游戏开发
-		".gd":   "\uf1c9", // Godot脚本
-		".hlsl": "\uf1c9", // HLSL着色器
-		".glsl": "\uf1c9", // GLSL着色器
+		".gd":   "\uf121", // Godot脚本
+		".hlsl": "\uf121", // HLSL着色器
+		".glsl": "\uf121", // GLSL着色器
 
 		// 配置文件格式
 		".ini":        "\ue5fc",
