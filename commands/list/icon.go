@@ -234,6 +234,13 @@ var defaultIcons = IconMap{
 		".lldbinit":     "\ue5fc", // LLDB
 		".clang-format": "\ue5fc", // Clang格式化
 		".clang-tidy":   "\ue5fc", // Clang静态分析
+		".hash":         "\uf4a7", // hash文件
+		".checksum":     "\uf4a7", // 校验和文件
+		".check":        "\uf4a7", // 校验文件
+		".md5":          "\uf4a7", // MD5校验和文件
+		".sha1":         "\uf4a7", // SHA1校验和文件
+		".sha256":       "\uf4a7", // SHA256校验和文件
+		".sha512":       "\uf4a7", // SHA512校验和文件
 
 		// 现代构建工具
 		".swcrc": "\ue5fc", // SWC配置
