@@ -302,6 +302,15 @@ var yellowExtensions = map[string]bool{
 	// 文档格式
 	".rst":  true, // reStructuredText
 	".adoc": true, // AsciiDoc
+
+	// 校验文件
+	".hash":     true, // hash文件
+	".checksum": true, // 校验和文件
+	".check":    true, // 校验文件
+	".md5":      true, // MD5校验和文件
+	".sha1":     true, // SHA1校验和文件
+	".sha256":   true, // SHA256校验和文件
+	".sha512":   true, // SHA512校验和文件
 }
 
 // redExtensions 红色系文件扩展名映射表
