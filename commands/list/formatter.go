@@ -571,7 +571,7 @@ func (f *FileFormatter) formatPermissionString(info FileInfo) string {
 //   - t: 表格写入器
 func (f *FileFormatter) configureColumns(t table.Writer) {
 	t.SetColumnConfigs([]table.ColumnConfig{
-		{Name: "#", Align: text.AlignCenter},
+		{Name: "#", Align: text.AlignRight},
 		{Name: "Type", Align: text.AlignCenter},
 		{Name: "Perm", Align: text.AlignLeft},
 		{Name: "Size", Align: text.AlignRight},
