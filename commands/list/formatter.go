@@ -246,16 +246,26 @@ func (f *FileFormatter) renderTable(files FileInfoList, opts FormatOptions) erro
 
 	// 设置表头
 	if opts.TableStyle != "none" {
+		// 基础表头
+		var header table.Row
 		if opts.ShowUserGroup {
-			t.AppendHeader(table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"})
+			header = table.Row{"Type", "Perm", "Owner", "Group", "Size", "Unit", "ModTime", "Name"}
 		} else {
-			t.AppendHeader(table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"})
+			header = table.Row{"Type", "Perm", "Size", "Unit", "ModTime", "Name"}
 		}
+
+		// 是否添加索引列
+		if !opts.DisableIndex {
+			header = append(table.Row{"#"}, header...)
+			t.SetIndexColumn(1)
+		}
+
+		t.AppendHeader(header)
 	}
 
 	// 添加数据行
-	for _, info := range files {
-		f.addTableRow(t, info, opts)
+	for i, info := range files {
+		f.addTableRow(t, info, opts, i+1)
 	}
 
 	// 设置列对齐
@@ -424,16 +434,14 @@ func (f *FileFormatter) calculateOptimalColumns(fileNames []string, width int) i
 	return baseColumns
 }
 
-// timeFormat 时间格式化字符串
-const timeFormat = "2006-01-02 15:04:05"
-
 // addTableRow 添加表格行(用于长格式)
 //
 // 参数:
 //   - t: 表格写入器
 //   - info: 文件信息
 //   - opts: 格式选项
-func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOptions) {
+//   - index: 行索引
+func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOptions, index int) {
 	// 获取文件名
 	_, fileName := filepath.Split(info.Name)
 
@@ -471,39 +479,52 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 
 	// 符号链接特殊处理
 	if info.EntryType == SymlinkType {
-		arrow := " -> "                        // 软链接箭头
-		arrowColor := f.colorLib.Swhite(arrow) // 软链接箭头颜色
-		//linkFormat := formatStr + arrowColor + formatStr // 软链接格式化占位符
+		arrowColor := f.colorLib.Swhite(symlinkArrow)
 
-		// 检查软连接目标是否存在
-		if _, err := os.Stat(info.LinkTargetPath); os.IsNotExist(err) {
-			// 目标不存在
-			linkPath := f.colorLib.Sred(iconPrefix + fileNameQuoted)                    // 源路径颜色（含图标、含引号）
-			sourcePath := f.colorLib.Sgray(fmt.Sprintf(formatStr, info.LinkTargetPath)) // 目标路径颜色（含引号）
-			nameCol = fmt.Sprint(linkPath, arrowColor, sourcePath)                      // 软链接格式化字符串
+		// 目标是否存在
+		_, statErr := os.Stat(info.LinkTargetPath)
+		targetExists := statErr == nil || !os.IsNotExist(statErr)
 
+		// 预先格式化目标显示文本（含引号）
+		targetQuoted := fmt.Sprintf(formatStr, info.LinkTargetPath)
+
+		// 源路径颜色（含图标、含引号）
+		var linkPath string
+		if targetExists {
+			linkPath = f.colorLib.Scyan(iconPrefix + fileNameQuoted)
 		} else {
-			// 目标存在
-			linkPath := f.colorLib.Scyan(iconPrefix + fileNameQuoted) // 源路径颜色（含图标、含引号）
-			sourcePath := common.SprintStringColor(
-				info.LinkTargetPath,
-				fmt.Sprintf(formatStr, info.LinkTargetPath),
-				f.colorLib,
-			) // 目标路径颜色（含引号）
-			nameCol = fmt.Sprint(linkPath, arrowColor, sourcePath) // 软链接格式化字符串
+			linkPath = f.colorLib.Sred(iconPrefix + fileNameQuoted)
 		}
 
+		// 目标路径颜色（含引号）
+		var sourcePath string
+		if targetExists {
+			sourcePath = common.SprintStringColor(info.LinkTargetPath, targetQuoted, f.colorLib)
+		} else {
+			sourcePath = f.colorLib.Sgray(targetQuoted)
+		}
+
+		nameCol = fmt.Sprint(linkPath, arrowColor, sourcePath)
 	} else {
 		// 普通类型: 图标和名称合并着色
 		nameCol = GetColorString(info, iconPrefix+fileNameQuoted, f.colorLib)
 	}
 
-	// 添加行，根据是否显示用户组信息
+	// 构建基础列（是否显示用户组）
+	var row table.Row
 	if opts.ShowUserGroup {
-		t.AppendRow(table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, nameCol})
+		row = table.Row{infoType, infoPerm, info.Owner, info.Group, infoSize, infoSizeUnit, infoModTime, nameCol}
 	} else {
-		t.AppendRow(table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, nameCol})
+		row = table.Row{infoType, infoPerm, infoSize, infoSizeUnit, infoModTime, nameCol}
 	}
+
+	// 仅当表格样式非 none 且未禁用索引时，前置索引列
+	if opts.TableStyle != "none" && !opts.DisableIndex {
+		row = append(table.Row{f.colorLib.Sgray(index)}, row...)
+	}
+
+	// 添加行到表格
+	t.AppendRow(row)
 }
 
 // formatPermissionString 格式化权限字符串
@@ -550,13 +571,14 @@ func (f *FileFormatter) formatPermissionString(info FileInfo) string {
 //   - t: 表格写入器
 func (f *FileFormatter) configureColumns(t table.Writer) {
 	t.SetColumnConfigs([]table.ColumnConfig{
-		{Name: "Size", Align: text.AlignRight},
+		{Name: "#", Align: text.AlignCenter},
 		{Name: "Type", Align: text.AlignCenter},
+		{Name: "Perm", Align: text.AlignLeft},
+		{Name: "Size", Align: text.AlignRight},
 		{Name: "Owner", Align: text.AlignCenter},
 		{Name: "Group", Align: text.AlignCenter},
-		{Name: "Perm", Align: text.AlignLeft},
-		{Name: "ModTime", Align: text.AlignCenter},
 		{Name: "Unit", Align: text.AlignCenter},
+		{Name: "ModTime", Align: text.AlignCenter},
 		{Name: "Name", Align: text.AlignLeft},
 	})
 }

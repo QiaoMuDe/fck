@@ -284,5 +284,6 @@ func getFormatOptions(isMultiPath bool) FormatOptions {
 		QuoteNames:    listCmdQuoteNames.Get(),    // 是否引用名称
 		ShowUserGroup: listCmdShowUserGroup.Get(), // 是否显示用户和组
 		ShouldGroup:   shouldGroup,                // 是否应该分组显示
+		DisableIndex:  listCmdDisableIndex.Get(),  // 是否禁用索引
 	}
 }

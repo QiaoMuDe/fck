@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+// timeFormat 时间格式化字符串
+const timeFormat = "2006-01-02 15:04:05"
+
+// 全局符号链接箭头常量
+const symlinkArrow = " -> "
+
 // ScanOptions 扫描选项
 type ScanOptions struct {
 	Recursive  bool     // 是否递归扫描
@@ -31,6 +37,7 @@ type FormatOptions struct {
 	QuoteNames    bool   // 是否引用文件名
 	ShowUserGroup bool   // 是否显示用户组
 	ShouldGroup   bool   // 是否应该分组显示 (新增：避免重复判断)
+	DisableIndex  bool   // 是否禁用索引
 }
 
 // list子命令用于存储文件信息的结构体
