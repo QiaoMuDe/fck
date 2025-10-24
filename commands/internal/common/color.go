@@ -2,6 +2,7 @@ package common
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
@@ -17,6 +18,11 @@ import (
 // 返回值:
 //   - string: 着色后的文件路径
 func GetFileColorByExtension(ext, path string, cl *colorlib.ColorLib) string {
+	// 非Windows系统，直接使用白色
+	if runtime.GOOS != "windows" {
+		return cl.Swhite(path)
+	}
+
 	// 处理特殊的macOS系统文件
 	base := filepath.Base(path)
 	if base == ".DS_Store" || base == ".localized" || strings.HasPrefix(base, "._") {

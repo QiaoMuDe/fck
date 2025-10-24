@@ -21,7 +21,7 @@ enable_cgo = false
 # --color, -c: 启用颜色输出
 color_output = true
 # --batch, -b: 批量编译模式
-batch_mode = false
+batch_mode = true
 # --current-platform-only, -cpo: 仅编译当前平台
 current_platform_only = false
 # --zip, -z: 将输出文件打包为zip
