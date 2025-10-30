@@ -79,11 +79,22 @@ func NewComprx() *Comprx {
 // ==============================================
 
 // Pack 压缩文件或目录
+//
+// 参数:
+//   - dst: 目标压缩文件路径
+//   - src: 源文件或目录路径
+//
+// 返回:
+//   - error: 错误信息
 func (c *Comprx) Pack(dst string, src string) error {
 	// 检查参数
 	if src == "" || dst == "" {
-		return fmt.Errorf("源文件路径或目标文件路径不能为空")
+		return fmt.Errorf("源路径或目标路径不能为空")
 	}
+
+	// 规范化路径
+	src = filepath.Clean(src)
+	dst = filepath.Clean(dst)
 
 	// 智能检测压缩文件格式
 	compressType, err := utils.DetectCompressFormat(dst)
@@ -144,9 +155,15 @@ func (c *Comprx) Pack(dst string, src string) error {
 // 返回:
 //   - error: 错误信息
 func (c *Comprx) Unpack(src string, dst string) error {
-	// 检查源文件路径是否为空
+	// 检查源路径是否为空
 	if src == "" {
-		return fmt.Errorf("源文件路径不能为空")
+		return fmt.Errorf("源路径不能为空")
+	}
+
+	// 规范化路径
+	src = filepath.Clean(src)
+	if dst != "" {
+		dst = filepath.Clean(dst)
 	}
 
 	// 智能检测压缩文件格式
