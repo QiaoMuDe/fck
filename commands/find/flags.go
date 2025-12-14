@@ -44,7 +44,7 @@ var (
 func InitFindCmd() *cmd.Cmd {
 	// fck find 子命令
 	findCmd = qflag.NewCmd("find", "f", flag.ExitOnError).
-		WithUsage(fmt.Sprint(qflag.LongName(), " find [options] <path>\n")).
+		WithUsage(fmt.Sprint(qflag.Root.LongName(), " find [options] <path>\n")).
 		WithChinese(true).
 		WithDesc("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")
 	findCmd.AddNote("大小单位支持B/K/M/G/b/k/m/g")

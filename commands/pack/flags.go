@@ -29,7 +29,7 @@ var (
 func InitPackCmd() *cmd.Cmd {
 	packCmd = qflag.NewCmd("pack", "p", flag.ExitOnError).
 		WithChinese(true).
-		WithUsage(fmt.Sprint(qflag.LongName(), " pack [options] <archive> [src]")).
+		WithUsage(fmt.Sprint(qflag.Root.LongName(), " pack [options] <archive> [src]")).
 		WithDesc("智能压缩打包工具, 智能识别文件类型并压缩打包")
 	packCmd.AddNote("支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib")
 

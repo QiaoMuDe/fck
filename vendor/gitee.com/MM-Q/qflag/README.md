@@ -141,9 +141,9 @@ import (
 
 func main() {
     // 定义标志
-    name := qflag.String("name", "n", "world", "要问候的名称")
-    count := qflag.Int("count", "c", 1, "问候次数")
-    verbose := qflag.Bool("verbose", "v", false, "详细输出")
+    name := qflag.Root.String("name", "n", "world", "要问候的名称")
+    count := qflag.Root.Int("count", "c", 1, "问候次数")
+    verbose := qflag.Root.Bool("verbose", "v", false, "详细输出")
   
     // 解析命令行参数
     if err := qflag.Parse(); err != nil {
@@ -182,7 +182,7 @@ import (
 
 func main() {
     // 全局标志
-    verbose := qflag.Bool("verbose", "v", false, "详细输出")
+    verbose := qflag.Root.Bool("verbose", "v", false, "详细输出")
   
     // 创建子命令
     startCmd := qflag.NewCmd("start", "s", flag.ExitOnError)
@@ -198,8 +198,8 @@ func main() {
   
     pidFile := stopCmd.String("pid-file", "f", "/var/run/app.pid", "PID文件路径")
   
-    // 注册子命令
-    qflag.AddSubCmd(startCmd, stopCmd)
+    // 注册子命令到根命令
+    qflag.Root.AddSubCmd(startCmd, stopCmd)
   
     // 解析参数
     if err := qflag.Parse(); err != nil {
@@ -244,7 +244,7 @@ import (
 
 func main() {
     // 创建枚举标志
-    logLevel := qflag.Enum("log-level", "l", "info", 
+    logLevel := qflag.Root.Enum("log-level", "l", "info", 
         "日志级别", []string{"debug", "info", "warn", "error"})
   
     // 设置大小写敏感（可选）
@@ -272,13 +272,13 @@ import (
 
 func main() {
     // 创建字符串切片标志
-    files := qflag.StringSlice("files", "f", []string{}, "要处理的文件列表")
+    files := qflag.Root.StringSlice("files", "f", []string{}, "要处理的文件列表")
   
     // 创建整数切片标志
-    ports := qflag.IntSlice("ports", "p", []int{8080}, "服务端口列表")
+    ports := qflag.Root.IntSlice("ports", "p", []int{8080}, "服务端口列表")
   
     // 创建64位整数切片标志
-    sizes := qflag.Int64Slice("sizes", "s", []int64{}, "文件大小列表")
+    sizes := qflag.Root.Int64Slice("sizes", "s", []int64{}, "文件大小列表")
   
     // 自定义分隔符（默认为逗号）
     files.SetDelimiters([]string{";"})
@@ -314,7 +314,7 @@ import (
 
 func main() {
     // 创建映射标志
-    config := qflag.Map("config", "c", map[string]string{}, "配置键值对")
+    config := qflag.Root.Map("config", "c", map[string]string{}, "配置键值对")
   
     // 设置分隔符（键值对分隔符，键值分隔符）
     config.SetDelimiters(",", ":")
@@ -344,7 +344,7 @@ import (
 
 func main() {
     // 创建带验证的标志
-    port := qflag.Int("port", "p", 8080, "服务端口")
+    port := qflag.Root.Int("port", "p", 8080, "服务端口")
   
     // 设置端口范围验证器
     port.SetValidator(&validator.IntRangeValidator{
@@ -353,7 +353,7 @@ func main() {
     })
   
     // 字符串长度验证
-    name := qflag.String("name", "n", "", "服务名称")
+    name := qflag.Root.String("name", "n", "", "服务名称")
     name.SetValidator(&validator.StringLengthValidator{
         Min: 3,
         Max: 20,
@@ -381,10 +381,10 @@ import (
 
 func main() {
     // 创建标志并绑定环境变量
-    dbHost := qflag.String("db-host", "", "localhost", "数据库主机")
+    dbHost := qflag.Root.String("db-host", "", "localhost", "数据库主机")
     dbHost.BindEnv("DATABASE_HOST")
   
-    dbPort := qflag.Int("db-port", "", 5432, "数据库端口")
+    dbPort := qflag.Root.Int("db-port", "", 5432, "数据库端口")
     dbPort.BindEnv("DATABASE_PORT")
   
     if err := qflag.Parse(); err != nil {
@@ -436,7 +436,7 @@ func (v *EmailValidator) Validate(value any) error {
 }
 
 func main() {
-    email := qflag.String("email", "e", "", "用户邮箱")
+    email := qflag.Root.String("email", "e", "", "用户邮箱")
     email.SetValidator(&EmailValidator{})
   
     if err := qflag.Parse(); err != nil {
@@ -484,23 +484,23 @@ import (
 
 func main() {
     // 设置应用信息
-    qflag.SetVersion("1.0.0")
-    qflag.SetDesc("这是一个示例应用程序")
-    qflag.SetUsage("myapp [选项] <命令> [参数...]")
+    qflag.Root.SetVersion("1.0.0")
+    qflag.Root.SetDesc("这是一个示例应用程序")
+    qflag.Root.SetUsage("myapp [选项] <命令> [参数...]")
   
     // 添加使用示例
-    qflag.AddExample("启动服务", "myapp start --port 8080")
-    qflag.AddExample("查看状态", "myapp status --verbose")
+    qflag.Root.AddExample("启动服务", "myapp start --port 8080")
+    qflag.Root.AddExample("查看状态", "myapp status --verbose")
   
     // 添加注意事项
-    qflag.AddNote("配置文件默认位置: ~/.myapp/config.yaml")
-    qflag.AddNote("日志文件位置: /var/log/myapp.log")
+    qflag.Root.AddNote("配置文件默认位置: ~/.myapp/config.yaml")
+    qflag.Root.AddNote("日志文件位置: /var/log/myapp.log")
   
     // 设置中文帮助信息
-    qflag.SetChinese(true)
+    qflag.Root.SetChinese(true)
   
     // 定义标志...
-    name := qflag.String("name", "n", "world", "要问候的名称")
+    name := qflag.Root.String("name", "n", "world", "要问候的名称")
   
     if err := qflag.Parse(); err != nil {
         return

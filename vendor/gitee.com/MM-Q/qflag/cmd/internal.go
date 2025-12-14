@@ -39,8 +39,8 @@ func (c *Cmd) parseCommon(args []string, parseSubcommands bool) (shouldExit bool
 	}
 
 	// 调用提取的组件校验方法
-	if err := c.validateComponents(); err != nil {
-		return false, err
+	if validationErr := c.validateComponents(); validationErr != nil {
+		return false, validationErr
 	}
 
 	c.ctx.ParseOnce.Do(func() {

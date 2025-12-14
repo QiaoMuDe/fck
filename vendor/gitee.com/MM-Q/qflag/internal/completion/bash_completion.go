@@ -1,6 +1,6 @@
 // Package completion Bash Shell 自动补全实现
-// 本文件实现了Bash Shell环境下的命令行自动补全功能，
-// 生成Bash补全脚本，支持标志和子命令的智能补全。
+// 本文件实现了Bash Shell环境下的命令行自动补全功能, 
+// 生成Bash补全脚本, 支持标志和子命令的智能补全。
 package completion
 
 import (
@@ -23,7 +23,7 @@ func generateBashCommandTreeEntry(cmdTreeEntries *bytes.Buffer, cmdPath string, 
 // generateBashCompletion 生成优化的Bash自动补全脚本
 //
 // 新增功能:
-// - 高性能模糊匹配算法 (纯整数运算，无bc依赖)
+// - 高性能模糊匹配算法 (纯整数运算, 无bc依赖)
 // - 智能分级匹配策略 (精确->大小写不敏感->模糊->子字符串)
 // - 性能保护机制 (候选项过多时自动回退到传统匹配)
 // - 结果缓存系统 (避免重复计算)
@@ -43,7 +43,7 @@ func generateBashCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 	// 遍历标志参数并生成相应的Bash自动补全脚本
 	for _, param := range params {
 		var key string
-		// 使用对象池构建键字符串，避免fmt.Sprintf的内存分配
+		// 使用对象池构建键字符串, 避免fmt.Sprintf的内存分配
 		if param.CommandPath == "" {
 			key = param.Name
 		} else {
@@ -54,14 +54,14 @@ func generateBashCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 			})
 		}
 
-		// 使用对象池构建参数值字符串，避免字符串拼接的内存分配
+		// 使用对象池构建参数值字符串, 避免字符串拼接的内存分配
 		paramValue := buildString(func(builder *strings.Builder) {
 			builder.WriteString(param.Type)
 			builder.WriteByte('|')
 			builder.WriteString(param.ValueType)
 		})
 
-		// 使用对象池构建完整的标志参数项，避免fmt.Fprintf的格式化开销
+		// 使用对象池构建完整的标志参数项, 避免fmt.Fprintf的格式化开销
 		flagParamItem := buildString(func(builder *strings.Builder) {
 			builder.WriteString(programName)
 			builder.WriteString("_flag_params[\"")
@@ -72,7 +72,7 @@ func generateBashCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 		})
 		flagParamsBuf.WriteString(flagParamItem)
 
-		// 如果参数类型为枚举，则生成枚举选项
+		// 如果参数类型为枚举, 则生成枚举选项
 		if param.ValueType == "enum" && len(param.EnumOptions) > 0 {
 			// 预分配切片容量以提高性能
 			escapedOpts := make([]string, len(param.EnumOptions))
@@ -80,7 +80,7 @@ func generateBashCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 				escapedOpts[i] = escapeSpecialChars(opt)
 			}
 
-			// 将枚举选项转换为字符串，使用|分隔符与其他选项保持一致
+			// 将枚举选项转换为字符串, 使用|分隔符与其他选项保持一致
 			options := strings.Join(escapedOpts, "|")
 
 			// 写入枚举选项
@@ -110,7 +110,7 @@ func generateBashCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 }
 
 // bashEscapeMap Bash特殊字符转义映射表
-// 使用全局map提高转义性能，避免重复的switch判断
+// 使用全局map提高转义性能, 避免重复的switch判断
 var bashEscapeMap = map[rune]string{
 	'\\': "\\\\", // 反斜杠
 	'"':  "\\\"", // 双引号
@@ -135,14 +135,14 @@ var bashEscapeMap = map[rune]string{
 }
 
 // escapeSpecialChars 处理字符串中的特殊字符转义
-// 优化版本：使用全局map进行O(1)查找，提升性能
+// 优化版本：使用全局map进行O(1)查找, 提升性能
 // 用于确保生成的bash脚本中的字符串安全性
 //
 // 参数:
 //   - s: 需要处理的字符串
 //
 // 返回值:
-//   - 转义后的字符串，可安全用于bash脚本中
+//   - 转义后的字符串, 可安全用于bash脚本中
 func escapeSpecialChars(s string) string {
 	var builder strings.Builder
 	builder.Grow(len(s) * 2) // 预分配容量以减少重新分配
@@ -168,25 +168,24 @@ const (
 	BashFunctionHeader = `#!/usr/bin/env bash
 
 # ==================== 模糊补全配置参数 ====================
-# 模糊补全功能开关 (设置为0禁用，1启用)
-readonly {{.ProgramName}}_FUZZY_COMPLETION_ENABLED=1
+# 模糊补全功能开关 (设置为0禁用, 1启用)
+{{.ProgramName}}_FUZZY_COMPLETION_ENABLED=1
 
 # 启用模糊补全的最大候选项数量阈值
 # 超过此数量将回退到传统前缀匹配以保证性能
-readonly {{.ProgramName}}_FUZZY_MAX_CANDIDATES=150
+{{.ProgramName}}_FUZZY_MAX_CANDIDATES=150
 
 # 模糊匹配的最小输入长度 (小于此长度不启用模糊匹配)
-readonly {{.ProgramName}}_FUZZY_MIN_PATTERN_LENGTH=2
+{{.ProgramName}}_FUZZY_MIN_PATTERN_LENGTH=2
 
-# 模糊匹配分数阈值 (0-100，分数低于此值的匹配将被过滤)
-readonly {{.ProgramName}}_FUZZY_SCORE_THRESHOLD=30
+# 模糊匹配分数阈值 (0-100, 分数低于此值的匹配将被过滤)
+{{.ProgramName}}_FUZZY_SCORE_THRESHOLD=30
 
 # 模糊匹配最大返回结果数
-readonly {{.ProgramName}}_FUZZY_MAX_RESULTS=8
+{{.ProgramName}}_FUZZY_MAX_RESULTS=8
 
-# 缓存大小控制参数
-# 缓存条目数量超过此阈值时将清空缓存以防止内存无限增长
-readonly {{.ProgramName}}_FUZZY_CACHE_MAX_SIZE=500
+# 缓存大小控制参数, 超过此阈值时将清空缓存以防止内存无限增长
+{{.ProgramName}}_FUZZY_CACHE_MAX_SIZE=500
 
 # ==================== 静态数据定义 ====================
 # 静态命令树定义 - 在函数外预初始化
@@ -234,7 +233,7 @@ _{{.ProgramName}}_fuzzy_score_fast() {
     for ((i=0; i<pattern_len; i++)); do
         local char="${pattern_lower:$i:1}"
         if [[ "$candidate_lower" != *"$char"* ]]; then
-            echo "0"  # 必需字符不存在，直接返回
+            echo "0"  # 必需字符不存在, 直接返回
             return
         fi
     done
@@ -278,7 +277,7 @@ _{{.ProgramName}}_fuzzy_score_fast() {
             fi
         done
         
-        # 如果某个字符未找到，重置连续计数
+        # 如果某个字符未找到, 重置连续计数
         if [[ $found -eq 0 ]]; then
             consecutive=0
         fi
@@ -291,7 +290,7 @@ _{{.ProgramName}}_fuzzy_score_fast() {
     # 连续性奖励: (最大连续长度 / 模式长度) * 20
     local consecutive_bonus=$((max_consecutive * 20 / pattern_len))
     
-    # 长度惩罚: 候选字符串越长，分数略微降低
+    # 长度惩罚: 候选字符串越长, 分数略微降低
     local length_penalty=$((candidate_len - pattern_len))
     if [[ $length_penalty -gt 10 ]]; then
         length_penalty=10  # 最大惩罚10分
@@ -360,7 +359,7 @@ _{{.ProgramName}}_intelligent_match() {
     
     local matches=()
     
-    # 第1级: 精确前缀匹配 (最快，优先级最高)
+    # 第1级: 精确前缀匹配 (最快, 优先级最高)
     local exact_matches=()
     local opt
     for opt in "${opts_arr[@]}"; do
@@ -369,7 +368,7 @@ _{{.ProgramName}}_intelligent_match() {
         fi
     done
     
-    # 如果有精确匹配且数量合理，直接返回
+    # 如果有精确匹配且数量合理, 直接返回
     if [[ ${#exact_matches[@]} -gt 0 && ${#exact_matches[@]} -le 15 ]]; then
         COMPREPLY=("${exact_matches[@]}")
         return 0
@@ -387,14 +386,14 @@ _{{.ProgramName}}_intelligent_match() {
             fi
         done
         
-        # 如果有大小写不敏感匹配，返回
+        # 如果有大小写不敏感匹配, 返回
         if [[ ${#case_insensitive_matches[@]} -gt 0 ]]; then
             COMPREPLY=("${case_insensitive_matches[@]}")
             return 0
         fi
     fi
     
-    # 第3级: 模糊匹配 (最慢，仅在必要时使用)
+    # 第3级: 模糊匹配 (最慢, 仅在必要时使用)
     if [[ ${{.ProgramName}}_FUZZY_COMPLETION_ENABLED -eq 1 && $pattern_len -ge ${{.ProgramName}}_FUZZY_MIN_PATTERN_LENGTH ]]; then
         local fuzzy_results=()
         local scored_matches=()
@@ -410,13 +409,13 @@ _{{.ProgramName}}_intelligent_match() {
             fi
         done
         
-        # 如果有模糊匹配结果，按分数排序并返回前N个
+        # 如果有模糊匹配结果, 按分数排序并返回前N个
         if [[ ${#scored_matches[@]} -gt 0 ]]; then
             # 按分数降序排序
             local sorted_matches
             mapfile -t sorted_matches < <(printf '%s\n' "${scored_matches[@]}" | sort -t: -k1 -nr)
             
-            # 提取选项名称，限制返回数量
+            # 提取选项名称, 限制返回数量
             local count=0
             local match
             for match in "${sorted_matches[@]}"; do
@@ -448,7 +447,7 @@ _{{.ProgramName}}_intelligent_match() {
         return 0
     fi
     
-    # 如果所有匹配策略都失败，返回空结果
+    # 如果所有匹配策略都失败, 返回空结果
     COMPREPLY=()
     return 1
 }
@@ -479,7 +478,7 @@ _{{.ProgramName}}() {
 	local i
 	for ((i=1; i < cword; i++)); do
 		local arg="${words[i]}"
-		# 如果遇到标志，停止上下文构建
+		# 如果遇到标志, 停止上下文构建
 		if [[ "$arg" =~ ^- ]]; then
 			break
 		fi
@@ -544,7 +543,7 @@ _{{.ProgramName}}() {
 }
 
 # ==================== 调试和诊断函数 ====================
-# 补全系统健康检查函数 (可选，用于调试)
+# 补全系统健康检查函数 (可选, 用于调试)
 _{{.ProgramName}}_completion_debug() {
     echo "=== {{.ProgramName}} 补全系统诊断 ==="
     echo "Bash版本: $BASH_VERSION"

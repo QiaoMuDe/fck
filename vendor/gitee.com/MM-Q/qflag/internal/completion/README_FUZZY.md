@@ -123,15 +123,15 @@ your_program --v<TAB>
 ### 调整性能参数
 ```bash
 # 在补全脚本中修改配置
-readonly FUZZY_MAX_CANDIDATES=200    # 提高候选项阈值
-readonly FUZZY_SCORE_THRESHOLD=40    # 提高分数要求
-readonly FUZZY_MAX_RESULTS=5         # 减少返回结果数
+FUZZY_MAX_CANDIDATES=200    # 提高候选项阈值
+FUZZY_SCORE_THRESHOLD=40    # 提高分数要求
+FUZZY_MAX_RESULTS=5         # 减少返回结果数
 ```
 
 ### 禁用模糊匹配
 ```bash
 # 方法1: 修改配置参数
-readonly FUZZY_COMPLETION_ENABLED=0
+FUZZY_COMPLETION_ENABLED=0
 
 # 方法2: 环境变量控制 (如果实现了的话)
 export YOUR_PROGRAM_FUZZY_DISABLED=1

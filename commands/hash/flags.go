@@ -25,7 +25,7 @@ var (
 func InitHashCmd() *cmd.Cmd {
 	// fck hash 子命令
 	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError).
-		WithUsage(fmt.Sprint(qflag.LongName(), " hash [options] <path>\n")).
+		WithUsage(fmt.Sprint(qflag.Root.LongName(), " hash [options] <path>\n")).
 		WithChinese(true).
 		WithDesc("文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理")
 	hashCmdType = hashCmd.Enum("type", "t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512", []string{"md5", "sha1", "sha256", "sha512"})

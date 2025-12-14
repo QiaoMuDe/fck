@@ -65,7 +65,7 @@ func Run() {
 	watchCmd := watch.InitWatchCmd()
 
 	// 添加子命令到全局根命令
-	if addCmdErr := qflag.AddSubCmd(sizeCmd, listCmd, checkCmd, hashCmd, findCmd, packCmd, unpackCmd, previewCmd, watchCmd); addCmdErr != nil {
+	if addCmdErr := qflag.Root.AddSubCmd(sizeCmd, listCmd, checkCmd, hashCmd, findCmd, packCmd, unpackCmd, previewCmd, watchCmd); addCmdErr != nil {
 		fmt.Printf("err: %v\n", addCmdErr)
 		os.Exit(1)
 	}
@@ -77,12 +77,12 @@ func Run() {
 	}
 
 	// 获取子命令名字
-	subCmdName := qflag.Arg(0)
+	subCmdName := qflag.Root.Arg(0)
 
 	// 如果没有指定子命令，则打印帮助信息
 	if subCmdName == "" {
 		// 打印帮助信息并退出
-		qflag.PrintHelp()
+		qflag.Root.PrintHelp()
 		os.Exit(0)
 	}
 
@@ -154,7 +154,7 @@ func Run() {
 	default:
 		// 如果是未知的子命令, 则打印帮助信息并退出
 		fmt.Printf("err: 未知的子命令 %s\n", subCmdName)
-		qflag.PrintHelp()
+		qflag.Root.PrintHelp()
 		os.Exit(1)
 	}
 

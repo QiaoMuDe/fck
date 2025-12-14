@@ -12,7 +12,20 @@ import (
 项目地址: https://gitee.com/MM-Q/qflag
 */
 
-// NewCmd 导出cmd包中的NewCmd函数
+// NewCmd 创建新的命令实例
+//
+// 参数:
+//   - longName: 命令的全称(如: ls, rm, mkdir 等)
+//   - shortName: 命令的简称(如: l, r, m 等)
+//   - errorHandling: 标志解析错误处理策略
+//
+// 返回值:
+//   - *cmd.Cmd: 新创建的命令实例
+//
+// errorHandling可选值:
+//   - flag.ContinueOnError: 遇到错误时继续解析, 并将错误返回
+//   - flag.ExitOnError: 遇到错误时立即退出程序, 并将错误返回
+//   - flag.PanicOnError: 遇到错误时立即触发panic, 并将错误返回
 var NewCmd = cmd.NewCmd
 
 // Cmd 导出cmd包中的Cmd结构体

@@ -29,7 +29,7 @@ func InitWatchCmd() *cmd.Cmd {
 	watchCmd = qflag.NewCmd("watch", "w", flag.ExitOnError).
 		WithDesc("命令监控工具, 周期性执行指定命令并显示输出结果").
 		WithChinese(true).
-		WithUsage(fmt.Sprint(qflag.LongName(), " watch [options] command\n"))
+		WithUsage(fmt.Sprint(qflag.Root.LongName(), " watch [options] command\n"))
 	watchCmd.AddNote("如果不指定命令, 将提示输入要监控的命令")
 	watchCmd.AddNote("使用 Ctrl+C 可以随时停止监控")
 	watchCmd.AddNote("命令执行失败时默认继续监控, 除非使用 -e 标志")

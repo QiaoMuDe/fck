@@ -23,7 +23,7 @@ var (
 func InitSizeCmd() *cmd.Cmd {
 	// fck size 子命令
 	sizeCmd = qflag.NewCmd("size", "s", flag.ExitOnError).
-		WithUsage(fmt.Sprint(qflag.LongName(), " size [options] <path>...\n")).
+		WithUsage(fmt.Sprint(qflag.Root.LongName(), " size [options] <path>...\n")).
 		WithChinese(true).
 		WithNote("大小单位会自动选择最合适的(B/KB/MB/GB/TB)").
 		WithDesc("文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示")
