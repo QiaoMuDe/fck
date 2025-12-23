@@ -7,12 +7,11 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/qflag"
-	"gitee.com/MM-Q/qflag/cmd"
 )
 
 var (
 	// fck hash 子命令
-	hashCmd          *cmd.Cmd
+	hashCmd          *qflag.Cmd
 	hashCmdType      *qflag.EnumFlag   // type 标志
 	hashCmdRecursion *qflag.BoolFlag   // recursion 标志
 	hashCmdWrite     *qflag.BoolFlag   // write 标志
@@ -22,12 +21,19 @@ var (
 	hashCmdBasePath  *qflag.StringFlag // base-path 标志
 )
 
-func InitHashCmd() *cmd.Cmd {
+func InitHashCmd() *qflag.Cmd {
 	// fck hash 子命令
-	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError).
-		WithUsage(fmt.Sprint(qflag.Root.LongName(), " hash [options] <path>\n")).
-		WithChinese(true).
-		WithDesc("文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理")
+	hashCmd = qflag.NewCmd("hash", "h", flag.ExitOnError)
+
+	hashCmdCfg := qflag.CmdConfig{
+		UseChinese:  true,
+		Desc:        "文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理",
+		Notes:       []string{"哈希值计算基于文件内容，不包括元数据"},
+		UsageSyntax: fmt.Sprintf("%s hash [options] <path>\n", qflag.Root.LongName()),
+	}
+
+	hashCmd.ApplyConfig(hashCmdCfg)
+
 	hashCmdType = hashCmd.Enum("type", "t", "md5", "指定哈希算法，支持 md5、sha1、sha256、sha512", []string{"md5", "sha1", "sha256", "sha512"})
 	hashCmdRecursion = hashCmd.Bool("recursion", "r", false, "递归处理目录")
 	hashCmdWrite = hashCmd.Bool("write", "w", false, "将哈希值写入文件, 文件名为checksum.hash")

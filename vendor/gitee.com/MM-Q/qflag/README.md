@@ -4,13 +4,13 @@
 
 **功能强大的 Go 语言命令行参数解析库**
 
-[![Go Version](https://img.shields.io/badge/Go-1.25.0-blue.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.24.0-blue.svg)](https://golang.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Gitee](https://img.shields.io/badge/Gitee-qflag-red.svg)](https://gitee.com/MM-Q/qflag)
 [![GitHub](https://img.shields.io/badge/GitHub-qflag-black.svg)](https://github.com/QiaoMuDe/qflag)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/QiaoMuDe/qflag)
 
-*支持多种数据类型 • 子命令管理 • 参数验证 • 自动补全 • 企业级特性*
+*泛型设计 • 自动路由 • 类型安全 • 并发安全 • 自动补全 • 子命令管理*
 
 [📖 快速开始](#快速开始) • [🔧 安装指南](#安装) • [📚 API 文档](#api-文档) • [🤝 贡献指南](#贡献指南)
 
@@ -18,31 +18,9 @@
 
 ---
 
-## 📋 目录
-
-- [🚀 qflag](#-qflag)
-  - [📋 目录](#-目录)
-  - [✨ 项目简介](#-项目简介)
-  - [🔗 项目地址](#-项目地址)
-  - [📦 安装](#-安装)
-  - [🌟 核心特性](#-核心特性)
-  - [📊 支持的标志类型](#-支持的标志类型)
-  - [🚀 快速开始](#-快速开始)
-  - [🔧 高级功能示例](#-高级功能示例)
-  - [🎯 自动补全](#-自动补全)
-  - [📝 帮助信息定制](#-帮助信息定制)
-  - [🏗️ 项目架构](#️-项目架构)
-  - [📚 API 文档](#-api-文档)
-  - [⚡ 性能特性](#-性能特性)
-  - [🔄 兼容性](#-兼容性)
-  - [🧪 测试说明](#-测试说明)
-  - [🤝 贡献指南](#-贡献指南)
-  - [📄 许可证](#-许可证)
-  - [💬 支持与反馈](#-支持与反馈)
-
 ## ✨ 项目简介
 
-qflag 是一个基于 Go 泛型的现代化命令行参数解析库，对标准库 flag 进行了全面增强。它采用模块化架构设计，提供了 16+ 种标志类型（包括基础类型、切片类型、复杂类型如枚举、时间、映射、大小等）、完整的子命令系统、强大的参数验证框架、智能的 Shell 自动补全（支持 Bash/PowerShell）、环境变量绑定等企业级特性。通过泛型设计确保类型安全，内置并发保护机制，支持中英文帮助信息，为构建专业的 CLI 应用提供了完整的解决方案。
+qflag 是一个基于 Go 泛型的现代化命令行参数解析库，对标准库 flag 进行了全面增强。它采用模块化架构设计，提供了 16+ 种标志类型（包括基础类型、切片类型、复杂类型如枚举、时间、映射、大小等）、完整的子命令系统、智能的自动路由机制、强大的参数验证框架、智能的 Shell 自动补全（支持 Bash/PowerShell）、环境变量绑定等企业级特性。通过泛型设计确保类型安全，内置并发保护机制，支持中英文帮助信息，为构建专业的 CLI 应用提供了完整的解决方案。
 
 ## 🔗 项目地址
 
@@ -65,9 +43,6 @@ go get -u gitee.com/MM-Q/qflag
 
 ```go
 import "gitee.com/MM-Q/qflag"
-import "gitee.com/MM-Q/qflag/cmd"
-import "gitee.com/MM-Q/qflag/flags"
-import "gitee.com/MM-Q/qflag/validator"
 ```
 
 ## 核心特性
@@ -95,6 +70,8 @@ import "gitee.com/MM-Q/qflag/validator"
 - **自动补全**：支持 Bash 和 PowerShell 的自动补全脚本生成
 - **环境变量绑定**：标志可自动从环境变量加载默认值
 - **帮助信息生成**：自动生成格式化的帮助文档，支持中英文
+- **执行函数接口**：通过 `SetRun` 和 `Run` 方法提供灵活的命令执行逻辑定义，支持并发安全
+- **自动路由**：`ParseAndRoute` 方法支持自动解析参数并路由到对应的子命令，简化命令行应用开发
 - **错误处理**：详细的错误类型和信息，便于调试
 
 ### 🛡️ 企业级特性
@@ -168,56 +145,66 @@ func main() {
 ./app -n "Bob" -c 2 -v
 ```
 
-### 子命令示例
+### 子命令示例（自动路由方式）
 
 ```go
 package main
 
 import (
-    "flag"
     "fmt"
     "os"
     "gitee.com/MM-Q/qflag"
 )
 
 func main() {
+    // 创建根命令
+    rootCmd := qflag.NewCmd("myapp", "", qflag.ExitOnError)
+    rootCmd.SetDesc("示例应用程序")
+    
     // 全局标志
-    verbose := qflag.Root.Bool("verbose", "v", false, "详细输出")
+    verbose := rootCmd.Bool("verbose", "v", false, "详细输出")
   
-    // 创建子命令
-    startCmd := qflag.NewCmd("start", "s", flag.ExitOnError)
+    // 创建启动服务子命令
+    startCmd := qflag.NewCmd("start", "s", qflag.ExitOnError)
     startCmd.SetDesc("启动服务")
   
     // 为子命令添加标志
     port := startCmd.Int("port", "p", 8080, "服务端口")
     host := startCmd.String("host", "h", "localhost", "服务主机")
-  
-    // 创建另一个子命令
-    stopCmd := qflag.NewCmd("stop", "st", flag.ExitOnError)
-    stopCmd.SetDesc("停止服务")
-  
-    pidFile := stopCmd.String("pid-file", "f", "/var/run/app.pid", "PID文件路径")
-  
-    // 注册子命令到根命令
-    qflag.Root.AddSubCmd(startCmd, stopCmd)
-  
-    // 解析参数
-    if err := qflag.Parse(); err != nil {
-        fmt.Printf("解析参数错误: %v\n", err)
-        os.Exit(1)
-    }
-  
-    // 处理命令逻辑
-    if startCmd.IsParsed() {
+    
+    // 设置启动服务的执行函数
+    startCmd.SetRun(func(cmd *qflag.Cmd) error {
         if verbose.Get() {
             fmt.Printf("启动服务在 %s:%d\n", host.Get(), port.Get())
         }
         // 启动服务逻辑...
-    } else if stopCmd.IsParsed() {
+        fmt.Printf("服务启动成功！监听地址: %s:%d\n", host.Get(), port.Get())
+        return nil
+    })
+  
+    // 创建停止服务子命令
+    stopCmd := qflag.NewCmd("stop", "st", qflag.ExitOnError)
+    stopCmd.SetDesc("停止服务")
+  
+    pidFile := stopCmd.String("pid-file", "f", "/var/run/app.pid", "PID文件路径")
+    
+    // 设置停止服务的执行函数
+    stopCmd.SetRun(func(cmd *qflag.Cmd) error {
         if verbose.Get() {
             fmt.Printf("从 %s 读取PID并停止服务\n", pidFile.Get())
         }
         // 停止服务逻辑...
+        fmt.Printf("服务停止成功！PID文件: %s\n", pidFile.Get())
+        return nil
+    })
+  
+    // 注册子命令到根命令
+    rootCmd.AddSubCmd(startCmd, stopCmd)
+  
+    // 使用ParseAndRoute自动解析并路由到对应子命令
+    if err := rootCmd.ParseAndRoute(os.Args[1:]); err != nil {
+        fmt.Printf("错误: %v\n", err)
+        os.Exit(1)
     }
 }
 ```
@@ -225,8 +212,68 @@ func main() {
 使用方式：
 
 ```bash
-./app start --port 9000 --host 0.0.0.0 --verbose
-./app stop --pid-file /tmp/app.pid -v
+# 启动服务
+./myapp start --port 9000 --host 0.0.0.0 --verbose
+# 输出: 启动服务在 0.0.0.0:9000
+# 输出: 服务启动成功！监听地址: 0.0.0.0:9000
+
+# 停止服务
+./myapp stop --pid-file /tmp/app.pid -v
+# 输出: 从 /tmp/app.pid 读取PID并停止服务
+# 输出: 服务停止成功！PID文件: /tmp/app.pid
+
+# 查看帮助
+./myapp --help
+./myapp start --help
+./myapp stop --help
+```
+
+### Run函数执行示例
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+    "gitee.com/MM-Q/qflag"
+)
+
+func main() {
+    // 创建命令
+    serverCmd := qflag.NewCmd("server", "s", qflag.ExitOnError)
+    port := serverCmd.Int("port", "p", 8080, "服务器端口")
+    debug := serverCmd.Bool("debug", "d", false, "调试模式")
+    
+    // 设置执行函数 - 使用SetRun方法
+    serverCmd.SetRun(func(cmd *qflag.Cmd) error {
+        fmt.Printf("启动服务器: localhost:%d (调试模式: %v)\n", port.Get(), debug.Get())
+        // 这里放置实际的服务器启动逻辑
+        return nil
+    })
+    
+    // 使用全局函数添加到根命令
+    qflag.AddSubCmd(serverCmd)
+    
+    // 使用全局函数解析参数
+    if err := qflag.Parse(); err != nil {
+        fmt.Printf("解析错误: %v\n", err)
+        os.Exit(1)
+    }
+    
+    // 直接执行Run方法 - 内部会自动检查是否已解析
+    if err := serverCmd.Run(); err != nil {
+        fmt.Printf("执行错误: %v\n", err)
+        os.Exit(1)
+    }
+}
+```
+
+使用方式：
+
+```bash
+./app server --port 3000 --debug
+# 输出: 启动服务器: localhost:3000 (调试模式: true)
 ```
 
 ## 高级功能示例
@@ -271,27 +318,20 @@ import (
 )
 
 func main() {
-    // 创建字符串切片标志
+    // 创建各种切片标志
     files := qflag.Root.StringSlice("files", "f", []string{}, "要处理的文件列表")
-  
-    // 创建整数切片标志
-    ports := qflag.Root.IntSlice("ports", "p", []int{8080}, "服务端口列表")
-  
-    // 创建64位整数切片标志
+    ports := qflag.Root.IntSlice("ports", "p", []int{8080}, "服务端口列表") 
     sizes := qflag.Root.Int64Slice("sizes", "s", []int64{}, "文件大小列表")
-  
-    // 自定义分隔符（默认为逗号）
+    
+    // 自定义分隔符（可选）
     files.SetDelimiters([]string{";"})
-    ports.SetDelimiters([]string{","})
-  
+    
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-  
-    fmt.Printf("要处理的文件: %v\n", files.Get())
-    fmt.Printf("服务端口: %v\n", ports.Get())
-    fmt.Printf("文件大小: %v\n", sizes.Get())
+    
+    fmt.Printf("文件: %v, 端口: %v, 大小: %v\n", files.Get(), ports.Get(), sizes.Get())
 }
 ```
 
@@ -343,27 +383,19 @@ import (
 )
 
 func main() {
-    // 创建带验证的标志
-    port := qflag.Root.Int("port", "p", 8080, "服务端口")
-  
-    // 设置端口范围验证器
-    port.SetValidator(&validator.IntRangeValidator{
-        Min: 1024,
-        Max: 65535,
-    })
-  
-    // 字符串长度验证
-    name := qflag.Root.String("name", "n", "", "服务名称")
-    name.SetValidator(&validator.StringLengthValidator{
-        Min: 3,
-        Max: 20,
-    })
-  
+    // 端口范围验证（1024-65535）
+    port := qflag.Root.Int("port", "p", 8080, "服务端口（1024-65535）")
+    port.SetValidator(&validator.IntRangeValidator{Min: 1024, Max: 65535})
+    
+    // 字符串长度验证（3-20字符）
+    name := qflag.Root.String("name", "n", "", "服务名称（3-20字符）")
+    name.SetValidator(&validator.StringLengthValidator{Min: 3, Max: 20})
+    
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-  
+    
     fmt.Printf("服务 %s 将在端口 %d 启动\n", name.Get(), port.Get())
 }
 ```
@@ -380,18 +412,17 @@ import (
 )
 
 func main() {
-    // 创建标志并绑定环境变量
+    // 绑定环境变量（DATABASE_HOST, DATABASE_PORT）
     dbHost := qflag.Root.String("db-host", "", "localhost", "数据库主机")
-    dbHost.BindEnv("DATABASE_HOST")
-  
     dbPort := qflag.Root.Int("db-port", "", 5432, "数据库端口")
+    dbHost.BindEnv("DATABASE_HOST")
     dbPort.BindEnv("DATABASE_PORT")
-  
+    
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-  
+    
     fmt.Printf("连接数据库: %s:%d\n", dbHost.Get(), dbPort.Get())
 }
 ```
@@ -399,9 +430,8 @@ func main() {
 使用方式：
 
 ```bash
-export DATABASE_HOST=prod-db.example.com
-export DATABASE_PORT=3306
-./app  # 将使用环境变量的值
+export DATABASE_HOST=prod-db.example.com DATABASE_PORT=3306
+./app  # 使用环境变量
 ./app --db-host localhost --db-port 5432  # 命令行参数优先级更高
 ```
 
@@ -416,34 +446,27 @@ import (
     "os"
     "strings"
     "gitee.com/MM-Q/qflag"
-    "gitee.com/MM-Q/qflag/flags"
 )
 
-// 自定义邮箱验证器
+// 超简化的自定义验证器
 type EmailValidator struct{}
-
 func (v *EmailValidator) Validate(value any) error {
-    email, ok := value.(string)
-    if !ok {
-        return errors.New("value is not a string")
+    email, _ := value.(string)
+    if !strings.Contains(email, "@") {
+        return errors.New("邮箱必须包含@符号")
     }
-  
-    if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
-        return errors.New("invalid email format")
-    }
-  
     return nil
 }
 
 func main() {
     email := qflag.Root.String("email", "e", "", "用户邮箱")
     email.SetValidator(&EmailValidator{})
-  
+    
     if err := qflag.Parse(); err != nil {
         fmt.Printf("解析参数错误: %v\n", err)
         os.Exit(1)
     }
-  
+    
     fmt.Printf("用户邮箱: %s\n", email.Get())
 }
 ```
@@ -480,32 +503,28 @@ package main
 
 import (
     "gitee.com/MM-Q/qflag"
+    "gitee.com/MM-Q/qflag/internal/types"
 )
 
 func main() {
-    // 设置应用信息
-    qflag.Root.SetVersion("1.0.0")
-    qflag.Root.SetDesc("这是一个示例应用程序")
-    qflag.Root.SetUsage("myapp [选项] <命令> [参数...]")
-  
-    // 添加使用示例
-    qflag.Root.AddExample("启动服务", "myapp start --port 8080")
-    qflag.Root.AddExample("查看状态", "myapp status --verbose")
-  
-    // 添加注意事项
-    qflag.Root.AddNote("配置文件默认位置: ~/.myapp/config.yaml")
-    qflag.Root.AddNote("日志文件位置: /var/log/myapp.log")
-  
-    // 设置中文帮助信息
-    qflag.Root.SetChinese(true)
-  
-    // 定义标志...
+    // 使用全局函数配置根命令
+    qflag.ApplyConfig(types.CmdConfig{
+        Version: "1.0.0",
+        Desc: "这是一个示例应用程序",
+        UseChinese: true,
+        Examples: []types.ExampleInfo{
+            {Desc: "启动服务", Usage: "myapp start --port 8080"},
+            {Desc: "查看状态", Usage: "myapp status --verbose"},
+        },
+    })
+    
+    // 定义标志并使用...
     name := qflag.Root.String("name", "n", "world", "要问候的名称")
-  
+    
     if err := qflag.Parse(); err != nil {
         return
     }
-  
+    
     // 应用逻辑...
 }
 ```
@@ -515,7 +534,6 @@ func main() {
 qflag 采用模块化设计，主要包含以下包：
 
 - **`qflag`** - 主包，提供全局 API 和便捷函数
-- **`cmd`** - 命令管理，处理子命令和命令树结构
 - **`flags`** - 标志类型定义，包含所有标志类型的实现
 - **`validator`** - 参数验证器，提供常用验证器和验证接口
 - **`qerr`** - 错误处理，定义错误类型和错误处理机制
@@ -527,7 +545,6 @@ qflag 采用模块化设计，主要包含以下包：
 完整的 API 文档按模块组织：
 
 - **[qflag 包文档](./APIDOC.md)** - 全局 API 和便捷函数
-- **[cmd 包文档](./cmd/APIDOC.md)** - 命令管理相关 API
 - **[flags 包文档](./flags/APIDOC.md)** - 标志类型定义和使用方法
 - **[validator 包文档](./validator/APIDOC.md)** - 参数验证器接口和实现
 - **[qerr 包文档](./qerr/APIDOC.md)** - 错误处理相关 API
@@ -541,7 +558,7 @@ qflag 采用模块化设计，主要包含以下包：
 
 ## 兼容性
 
-- **Go 版本**：要求 Go 1.25+ （支持泛型）
+- **Go 版本**：要求 Go 1.24+ （支持泛型）
 - **操作系统**：支持 Windows、Linux、macOS
 - **Shell 支持**：Bash、PowerShell
 
@@ -569,22 +586,6 @@ go test -bench=. ./...
 go test ./flags
 go test ./cmd
 go test ./validator
-```
-
-### 测试结构
-
-```
-qflag/
-├── flags/
-│   ├── *_test.go          # 标志类型测试
-│   └── sizeflag_test.go   # 大小标志专项测试
-├── cmd/
-│   ├── *_test.go          # 命令管理测试
-│   └── extended_test.go   # 扩展功能测试
-├── validator/
-│   └── *_test.go          # 验证器测试
-└── qerr/
-    └── *_test.go          # 错误处理测试
 ```
 
 ### 测试覆盖率目标

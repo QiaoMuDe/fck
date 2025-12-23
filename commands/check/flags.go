@@ -6,25 +6,28 @@ import (
 	"flag"
 
 	"gitee.com/MM-Q/qflag"
-	"gitee.com/MM-Q/qflag/cmd"
 )
 
 var (
 	// fck check 子命令
-	checkCmd        *cmd.Cmd
+	checkCmd        *qflag.Cmd
 	checkCmdFile    *qflag.StringFlag // file 标志
 	checkCmdBaseDir *qflag.StringFlag // base-dir 标志
 	checkCmdQuiet   *qflag.BoolFlag   // quiet 标志
 	checkCmdColor   *qflag.BoolFlag   // color 标志
 )
 
-func InitCheckCmd() *cmd.Cmd {
+func InitCheckCmd() *qflag.Cmd {
 	// fck check 子命令
-	checkCmd = qflag.NewCmd("check", "c", flag.ExitOnError).
-		WithChinese(true).
-		WithDesc("文件校验工具, 对比指定目录A和目录B的文件差异, 并支持指定校验类型").
-		WithNote("校验文件必须包含有效的头信息").
-		WithNote("校验时会自动跳过空行和注释行(以#开头的行)")
+	checkCmd = qflag.NewCmd("check", "c", flag.ExitOnError)
+
+	checkCmdCfg := qflag.CmdConfig{
+		UseChinese: true,
+		Desc:       "文件校验工具, 对比指定目录A和目录B的文件差异, 并支持指定校验类型",
+		Notes:      []string{"校验文件必须包含有效的头信息", "校验时会自动跳过空行和注释行(以#开头的行)"},
+	}
+
+	checkCmd.ApplyConfig(checkCmdCfg)
 
 	checkCmdFile = checkCmd.String("file", "f", "", "指定校验文件路径(默认为checksum.hash)")
 	checkCmdBaseDir = checkCmd.String("base-dir", "b", "", "手动指定校验基准目录(覆盖自动检测)")

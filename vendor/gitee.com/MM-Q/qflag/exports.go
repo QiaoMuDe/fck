@@ -1,40 +1,41 @@
-// Package qflag 根包统一导出入口
+// package qflag 根包统一导出入口
 // 本文件用于将各子包的核心功能导出到根包，简化外部使用。
 // 通过类型别名和变量导出的方式，为用户提供统一的API接口。
 package qflag
 
 import (
-	"gitee.com/MM-Q/qflag/cmd"
 	"gitee.com/MM-Q/qflag/flags"
+	"gitee.com/MM-Q/qflag/internal/types"
 )
 
 /*
 项目地址: https://gitee.com/MM-Q/qflag
 */
 
-// NewCmd 创建新的命令实例
-//
-// 参数:
-//   - longName: 命令的全称(如: ls, rm, mkdir 等)
-//   - shortName: 命令的简称(如: l, r, m 等)
-//   - errorHandling: 标志解析错误处理策略
-//
-// 返回值:
-//   - *cmd.Cmd: 新创建的命令实例
-//
-// errorHandling可选值:
-//   - flag.ContinueOnError: 遇到错误时继续解析, 并将错误返回
-//   - flag.ExitOnError: 遇到错误时立即退出程序, 并将错误返回
-//   - flag.PanicOnError: 遇到错误时立即触发panic, 并将错误返回
-var NewCmd = cmd.NewCmd
+// ErrorHandling 错误处理策略
+type ErrorHandling = flags.ErrorHandling
 
-// Cmd 导出cmd包中的Cmd结构体
-type Cmd = cmd.Cmd
+// ErrorHandling 错误处理策略常量
+var (
+	// ContinueOnError 解析错误时继续解析并返回错误
+	ContinueOnError ErrorHandling = flags.ContinueOnError
+	// ExitOnError 解析错误时退出程序
+	ExitOnError ErrorHandling = flags.ExitOnError
+	// PanicOnError 解析错误时触发panic
+	PanicOnError ErrorHandling = flags.PanicOnError
+)
 
-// 导出标志类型 //
+// CmdConfig 导出cmd包中的CmdConfig结构体
+type CmdConfig = types.CmdConfig
+
+// ExampleInfo 导出示例信息类型
+type ExampleInfo = types.ExampleInfo
 
 // Flag 导出flag包中的Flag结构体
 type Flag = flags.Flag
+
+// FlagRegistry 导出flag包中的FlagRegistry结构体
+type FlagRegistry = flags.FlagRegistry
 
 // StringFlag 导出flag包中的StringFlag结构体
 type StringFlag = flags.StringFlag

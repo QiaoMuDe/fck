@@ -94,11 +94,11 @@ var (
 
 ```go
 var CompletionExamplesCN = []types.ExampleInfo{
-    {Description: "Linux 环境 临时启用", Usage: "source <(%s --completion bash)"},
-    {Description: "Linux 环境 永久启用(添加到 ~/.bashrc)", Usage: "echo \"source <(%s --completion bash)\" >> ~/.bashrc"},
+    {Desc: "Linux 环境 临时启用", Usage: "source <(%s --completion bash)"},
+    {Desc: "Linux 环境 永久启用(添加到 ~/.bashrc)", Usage: "echo \"source <(%s --completion bash)\" >> ~/.bashrc"},
 
-    {Description: "Windows 环境 临时启用", Usage: "%s --completion powershell | Out-String | Invoke-Expression"},
-    {Description: "Windows 环境 永久启用(添加到 PowerShell 配置文件)", Usage: "echo \"%s --completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
+    {Desc: "Windows 环境 临时启用", Usage: "%s --completion powershell | Out-String | Invoke-Expression"},
+    {Desc: "Windows 环境 永久启用(添加到 PowerShell 配置文件)", Usage: "echo \"%s --completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
 }
 ```
 
@@ -106,11 +106,11 @@ var CompletionExamplesCN = []types.ExampleInfo{
 
 ```go
 var CompletionExamplesEN = []types.ExampleInfo{
-    {Description: "Linux environment temporary activation", Usage: "source <(%s --completion bash)"},
-    {Description: "Linux environment permanent activation (add to ~/.bashrc)", Usage: "echo \"source <(%s --completion bash)\" >> ~/.bashrc"},
+    {Desc: "Linux environment temporary activation", Usage: "source <(%s --completion bash)"},
+    {Desc: "Linux environment permanent activation (add to ~/.bashrc)", Usage: "echo \"source <(%s --completion bash)\" >> ~/.bashrc"},
 
-    {Description: "Windows environment temporary activation", Usage: "%s --completion powershell | Out-String | Invoke-Expression"},
-    {Description: "Windows environment permanent activation (add to PowerShell profile)", Usage: "echo \"%s --completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
+    {Desc: "Windows environment temporary activation", Usage: "%s --completion powershell | Out-String | Invoke-Expression"},
+    {Desc: "Windows environment permanent activation (add to PowerShell profile)", Usage: "echo \"%s --completion powershell | Out-String | Invoke-Expression\" >> $PROFILE"},
 }
 ```
 

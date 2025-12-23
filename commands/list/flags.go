@@ -8,12 +8,11 @@ import (
 
 	"gitee.com/MM-Q/fck/commands/internal/types"
 	"gitee.com/MM-Q/qflag"
-	"gitee.com/MM-Q/qflag/cmd"
 )
 
 var (
 	// fck list 子命令
-	listCmd              *cmd.Cmd
+	listCmd              *qflag.Cmd
 	listCmdAll           *qflag.BoolFlag // all 标志
 	listCmdColor         *qflag.BoolFlag // color 标志
 	listCmdSortByName    *qflag.BoolFlag // sort-by-name 标志
@@ -31,14 +30,18 @@ var (
 	listCmdDisableIndex  *qflag.BoolFlag // disable-index 标志
 )
 
-func InitListCmd() *cmd.Cmd {
+func InitListCmd() *qflag.Cmd {
 	// fck list 子命令
-	listCmd = qflag.NewCmd("list", "ls", flag.ExitOnError).
-		WithDesc("文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项").
-		WithChinese(true).
-		WithUsage(fmt.Sprint(qflag.Root.LongName(), " list [options] <path>\n"))
-	listCmd.AddNote("如果不指定路径，默认为当前目录")
-	listCmd.AddNote("排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个")
+	listCmd = qflag.NewCmd("list", "ls", flag.ExitOnError)
+
+	listCmdCfg := qflag.CmdConfig{
+		UseChinese:  true,
+		Desc:        "文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项",
+		Notes:       []string{"如果不指定路径，默认为当前目录", "排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个"},
+		UsageSyntax: fmt.Sprintf("%s list [options] <path>\n", qflag.Root.LongName()),
+	}
+
+	listCmd.ApplyConfig(listCmdCfg)
 
 	// 添加标志
 	listCmdAll = listCmd.Bool("all", "a", false, "列出所有文件和目录，包括隐藏文件和目录")

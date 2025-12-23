@@ -1,5 +1,5 @@
 // Package completion Bash Shell 自动补全实现
-// 本文件实现了Bash Shell环境下的命令行自动补全功能, 
+// 本文件实现了Bash Shell环境下的命令行自动补全功能,
 // 生成Bash补全脚本, 支持标志和子命令的智能补全。
 package completion
 
@@ -214,6 +214,16 @@ _{{.ProgramName}}_fuzzy_score_fast() {
     local pattern_len=${#pattern}
     local candidate_len=${#candidate}
     
+    # 快速路径1: 空模式检查
+    [[ -z "$pattern" ]] && { echo "100"; return; }
+    
+    # 快速路径2: 单字符模式优化
+    if [[ $pattern_len -eq 1 ]]; then
+        local idx=$(expr index "$candidate" "$pattern")
+        echo $(( idx > 0 ? 100 - idx + 1 : 0 ))
+        return
+    fi
+    
     # 性能优化1: 长度预检查 - 候选项太短直接返回0
     if [[ $candidate_len -lt $pattern_len ]]; then
         echo "0"
@@ -347,6 +357,15 @@ _{{.ProgramName}}_intelligent_match() {
     IFS='|' read -ra opts_arr <<< "$options_str"
     local total_candidates=${#opts_arr[@]}
     
+    # 预计算常用值优化
+    local pattern_lower="${pattern,,}"
+    
+    # 快速路径：模式为空时返回所有选项
+    [[ -z "$pattern" ]] && {
+        COMPREPLY=("${opts_arr[@]}")
+        return 0
+    }
+    
     # 性能保护: 候选项过多时禁用模糊匹配
     if [[ $total_candidates -gt ${{.ProgramName}}_FUZZY_MAX_CANDIDATES ]]; then
         # 回退到传统compgen前缀匹配
@@ -363,9 +382,9 @@ _{{.ProgramName}}_intelligent_match() {
     local exact_matches=()
     local opt
     for opt in "${opts_arr[@]}"; do
-        if [[ "$opt" == "$pattern"* ]]; then
-            exact_matches+=("$opt")
-        fi
+        [[ "$opt" == "$pattern"* ]] && exact_matches+=("$opt")
+        # 限制遍历次数，避免过多精确匹配
+        [[ ${#exact_matches[@]} -ge 20 ]] && break
     done
     
     # 如果有精确匹配且数量合理, 直接返回
@@ -376,14 +395,11 @@ _{{.ProgramName}}_intelligent_match() {
     
     # 第2级: 大小写不敏感前缀匹配
     if [[ ${#exact_matches[@]} -eq 0 ]]; then
-        local pattern_lower="${pattern,,}"
         local case_insensitive_matches=()
         
         for opt in "${opts_arr[@]}"; do
             local opt_lower="${opt,,}"
-            if [[ "$opt_lower" == "$pattern_lower"* ]]; then
-                case_insensitive_matches+=("$opt")
-            fi
+            [[ "$opt_lower" == "$pattern_lower"* ]] && case_insensitive_matches+=("$opt")
         done
         
         # 如果有大小写不敏感匹配, 返回
@@ -433,13 +449,10 @@ _{{.ProgramName}}_intelligent_match() {
     
     # 第4级: 子字符串匹配 (最后的备选方案)
     local substring_matches=()
-    local pattern_lower="${pattern,,}"
     
     for opt in "${opts_arr[@]}"; do
         local opt_lower="${opt,,}"
-        if [[ "$opt_lower" == *"$pattern_lower"* ]]; then
-            substring_matches+=("$opt")
-        fi
+        [[ "$opt_lower" == *"$pattern_lower"* ]] && substring_matches+=("$opt")
     done
     
     if [[ ${#substring_matches[@]} -gt 0 ]]; then
@@ -471,6 +484,12 @@ _{{.ProgramName}}() {
 	# 输入验证
 	if [[ $cword -lt 0 || ${#words[@]} -eq 0 ]]; then
 		return 1
+	fi
+
+	# 快速路径：如果当前输入看起来像是路径，优先提供路径补全
+	if [[ "$cur" == *"/"* || "$cur" == *"."* || "$cur" == *"~"* ]]; then
+		COMPREPLY=($(compgen -f -d -- "$cur"))
+		return 0
 	fi
 
 	# 查找当前命令上下文
@@ -511,30 +530,22 @@ _{{.ProgramName}}() {
 		fi
 	fi
 
-	# 根据参数类型动态生成补全
+	# 根据参数类型动态生成补全 - 仅处理需要值的参数
 	if [[ -n "$prev_param_type" && "$prev_param_type" == "required" ]]; then
-		case "$prev_value_type" in
-			enum)
-				local enum_key="${context}|${words[cword-1]}"
-				local enum_opts="${{{.ProgramName}}_enum_options[$enum_key]:-}"
-				
-				if [[ -n "$enum_opts" ]]; then
-					# 对枚举选项也使用智能匹配
-					_{{.ProgramName}}_intelligent_match "$cur" "$enum_opts"
-					return 0
-				fi
-				;;
-			string)
-				# 字符串类型 - 提供文件和目录路径补全
-				COMPREPLY=($(compgen -f -d -- "$cur"))
+		if [[ "$prev_value_type" == "enum" ]]; then
+			local enum_key="${context}|${words[cword-1]}"
+			local enum_opts="${{{.ProgramName}}_enum_options[$enum_key]:-}"
+			
+			if [[ -n "$enum_opts" ]]; then
+				# 对枚举选项使用智能匹配
+				_{{.ProgramName}}_intelligent_match "$cur" "$enum_opts"
 				return 0
-				;;
-			*)
-				# 默认值补全 - 使用智能匹配
-				_{{.ProgramName}}_intelligent_match "$cur" "$current_context_opts"
-				return 0
-				;;
-		esac
+			fi
+		else
+			# 非枚举类型 - 统一使用文件和目录路径补全
+			COMPREPLY=($(compgen -f -d -- "$cur"))
+			return 0
+		fi
 	fi
 
 	# 主要的标志和命令补全 - 使用智能匹配算法

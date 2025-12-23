@@ -1,13 +1,15 @@
 // cmd_internal 包含 Cmd 的内部实现细节，不对外暴露
-// Package cmd 内部实现和辅助功能
+// package qflag 内部实现和辅助功能
 // 本文件包含了Cmd结构体的内部实现方法和辅助功能，提供命令行解析的核心逻辑。
 // 变更需同步更新 cmd.go 中的公共接口文档。
-package cmd
+package qflag
 
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"gitee.com/MM-Q/qflag/flags"
 	"gitee.com/MM-Q/qflag/internal/completion"
@@ -35,7 +37,7 @@ func (c *Cmd) parseCommon(args []string, parseSubcommands bool) (shouldExit bool
 
 	// 检查命令是否为nil
 	if c == nil {
-		return false, fmt.Errorf("cmd: nil command")
+		return false, fmt.Errorf("nil command")
 	}
 
 	// 调用提取的组件校验方法
@@ -43,6 +45,7 @@ func (c *Cmd) parseCommon(args []string, parseSubcommands bool) (shouldExit bool
 		return false, validationErr
 	}
 
+	// 只解析一次
 	c.ctx.ParseOnce.Do(func() {
 		defer c.ctx.Parsed.Store(true) // 在返回时, 无论成功失败均标记为已解析
 
@@ -60,15 +63,18 @@ func (c *Cmd) parseCommon(args []string, parseSubcommands bool) (shouldExit bool
 			return
 		}
 
-		// 处理内置标志
-		exit, handleErr := c.handleBuiltinFlags()
+		// 处理内置标志(-h/--help, -v/--version, --completion等)
+		// handleBuiltinFlags方法返回是否阻止退出
+		// 当preventExit为false时，表示不阻止退出，需要退出程序
+		// 当preventExit为true时，表示阻止退出，不需要退出程序
+		preventExit, handleErr := c.handleBuiltinFlags()
 		if handleErr != nil {
 			err = handleErr
 			return
 		}
 
-		// 内置标志处理是否需要退出程序
-		if exit {
+		// 如果不阻止退出，则应该退出程序
+		if !preventExit {
 			shouldExit = true
 			return
 		}
@@ -80,6 +86,8 @@ func (c *Cmd) parseCommon(args []string, parseSubcommands bool) (shouldExit bool
 				err = parseErr
 				return
 			}
+
+			// 如果子命令解析返回退出信号，则需要退出程序
 			if exit {
 				shouldExit = true
 				return
@@ -93,6 +101,8 @@ func (c *Cmd) parseCommon(args []string, parseSubcommands bool) (shouldExit bool
 				err = hookErr
 				return
 			}
+
+			// 如果钩子返回退出信号，则需要退出程序
 			if hookExit {
 				shouldExit = true
 				return
@@ -100,6 +110,7 @@ func (c *Cmd) parseCommon(args []string, parseSubcommands bool) (shouldExit bool
 		}
 	})
 
+	// 如果解析过程中没有错误, 则不需要主动退出程序
 	return shouldExit, err
 }
 
@@ -123,12 +134,12 @@ func (c *Cmd) parseSubCommands() (bool, error) {
 		return false, nil
 	}
 
-	// 获取除子命令名称外的剩余参数
+	// 获取除子命令名称外的剩余参数 (克隆参数防止修改原始参数)
 	argsToProcess := make([]string, len(c.ctx.Args)-1)
 	copy(argsToProcess, c.ctx.Args[1:])
 
 	// 解析子命令的参数(这里创建了临时Cmd实例包装器)
-	exit, parseErr := tempCmd(subCmd).parseCommon(argsToProcess, true)
+	exit, parseErr := wrapCmdForParsing(subCmd).parseCommon(argsToProcess, true)
 	if parseErr != nil {
 		return false, fmt.Errorf("%w for '%s': %v", qerr.ErrSubCommandParseFailed, subCmdName, parseErr)
 	}
@@ -172,7 +183,7 @@ func (c *Cmd) registerBuiltinFlags() {
 	}
 
 	// 如果启用了自动补全功能
-	if c.ctx.Config.EnableCompletion {
+	if c.ctx.Config.Completion {
 		// 语言配置结构体：集中管理所有语言相关资源
 		type languageConfig struct {
 			notes     []string            // 注意事项
@@ -205,19 +216,46 @@ func (c *Cmd) registerBuiltinFlags() {
 		// 注册到内置的标志名称映射
 		c.ctx.BuiltinFlags.NameMap.Store(flags.CompletionShellFlagLongName, true)
 
-		// 添加自动补全子命令的注意事项
-		c.ctx.Config.Notes = append(c.ctx.Config.Notes, langConfig.notes...)
+		// 添加自动补全子命令的注意事项（根据平台过滤）
+		if runtime.GOOS == "windows" {
+			// Windows平台只添加Windows相关的注意事项
+			for _, note := range langConfig.notes {
+				if strings.Contains(note, "Windows") {
+					c.ctx.Config.Notes = append(c.ctx.Config.Notes, note)
+				}
+			}
+		} else {
+			// Linux/macOS平台只添加Linux相关的注意事项
+			for _, note := range langConfig.notes {
+				if strings.Contains(note, "Linux") {
+					c.ctx.Config.Notes = append(c.ctx.Config.Notes, note)
+				}
+			}
+		}
 
 		// 获取运行的程序名
 		cmdName := os.Args[0]
 
-		// 添加自动补全子命令的示例
+		// 添加自动补全子命令的示例（根据平台过滤）
 		for _, ex := range langConfig.examples {
-			// 直接添加到底层切片中
-			c.ctx.Config.Examples = append(c.ctx.Config.Examples, types.ExampleInfo{
-				Description: ex.Description,
-				Usage:       fmt.Sprintf(ex.Usage, cmdName),
-			})
+			// 根据平台过滤示例
+			if runtime.GOOS == "windows" {
+				// Windows平台只添加Windows相关的示例
+				if strings.Contains(ex.Desc, "Windows") {
+					c.ctx.Config.Examples = append(c.ctx.Config.Examples, types.ExampleInfo{
+						Desc:  ex.Desc,
+						Usage: fmt.Sprintf(ex.Usage, cmdName),
+					})
+				}
+			} else {
+				// Linux/macOS平台只添加Linux相关的示例
+				if strings.Contains(ex.Desc, "Linux") {
+					c.ctx.Config.Examples = append(c.ctx.Config.Examples, types.ExampleInfo{
+						Desc:  ex.Desc,
+						Usage: fmt.Sprintf(ex.Usage, cmdName),
+					})
+				}
+			}
 		}
 	}
 
@@ -235,16 +273,15 @@ func (c *Cmd) registerBuiltinFlags() {
 // handleBuiltinFlags 处理内置标志(-h/--help, -v/--version, --completion等)的逻辑
 //
 // 返回值:
-//   - 是否需要退出程序
+//   - preventExit: 是否阻止退出程序
+//   - true:  阻止退出（NoFgExit=true 时）
+//   - false: 不阻止退出（NoFgExit=false 时）
 //   - 处理过程中遇到的错误
-func (c *Cmd) handleBuiltinFlags() (bool, error) {
+func (c *Cmd) handleBuiltinFlags() (preventExit bool, err error) {
 	// 检查是否使用-h/--help标志
 	if c.ctx.BuiltinFlags.Help.Get() {
 		c.PrintHelp()
-		if c.ctx.Config.ExitOnBuiltinFlags {
-			return true, nil // 标记需要退出
-		}
-		return false, nil
+		return c.ctx.Config.NoFgExit, nil
 	}
 
 	// 只有在顶级命令中处理-v/--version标志
@@ -252,15 +289,12 @@ func (c *Cmd) handleBuiltinFlags() (bool, error) {
 		// 检查是否使用-v/--version标志
 		if c.ctx.BuiltinFlags.Version.Get() && c.ctx.Config.Version != "" {
 			fmt.Println(c.ctx.Config.Version)
-			if c.ctx.Config.ExitOnBuiltinFlags {
-				return true, nil // 标记需要退出
-			}
-			return false, nil
+			return c.ctx.Config.NoFgExit, nil
 		}
 	}
 
 	// 检查是否启用补全功能
-	if c.ctx.Config.EnableCompletion {
+	if c.ctx.Config.Completion {
 		// 获取shell类型
 		shell := c.ctx.BuiltinFlags.Completion.Get()
 
@@ -268,10 +302,10 @@ func (c *Cmd) handleBuiltinFlags() (bool, error) {
 		if shell != flags.ShellNone {
 			completion, err := completion.GenerateShellCompletion(c.ctx, shell)
 			if err != nil {
-				return false, err
+				return c.ctx.Config.NoFgExit, err
 			}
 			fmt.Println(completion)
-			return c.ctx.Config.ExitOnBuiltinFlags, nil
+			return c.ctx.Config.NoFgExit, nil
 		}
 	}
 
@@ -283,7 +317,7 @@ func (c *Cmd) handleBuiltinFlags() (bool, error) {
 		}
 
 		// 获取枚举类型标志失败，跳过
-		enumFlag, ok := meta.GetFlag().(*flags.EnumFlag)
+		enumFlag, ok := meta.GetFlag().(*EnumFlag)
 		if !ok {
 			continue
 		}
@@ -291,23 +325,24 @@ func (c *Cmd) handleBuiltinFlags() (bool, error) {
 		// 调用IsCheck方法进行验证
 		if checkErr := enumFlag.IsCheck(enumFlag.Get()); checkErr != nil {
 			// 添加标志名称到错误信息, 便于定位问题
-			return false, fmt.Errorf("flag %s: %w", meta.GetName(), checkErr)
+			return c.ctx.Config.NoFgExit, fmt.Errorf("flag %s: %w", meta.GetName(), checkErr)
 		}
 	}
 
-	return false, nil
+	// 没有触发任何内置标志, 返回true表示不需要退出
+	return true, nil
 }
 
-// tempCmd 创建临时的 Cmd 包装器用于递归解析子命令
+// wrapCmdForParsing 创建用于解析的 Cmd 包装器
 //
 // 这个函数解决了 *types.CmdContext 无法直接调用 parseCommon 方法的问题
-// 创建的临时实例仅用于方法调用，不会被其他地方引用
+// 创建的包装器仅用于解析，不会影响原始 Cmd 实例的状态
 //
 // 参数:
 //   - ctx: 子命令的上下文
 //
 // 返回值:
-//   - *Cmd: 临时的 Cmd 包装器
-func tempCmd(ctx *types.CmdContext) *Cmd {
+//   - *Cmd: 用于解析的 Cmd 包装器
+func wrapCmdForParsing(ctx *types.CmdContext) *Cmd {
 	return &Cmd{ctx: ctx}
 }

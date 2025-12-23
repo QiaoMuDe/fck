@@ -3,8 +3,30 @@
 // 验证器接口、标志接口等核心定义，为整个标志系统提供基础类型支持。
 package flags
 
+import (
+	"flag"
+	"fmt"
+	"sort"
+	"strings"
+	"time"
+)
+
 // 定义非法字符集常量, 防止非法的标志名称
 const InvalidFlagChars = " !@#$%^&*(){}[]|\\;:'\"<>,.?/"
+
+// ErrorHandling 错误处理策略
+// 便于使用, 是flag包中的ErrorHandling类型的别名
+type ErrorHandling = flag.ErrorHandling
+
+// ErrorHandling 错误处理策略常量
+var (
+	// ContinueOnError 解析错误时继续解析并返回错误
+	ContinueOnError ErrorHandling = flag.ContinueOnError
+	// ExitOnError 解析错误时退出程序
+	ExitOnError ErrorHandling = flag.ExitOnError
+	// PanicOnError 解析错误时触发panic
+	PanicOnError ErrorHandling = flag.PanicOnError
+)
 
 // 标志类型
 type FlagType int
@@ -185,5 +207,143 @@ func FlagTypeToString(flagType FlagType) string {
 
 	default:
 		return "<value>"
+	}
+}
+
+// FormatDefaultValue 根据标志类型格式化默认值为人类可读的字符串
+//
+// 参数:
+//   - flagType: 标志类型
+//   - defaultValue: 默认值
+//
+// 返回值:
+//   - 格式化后的默认值字符串
+func FormatDefaultValue(flagType FlagType, defaultValue any) string {
+	// 如果默认值为nil，返回空字符串
+	if defaultValue == nil {
+		return ""
+	}
+
+	switch flagType {
+	case FlagTypeString:
+		if str, ok := defaultValue.(string); ok {
+			return str
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeBool:
+		if b, ok := defaultValue.(bool); ok {
+			return fmt.Sprintf("%t", b)
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeInt:
+		if i, ok := defaultValue.(int); ok {
+			return fmt.Sprintf("%d", i)
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeInt64:
+		if i, ok := defaultValue.(int64); ok {
+			return fmt.Sprintf("%d", i)
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeUint16:
+		if i, ok := defaultValue.(uint16); ok {
+			return fmt.Sprintf("%d", i)
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeUint32:
+		if i, ok := defaultValue.(uint32); ok {
+			return fmt.Sprintf("%d", i)
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeUint64:
+		if i, ok := defaultValue.(uint64); ok {
+			return fmt.Sprintf("%d", i)
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeFloat64:
+		if f, ok := defaultValue.(float64); ok {
+			return fmt.Sprintf("%g", f)
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeDuration:
+		if d, ok := defaultValue.(time.Duration); ok {
+			return d.String()
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeTime:
+		if t, ok := defaultValue.(time.Time); ok {
+			// 根据时间的特点智能选择格式
+			if t.IsZero() {
+				return "" // 零值时间返回空字符串
+			}
+
+			// 如果时间只有日期部分（时分秒都是0），只显示日期
+			if t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 && t.Nanosecond() == 0 {
+				return t.Format("2006-01-02")
+			}
+
+			// 默认显示到秒
+			return t.Format("2006-01-02 15:04:05")
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeMap:
+		if m, ok := defaultValue.(map[string]string); ok {
+			var entries []string
+			for k, v := range m {
+				entries = append(entries, fmt.Sprintf("%s=%s", k, v))
+			}
+			// 对键值对进行排序，确保输出一致
+			sort.Strings(entries)
+			return strings.Join(entries, ",")
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeStringSlice:
+		if slice, ok := defaultValue.([]string); ok {
+			return strings.Join(slice, ",")
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeIntSlice:
+		if slice, ok := defaultValue.([]int); ok {
+			var strValues []string
+			for _, v := range slice {
+				strValues = append(strValues, fmt.Sprintf("%d", v))
+			}
+			return strings.Join(strValues, ",")
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeInt64Slice:
+		if slice, ok := defaultValue.([]int64); ok {
+			var strValues []string
+			for _, v := range slice {
+				strValues = append(strValues, fmt.Sprintf("%d", v))
+			}
+			return strings.Join(strValues, ",")
+		}
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeSize:
+		// Size类型通常是一个带有单位的数值，这里简单处理
+		return fmt.Sprintf("%v", defaultValue)
+
+	case FlagTypeEnum:
+		// 枚举类型直接显示值
+		return fmt.Sprintf("%v", defaultValue)
+
+	default:
+		// 未知类型使用默认格式化
+		return fmt.Sprintf("%v", defaultValue)
 	}
 }

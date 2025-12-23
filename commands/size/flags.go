@@ -8,25 +8,29 @@ import (
 
 	"gitee.com/MM-Q/fck/commands/internal/types"
 	"gitee.com/MM-Q/qflag"
-	"gitee.com/MM-Q/qflag/cmd"
 )
 
 var (
 	// fck size 子命令
-	sizeCmd           *cmd.Cmd
+	sizeCmd           *qflag.Cmd
 	sizeCmdColor      *qflag.BoolFlag // color 标志
 	sizeCmdTableStyle *qflag.EnumFlag // ts 标志
 	sizeCmdHidden     *qflag.BoolFlag // hidden 标志
 )
 
 // 初始化
-func InitSizeCmd() *cmd.Cmd {
+func InitSizeCmd() *qflag.Cmd {
 	// fck size 子命令
-	sizeCmd = qflag.NewCmd("size", "s", flag.ExitOnError).
-		WithUsage(fmt.Sprint(qflag.Root.LongName(), " size [options] <path>...\n")).
-		WithChinese(true).
-		WithNote("大小单位会自动选择最合适的(B/KB/MB/GB/TB)").
-		WithDesc("文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示")
+	sizeCmd = qflag.NewCmd("size", "s", flag.ExitOnError)
+
+	sizeCmdCfg := qflag.CmdConfig{
+		UseChinese:  true,
+		Desc:        "文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示",
+		Notes:       []string{"大小单位会自动选择最合适的(B/KB/MB/GB/TB)"},
+		UsageSyntax: fmt.Sprintf("%s size [options] <path>...\n", qflag.Root.LongName()),
+	}
+
+	sizeCmd.ApplyConfig(sizeCmdCfg)
 
 	// 标志定义
 	sizeCmdColor = sizeCmd.Bool("color", "c", false, "启用颜色输出")

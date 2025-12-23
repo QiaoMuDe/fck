@@ -6,11 +6,10 @@ import (
 
 	"gitee.com/MM-Q/fck/commands/internal/types"
 	"gitee.com/MM-Q/qflag"
-	"gitee.com/MM-Q/qflag/cmd"
 )
 
 var (
-	unpackCmd *cmd.Cmd // unpack 命令
+	unpackCmd *qflag.Cmd // unpack 命令
 
 	// 过滤器配置标志
 	includePatterns *qflag.StringSliceFlag // 包含模式
@@ -26,12 +25,17 @@ var (
 )
 
 // InitUnpackCmd 初始化unpack命令及其所有标志
-func InitUnpackCmd() *cmd.Cmd {
-	unpackCmd = qflag.NewCmd("unpack", "up", flag.ExitOnError).
-		WithChinese(true).
-		WithUsage(fmt.Sprint(qflag.Root.LongName(), " unpack [options] <archive> [dst]")).
-		WithDesc("智能解压缩工具, 智能识别压缩文件格式并解压")
-	unpackCmd.AddNote("支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib")
+func InitUnpackCmd() *qflag.Cmd {
+	unpackCmd = qflag.NewCmd("unpack", "up", flag.ExitOnError)
+
+	unpackCmdCfg := qflag.CmdConfig{
+		UseChinese:  true,
+		Desc:        "智能解压缩工具, 智能识别压缩文件格式并解压",
+		Notes:       []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
+		UsageSyntax: fmt.Sprintf("%s unpack [options] <archive> [dst]\n", qflag.Root.LongName()),
+	}
+
+	unpackCmd.ApplyConfig(unpackCmdCfg)
 
 	// 添加过滤器配置标志
 	includePatterns = unpackCmd.StringSlice("include", "i", []string{}, "包含的文件模式(支持glob语法)")

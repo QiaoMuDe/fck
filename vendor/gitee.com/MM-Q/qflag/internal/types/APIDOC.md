@@ -102,7 +102,7 @@ type CmdConfig struct {
     Version string
 
     // 自定义描述
-    Description string
+    Desc string
 
     // 自定义的完整命令行帮助信息
     Help string
@@ -126,10 +126,10 @@ type CmdConfig struct {
     UseChinese bool
 
     // 控制内置标志是否自动退出
-    ExitOnBuiltinFlags bool
+    NoFgExit bool
 
     // 控制是否启用自动补全功能
-    EnableCompletion bool
+    Completion bool
 }
 ```
 
@@ -139,7 +139,7 @@ CmdConfig 命令行配置结构体，包含命令的所有配置选项。
 
 **基本信息:**
 - `Version`: 应用程序版本号
-- `Description`: 命令描述信息
+- `Desc`: 命令描述信息
 - `Help`: 自定义帮助信息
 - `UsageSyntax`: 用法语法说明
 
@@ -151,8 +151,8 @@ CmdConfig 命令行配置结构体，包含命令的所有配置选项。
 
 **行为控制:**
 - `UseChinese`: 是否使用中文帮助信息
-- `ExitOnBuiltinFlags`: 内置标志是否自动退出程序
-- `EnableCompletion`: 是否启用自动补全功能
+- `NoFgExit`: 是否禁用内置标志自动退出
+- `Completion`: 是否启用自动补全功能
 
 #### 构造函数
 
@@ -294,7 +294,7 @@ GetName 获取命令名称。如果长命令名称不为空则返回长命令名
 
 ```go
 type ExampleInfo struct {
-    Description string // 示例描述
+    Desc string // 示例描述
     Usage       string // 示例使用方式
 }
 ```
@@ -302,7 +302,7 @@ type ExampleInfo struct {
 ExampleInfo 示例信息结构体，用于存储命令的使用示例，包括描述和示例内容。
 
 **字段:**
-- `Description`: 示例描述，说明示例的用途和场景
+- `Desc`: 示例描述，说明示例的用途和场景
 - `Usage`: 示例使用方式，具体的命令行用法
 
 **用途:**
@@ -329,7 +329,7 @@ func main() {
     // 设置配置
     ctx.Config = types.NewCmdConfig()
     ctx.Config.Version = "1.0.0"
-    ctx.Config.Description = "我的应用程序"
+    ctx.Config.Desc = "我的应用程序"
     
     // 使用上下文...
 }
@@ -344,7 +344,7 @@ func setupCommand() *types.CmdContext {
     // 配置基本信息
     config := types.NewCmdConfig()
     config.Version = "2.1.0"
-    config.Description = "部署应用程序到服务器"
+    config.Desc = "部署应用程序到服务器"
     config.UsageSyntax = "deploy [选项] <目标环境>"
     
     // 添加注意事项
@@ -356,11 +356,11 @@ func setupCommand() *types.CmdContext {
     // 添加使用示例
     config.Examples = []types.ExampleInfo{
         {
-            Description: "部署到生产环境",
+            Desc: "部署到生产环境",
             Usage:       "deploy --env production --config prod.yaml",
         },
         {
-            Description: "部署到测试环境",
+            Desc: "部署到测试环境",
             Usage:       "deploy --env staging --dry-run",
         },
     }
@@ -377,12 +377,12 @@ func setupSubCommands(parent *types.CmdContext) {
     // 创建子命令
     startCmd := types.NewCmdContext("start", "s", flag.ExitOnError)
     startCmd.Config = types.NewCmdConfig()
-    startCmd.Config.Description = "启动服务"
+    startCmd.Config.Desc = "启动服务"
     startCmd.Parent = parent
     
     stopCmd := types.NewCmdContext("stop", "st", flag.ExitOnError)
     stopCmd.Config = types.NewCmdConfig()
-    stopCmd.Config.Description = "停止服务"
+    stopCmd.Config.Desc = "停止服务"
     stopCmd.Parent = parent
     
     // 添加到父命令

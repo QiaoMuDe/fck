@@ -6,7 +6,6 @@ package help
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"gitee.com/MM-Q/qflag/flags"
 	"gitee.com/MM-Q/qflag/internal/types"
@@ -92,8 +91,8 @@ func writeCommandHeader(ctx *types.CmdContext, tpl HelpTemplate, buf *bytes.Buff
 	}
 
 	// 如果描述不为空, 则写入描述
-	if ctx.Config.Description != "" {
-		fmt.Fprintf(buf, tpl.CmdDescription, ctx.Config.Description)
+	if ctx.Config.Desc != "" {
+		fmt.Fprintf(buf, tpl.CmdDescription, ctx.Config.Desc)
 	}
 }
 
@@ -113,7 +112,7 @@ func writeUsageLine(ctx *types.CmdContext, tpl HelpTemplate, buf *bytes.Buffer) 
 
 	// 优先使用用户自定义用法
 	if ctx.Config.UsageSyntax != "" {
-		usageLine = usageLinePrefix + ctx.Config.UsageSyntax + "\n"
+		usageLine = usageLinePrefix + ctx.Config.UsageSyntax + "\n\n"
 	} else {
 		// 获取命令的完整路径
 		fullCmdPath := getFullCommandPath(ctx)
@@ -223,14 +222,7 @@ func collectFlags(cmd *types.CmdContext) []flagInfo {
 		flag := f // 获取标志类型
 
 		// 收集默认值
-		defValue := fmt.Sprintf("%v", flag.GetDefault())
-
-		// 对Duration类型进行特殊格式化
-		if flag.GetFlagType() == flags.FlagTypeDuration {
-			if duration, ok := flag.GetDefault().(time.Duration); ok {
-				defValue = duration.String() // 获取时间间隔标志的默认值的字符串表示
-			}
-		}
+		defValue := flags.FormatDefaultValue(flag.GetFlagType(), flag.GetDefault())
 
 		// 创建标志元数据
 		flagInfos = append(flagInfos, flagInfo{
@@ -306,7 +298,7 @@ func writeSubCmds(ctx *types.CmdContext, tpl HelpTemplate, buf *bytes.Buffer) {
 		}
 
 		// 格式化输出，确保描述信息对齐
-		fmt.Fprintf(buf, "  %-*s\t%s\n", maxNameLen, namePart, subCmd.Config.Description)
+		fmt.Fprintf(buf, "  %-*s\t%s\n", maxNameLen, namePart, subCmd.Config.Desc)
 	}
 }
 
@@ -370,7 +362,7 @@ func writeExamples(ctx *types.CmdContext, tpl HelpTemplate, buf *bytes.Buffer) {
 	// 遍历添加示例信息
 	for i, example := range examples {
 		// 格式化示例信息
-		fmt.Fprintf(buf, tpl.ExampleItem, i+1, example.Description, example.Usage)
+		fmt.Fprintf(buf, tpl.ExampleItem, i+1, example.Desc, example.Usage)
 
 		// 如果不是最后一个示例，添加空行
 		if i < len(examples)-1 {

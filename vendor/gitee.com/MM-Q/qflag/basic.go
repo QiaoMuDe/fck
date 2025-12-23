@@ -1,6 +1,6 @@
-// Package cmd 基础标志创建和管理功能
+// package qflag 基础标志创建和管理功能
 // 本文件提供了Cmd结构体的基础标志创建方法，包括字符串、整数、布尔、浮点数等基本类型标志的创建和绑定功能。
-package cmd
+package qflag
 
 import (
 	"fmt"
@@ -15,12 +15,12 @@ import (
 // BoolVar 绑定布尔类型标志到指针并内部注册Flag对象
 //
 // 参数值:
-//   - f: *flags.BoolFlag - 布尔标志对象指针
+//   - f: *BoolFlag - 布尔标志对象指针
 //   - longName: string - 长标志名
 //   - shortName: string - 短标志
 //   - defValue: bool - 默认值
 //   - usage: string - 帮助说明
-func (c *Cmd) BoolVar(f *flags.BoolFlag, longName, shortName string, defValue bool, usage string) {
+func (c *Cmd) BoolVar(f *BoolFlag, longName, shortName string, defValue bool, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -69,8 +69,8 @@ func (c *Cmd) BoolVar(f *flags.BoolFlag, longName, shortName string, defValue bo
 //   - usage: string - 帮助说明
 //
 // 返回值:
-//   - *flags.BoolFlag - 布尔标志对象指针
-func (c *Cmd) Bool(longName, shortName string, defValue bool, usage string) *flags.BoolFlag {
+//   - *BoolFlag - 布尔标志对象指针
+func (c *Cmd) Bool(longName, shortName string, defValue bool, usage string) *BoolFlag {
 	f := &flags.BoolFlag{}
 	c.BoolVar(f, longName, shortName, defValue, usage)
 	return f
@@ -89,8 +89,8 @@ func (c *Cmd) Bool(longName, shortName string, defValue bool, usage string) *fla
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.StringFlag: 字符串标志对象指针
-func (c *Cmd) String(longName, shortName, defValue, usage string) *flags.StringFlag {
+//   - *StringFlag: 字符串标志对象指针
+func (c *Cmd) String(longName, shortName, defValue, usage string) *StringFlag {
 	f := &flags.StringFlag{}
 	c.StringVar(f, longName, shortName, defValue, usage)
 	return f
@@ -104,7 +104,7 @@ func (c *Cmd) String(longName, shortName, defValue, usage string) *flags.StringF
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) StringVar(f *flags.StringFlag, longName, shortName, defValue, usage string) {
+func (c *Cmd) StringVar(f *StringFlag, longName, shortName, defValue, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -159,8 +159,8 @@ func (c *Cmd) StringVar(f *flags.StringFlag, longName, shortName, defValue, usag
 //   - usage - 帮助说明
 //
 // 返回值:
-//   - *flags.Float64Flag - 浮点型标志对象指针
-func (c *Cmd) Float64(longName, shortName string, defValue float64, usage string) *flags.Float64Flag {
+//   - *Float64Flag - 浮点型标志对象指针
+func (c *Cmd) Float64(longName, shortName string, defValue float64, usage string) *Float64Flag {
 	f := &flags.Float64Flag{}
 	c.Float64Var(f, longName, shortName, defValue, usage)
 	return f
@@ -169,12 +169,12 @@ func (c *Cmd) Float64(longName, shortName string, defValue float64, usage string
 // Float64Var 绑定浮点型标志到指针并内部注册Flag对象
 //
 // 参数值:
-//   - f: *flags.Float64Flag - 浮点型标志对象指针
+//   - f: *Float64Flag - 浮点型标志对象指针
 //   - longName: string - 长标志名
 //   - shortName: string - 短标志
 //   - defValue: float64 - 默认值
 //   - usage: string - 帮助说明
-func (c *Cmd) Float64Var(f *flags.Float64Flag, longName, shortName string, defValue float64, usage string) {
+func (c *Cmd) Float64Var(f *Float64Flag, longName, shortName string, defValue float64, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -226,7 +226,7 @@ func (c *Cmd) Float64Var(f *flags.Float64Flag, longName, shortName string, defVa
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) IntVar(f *flags.IntFlag, longName, shortName string, defValue int, usage string) {
+func (c *Cmd) IntVar(f *IntFlag, longName, shortName string, defValue int, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -275,8 +275,8 @@ func (c *Cmd) IntVar(f *flags.IntFlag, longName, shortName string, defValue int,
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.IntFlag: 整数标志对象指针
-func (c *Cmd) Int(longName, shortName string, defValue int, usage string) *flags.IntFlag {
+//   - *IntFlag: 整数标志对象指针
+func (c *Cmd) Int(longName, shortName string, defValue int, usage string) *IntFlag {
 	f := &flags.IntFlag{}
 	c.IntVar(f, longName, shortName, defValue, usage)
 	return f
@@ -290,7 +290,7 @@ func (c *Cmd) Int(longName, shortName string, defValue int, usage string) *flags
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) Int64Var(f *flags.Int64Flag, longName, shortName string, defValue int64, usage string) {
+func (c *Cmd) Int64Var(f *Int64Flag, longName, shortName string, defValue int64, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -339,8 +339,8 @@ func (c *Cmd) Int64Var(f *flags.Int64Flag, longName, shortName string, defValue 
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.Int64Flag: 64位整数标志对象指针
-func (c *Cmd) Int64(longName, shortName string, defValue int64, usage string) *flags.Int64Flag {
+//   - *Int64Flag: 64位整数标志对象指针
+func (c *Cmd) Int64(longName, shortName string, defValue int64, usage string) *Int64Flag {
 	f := &flags.Int64Flag{}
 	c.Int64Var(f, longName, shortName, defValue, usage)
 	return f

@@ -1,12 +1,12 @@
-// Package cmd 命令结构体和核心功能实现
-// 本文件定义了Cmd结构体，提供命令行解析、子命令管理、标志注册等核心功能。
+// package qflag 命令结构体和核心功能实现
+// 本文件定义了Cmd结构体, 提供命令行解析、子命令管理、标志注册等核心功能。
 // Cmd作为适配器连接内部函数式API和外部面向对象API。
-package cmd
+package qflag
 
 import (
-	"flag"
 	"fmt"
 	"os"
+	"sync"
 
 	"gitee.com/MM-Q/qflag/flags"
 	"gitee.com/MM-Q/qflag/internal/help"
@@ -15,20 +15,13 @@ import (
 	"gitee.com/MM-Q/qflag/qerr"
 )
 
-// ExampleInfo 导出示例信息类型
-type ExampleInfo = types.ExampleInfo
-
-// Cmd 简化的命令结构体，作为适配器连接内部函数式API和外部面向对象API
+// Cmd 命令结构体, 作为适配器连接内部函数式API和外部面向对象API
 type Cmd struct {
-	ctx *types.CmdContext // 内部上下文，包含所有状态
+	ctx       *types.CmdContext // 内部上下文，包含所有状态
+	runFunc   func(*Cmd) error  // 存储Run函数, 用于执行命令逻辑
+	subCmdMap map[string]*Cmd   // 存储子命令映射
+	runMutex  sync.RWMutex      // 保护runFunc的读写锁
 }
-
-// New 创建新的命令实例(NewCmd的简写)
-var New = NewCmd
-
-// ================================================================================
-// 操作方法 - 解析与管理 (17个)
-// ================================================================================
 
 // NewCmd 创建新的命令实例
 //
@@ -41,15 +34,19 @@ var New = NewCmd
 //   - *Cmd: 新创建的命令实例
 //
 // errorHandling可选值:
-//   - flag.ContinueOnError: 遇到错误时继续解析, 并将错误返回
-//   - flag.ExitOnError: 遇到错误时立即退出程序, 并将错误返回
-//   - flag.PanicOnError: 遇到错误时立即触发panic, 并将错误返回
-func NewCmd(longName, shortName string, errorHandling flag.ErrorHandling) *Cmd {
+//   - qflag.ContinueOnError: 遇到错误时继续解析, 并将错误返回
+//   - qflag.ExitOnError: 遇到错误时立即退出程序, 并将错误返回
+//   - qflag.PanicOnError: 遇到错误时立即触发panic, 并将错误返回
+func NewCmd(longName, shortName string, errorHandling ErrorHandling) *Cmd {
 	// 创建内部上下文
 	ctx := types.NewCmdContext(longName, shortName, errorHandling)
 
 	// 创建命令实例
-	cmd := &Cmd{ctx: ctx}
+	cmd := &Cmd{
+		ctx:       ctx,
+		subCmdMap: make(map[string]*Cmd),
+		runMutex:  sync.RWMutex{},
+	}
 
 	// 注册内置标志help
 	cmd.BoolVar(cmd.ctx.BuiltinFlags.Help, flags.HelpFlagName, flags.HelpFlagShortName, false, flags.HelpFlagUsage)
@@ -61,7 +58,7 @@ func NewCmd(longName, shortName string, errorHandling flag.ErrorHandling) *Cmd {
 	return cmd
 }
 
-// Parse 完整解析命令行参数(含子命令处理)
+// Parse 完整解析命令行参数(递归解析子命令)
 //
 // 主要功能：
 //  1. 解析当前命令的长短标志及内置标志
@@ -80,8 +77,9 @@ func NewCmd(longName, shortName string, errorHandling flag.ErrorHandling) *Cmd {
 //   - 处理内置标志执行逻辑
 func (c *Cmd) Parse(args []string) (err error) {
 	shouldExit, err := c.parseCommon(args, true)
+
+	// 如果返回了退出信号, 则需要主动退出程序, 否则通过返回的错误判断是否需要退出
 	if shouldExit {
-		// 延迟处理内置标志的退出
 		os.Exit(0)
 	}
 	return err
@@ -106,6 +104,8 @@ func (c *Cmd) Parse(args []string) (err error) {
 //   - 处理内置标志逻辑
 func (c *Cmd) ParseFlagsOnly(args []string) (err error) {
 	shouldExit, err := c.parseCommon(args, false)
+
+	// 如果返回了退出信号, 则需要主动退出程序, 否则通过返回的错误判断是否需要退出
 	if shouldExit {
 		os.Exit(0)
 	}
@@ -117,8 +117,6 @@ func (c *Cmd) ParseFlagsOnly(args []string) (err error) {
 // 此方法会对所有子命令进行完整性验证，包括名称冲突检查、循环依赖检测等。
 // 所有验证通过后，子命令将被注册到当前命令的子命令映射表和列表中。
 // 操作过程中会自动设置子命令的父命令引用，确保命令树结构的完整性。
-//
-// 并发安全: 此方法使用互斥锁保护，可安全地在多个 goroutine 中并发调用。
 //
 // 参数:
 //   - subCmds: 要添加的子命令实例指针，支持传入多个子命令进行批量添加
@@ -146,7 +144,7 @@ func (c *Cmd) AddSubCmd(subCmds ...*Cmd) error {
 		return qerr.NewValidationError("subCmds list cannot be empty")
 	}
 
-	// 🔒 提前获取锁，覆盖整个验证和添加过程
+	// 提前获取锁，覆盖整个验证和添加过程
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -195,12 +193,14 @@ func (c *Cmd) AddSubCmd(subCmds ...*Cmd) error {
 
 		// 将子命令的长名称和实例关联
 		if cmd.ctx.LongName != "" {
-			c.ctx.SubCmdMap[cmd.ctx.LongName] = cmd.ctx
+			c.ctx.SubCmdMap[cmd.ctx.LongName] = cmd.ctx // 添加命令到ctx命令映射表
+			c.subCmdMap[cmd.ctx.LongName] = cmd         // 添加命令到cmd命令映射表
 		}
 
 		// 将子命令的短名称和实例关联
 		if cmd.ctx.ShortName != "" {
 			c.ctx.SubCmdMap[cmd.ctx.ShortName] = cmd.ctx
+			c.subCmdMap[cmd.ctx.ShortName] = cmd
 		}
 
 		// 先添加到临时切片
@@ -217,8 +217,6 @@ func (c *Cmd) AddSubCmd(subCmds ...*Cmd) error {
 //
 // 此方法是 AddSubCmd 的便捷包装，专门用于处理子命令切片。
 // 内部直接调用 AddSubCmd 方法，具有相同的验证逻辑和并发安全特性。
-//
-// 并发安全: 此方法通过调用 AddSubCmd 实现，继承其互斥锁保护特性。
 //
 // 参数:
 //   - subCmds: 子命令切片，包含要添加的所有子命令实例指针
@@ -250,49 +248,50 @@ func (c *Cmd) SubCmdMap() map[string]*Cmd {
 	defer c.ctx.Mutex.RUnlock()
 
 	// 检查子命令映射表是否为空
-	if len(c.ctx.SubCmdMap) == 0 {
+	if len(c.subCmdMap) == 0 {
 		return nil
 	}
 
 	// 返回map副本避免外部修改
-	subCmdMap := make(map[string]*Cmd, len(c.ctx.SubCmdMap))
+	subCmdMap := make(map[string]*Cmd, len(c.subCmdMap))
 
 	// 遍历子命令映射表, 将每个子命令复制到新的map中
-	for name, ctx := range c.ctx.SubCmdMap {
-		subCmdMap[name] = &Cmd{ctx: ctx}
+	for name, cmd := range c.subCmdMap {
+		subCmdMap[name] = cmd
 	}
 	return subCmdMap
 }
 
-// SubCmds 返回子命令切片
+// GetSubCmd 根据名称获取子命令实例
+//
+// 参数:
+//   - name: 子命令名称 (长名称或短名称)
 //
 // 返回值:
-//   - []*Cmd: 子命令切片
-func (c *Cmd) SubCmds() []*Cmd {
+//   - *Cmd: 子命令实例，如果找不到则抛出恐慌
+func (c *Cmd) GetSubCmd(name string) *Cmd {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 
-	// 检查子命令是否为空
-	if len(c.ctx.SubCmds) == 0 {
-		return nil
+	// 检查名称是否为空
+	if name == "" {
+		panic("subcommand name cannot be empty")
 	}
 
-	// 创建一个切片副本
-	result := make([]*Cmd, len(c.ctx.SubCmds))
-
-	// 拷贝子命令切片
-	for i, ctx := range c.ctx.SubCmds {
-		result[i] = &Cmd{ctx: ctx}
+	// 从子命令映射表中查找
+	cmd, exists := c.subCmdMap[name]
+	if !exists {
+		panic(fmt.Sprintf("subcommand '%s' not found", name))
 	}
 
-	return result
+	return cmd
 }
 
 // FlagRegistry 获取标志注册表的只读访问
 //
 // 返回值:
-// - *flags.FlagRegistry: 标志注册表的只读访问
-func (c *Cmd) FlagRegistry() *flags.FlagRegistry {
+// - *FlagRegistry: 标志注册表的只读访问
+func (c *Cmd) FlagRegistry() *FlagRegistry {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 	return c.ctx.FlagRegistry
@@ -412,14 +411,14 @@ func (c *Cmd) PrintHelp() {
 	fmt.Println(c.Help())
 }
 
-// CmdExists 检查子命令是否存在
+// HasSubCmd 检查子命令是否存在
 //
 // 参数:
 //   - cmdName: 子命令名称
 //
 // 返回:
 //   - bool: 子命令是否存在
-func (c *Cmd) CmdExists(cmdName string) bool {
+func (c *Cmd) HasSubCmd(cmdName string) bool {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
 
@@ -428,8 +427,8 @@ func (c *Cmd) CmdExists(cmdName string) bool {
 		return false
 	}
 
-	// 检查子命令是否存在
-	_, ok := c.ctx.SubCmdMap[cmdName]
+	// 使用Cmd结构体的命令映射字段检查子命令是否存在
+	_, ok := c.subCmdMap[cmdName]
 	return ok
 }
 
@@ -440,10 +439,6 @@ func (c *Cmd) CmdExists(cmdName string) bool {
 func (c *Cmd) IsParsed() bool {
 	return c.ctx.Parsed.Load()
 }
-
-// ================================================================================
-// 获取配置信息方法(9个)
-// ================================================================================
 
 // Version 获取版本信息
 //
@@ -498,14 +493,14 @@ func (c *Cmd) Notes() []string {
 	return notes
 }
 
-// Description 返回命令描述
+// Desc 返回命令描述
 //
 // 返回值:
 //   - string: 命令描述
 func (c *Cmd) Desc() string {
 	c.ctx.Mutex.RLock()
 	defer c.ctx.Mutex.RUnlock()
-	return c.ctx.Config.Description
+	return c.ctx.Config.Desc
 }
 
 // Help 返回命令用法帮助信息
@@ -547,19 +542,15 @@ func (c *Cmd) Examples() []ExampleInfo {
 	return examples
 }
 
-// ================================================================================
-// Set 方法 - 设置配置信息(15个)
-// ================================================================================
-
-// SetAutoExit 设置是否在解析内置参数时退出
-// 默认情况下为true, 当解析到内置参数时, QFlag将退出程序
+// SetNoFgExit 设置禁用内置标志自动退出
+// 默认情况下为false, 当解析到内置参数时, QFlag将退出程序
 //
 // 参数:
 //   - exit: 是否退出
-func (c *Cmd) SetAutoExit(exit bool) {
+func (c *Cmd) SetNoFgExit(exit bool) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
-	c.ctx.Config.ExitOnBuiltinFlags = exit
+	c.ctx.Config.NoFgExit = exit
 }
 
 // SetCompletion 设置是否启用自动补全, 只能在根命令上启用
@@ -576,7 +567,7 @@ func (c *Cmd) SetCompletion(enable bool) {
 	}
 
 	// 设置启用状态
-	c.ctx.Config.EnableCompletion = enable
+	c.ctx.Config.Completion = enable
 }
 
 // SetVersion 设置版本信息
@@ -642,7 +633,7 @@ func (c *Cmd) SetChinese(useChinese bool) {
 func (c *Cmd) SetDesc(desc string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
-	c.ctx.Config.Description = desc
+	c.ctx.Config.Desc = desc
 }
 
 // SetHelp 设置用户自定义命令帮助信息
@@ -663,6 +654,111 @@ func (c *Cmd) SetUsage(usageSyntax string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 	c.ctx.Config.UsageSyntax = usageSyntax
+}
+
+// ApplyConfig 批量设置命令配置
+// 通过传入一个CmdConfig结构体来一次性设置多个配置项
+//
+// 参数:
+//   - config: 包含所有配置项的CmdConfig结构体
+func (c *Cmd) ApplyConfig(config CmdConfig) {
+	// 参数验证
+	if c == nil || c.ctx == nil {
+		return
+	}
+
+	c.ctx.Mutex.Lock()
+	defer c.ctx.Mutex.Unlock()
+
+	// 设置版本信息
+	if config.Version != "" {
+		c.ctx.Config.Version = config.Version
+	}
+
+	// 设置命令描述
+	if config.Desc != "" {
+		c.ctx.Config.Desc = config.Desc
+	}
+
+	// 设置自定义帮助信息
+	if config.Help != "" {
+		c.ctx.Config.Help = config.Help
+	}
+
+	// 设置自定义用法格式
+	if config.UsageSyntax != "" {
+		c.ctx.Config.UsageSyntax = config.UsageSyntax
+	}
+
+	// 设置模块帮助信息
+	if config.ModuleHelps != "" {
+		c.ctx.Config.ModuleHelps = config.ModuleHelps
+	}
+
+	// 设置logo文本
+	if config.LogoText != "" {
+		c.ctx.Config.LogoText = config.LogoText
+	}
+
+	// 安全地设置备注信息 - 创建新切片避免内存泄漏
+	if len(config.Notes) > 0 {
+		newNotes := make([]string, len(c.ctx.Config.Notes)+len(config.Notes))
+		copy(newNotes, c.ctx.Config.Notes)
+		copy(newNotes[len(c.ctx.Config.Notes):], config.Notes)
+		c.ctx.Config.Notes = newNotes
+	}
+
+	// 安全地设置示例信息 - 创建新切片避免内存泄漏
+	if len(config.Examples) > 0 {
+		newExamples := make([]types.ExampleInfo, len(c.ctx.Config.Examples)+len(config.Examples))
+		copy(newExamples, c.ctx.Config.Examples)
+		copy(newExamples[len(c.ctx.Config.Examples):], config.Examples)
+		c.ctx.Config.Examples = newExamples
+	}
+
+	// 设置是否使用中文帮助信息
+	c.ctx.Config.UseChinese = config.UseChinese
+
+	// 设置内置标志是否自动退出
+	c.ctx.Config.NoFgExit = config.NoFgExit
+
+	// 设置是否启用自动补全功能 (只允许在根命令上设置)
+	if c.ctx.Parent == nil {
+		c.ctx.Config.Completion = config.Completion
+	}
+}
+
+// SetRun 设置命令的执行函数
+//
+// 参数:
+//   - run: 命令执行函数，接收*Cmd作为参数，返回error
+func (c *Cmd) SetRun(run func(*Cmd) error) {
+	c.runMutex.Lock()
+	defer c.runMutex.Unlock()
+
+	if run == nil {
+		panic("run function cannot be nil")
+	}
+	c.runFunc = run
+}
+
+// Run 执行在命令设置的run函数, 如果未设置run函数, 则返回错误
+//
+// 返回值:
+//   - error: 执行过程中的错误信息
+func (c *Cmd) Run() error {
+	c.runMutex.RLock()
+	defer c.runMutex.RUnlock()
+
+	// 检查命令是否已解析
+	if !c.IsParsed() {
+		return qerr.NewValidationError("command must be parsed before execution")
+	}
+
+	if c.runFunc == nil {
+		return qerr.NewValidationError("no run function set for command")
+	}
+	return c.runFunc(c)
 }
 
 // AddNote 添加备注信息到命令
@@ -701,8 +797,8 @@ func (c *Cmd) AddExample(desc, usage string) {
 
 	// 新建示例信息
 	e := ExampleInfo{
-		Description: desc,
-		Usage:       usage,
+		Desc:  desc,
+		Usage: usage,
 	}
 
 	// 添加到使用示例列表中
@@ -726,176 +822,49 @@ func (c *Cmd) AddExamples(examples []ExampleInfo) {
 	c.ctx.Config.Examples = append(c.ctx.Config.Examples, examples...)
 }
 
-// ================================================================================
-// 链式调用方法 - 用于构建器模式，提供更流畅的API体验(14个)
-// ================================================================================
-
-// WithDesc 设置命令描述(链式调用)
+// ParseAndRoute 解析参数并自动路由执行子命令
 //
 // 参数:
-//   - desc: 命令描述
+//   - args: 命令行参数列表(通常为 os.Args[1:])
 //
 // 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithDesc(desc string) *Cmd {
-	c.SetDesc(desc)
-	return c
-}
+//   - error: 执行过程中遇到的错误
+func (c *Cmd) ParseAndRoute(args []string) error {
+	// 1. 只解析当前命令的标志参数（不递归子命令）
+	if err := c.ParseFlagsOnly(args); err != nil {
+		return err
+	}
 
-// WithVersion 设置版本信息(链式调用)
-//
-// 参数:
-//   - version: 版本信息
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithVersion(version string) *Cmd {
-	c.SetVersion(version)
-	return c
-}
+	// 2. 获取非标志参数
+	nonFlagArgs := c.Args()
 
-// WithVersionf 设置版本信息(链式调用，支持格式化)
-//
-// 参数:
-//   - format: 版本信息格式字符串
-//   - args: 格式化参数
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithVersionf(format string, args ...any) *Cmd {
-	c.SetVersionf(format, args...)
-	return c
-}
+	// 3. 如果没有非标志参数，执行当前命令
+	if len(nonFlagArgs) == 0 {
+		if c.runFunc != nil {
+			return c.Run()
+		}
+		c.PrintHelp()
+		return nil
+	}
 
-// WithChinese 设置是否使用中文帮助信息(链式调用)
-//
-// 参数:
-//   - useChinese: 是否使用中文帮助信息
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithChinese(useChinese bool) *Cmd {
-	c.SetChinese(useChinese)
-	return c
-}
+	// 4. 第一个参数可能是子命令
+	cmdName := nonFlagArgs[0]
 
-// WithUsage 设置自定义命令用法(链式调用)
-//
-// 参数:
-//   - usageSyntax: 自定义命令用法
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithUsage(usageSyntax string) *Cmd {
-	c.SetUsage(usageSyntax)
-	return c
-}
+	// 5. 查找子命令
+	subCmdMap := c.SubCmdMap()
 
-// WithLogo 设置logo文本(链式调用)
-//
-// 参数:
-//   - logoText: logo文本字符串
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithLogo(logoText string) *Cmd {
-	c.SetLogo(logoText)
-	return c
-}
+	if subCmd, exists := subCmdMap[cmdName]; exists {
+		// 递归调用子命令，传递剩余参数
+		return subCmd.ParseAndRoute(nonFlagArgs[1:])
+	}
 
-// WithHelp 设置用户自定义命令帮助信息(链式调用)
-//
-// 参数:
-//   - help: 用户自定义命令帮助信息
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithHelp(help string) *Cmd {
-	c.SetHelp(help)
-	return c
-}
+	// 6. 如果不是子命令, 则执行当前命令
+	if c.runFunc != nil {
+		return c.Run()
+	}
 
-// WithNote 添加备注信息到命令(链式调用)
-//
-// 参数:
-//   - note: 备注信息
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithNote(note string) *Cmd {
-	c.AddNote(note)
-	return c
-}
-
-// WithNotes 添加备注信息切片到命令(链式调用)
-//
-// 参数:
-//   - notes: 备注信息列表
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithNotes(notes []string) *Cmd {
-	c.AddNotes(notes)
-	return c
-}
-
-// WithExample 为命令添加使用示例(链式调用)
-//
-// 参数:
-//   - desc: 示例描述
-//   - usage: 示例用法
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithExample(desc, usage string) *Cmd {
-	c.AddExample(desc, usage)
-	return c
-}
-
-// WithExamples 添加使用示例列表到命令(链式调用)
-//
-// 参数:
-//   - examples: 示例信息列表
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithExamples(examples []ExampleInfo) *Cmd {
-	c.AddExamples(examples)
-	return c
-}
-
-// WithAutoExit 设置是否在解析内置参数时退出(链式调用)
-//
-// 参数:
-//   - exit: 是否退出
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithAutoExit(exit bool) *Cmd {
-	c.SetAutoExit(exit)
-	return c
-}
-
-// WithCompletion 设置是否启用自动补全(链式调用)
-//
-// 参数:
-//   - enable: true表示启用补全,false表示禁用
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithCompletion(enable bool) *Cmd {
-	c.SetCompletion(enable)
-	return c
-}
-
-// WithModules 设置自定义模块帮助信息(链式调用)
-//
-// 参数:
-//   - moduleHelps: 自定义模块帮助信息
-//
-// 返回值:
-//   - *Cmd: 返回命令实例，支持链式调用
-func (c *Cmd) WithModules(moduleHelps string) *Cmd {
-	c.SetModules(moduleHelps)
-	return c
+	// 7. 如果不是子命令, 并且没有执行函数, 则显示帮助信息
+	fmt.Printf("unknown command: %s\n", cmdName)
+	c.PrintHelp()
+	return nil
 }

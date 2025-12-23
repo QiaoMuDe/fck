@@ -1,6 +1,6 @@
-// Package cmd 扩展标志类型支持
+// package qflag 扩展标志类型支持
 // 本文件提供了Cmd结构体的扩展标志创建方法，包括枚举、时间间隔、切片、时间、映射等高级类型标志的创建和绑定功能。
-package cmd
+package qflag
 
 import (
 	"fmt"
@@ -23,8 +23,8 @@ import (
 //   - options: []string - 限制该标志取值的枚举值切片
 //
 // 返回值:
-//   - *flags.EnumFlag - 枚举标志对象指针
-func (c *Cmd) Enum(longName, shortName string, defValue string, usage string, options []string) *flags.EnumFlag {
+//   - *EnumFlag - 枚举标志对象指针
+func (c *Cmd) Enum(longName, shortName string, defValue string, usage string, options []string) *EnumFlag {
 	f := &flags.EnumFlag{}
 	c.EnumVar(f, longName, shortName, defValue, usage, options)
 	return f
@@ -33,13 +33,13 @@ func (c *Cmd) Enum(longName, shortName string, defValue string, usage string, op
 // EnumVar 绑定枚举类型标志到指针并内部注册Flag对象
 //
 // 参数值:
-//   - f: *flags.EnumFlag - 枚举标志对象指针
+//   - f: *EnumFlag - 枚举标志对象指针
 //   - longName: string - 长标志名
 //   - shortName: string - 短标志
 //   - defValue: string - 默认值
 //   - usage: string - 帮助说明
 //   - options: []string - 限制该标志取值的枚举值切片
-func (c *Cmd) EnumVar(f *flags.EnumFlag, longName, shortName string, defValue string, usage string, options []string) {
+func (c *Cmd) EnumVar(f *EnumFlag, longName, shortName string, defValue string, usage string, options []string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -92,7 +92,7 @@ func (c *Cmd) EnumVar(f *flags.EnumFlag, longName, shortName string, defValue st
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) Uint16Var(f *flags.Uint16Flag, longName, shortName string, defValue uint16, usage string) {
+func (c *Cmd) Uint16Var(f *Uint16Flag, longName, shortName string, defValue uint16, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -141,8 +141,8 @@ func (c *Cmd) Uint16Var(f *flags.Uint16Flag, longName, shortName string, defValu
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.Uint16Flag: 16位无符号整数标志对象指针
-func (c *Cmd) Uint16(longName, shortName string, defValue uint16, usage string) *flags.Uint16Flag {
+//   - *Uint16Flag: 16位无符号整数标志对象指针
+func (c *Cmd) Uint16(longName, shortName string, defValue uint16, usage string) *Uint16Flag {
 	f := &flags.Uint16Flag{}
 	c.Uint16Var(f, longName, shortName, defValue, usage)
 	return f
@@ -156,7 +156,7 @@ func (c *Cmd) Uint16(longName, shortName string, defValue uint16, usage string) 
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) Uint32Var(f *flags.Uint32Flag, longName, shortName string, defValue uint32, usage string) {
+func (c *Cmd) Uint32Var(f *Uint32Flag, longName, shortName string, defValue uint32, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -204,8 +204,8 @@ func (c *Cmd) Uint32Var(f *flags.Uint32Flag, longName, shortName string, defValu
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.Uint32Flag: 32位无符号整数标志对象指针
-func (c *Cmd) Uint32(longName, shortName string, defValue uint32, usage string) *flags.Uint32Flag {
+//   - *Uint32Flag: 32位无符号整数标志对象指针
+func (c *Cmd) Uint32(longName, shortName string, defValue uint32, usage string) *Uint32Flag {
 	f := &flags.Uint32Flag{}
 	c.Uint32Var(f, longName, shortName, defValue, usage)
 	return f
@@ -219,7 +219,7 @@ func (c *Cmd) Uint32(longName, shortName string, defValue uint32, usage string) 
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) Uint64Var(f *flags.Uint64Flag, longName, shortName string, defValue uint64, usage string) {
+func (c *Cmd) Uint64Var(f *Uint64Flag, longName, shortName string, defValue uint64, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -268,8 +268,8 @@ func (c *Cmd) Uint64Var(f *flags.Uint64Flag, longName, shortName string, defValu
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.Uint64Flag: 64位无符号整数标志对象指针
-func (c *Cmd) Uint64(longName, shortName string, defValue uint64, usage string) *flags.Uint64Flag {
+//   - *Uint64Flag: 64位无符号整数标志对象指针
+func (c *Cmd) Uint64(longName, shortName string, defValue uint64, usage string) *Uint64Flag {
 	f := &flags.Uint64Flag{}
 	c.Uint64Var(f, longName, shortName, defValue, usage)
 	return f
@@ -288,7 +288,7 @@ func (c *Cmd) Uint64(longName, shortName string, defValue uint64, usage string) 
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.TimeFlag: 时间标志对象指针
+//   - *TimeFlag: 时间标志对象指针
 //
 // 支持的默认值格式:
 //   - "now" 或 "" : 当前时间
@@ -296,7 +296,7 @@ func (c *Cmd) Uint64(longName, shortName string, defValue uint64, usage string) 
 //   - "1h", "30m", "-2h" : 相对时间（基于当前时间的偏移）
 //   - "2006-01-02", "2006-01-02 15:04:05" : 绝对时间格式
 //   - RFC3339等标准格式
-func (c *Cmd) Time(longName, shortName string, defValue string, usage string) *flags.TimeFlag {
+func (c *Cmd) Time(longName, shortName string, defValue string, usage string) *TimeFlag {
 	f := &flags.TimeFlag{}
 	c.TimeVar(f, longName, shortName, defValue, usage)
 	return f
@@ -317,7 +317,7 @@ func (c *Cmd) Time(longName, shortName string, defValue string, usage string) *f
 //   - "1h", "30m", "-2h" : 相对时间（基于当前时间的偏移）
 //   - "2006-01-02", "2006-01-02 15:04:05" : 绝对时间格式
 //   - RFC3339等标准格式
-func (c *Cmd) TimeVar(f *flags.TimeFlag, longName, shortName string, defValue string, usage string) {
+func (c *Cmd) TimeVar(f *TimeFlag, longName, shortName string, defValue string, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -358,12 +358,12 @@ func (c *Cmd) TimeVar(f *flags.TimeFlag, longName, shortName string, defValue st
 // DurationVar 绑定时间间隔类型标志到指针并内部注册Flag对象
 //
 // 参数值:
-//   - f: *flags.DurationFlag - 时间间隔标志对象指针
+//   - f: *DurationFlag - 时间间隔标志对象指针
 //   - longName: string - 长标志名
 //   - shortName: string - 短标志
 //   - defValue: time.Duration - 默认值
 //   - usage: string - 帮助说明
-func (c *Cmd) DurationVar(f *flags.DurationFlag, longName, shortName string, defValue time.Duration, usage string) {
+func (c *Cmd) DurationVar(f *DurationFlag, longName, shortName string, defValue time.Duration, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -412,8 +412,8 @@ func (c *Cmd) DurationVar(f *flags.DurationFlag, longName, shortName string, def
 //   - usage: string - 帮助说明
 //
 // 返回值:
-//   - *flags.DurationFlag - 时间间隔标志对象指针
-func (c *Cmd) Duration(longName, shortName string, defValue time.Duration, usage string) *flags.DurationFlag {
+//   - *DurationFlag - 时间间隔标志对象指针
+func (c *Cmd) Duration(longName, shortName string, defValue time.Duration, usage string) *DurationFlag {
 	f := &flags.DurationFlag{}
 	c.DurationVar(f, longName, shortName, defValue, usage)
 	return f
@@ -431,7 +431,7 @@ func (c *Cmd) Duration(longName, shortName string, defValue time.Duration, usage
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) MapVar(f *flags.MapFlag, longName, shortName string, defValue map[string]string, usage string) {
+func (c *Cmd) MapVar(f *MapFlag, longName, shortName string, defValue map[string]string, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -490,8 +490,8 @@ func (c *Cmd) MapVar(f *flags.MapFlag, longName, shortName string, defValue map[
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.MapFlag: 键值对标志对象指针
-func (c *Cmd) Map(longName, shortName string, defValue map[string]string, usage string) *flags.MapFlag {
+//   - *MapFlag: 键值对标志对象指针
+func (c *Cmd) Map(longName, shortName string, defValue map[string]string, usage string) *MapFlag {
 	f := &flags.MapFlag{}
 	c.MapVar(f, longName, shortName, defValue, usage)
 	return f
@@ -510,8 +510,8 @@ func (c *Cmd) Map(longName, shortName string, defValue map[string]string, usage 
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.StringSliceFlag: 字符串切片标志对象指针
-func (c *Cmd) StringSlice(longName, shortName string, defValue []string, usage string) *flags.StringSliceFlag {
+//   - *StringSliceFlag: 字符串切片标志对象指针
+func (c *Cmd) StringSlice(longName, shortName string, defValue []string, usage string) *StringSliceFlag {
 	f := &flags.StringSliceFlag{}
 	c.StringSliceVar(f, longName, shortName, defValue, usage)
 	return f
@@ -525,7 +525,7 @@ func (c *Cmd) StringSlice(longName, shortName string, defValue []string, usage s
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) StringSliceVar(f *flags.StringSliceFlag, longName, shortName string, defValue []string, usage string) {
+func (c *Cmd) StringSliceVar(f *StringSliceFlag, longName, shortName string, defValue []string, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -581,8 +581,8 @@ func (c *Cmd) StringSliceVar(f *flags.StringSliceFlag, longName, shortName strin
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.IntSliceFlag: 整数切片标志对象指针
-func (c *Cmd) IntSlice(longName, shortName string, defValue []int, usage string) *flags.IntSliceFlag {
+//   - *IntSliceFlag: 整数切片标志对象指针
+func (c *Cmd) IntSlice(longName, shortName string, defValue []int, usage string) *IntSliceFlag {
 	f := &flags.IntSliceFlag{}
 	c.IntSliceVar(f, longName, shortName, defValue, usage)
 	return f
@@ -596,7 +596,7 @@ func (c *Cmd) IntSlice(longName, shortName string, defValue []int, usage string)
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) IntSliceVar(f *flags.IntSliceFlag, longName, shortName string, defValue []int, usage string) {
+func (c *Cmd) IntSliceVar(f *IntSliceFlag, longName, shortName string, defValue []int, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -652,8 +652,8 @@ func (c *Cmd) IntSliceVar(f *flags.IntSliceFlag, longName, shortName string, def
 //   - usage: 帮助说明
 //
 // 返回值:
-//   - *flags.Int64SliceFlag: 64位整数切片标志对象指针
-func (c *Cmd) Int64Slice(longName, shortName string, defValue []int64, usage string) *flags.Int64SliceFlag {
+//   - *Int64SliceFlag: 64位整数切片标志对象指针
+func (c *Cmd) Int64Slice(longName, shortName string, defValue []int64, usage string) *Int64SliceFlag {
 	f := &flags.Int64SliceFlag{}
 	c.Int64SliceVar(f, longName, shortName, defValue, usage)
 	return f
@@ -667,7 +667,7 @@ func (c *Cmd) Int64Slice(longName, shortName string, defValue []int64, usage str
 //   - shortName: 短标志名
 //   - defValue: 默认值
 //   - usage: 帮助说明
-func (c *Cmd) Int64SliceVar(f *flags.Int64SliceFlag, longName, shortName string, defValue []int64, usage string) {
+func (c *Cmd) Int64SliceVar(f *Int64SliceFlag, longName, shortName string, defValue []int64, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 
@@ -723,7 +723,7 @@ func (c *Cmd) Int64SliceVar(f *flags.Int64SliceFlag, longName, shortName string,
 //   - usage: string - 帮助说明
 //
 // 返回值:
-//   - *flags.SizeFlag - 大小标志对象指针
+//   - *SizeFlag - 大小标志对象指针
 //
 // 支持的单位格式:
 //   - 字节: "B", "b", "byte", "bytes"
@@ -732,7 +732,7 @@ func (c *Cmd) Int64SliceVar(f *flags.Int64SliceFlag, longName, shortName string,
 //   - 支持小数: "1.5GB", "2.5MB"
 //   - 支持负数: "-1GB", "-500MB"
 //   - 特殊值: "0" (零值特例)
-func (c *Cmd) Size(longName, shortName string, defValue int64, usage string) *flags.SizeFlag {
+func (c *Cmd) Size(longName, shortName string, defValue int64, usage string) *SizeFlag {
 	f := &flags.SizeFlag{}
 	c.SizeVar(f, longName, shortName, defValue, usage)
 	return f
@@ -741,7 +741,7 @@ func (c *Cmd) Size(longName, shortName string, defValue int64, usage string) *fl
 // SizeVar 绑定大小类型标志到指针并内部注册Flag对象
 //
 // 参数值:
-//   - f: *flags.SizeFlag - 大小标志对象指针
+//   - f: *SizeFlag - 大小标志对象指针
 //   - longName: string - 长标志名
 //   - shortName: string - 短标志名
 //   - defValue: int64 - 默认值(单位为字节)
@@ -754,7 +754,7 @@ func (c *Cmd) Size(longName, shortName string, defValue int64, usage string) *fl
 //   - 支持小数: "1.5GB", "2.5MB"
 //   - 支持负数: "-1GB", "-500MB"
 //   - 特殊值: "0" (零值特例)
-func (c *Cmd) SizeVar(f *flags.SizeFlag, longName, shortName string, defValue int64, usage string) {
+func (c *Cmd) SizeVar(f *SizeFlag, longName, shortName string, defValue int64, usage string) {
 	c.ctx.Mutex.Lock()
 	defer c.ctx.Mutex.Unlock()
 

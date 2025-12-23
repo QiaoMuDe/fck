@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/qflag"
-	"gitee.com/MM-Q/qflag/cmd"
 )
 
 var (
-	previewCmd *cmd.Cmd // Preview command
+	previewCmd *qflag.Cmd // Preview command
 
 	// 预览配置标志
 	infoFlag  *qflag.BoolFlag // 打印压缩包信息
@@ -19,12 +18,17 @@ var (
 )
 
 // 初始化预览命令
-func InitPreviewCmd() *cmd.Cmd {
-	previewCmd = cmd.NewCmd("preview", "pv", flag.ExitOnError).
-		WithChinese(true).
-		WithUsage(fmt.Sprint(qflag.Root.LongName(), " preview [options] <archive>")).
-		WithDesc("压缩包预览工具, 查看压缩包信息和文件列表")
-	previewCmd.AddNote("支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib")
+func InitPreviewCmd() *qflag.Cmd {
+	previewCmd = qflag.NewCmd("preview", "pv", flag.ExitOnError)
+
+	previewCmdCfg := qflag.CmdConfig{
+		UseChinese:  true,
+		Desc:        "压缩包预览工具, 查看压缩包信息和文件列表",
+		Notes:       []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
+		UsageSyntax: fmt.Sprintf("%s preview [options] <archive>\n", qflag.Root.LongName()),
+	}
+
+	previewCmd.ApplyConfig(previewCmdCfg)
 
 	// 添加预览配置标志
 	infoFlag = previewCmd.Bool("info", "i", false, "打印压缩包基本信息")

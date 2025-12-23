@@ -235,7 +235,7 @@ func demonstrateIdentifier() {
     // 创建命令
     cmd := types.NewCmdContext("deploy", "d", flag.ExitOnError)
     cmd.Config = types.NewCmdConfig()
-    cmd.Config.Description = "部署应用程序"
+    cmd.Config.Desc = "部署应用程序"
     
     // 获取命令标识符
     identifier := validator.GetCmdIdentifier(cmd)

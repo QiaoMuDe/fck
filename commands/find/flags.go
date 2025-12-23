@@ -8,12 +8,11 @@ import (
 
 	"gitee.com/MM-Q/fck/commands/internal/types"
 	"gitee.com/MM-Q/qflag"
-	"gitee.com/MM-Q/qflag/cmd"
 )
 
 var (
 	// fck find 子命令
-	findCmd              *cmd.Cmd
+	findCmd              *qflag.Cmd
 	findCmdName          *qflag.StringFlag      // name 标志
 	findCmdPath          *qflag.StringFlag      // path 标志
 	findCmdExt           *qflag.StringSliceFlag // ext 标志
@@ -41,16 +40,18 @@ var (
 	findCmdQuiet         *qflag.BoolFlag        // quiet 标志
 )
 
-func InitFindCmd() *cmd.Cmd {
+func InitFindCmd() *qflag.Cmd {
 	// fck find 子命令
-	findCmd = qflag.NewCmd("find", "f", flag.ExitOnError).
-		WithUsage(fmt.Sprint(qflag.Root.LongName(), " find [options] <path>\n")).
-		WithChinese(true).
-		WithDesc("文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录")
-	findCmd.AddNote("大小单位支持B/K/M/G/b/k/m/g")
-	findCmd.AddNote("时间参数以天为单位")
-	findCmd.AddNote("不能同时执行-exec和-delete以及-move标志")
-	findCmd.AddNote("如果不指定路径，默认为当前目录")
+	findCmd = qflag.NewCmd("find", "f", flag.ExitOnError)
+
+	findCmdCfg := qflag.CmdConfig{
+		UseChinese:  true,
+		Desc:        "文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录",
+		Notes:       []string{"大小单位支持B/K/M/G/b/k/m/g", "时间参数以天为单位", "不能同时执行-exec和-delete以及-move标志", "如果不指定路径，默认为当前目录"},
+		UsageSyntax: fmt.Sprintf("%s find [options] <path>\n", qflag.Root.LongName()),
+	}
+
+	findCmd.ApplyConfig(findCmdCfg)
 
 	// 添加标志
 	findCmdName = findCmd.String("name", "n", "", "指定要查找的文件或目录名")
