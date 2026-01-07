@@ -1,44 +1,69 @@
+# 安装环境配置 - 构建并安装到指定路径
 # gob 构建工具配置文件 - 此文件包含所有可用的构建配置选项，与命令行参数对应
 # 项目地址: https://gitee.com/MM-Q/gob.git
 
 [build]
+
+# ==================== 输出配置 ====================
+[build.output]
 # --output, -o: 指定输出目录
-output_dir = 'output'
+dir = 'output'
 # --name, -n: 指定输出文件名
-output_name = 'fck'
+name = 'fck'
+# --simple-name, -sn: 使用简单名称（不包含平台和架构信息）
+simple = true
+# --zip, -z: 将输出文件打包为zip
+zip = false
+
+# ==================== 源码配置 ====================
+[build.source]
 # --main, -m: 指定入口文件
 main_file = 'main.go'
 # --use-vendor, -uv: 在编译时使用vendor目录
 use_vendor = true
+
+# ==================== Git 配置 ====================
+[build.git]
 # --git, -g: 在编译时注入git信息
-inject_git_info = true
-# --simple-name, -sn: 使用简单名称（不包含平台和架构信息）
-simple_name = true
-# --proxy, -p: 设置Go代理
-proxy = 'https://goproxy.cn,https://goproxy.io,direct'
+inject = true
+# 指定包含Git信息的链接器标志, 支持占位符: {{AppName}} (应用名称)、{{GitVersion}} (Git版本)、{{GitCommit}} (提交哈希)、{{GitCommitTime}} (提交时间)、{{BuildTime}} (构建时间)、{{GitTreeState}} (树状态)
+ldflags = "-X 'gitee.com/MM-Q/verman.appName={{AppName}}' -X 'gitee.com/MM-Q/verman.gitVersion={{GitVersion}}' -X 'gitee.com/MM-Q/verman.gitCommit={{GitCommit}}' -X 'gitee.com/MM-Q/verman.gitCommitTime={{GitCommitTime}}' -X 'gitee.com/MM-Q/verman.buildTime={{BuildTime}}' -X 'gitee.com/MM-Q/verman.gitTreeState={{GitTreeState}}' -s -w"
+
+# ==================== 编译器配置 ====================
+[build.compiler]
 # --enable-cgo, -ec: 启用CGO
 enable_cgo = false
-# --color, -c: 启用颜色输出
-color_output = true
-# --batch, -b: 批量编译模式
-batch_mode = false
-# --current-platform-only, -cpo: 仅编译当前平台
-current_platform_only = true
-# --zip, -z: 将输出文件打包为zip
-zip_output = false
+# --proxy, -p: 设置Go代理
+proxy = 'https://goproxy.cn,https://goproxy.io,direct'
+# --skip-check, -sc: 跳过构建前检查
+skip_check = false
 # --timeout: 构建超时时间(支持单位: ns/us/ms/s/m/h)
 timeout = '60s'
 # 指定链接器标志
 ldflags = '-s -w'
-# 指定包含Git信息的链接器标志, 支持占位符: {{AppName}} (应用名称)、{{GitVersion}} (Git版本)、{{GitCommit}} (提交哈希)、{{GitCommitTime}} (提交时间)、{{BuildTime}} (构建时间)、{{GitTreeState}} (树状态)
-git_ldflags = "-X 'gitee.com/MM-Q/verman.appName={{AppName}}' -X 'gitee.com/MM-Q/verman.gitVersion={{GitVersion}}' -X 'gitee.com/MM-Q/verman.gitCommit={{GitCommit}}' -X 'gitee.com/MM-Q/verman.gitCommitTime={{GitCommitTime}}' -X 'gitee.com/MM-Q/verman.buildTime={{BuildTime}}' -X 'gitee.com/MM-Q/verman.gitTreeState={{GitTreeState}}' -s -w"
-# 支持的目标平台列表，多个平台用逗号分隔
-platforms = ['darwin', 'linux', 'windows']
-# 支持的目标架构列表，多个架构用逗号分隔
-architectures = ['amd64', 'arm64']
-# 编译命令模板，支持占位符: {{ldflags}} (链接器标志)、{{output}} (输出路径)、{{if UseVendor}}-mod=vendor{{end}} (条件包含vendor)、{{mainFile}} (入口文件), 多个命令用逗号分隔
-build_command = ['go', 'build', '-trimpath', '-ldflags', '{{ldflags}}', '-o', '{{output}}', '{{if UseVendor}}-mod=vendor{{end}}', '{{mainFile}}']
 
+# ==================== 目标平台配置 ====================
+[build.target]
+# --batch, -b: 批量编译模式
+batch = false
+# --current-platform-only, -cpo: 仅编译当前平台
+current_platform_only = true
+# 支持的目标平台列表，多个平台用逗号分隔
+platforms = ['linux', 'windows']
+# 支持的目标架构列表，多个架构用逗号分隔
+architectures = ['amd64']
+
+# ==================== 命令配置 ====================
+[build.command]
+# 编译命令模板，支持占位符: {{ldflags}} (链接器标志)、{{output}} (输出路径)、{{if UseVendor}}-mod=vendor{{end}} (条件包含vendor)、{{mainFile}} (入口文件), 多个命令用逗号分隔
+build = ['go', 'build', '-trimpath', '-ldflags', '{{ldflags}}', '-o', '{{output}}', '{{if UseVendor}}-mod=vendor{{end}}', '{{mainFile}}']
+
+# ==================== UI 配置 ====================
+[build.ui]
+# --color, -c: 启用颜色输出
+color = true
+
+# ==================== 安装配置 ====================
 [install]
 # --install, -i: 安装编译后的二进制文件
 install = true
@@ -47,9 +72,11 @@ install_path = '$GOPATH/bin'
 # --force, -f: 强制安装（覆盖已存在文件）
 force = true
 
+# ==================== 环境变量配置 ====================
 # --env, -e: 环境变量配置
 [env]
 # 示例:
 # GOOS = "linux"
 # GOARCH = "amd64"
 # CGO_ENABLED = "1"
+
