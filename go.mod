@@ -6,14 +6,14 @@ require gitee.com/MM-Q/colorlib v1.3.2
 
 require (
 	gitee.com/MM-Q/comprx v0.1.6
-	gitee.com/MM-Q/go-kit v0.0.9
-	gitee.com/MM-Q/qflag v0.4.8
-	gitee.com/MM-Q/shellx v1.0.11
-	gitee.com/MM-Q/verman v0.0.18
+	gitee.com/MM-Q/go-kit v0.0.15
+	gitee.com/MM-Q/qflag v0.5.9
+	gitee.com/MM-Q/shellx v1.0.18
+	gitee.com/MM-Q/verman v0.0.19
 	github.com/jedib0t/go-pretty/v6 v6.6.8
-	github.com/schollz/progressbar/v3 v3.18.0
-	golang.org/x/sys v0.37.0
-	golang.org/x/term v0.36.0
+	github.com/schollz/progressbar/v3 v3.19.0
+	golang.org/x/sys v0.42.0
+	golang.org/x/term v0.41.0
 )
 
 require (
