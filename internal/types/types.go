@@ -416,17 +416,6 @@ var WindowsSymlinkExts = map[string]bool{
 	".url": true, // 链接文件
 }
 
-// 自定义fck命令的logo
-var FckHelpLogo = `    ________      ________          ___  __       
-   |\  _____\    |\   ____\        |\  \|\  \     
-   \ \  \__/     \ \  \___|        \ \  \/  /|_   
-    \ \   __\     \ \  \            \ \   ___  \  
-     \ \  \_|      \ \  \____        \ \  \\ \  \ 
-      \ \__\        \ \_______\       \ \__\\ \__\
-       \|__|         \|_______|        \|__| \|__|
-                   FCK CLI                        
-`
-
 // FindConfig 用于封装find命令的配置参数和共享资源
 // 避免函数参数过多难以管理
 type FindConfig struct {
