@@ -18,9 +18,9 @@ zip = false
 # ==================== 源码配置 ====================
 [build.source]
 # --main, -m: 指定入口文件
-main_file = 'main.go'
+main_file = './cmd/main.go'
 # --use-vendor, -uv: 在编译时使用vendor目录
-use_vendor = true
+use_vendor = false
 
 # ==================== Git 配置 ====================
 [build.git]

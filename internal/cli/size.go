@@ -22,7 +22,7 @@ func init() {
 
 	sizeColor = SizeCmd.Bool("color", "c", "启用颜色输出", false)
 	sizeHidden = SizeCmd.Bool("hidden", "H", "包含隐藏文件或目录进行大小计算，默认过滤", false)
-	sizeTableStyle = SizeCmd.Enum("table-style", "ts", "def", "指定表格样式，支持以下选项：\n"+
+	sizeTableStyle = SizeCmd.Enum("table-style", "ts", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\t\t[def ]   - 默认样式\n"+
 		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
 		"\t\t\t\t\t[r   ]   - 圆角样式\n"+
@@ -42,7 +42,7 @@ func init() {
 		"\t\t\t\t\t[cmw ]   - 紫色背景白色字体\n"+
 		"\t\t\t\t\t[crw ]   - 红色背景白色字体\n"+
 		"\t\t\t\t\t[cyw ]   - 黄色背景白色字体\n"+
-		"\t\t\t\t\t[none]   - 禁用表格样式", types.TableStyles)
+		"\t\t\t\t\t[none]   - 禁用表格样式", "def", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:       "文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示",
