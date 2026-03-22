@@ -37,6 +37,9 @@ func InitAndRun() (err error) {
 			ListCmd,
 			SizeCmd,
 			DateCmd,
+			EchoCmd,
+			RMCmd,
+			MkdirCmd,
 		},
 	}
 
