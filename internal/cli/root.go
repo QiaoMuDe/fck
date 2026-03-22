@@ -36,6 +36,7 @@ func InitAndRun() (err error) {
 			HashCmd,
 			ListCmd,
 			SizeCmd,
+			DateCmd,
 		},
 	}
 
