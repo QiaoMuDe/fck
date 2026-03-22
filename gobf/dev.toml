@@ -11,7 +11,7 @@ dir = 'output'
 # --name, -n: 指定输出文件名
 name = 'fck'
 # --simple-name, -sn: 使用简单名称（不包含平台和架构信息）
-simple = false
+simple = true
 # --zip, -z: 将输出文件打包为zip
 zip = false
 
@@ -45,7 +45,7 @@ ldflags = '-s -w'
 # ==================== 目标平台配置 ====================
 [build.target]
 # --batch, -b: 批量编译模式
-batch = true
+batch = false
 # --current-platform-only, -cpo: 仅编译当前平台
 current_platform_only = false
 # 支持的目标平台列表，多个平台用逗号分隔

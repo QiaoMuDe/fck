@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/qflag"
 	"gitee.com/MM-Q/verman"
 )
@@ -20,7 +21,8 @@ func InitAndRun() (err error) {
 		UseChinese: true,
 		Completion: true,
 		Version:    verman.V.Version(),
-		//LogoText: types.FckHelpLogo,
+		RunFunc:    run,
+		LogoText:   types.FckHelpLogo,
 		Notes: []string{
 			"各子命令有独立帮助文档，可通过-h参数查看, 例如 'fck <子命令> -h' 查看各子命令详细帮助",
 		},
@@ -47,5 +49,11 @@ func InitAndRun() (err error) {
 		return err
 	}
 
+	return nil
+}
+
+// 根命令运行函数
+func run(cmd qflag.Command) error {
+	qflag.Root.PrintHelp()
 	return nil
 }
