@@ -40,6 +40,14 @@ func InitAndRun() (err error) {
 			EchoCmd,
 			RMCmd,
 			MkdirCmd,
+			TouchCmd,
+			ChmodCmd,
+			PwdCmd,
+			HomeCmd,
+			TruncateCmd,
+			CpCmd,
+			MvCmd,
+			TestCmd,
 		},
 	}
 

@@ -1,0 +1,406 @@
+#!/usr/bin/env bash
+
+# ==================== 模糊补全配置参数 ====================
+# 模糊补全功能开关 (设置为0禁用, 1启用)
+{{.ProgramName}}_FUZZY_COMPLETION_ENABLED=1
+
+# 启用模糊补全的最大候选项数量阈值
+# 超过此数量将回退到传统前缀匹配以保证性能
+{{.ProgramName}}_FUZZY_MAX_CANDIDATES=150
+
+# 模糊匹配的最小输入长度 (小于此长度不启用模糊匹配)
+{{.ProgramName}}_FUZZY_MIN_PATTERN_LENGTH=2
+
+# 模糊匹配分数阈值 (0-100, 分数低于此值的匹配将被过滤)
+{{.ProgramName}}_FUZZY_SCORE_THRESHOLD=30
+
+# 模糊匹配最大返回结果数
+{{.ProgramName}}_FUZZY_MAX_RESULTS=8
+
+# 缓存大小控制参数, 超过此阈值时将清空缓存以防止内存无限增长
+{{.ProgramName}}_FUZZY_CACHE_MAX_SIZE=500
+
+# ==================== 静态数据定义 ====================
+# 静态命令树定义 - 在函数外预初始化
+declare -A {{.ProgramName}}_cmd_tree
+{{.ProgramName}}_cmd_tree["/"]="{{.RootCmdOpts}}"
+{{.CmdTreeEntries}}
+
+# 标志参数定义 - 存储类型和值类型 (type|valueType)
+declare -A {{.ProgramName}}_flag_params
+{{.FlagParams}}
+
+# 枚举选项定义 - 存储枚举标志的允许值
+declare -A {{.ProgramName}}_enum_options
+{{.EnumOptions}}
+
+# 模糊匹配结果缓存 (格式: "pattern|candidate" -> score)
+declare -A {{.ProgramName}}_fuzzy_cache
+
+# ==================== 模糊匹配核心算法 ====================
+# 高性能模糊评分函数 - 使用纯整数运算避免bc开销
+# 参数: $1=输入模式, $2=候选字符串
+# 返回: 0-100的整数分数 (通过echo输出)
+_{{.ProgramName}}_fuzzy_score_fast() {
+    local pattern="$1"
+    local candidate="$2"
+    local pattern_len=${#pattern}
+    local candidate_len=${#candidate}
+    
+    # 快速路径1: 空模式检查
+    [[ -z "$pattern" ]] && { echo "100"; return; }
+    
+    # 快速路径2: 单字符模式优化
+    if [[ $pattern_len -eq 1 ]]; then
+        local idx=$(expr index "$candidate" "$pattern")
+        echo $(( idx > 0 ? 100 - idx + 1 : 0 ))
+        return
+    fi
+    
+    # 性能优化1: 长度预检查 - 候选项太短直接返回0
+    if [[ $candidate_len -lt $pattern_len ]]; then
+        echo "0"
+        return
+    fi
+    
+    # 性能优化2: 完全匹配检查 - 避免不必要的复杂计算
+    if [[ "$candidate" == "$pattern"* ]]; then
+        echo "100"  # 前缀完全匹配给最高分
+        return
+    fi
+    
+    # 性能优化3: 字符存在性预检查 - 快速排除不可能的匹配
+    local pattern_lower="${pattern,,}"  # 转小写用于大小写不敏感匹配
+    local candidate_lower="${candidate,,}"
+    local i
+    for ((i=0; i<pattern_len; i++)); do
+        local char="${pattern_lower:$i:1}"
+        if [[ "$candidate_lower" != *"$char"* ]]; then
+            echo "0"  # 必需字符不存在, 直接返回
+            return
+        fi
+    done
+    
+    # 核心匹配算法 - 计算字符匹配度和连续性
+    local matched=0           # 匹配的字符数
+    local consecutive=0       # 当前连续匹配长度
+    local max_consecutive=0   # 最大连续匹配长度
+    local candidate_pos=0     # 候选字符串当前搜索位置
+    local start_bonus=0       # 起始位置奖励
+    
+    # 检查是否从开头匹配 (大小写不敏感)
+    if [[ "$candidate_lower" == "$pattern_lower"* ]]; then
+        start_bonus=20  # 起始匹配给20分奖励
+    fi
+    
+    # 逐字符匹配算法
+    for ((i=0; i<pattern_len; i++)); do
+        local pattern_char="${pattern_lower:$i:1}"
+        local found=0
+        
+        # 在候选字符串中查找当前模式字符
+        for ((j=candidate_pos; j<candidate_len; j++)); do
+            local candidate_char="${candidate_lower:$j:1}"
+            if [[ "$pattern_char" == "$candidate_char" ]]; then
+                ((matched++))
+                found=1
+                
+                # 连续性检查 - 连续匹配的字符得分更高
+                if [[ $j -eq $candidate_pos ]]; then
+                    ((consecutive++))
+                    if [[ $consecutive -gt $max_consecutive ]]; then
+                        max_consecutive=$consecutive
+                    fi
+                else
+                    consecutive=1  # 重置连续计数
+                fi
+                
+                candidate_pos=$((j+1))  # 更新搜索位置
+                break
+            fi
+        done
+        
+        # 如果某个字符未找到, 重置连续计数
+        if [[ $found -eq 0 ]]; then
+            consecutive=0
+        fi
+    done
+    
+    # 评分计算 - 使用整数运算避免浮点数和bc
+    # 基础分数: (匹配字符数 / 模式长度) * 60
+    local base_score=$((matched * 60 / pattern_len))
+    
+    # 连续性奖励: (最大连续长度 / 模式长度) * 20
+    local consecutive_bonus=$((max_consecutive * 20 / pattern_len))
+    
+    # 长度惩罚: 候选字符串越长, 分数略微降低
+    local length_penalty=$((candidate_len - pattern_len))
+    if [[ $length_penalty -gt 10 ]]; then
+        length_penalty=10  # 最大惩罚10分
+    fi
+    
+    # 最终分数计算
+    local final_score=$((base_score + consecutive_bonus + start_bonus - length_penalty))
+    
+    # 确保分数在0-100范围内
+    if [[ $final_score -lt 0 ]]; then
+        final_score=0
+    elif [[ $final_score -gt 100 ]]; then
+        final_score=100
+    fi
+    
+    echo "$final_score"
+}
+
+# 带缓存的模糊评分函数 - 避免重复计算提高性能
+# 参数: $1=输入模式, $2=候选字符串
+_{{.ProgramName}}_fuzzy_score_cached() {
+    local pattern="$1"
+    local candidate="$2"
+    local cache_key="${pattern}|${candidate}"
+    
+    # 缓存命中检查
+    if [[ -n "${{{.ProgramName}}_fuzzy_cache[$cache_key]}" ]]; then
+        echo "${{{.ProgramName}}_fuzzy_cache[$cache_key]}"
+        return
+    fi
+    
+    # 计算分数并缓存
+    local score
+    score=$(_{{.ProgramName}}_fuzzy_score_fast "$pattern" "$candidate")
+    
+    # 缓存大小控制 - 防止内存无限增长
+    if [[ ${#{{.ProgramName}}_fuzzy_cache[@]} -gt ${{.ProgramName}}_FUZZY_CACHE_MAX_SIZE ]]; then
+        {{.ProgramName}}_fuzzy_cache=()  # 清空缓存
+    fi
+    
+    {{.ProgramName}}_fuzzy_cache["$cache_key"]="$score"
+    echo "$score"
+}
+
+# 智能补全匹配函数 - 分级匹配策略
+# 参数: $1=输入模式, $2=候选选项字符串(用|分隔)
+_{{.ProgramName}}_intelligent_match() {
+    local pattern="$1"
+    local options_str="$2"
+    local pattern_len=${#pattern}
+    
+    # 解析候选选项到数组
+    local opts_arr
+    IFS='|' read -ra opts_arr <<< "$options_str"
+    local total_candidates=${#opts_arr[@]}
+    
+    # 预计算常用值优化
+    local pattern_lower="${pattern,,}"
+    
+    # 快速路径: 模式为空时返回所有选项
+    [[ -z "$pattern" ]] && {
+        COMPREPLY=("${opts_arr[@]}")
+        return 0
+    }
+    
+    # 性能保护: 候选项过多时禁用模糊匹配
+    if [[ $total_candidates -gt ${{.ProgramName}}_FUZZY_MAX_CANDIDATES ]]; then
+        # 回退到传统compgen前缀匹配
+        local opts
+        printf -v opts '%s ' "${opts_arr[@]}"
+        opts="${opts% }"
+        COMPREPLY=($(compgen -W "$opts" -- "$pattern"))
+        return 0
+    fi
+    
+    local matches=()
+    
+    # 第1级: 精确前缀匹配 (最快, 优先级最高)
+    local exact_matches=()
+    local opt
+    for opt in "${opts_arr[@]}"; do
+        [[ "$opt" == "$pattern"* ]] && exact_matches+=("$opt")
+        # 限制遍历次数, 避免过多精确匹配
+        [[ ${#exact_matches[@]} -ge 20 ]] && break
+    done
+    
+    # 如果有精确匹配且数量合理, 直接返回
+    if [[ ${#exact_matches[@]} -gt 0 && ${#exact_matches[@]} -le 15 ]]; then
+        COMPREPLY=("${exact_matches[@]}")
+        return 0
+    fi
+    
+    # 第2级: 大小写不敏感前缀匹配
+    if [[ ${#exact_matches[@]} -eq 0 ]]; then
+        local case_insensitive_matches=()
+        
+        for opt in "${opts_arr[@]}"; do
+            local opt_lower="${opt,,}"
+            [[ "$opt_lower" == "$pattern_lower"* ]] && case_insensitive_matches+=("$opt")
+        done
+        
+        # 如果有大小写不敏感匹配, 返回
+        if [[ ${#case_insensitive_matches[@]} -gt 0 ]]; then
+            COMPREPLY=("${case_insensitive_matches[@]}")
+            return 0
+        fi
+    fi
+    
+    # 第3级: 模糊匹配 (最慢, 仅在必要时使用)
+    if [[ ${{.ProgramName}}_FUZZY_COMPLETION_ENABLED -eq 1 && $pattern_len -ge ${{.ProgramName}}_FUZZY_MIN_PATTERN_LENGTH ]]; then
+        local fuzzy_results=()
+        local scored_matches=()
+        
+        # 对所有候选项进行模糊评分
+        for opt in "${opts_arr[@]}"; do
+            local score
+            score=$(_{{.ProgramName}}_fuzzy_score_cached "$pattern" "$opt")
+            
+            # 只保留分数达到阈值的匹配
+            if [[ $score -ge ${{.ProgramName}}_FUZZY_SCORE_THRESHOLD ]]; then
+                scored_matches+=("$score:$opt")
+            fi
+        done
+        
+        # 如果有模糊匹配结果, 按分数排序并返回前N个
+        if [[ ${#scored_matches[@]} -gt 0 ]]; then
+            # 按分数降序排序
+            local sorted_matches
+            mapfile -t sorted_matches < <(printf '%s\n' "${scored_matches[@]}" | sort -t: -k1 -nr)
+            
+            # 提取选项名称, 限制返回数量
+            local count=0
+            local match
+            for match in "${sorted_matches[@]}"; do
+                if [[ $count -ge ${{.ProgramName}}_FUZZY_MAX_RESULTS ]]; then
+                    break
+                fi
+                fuzzy_results+=("${match#*:}")  # 移除分数前缀
+                ((count++))
+            done
+            
+            COMPREPLY=("${fuzzy_results[@]}")
+            return 0
+        fi
+    fi
+    
+    # 第4级: 子字符串匹配 (最后的备选方案)
+    local substring_matches=()
+    
+    for opt in "${opts_arr[@]}"; do
+        local opt_lower="${opt,,}"
+        [[ "$opt_lower" == *"$pattern_lower"* ]] && substring_matches+=("$opt")
+    done
+    
+    if [[ ${#substring_matches[@]} -gt 0 ]]; then
+        COMPREPLY=("${substring_matches[@]}")
+        return 0
+    fi
+    
+    # 如果所有匹配策略都失败, 返回空结果
+    COMPREPLY=()
+    return 1
+}
+
+# ==================== 主补全函数 ====================
+_{{.ProgramName}}_complete() {
+	local cur prev words cword context opts i arg
+	COMPREPLY=()
+
+	# 使用 _get_comp_words_by_ref 获取补全参数以提高健壮性
+	if declare -F _get_comp_words_by_ref >/dev/null 2>&1; then
+		_get_comp_words_by_ref -n =: cur prev words cword
+	else
+		# 与旧版本 Bash 补全环境的兼容性
+		words=("${COMP_WORDS[@]}")
+		cword=$COMP_CWORD
+		cur="${words[cword]}"
+		prev="${words[cword-1]}"
+	fi
+
+	# 输入验证
+	if [[ $cword -lt 0 || ${#words[@]} -eq 0 ]]; then
+		return 1
+	fi
+
+	# 快速路径: 如果当前输入看起来像是路径, 优先提供路径补全
+	if [[ "$cur" == *"/"* || "$cur" == *"."* || "$cur" == *"~"* ]]; then
+		COMPREPLY=($(compgen -f -d -- "$cur"))
+		return 0
+	fi
+
+	# 查找当前命令上下文
+	local context="/"
+	local i
+	for ((i=1; i < cword; i++)); do
+		local arg="${words[i]}"
+		# 如果遇到标志, 停止上下文构建
+		if [[ "$arg" =~ ^- ]]; then
+			break
+		fi
+		
+		local next_context="$context$arg/"
+		# 验证上下文是否存在
+		if [[ -n "${{{.ProgramName}}_cmd_tree[$next_context]}" ]]; then
+			context="$next_context"
+		else
+			break
+		fi
+	done
+
+	# 获取当前上下文的可用选项
+	local current_context_opts="${{{.ProgramName}}_cmd_tree[$context]}"
+	if [[ -z "$current_context_opts" ]]; then
+		return 1
+	fi
+	
+	# 检查前一个参数是否需要值并获取其类型
+	local prev_param_type=""
+	local prev_value_type=""
+	if [[ $cword -gt 1 ]]; then
+		local prev_arg="${words[cword-1]}"
+		local key="${context}|${prev_arg}"
+		local prev_param_info="${{{.ProgramName}}_flag_params[$key]:-}"
+		
+		if [[ -n "$prev_param_info" ]]; then
+			IFS='|' read -r prev_param_type prev_value_type <<< "$prev_param_info"
+		fi
+	fi
+
+	# 根据参数类型动态生成补全 - 仅处理需要值的参数
+	if [[ -n "$prev_param_type" && "$prev_param_type" == "required" ]]; then
+		if [[ "$prev_value_type" == "enum" ]]; then
+			local enum_key="${context}|${words[cword-1]}"
+			local enum_opts="${{{.ProgramName}}_enum_options[$enum_key]:-}"
+			
+			if [[ -n "$enum_opts" ]]; then
+				# 对枚举选项使用智能匹配
+				_{{.ProgramName}}_intelligent_match "$cur" "$enum_opts"
+				return 0
+			fi
+		else
+			# 非枚举类型 - 统一使用文件和目录路径补全
+			COMPREPLY=($(compgen -f -d -- "$cur"))
+			return 0
+		fi
+	fi
+
+	# 主要的标志和命令补全 - 使用智能匹配算法
+	_{{.ProgramName}}_intelligent_match "$cur" "$current_context_opts"
+	return 0
+}
+
+# ==================== 调试和诊断函数 ====================
+# 补全系统健康检查函数 (可选, 用于调试)
+_{{.ProgramName}}_completion_debug() {
+    echo "=== {{.ProgramName}} 补全系统诊断 ==="
+    echo "Bash版本: $BASH_VERSION"
+    echo "补全函数状态: $(type -t _{{.ProgramName}})"
+    echo "命令树条目数: ${#{{.ProgramName}}_cmd_tree[@]}"
+    echo "标志参数数: ${#{{.ProgramName}}_flag_params[@]}"
+    echo "枚举选项数: ${#{{.ProgramName}}_enum_options[@]}"
+    echo "模糊补全状态: $([ ${{.ProgramName}}_FUZZY_COMPLETION_ENABLED -eq 1 ] && echo "启用" || echo "禁用")"
+    echo "候选项阈值: ${{.ProgramName}}_FUZZY_MAX_CANDIDATES"
+    echo "缓存条目数: ${#{{.ProgramName}}_fuzzy_cache[@]}"
+    echo ""
+    echo "使用方法: 在命令行输入 '_{{.ProgramName}}_completion_debug' 查看此信息"
+}
+
+# 注册补全函数
+complete -F _{{.ProgramName}}_complete {{.ProgramName}}
