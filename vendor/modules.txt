@@ -38,6 +38,7 @@ gitee.com/MM-Q/qflag/internal/utils
 # gitee.com/MM-Q/shellx v1.0.18
 ## explicit; go 1.25.0
 gitee.com/MM-Q/shellx
+gitee.com/MM-Q/shellx/shx
 # gitee.com/MM-Q/verman v0.0.19
 ## explicit; go 1.24.2
 gitee.com/MM-Q/verman
@@ -69,3 +70,10 @@ golang.org/x/term
 ## explicit; go 1.24.0
 golang.org/x/text/transform
 golang.org/x/text/width
+# mvdan.cc/sh/v3 v3.12.0
+## explicit; go 1.23.0
+mvdan.cc/sh/v3/expand
+mvdan.cc/sh/v3/fileutil
+mvdan.cc/sh/v3/interp
+mvdan.cc/sh/v3/pattern
+mvdan.cc/sh/v3/syntax

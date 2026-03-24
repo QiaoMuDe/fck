@@ -48,6 +48,7 @@ func InitAndRun() (err error) {
 			CpCmd,
 			MvCmd,
 			TestCmd,
+			GmCmd,
 		},
 	}
 

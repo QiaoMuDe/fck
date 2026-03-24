@@ -21,4 +21,5 @@ require (
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	golang.org/x/text v0.29.0 // indirect
+	mvdan.cc/sh/v3 v3.12.0 // indirect
 )
