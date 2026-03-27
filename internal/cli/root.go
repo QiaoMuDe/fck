@@ -49,7 +49,6 @@ func InitAndRun() (err error) {
 			MvCmd,
 			TestCmd,
 			GmCmd,
-			XargsCmd,
 		},
 	}
 
