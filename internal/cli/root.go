@@ -41,7 +41,6 @@ func InitAndRun() (err error) {
 			RMCmd,
 			MkdirCmd,
 			TouchCmd,
-			ChmodCmd,
 			PwdCmd,
 			HomeCmd,
 			TruncateCmd,
