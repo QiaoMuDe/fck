@@ -428,34 +428,52 @@ func (f *FileFormatter) calculateOptimalColumns(fileNames []string, width int) i
 //   - info: 文件信息
 //   - opts: 格式选项
 //   - index: 行索引
+//
+// addTableRow 为表格添加一行文件信息
+// t: 表格写入器
+// info: 文件信息结构体
+// opts: 格式化选项
+// index: 文件索引
 func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOptions, index int) {
+	// 从文件完整路径中提取文件名
 	_, fileName := filepath.Split(info.Name)
 
+	// 格式化文件权限字符串
 	infoPerm := f.formatPermissionString(info, opts)
 
+	// 获取文件类型并应用颜色
 	infoType := GetColorString(info, info.EntryType.String(), f.colorLib)
 
+	// 将文件大小转换为可读格式（如KB、MB等）
 	infoSize, infoSizeUnit := f.humanSize(info.Size)
+	// 设置非粗体样式
 	f.colorLib.SetBold(false)
+	// 为文件大小和单位应用黄色
 	infoSize = f.colorLib.Syellow(infoSize)
 	infoSizeUnit = f.colorLib.Syellow(infoSizeUnit)
 
+	// 格式化修改时间并应用蓝色
 	infoModTime := f.colorLib.Sblue(info.ModTime.Format(timeFormat))
+	// 恢复粗体样式
 	f.colorLib.SetBold(true)
 
+	// 文件名处理：根据选项是否引号包裹
 	formatStr := "%s"
 	if opts.QuoteNames {
 		formatStr = "\"%s\""
 	}
 
+	// 构建文件名列（包含图标、引号包裹）
 	var nameCol string
 	iconPrefix := ""
 	if opts.Icon {
 		iconPrefix = getIcon(info)
 	}
 
+	// 格式化文件名（含引号）
 	fileNameQuoted := fmt.Sprintf(formatStr, fileName)
 
+	// 处理符号链接
 	if info.EntryType == SymlinkType {
 		arrowColor := f.colorLib.Swhite(symlinkArrow)
 
