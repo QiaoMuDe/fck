@@ -7,7 +7,6 @@ import (
 // CmdOpts 命令选项
 //
 // CmdOpts 提供了配置现有命令的方式，包含命令的所有可配置属性。
-// 与 CmdSpec 不同，CmdOpts 用于配置已存在的命令，而不是创建新命令。
 //
 // 使用场景:
 //   - 已有命令实例，需要批量设置属性
@@ -37,6 +36,9 @@ type CmdOpts struct {
 	UsageSyntax string // 命令使用语法
 	LogoText    string // Logo文本
 	Completion  bool   // 是否启用自动补全标志
+
+	// 环境变量绑定
+	AutoBindEnv bool // 是否自动绑定所有标志的环境变量
 
 	// 示例和说明
 	Examples map[string]string // 示例使用, key为描述, value为示例命令

@@ -2,6 +2,7 @@ package flag
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"gitee.com/MM-Q/qflag/internal/types"
@@ -249,6 +250,36 @@ func (f *BaseFlag[T]) BindEnv(name string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.envVar = name
+}
+
+// AutoBindEnv 自动绑定环境变量
+//
+// 功能说明:
+//   - 自动使用标志的长名称作为环境变量名（转为大写）
+//   - 如果没有设置长名称，会触发 panic
+//   - 环境变量前缀（EnvPrefix）在解析时自动拼接，无需手动处理
+//
+// 使用示例:
+//   - 标志 "host" -> 绑定到 "HOST"
+//   - 标志 "PORT" -> 绑定到 "PORT"
+//   - 标志 "db-host" -> 绑定到 "DB-HOST"
+//
+// 注意事项:
+//   - 环境变量的优先级低于命令行参数
+//   - 必须设置长名称，否则会 panic
+//   - 短名称不会被使用，避免冲突
+//   - 自动转为大写，确保环境变量命名规范
+func (f *BaseFlag[T]) AutoBindEnv() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// 必须有长名称
+	if f.longName == "" {
+		panic(types.NewError("EMPTY_LONG_NAME", "flag must have a long name for AutoBindEnv", nil))
+	}
+
+	// 使用长名称并转为大写
+	f.envVar = strings.ToUpper(f.longName)
 }
 
 // GetValuePtr 返回值指针, 用于注册到标准库 flag 包

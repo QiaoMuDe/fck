@@ -63,4 +63,7 @@ type Command interface {
 	AddNotes(notes []string)                // 添加多条注意事项
 	SetLogoText(logo string)                // 设置命令logo文本
 	Config() *CmdConfig                     // 获取命令配置
+
+	// 环境变量绑定
+	AutoBindAllEnv() // 为所有标志自动绑定环境变量
 }

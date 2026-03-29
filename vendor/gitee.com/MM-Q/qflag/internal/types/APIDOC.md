@@ -383,6 +383,44 @@ IsNotFoundError 判断是否为"未找到"错误
 
 ---
 
+### func FormatError(err error) string
+
+```go
+func FormatError(err error) string
+```
+
+FormatError 格式化错误信息
+
+**参数:**
+  - err: 要格式化的错误
+
+**返回值:**
+  - string: 格式化的错误字符串
+
+**功能说明:**
+  - 将错误转换为可读的格式化字符串
+  - 如果是 *Error 类型, 返回详细的错误信息
+  - 如果不是 *Error 类型, 返回普通错误字符串
+
+**输出格式:**
+  - *Error 类型: "[错误码] 错误消息: 原始错误"
+  - 非 *Error 类型: 错误字符串
+
+**使用场景:**
+  - 日志记录
+  - 错误展示
+  - 调试输出
+  - API 响应
+
+**示例:**
+```go
+err := types.NewError("INVALID_VALUE", "invalid port value", nil)
+fmt.Println(types.FormatError(err))
+// 输出: [INVALID_VALUE] invalid port value
+```
+
+---
+
 ### func ParseTimeWithCommonFormats(value string) (time.Time, string, error)
 
 ```go
@@ -766,6 +804,9 @@ type Command interface {
     AddNotes(notes []string)                // 添加多条注意事项
     SetLogoText(logo string)                // 设置命令logo文本
     Config() *CmdConfig                     // 获取命令配置
+
+    // 环境变量绑定
+    AutoBindAllEnv() // 为所有标志自动绑定环境变量
 }
 ```
 
@@ -1049,6 +1090,20 @@ type Flag interface {
     //   - 优先级低于命令行参数
     //   - 支持配置文件和环境变量
     BindEnv(name string)
+
+    // AutoBindEnv 自动绑定环境变量
+    //
+    // 功能说明:
+    //   - 自动使用标志的长名称作为环境变量名（转为大写）
+    //   - 如果没有设置长名称，会触发 panic
+    //   - 环境变量前缀（EnvPrefix）在解析时自动拼接，无需手动处理
+    //
+    // 注意事项:
+    //   - 环境变量的优先级低于命令行参数
+    //   - 必须设置长名称，否则会 panic
+    //   - 短名称不会被使用，避免冲突
+    //   - 自动转为大写，确保环境变量命名规范
+    AutoBindEnv()
 
     // GetEnvVar 获取绑定的环境变量名
     //

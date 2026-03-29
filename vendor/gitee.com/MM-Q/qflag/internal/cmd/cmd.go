@@ -404,7 +404,7 @@ func (c *Cmd) HasSubCmd(name string) bool {
 	return c.cmdRegistry.Has(name)
 }
 
-// Parse 解析命令行参数（可重复解析）
+// Parse 解析命令行参数 (可重复解析)
 //
 // 参数:
 //   - args: 命令行参数列表
@@ -425,7 +425,7 @@ func (c *Cmd) Parse(args []string) error {
 	return c.parser.Parse(c, args)
 }
 
-// ParseOnce 解析命令行参数（只解析一次）
+// ParseOnce 解析命令行参数 (只解析一次)
 //
 // 参数:
 //   - args: 命令行参数列表
@@ -450,7 +450,7 @@ func (c *Cmd) ParseOnce(args []string) error {
 	return err
 }
 
-// ParseAndRoute 解析并路由执行命令（可重复解析）
+// ParseAndRoute 解析并路由执行命令 (可重复解析)
 //
 // 参数:
 //   - args: 命令行参数列表
@@ -471,7 +471,7 @@ func (c *Cmd) ParseAndRoute(args []string) error {
 	return c.parser.ParseAndRoute(c, args)
 }
 
-// ParseAndRouteOnce 解析并路由执行命令（只解析一次）
+// ParseAndRouteOnce 解析并路由执行命令 (只解析一次)
 //
 // 参数:
 //   - args: 命令行参数列表
@@ -496,7 +496,7 @@ func (c *Cmd) ParseAndRouteOnce(args []string) error {
 	return err
 }
 
-// ParseOnly 仅解析当前命令, 不递归解析子命令（可重复解析）
+// ParseOnly 仅解析当前命令, 不递归解析子命令 (可重复解析)
 //
 // 参数:
 //   - args: 命令行参数列表
@@ -517,7 +517,7 @@ func (c *Cmd) ParseOnly(args []string) error {
 	return c.parser.ParseOnly(c, args)
 }
 
-// ParseOnlyOnce 仅解析当前命令, 不递归解析子命令（只解析一次）
+// ParseOnlyOnce 仅解析当前命令, 不递归解析子命令 (只解析一次)
 //
 // 参数:
 //   - args: 命令行参数列表
@@ -791,6 +791,32 @@ func (c *Cmd) SetEnvPrefix(prefix string) {
 	}
 }
 
+// AutoBindAllEnv 为所有标志自动绑定环境变量
+//
+// 功能说明:
+//   - 遍历命令的所有标志
+//   - 为每个标志调用 AutoBindEnv() 方法
+//   - 批量设置环境变量绑定
+//
+// 使用示例:
+//
+//	cmd.String("host", "h", "主机地址", "localhost")
+//	cmd.Uint("port", "p", "端口号", 8080)
+//	cmd.AutoBindAllEnv()  // 自动绑定 HOST 和 PORT
+//
+// 注意事项:
+//   - 如果标志没有长名称，会触发 panic
+//   - 环境变量名为标志长名称的大写形式
+//   - 环境变量前缀在解析时自动拼接
+func (c *Cmd) AutoBindAllEnv() {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for _, f := range c.flagRegistry.List() {
+		f.AutoBindEnv()
+	}
+}
+
 // SetUsageSyntax 设置使用语法
 //
 // 参数:
@@ -992,7 +1018,7 @@ func (c *Cmd) SetParser(p types.Parser) {
 	defer c.mu.Unlock()
 
 	if p == nil {
-		panic("parser cannot be nil")
+		panic(types.NewError("NIL_PARSER", "parser cannot be nil", nil))
 	}
 
 	c.parser = p
@@ -1045,15 +1071,15 @@ func (c *Cmd) SetParsed(parsed bool) {
 //
 // 功能说明:
 //   - 将选项结构体的所有属性应用到当前命令
-//   - 支持部分配置（未设置的属性不会被修改）
+//   - 支持部分配置 (未设置的属性不会被修改)
 //   - 使用defer捕获panic, 转换为错误返回
 //
 // 应用顺序:
-//  1. 基本属性（Desc、RunFunc）
-//  2. 配置选项（Version、UseChinese、EnvPrefix、UsageSyntax、LogoText）
-//  3. 示例和说明（Examples、Notes）
-//  4. 互斥组（MutexGroups）
-//  5. 子命令（SubCmds）
+//  1. 基本属性 (Desc、RunFunc)
+//  2. 配置选项 (Version、UseChinese、EnvPrefix、UsageSyntax、LogoText)
+//  3. 示例和说明 (Examples、Notes)
+//  4. 互斥组 (MutexGroups)
+//  5. 子命令 (SubCmds)
 //
 // 错误处理:
 //   - 选项为 nil: 返回 INVALID_CMDOPTS 错误
@@ -1147,6 +1173,11 @@ func (c *Cmd) ApplyOpts(opts *CmdOpts) error {
 		if err := c.AddSubCmds(opts.SubCmds...); err != nil {
 			return types.WrapError(err, "FAILED_TO_ADD_SUBCMDS", "failed to add subcommands")
 		}
+	}
+
+	// 7. 自动绑定环境变量
+	if opts.AutoBindEnv {
+		c.AutoBindAllEnv()
 	}
 
 	return err

@@ -116,6 +116,36 @@ var WrapParseError = types.WrapParseError
 //   - 简化错误处理逻辑
 var IsNotFoundError = types.IsNotFoundError
 
+// FormatError 格式化错误信息
+//
+// 参数:
+//   - err: 要格式化的错误
+//
+// 返回值:
+//   - string: 格式化的错误字符串
+//
+// 功能说明:
+//   - 将错误转换为可读的格式化字符串
+//   - 如果是 *Error 类型, 返回详细的错误信息
+//   - 如果不是 *Error 类型, 返回普通错误字符串
+//
+// 输出格式:
+//   - *Error 类型: "[错误码] 错误消息: 原始错误"
+//   - 非 *Error 类型: 错误字符串
+//
+// 使用场景:
+//   - 日志记录
+//   - 错误展示
+//   - 调试输出
+//   - API 响应
+//
+// 示例:
+//
+//	err := qflag.NewError("INVALID_VALUE", "invalid port value", nil)
+//	fmt.Println(qflag.FormatError(err))
+//	// 输出: [INVALID_VALUE] invalid port value
+var FormatError = types.FormatError
+
 // 预定义错误变量
 var (
 	// ErrInvalidFlagType 无效的标志类型错误
@@ -400,30 +430,9 @@ type Cmd = cmd.Cmd
 //   - 初始化配置选项
 var NewCmd = cmd.NewCmd
 
-// CmdSpec 命令规格结构体
-// CmdSpec 提供了通过规格创建命令的方式, 包含命令的所有属性。
-// 这种方式比函数式配置更加直观和集中。
-type CmdSpec = cmd.CmdSpec
-
 // CmdOpts 命令选项结构体
 // CmdOpts 提供了配置现有命令的方式，包含命令的所有可配置属性。
-// 与 CmdSpec 不同，CmdOpts 用于配置已存在的命令，而不是创建新命令。
 type CmdOpts = cmd.CmdOpts
-
-// NewCmdSpec 创建新的命令规格
-//
-// 参数:
-//   - longName: 命令长名称
-//   - shortName: 命令短名称
-//
-// 返回值:
-//   - *CmdSpec: 初始化的命令规格
-//
-// 功能说明:
-//   - 创建基本命令规格
-//   - 设置默认值
-//   - 初始化所有字段
-var NewCmdSpec = cmd.NewCmdSpec
 
 // NewCmdOpts 创建新的命令选项
 //
@@ -435,23 +444,6 @@ var NewCmdSpec = cmd.NewCmdSpec
 //   - 初始化所有字段为零值
 //   - 初始化 map 和 slice 避免空指针
 var NewCmdOpts = cmd.NewCmdOpts
-
-// NewCmdFromSpec 从规格创建命令
-//
-// 参数:
-//   - spec: 命令规格结构体
-//
-// 返回值:
-//   - *Cmd: 创建的命令实例
-//   - error: 创建失败时返回错误
-//
-// 功能说明:
-//   - 根据规格结构体创建命令
-//   - 自动设置所有属性和配置
-//   - 递归创建子命令
-//   - 支持默认值处理
-//   - 使用defer捕获panic, 转换为错误返回
-var NewCmdFromSpec = cmd.NewCmdFromSpec
 
 // GenerateCompletion 生成补全脚本
 //

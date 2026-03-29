@@ -251,3 +251,50 @@ func IsNotFoundError(err error) bool {
 	}
 	return false
 }
+
+// FormatError 格式化错误信息
+//
+// 参数:
+//   - err: 要格式化的错误
+//
+// 返回值:
+//   - string: 格式化的错误字符串
+//
+// 功能说明:
+//   - 将错误转换为可读的格式化字符串
+//   - 如果是 *Error 类型, 返回详细的错误信息
+//   - 如果不是 *Error 类型, 返回普通错误字符串
+//
+// 输出格式:
+//   - *Error 类型: "[错误码] 错误消息: 原始错误"
+//   - 非 *Error 类型: 错误字符串
+//
+// 使用场景:
+//   - 日志记录
+//   - 错误展示
+//   - 调试输出
+//   - API 响应
+//
+// 示例:
+//
+//	err := types.NewError("INVALID_VALUE", "invalid port value", nil)
+//	fmt.Println(types.FormatError(err))
+//	// 输出: [INVALID_VALUE] invalid port value
+func FormatError(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	var e *Error
+	if errors.As(err, &e) {
+		// 格式化 *Error 类型
+		result := fmt.Sprintf("[%s] %s", e.Code, e.Message)
+		if e.Cause != nil {
+			result += ": " + e.Cause.Error()
+		}
+		return result
+	}
+
+	// 非 *Error 类型, 返回普通错误字符串
+	return err.Error()
+}

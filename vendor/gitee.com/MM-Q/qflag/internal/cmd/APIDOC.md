@@ -22,19 +22,6 @@ cmd 包实现了 types.Command 接口, 提供了完整的命令行命令功能�
   - 灵活的配置选项
   - 完整的帮助系统
 
-# Package cmd 提供命令规格结构体, 用于通过配置创建命令
-
-cmdspec 包实现了通过规格结构体创建命令的功能, 提供了更直观、集中的命令配置方式。 主要组件: 
-  - CmdSpec: 命令规格结构体
-  - NewCmdSpec: 便捷构造函数
-  - NewCmdFromSpec: 从规格创建命令的函数
-
-特性: 
-  - 支持所有命令属性的集中配置
-  - 支持嵌套子命令
-  - 提供默认值处理
-  - 完全兼容现有API
-
 ---
 
 ## TYPES
@@ -92,116 +79,6 @@ NewCmd 创建新的命令实例
   - 设置默认解析器
   - 初始化配置选项
 
-### type CmdSpec struct
-
-```go
-type CmdSpec struct {
-    // 基本属性
-    LongName      string              // 命令长名称
-    ShortName     string              // 命令短名称
-    Desc          string              // 命令描述
-    ErrorHandling types.ErrorHandling // 错误处理策略
-
-    // 运行函数
-    RunFunc func(types.Command) error // 命令执行函数
-
-    // 配置选项
-    Version     string // 版本号
-    UseChinese  bool   // 是否使用中文
-    EnvPrefix   string // 环境变量前缀
-    UsageSyntax string // 命令使用语法
-    LogoText    string // Logo文本
-    Completion  bool   // 是否启用自动补全标志
-
-    // 示例和说明
-    Examples map[string]string // 示例使用, key为描述, value为示例命令
-    Notes    []string          // 注意事项
-
-    // 子命令和互斥组
-    SubCmds        []types.Command       // 子命令列表, 用于添加到命令中
-    MutexGroups    []types.MutexGroup    // 互斥组列表
-    RequiredGroups []types.RequiredGroup // 必需组列表
-}
-```
-
-CmdSpec 是命令规格结构体, 提供了通过规格创建命令的方式
-
-CmdSpec 包含了命令的所有属性, 这种方式比函数式配置更加直观和集中。 通过 NewCmdFromSpec 函数可以将规格转换为实际的命令实例。
-
-字段说明: 
-  - LongName/ShortName: 命令的长名称和短名称
-  - Desc: 命令的描述信息
-  - ErrorHandling: 错误处理策略
-  - RunFunc: 命令执行函数
-  - Version: 版本号
-  - UseChinese: 是否使用中文
-  - EnvPrefix: 环境变量前缀
-  - UsageSyntax: 命令使用语法
-  - LogoText: Logo文本
-  - Examples: 示例使用, key为描述, value为示例命令
-  - Notes: 注意事项
-  - SubCmds: 子命令列表, 用于添加到命令中
-  - MutexGroups: 互斥组列表
-  - RequiredGroups: 必需组列表, 支持普通必需组和条件性必需组
-
-使用场景: 
-  - 需要集中配置命令属性
-  - 通过配置文件创建命令
-  - 命令模板和复用
-  - 复杂命令的结构化定义
-
-#### func NewCmdSpec(longName, shortName string) *CmdSpec
-
-```go
-func NewCmdSpec(longName, shortName string) *CmdSpec
-```
-
-NewCmdSpec 创建新的命令规格
-
-**参数:**
-  - longName: 命令长名称
-  - shortName: 命令短名称
-
-**返回值:**
-  - *CmdSpec: 初始化的命令规格
-
-**功能说明: **
-  - 创建基本命令规格
-  - 设置默认值
-  - 初始化所有字段
-
-**默认值: **
-  - ErrorHandling: ExitOnError
-  - UseChinese: false
-  - Completion: false
-  - Examples: 空映射
-  - Notes: 空切片
-  - SubCmds: 空切片
-  - MutexGroups: 空切片
-  - RequiredGroups: 空切片
-
-#### func NewCmdFromSpec(spec *CmdSpec) (cmd *Cmd, err error)
-
-```go
-func NewCmdFromSpec(spec *CmdSpec) (cmd *Cmd, err error)
-```
-
-NewCmdFromSpec 从规格创建命令
-
-**参数:**
-  - spec: 命令规格结构体
-
-**返回值:**
-  - *Cmd: 创建的命令实例
-  - error: 创建失败时返回错误
-
-**功能说明: **
-  - 根据规格结构体创建命令
-  - 自动设置所有属性和配置
-  - 递归创建子命令
-  - 支持默认值处理
-  - 使用defer捕获panic, 转换为错误返回
-
 ### type CmdOpts struct
 
 ```go
@@ -220,6 +97,9 @@ type CmdOpts struct {
     LogoText    string // Logo文本
     Completion  bool   // 是否启用自动补全标志
 
+    // 环境变量绑定
+    AutoBindEnv bool // 是否自动绑定所有标志的环境变量
+
     // 示例和说明
     Examples map[string]string // 示例使用, key为描述, value为示例命令
     Notes    []string          // 注意事项
@@ -233,7 +113,7 @@ type CmdOpts struct {
 
 CmdOpts 是命令选项结构体, 提供了配置现有命令的方式
 
-CmdOpts 包含了命令的所有可配置属性, 用于配置已存在的命令, 而不是创建新命令。 与 CmdSpec 不同, CmdOpts 用于配置现有命令的属性。
+CmdOpts 包含了命令的所有可配置属性, 用于配置已存在的命令。
 
 字段说明: 
   - Desc: 命令描述
@@ -243,6 +123,7 @@ CmdOpts 包含了命令的所有可配置属性, 用于配置已存在的命令,
   - EnvPrefix: 环境变量前缀
   - UsageSyntax: 命令使用语法
   - LogoText: Logo文本
+  - AutoBindEnv: 是否自动绑定所有标志的环境变量
   - Examples: 示例使用, key为描述, value为示例命令
   - Notes: 注意事项
   - SubCmds: 子命令列表, 用于添加到命令中
@@ -1388,6 +1269,31 @@ SetEnvPrefix 设置环境变量前缀
   - 自动添加下划线后缀
   - 空字符串表示不使用前缀
   - 支持并发安全的设置
+
+#### func (c *Cmd) AutoBindAllEnv()
+
+```go
+func (c *Cmd) AutoBindAllEnv()
+```
+
+AutoBindAllEnv 为所有标志自动绑定环境变量
+
+**功能说明:**
+  - 遍历命令的所有标志
+  - 为每个标志调用 AutoBindEnv() 方法
+  - 批量设置环境变量绑定
+
+**使用示例:**
+```go
+cmd.String("host", "h", "主机地址", "localhost")
+cmd.Uint("port", "p", "端口号", 8080)
+cmd.AutoBindAllEnv()  // 自动绑定 HOST 和 PORT
+```
+
+**注意事项:**
+  - 如果标志没有长名称，会触发 panic
+  - 环境变量名为标志长名称的大写形式
+  - 环境变量前缀在解析时自动拼接
 
 #### func (c *Cmd) SetLogoText(logo string)
 
