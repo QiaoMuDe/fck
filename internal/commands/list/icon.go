@@ -239,6 +239,7 @@ var defaultIcons = IconMap{
 		".check":        "\uf4a7", // 校验文件
 		".md5":          "\uf4a7", // MD5校验和文件
 		".sha1":         "\uf4a7", // SHA1校验和文件
+		".sha128":       "\uf4a7", // SHA128校验和文件
 		".sha256":       "\uf4a7", // SHA256校验和文件
 		".sha512":       "\uf4a7", // SHA512校验和文件
 
