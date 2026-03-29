@@ -245,12 +245,21 @@ func (m *HashTaskManager) resultCollector() {
 
 		// 非写入模式下直接输出到终端
 		if !m.config.Write {
-			fmt.Printf("%s\t%q\n", result.HashValue, result.FilePath)
+			if m.config.Quote {
+				fmt.Printf("%s\t%q\n", result.HashValue, result.FilePath)
+			} else {
+				fmt.Printf("%s\t%s\n", result.HashValue, result.FilePath)
+			}
 		}
 
 		// 写入模式下发送写入请求
 		if m.config.Write {
-			content := fmt.Sprintf("%s\t%q\n", result.HashValue, result.FilePath)
+			var content string
+			if m.config.Quote {
+				content = fmt.Sprintf("%s\t%q\n", result.HashValue, result.FilePath)
+			} else {
+				content = fmt.Sprintf("%s\t%s\n", result.HashValue, result.FilePath)
+			}
 			m.requestWrite(content)
 		}
 

@@ -21,6 +21,7 @@ type HashConfig struct {
 	Progress    bool     // 显示进度条
 	Local       bool     // 本地模式
 	BasePath    string   // 基准路径
+	Quote       bool     // 输出路径添加双引号
 }
 
 // HashCmdMain 执行哈希命令
@@ -87,7 +88,7 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 	if len(errors) > 0 {
 		printUniqueErrors(cl, errors)
 	} else if config.Write {
-		cl.Greenf("checksum file saved: %s (%d files processed)\n", types.OutputFileName, processed)
+		cl.Greenf("checksum file saved: %s (%d files)\n", types.OutputFileName, processed)
 	}
 
 	return nil

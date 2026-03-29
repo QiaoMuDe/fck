@@ -18,12 +18,12 @@ var (
 	hashProgress  *qflag.BoolFlag
 	hashLocal     *qflag.BoolFlag
 	hashBasePath  *qflag.StringFlag
+	hashQuote     *qflag.BoolFlag
 	noColor       *qflag.BoolFlag
 )
 
 func init() {
 	HashCmd = qflag.NewCmd("hash", "h", qflag.ExitOnError)
-
 	hashType = HashCmd.Enum("type", "t", "指定哈希算法，支持 md5、sha1、sha256、sha512", "md5", []string{"md5", "sha1", "sha256", "sha512"})
 	hashRecursion = HashCmd.Bool("recursion", "r", "递归处理目录", false)
 	hashWrite = HashCmd.Bool("write", "w", "将哈希值写入文件, 文件名为checksum.hash", false)
@@ -31,6 +31,7 @@ func init() {
 	hashProgress = HashCmd.Bool("progress", "p", "显示文件哈希计算进度条, 推荐在大文件处理时使用", false)
 	hashLocal = HashCmd.Bool("local", "l", "生成本地模式校验文件，记录绝对路径和基准目录", false)
 	hashBasePath = HashCmd.String("base-path", "b", "指定基准路径(默认为当前工作目录)", "")
+	hashQuote = HashCmd.Bool("quote", "q", "输出路径时添加双引号", false)
 	noColor = HashCmd.Bool("no-color", "n", "禁用颜色输出", false)
 
 	cmdOpts := &qflag.CmdOpts{
@@ -63,6 +64,7 @@ func runHash(cmd qflag.Command) error {
 		Progress:    hashProgress.Get(),
 		Local:       hashLocal.Get(),
 		BasePath:    hashBasePath.Get(),
+		Quote:       hashQuote.Get(),
 	}
 
 	return hash.HashCmdMain(cl, config)
