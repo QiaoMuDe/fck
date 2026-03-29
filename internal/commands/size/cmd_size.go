@@ -29,6 +29,7 @@ type SizeConfig struct {
 	Color      bool
 	TableStyle string
 	Hidden     bool
+	Human      bool
 }
 
 func SizeCmdMain(cl *colorlib.ColorLib, config SizeConfig) error {
@@ -91,9 +92,16 @@ func addPathToList(path string, itemList *items, cl *colorlib.ColorLib, config S
 		return
 	}
 
+	var sizeStr string
+	if config.Human {
+		sizeStr = humanReadableSize(size, 2)
+	} else {
+		sizeStr = fmt.Sprintf("%d", size)
+	}
+
 	*itemList = append(*itemList, item{
 		Name: path,
-		Size: humanReadableSize(size, 2),
+		Size: sizeStr,
 	})
 }
 

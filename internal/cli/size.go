@@ -15,6 +15,7 @@ var (
 	sizeColor      *qflag.BoolFlag // 启用颜色输出
 	sizeTableStyle *qflag.EnumFlag // 指定表格样式
 	sizeHidden     *qflag.BoolFlag // 包含隐藏文件或目录进行大小计算，默认过滤
+	sizeHuman      *qflag.BoolFlag // 人类可读格式显示大小
 )
 
 func init() {
@@ -22,6 +23,7 @@ func init() {
 
 	sizeColor = SizeCmd.Bool("color", "c", "启用颜色输出", false)
 	sizeHidden = SizeCmd.Bool("hidden", "H", "包含隐藏文件或目录进行大小计算，默认过滤", false)
+	sizeHuman = SizeCmd.Bool("human", "u", "以人类可读格式显示大小(如KB/MB/GB)", false)
 	sizeTableStyle = SizeCmd.Enum("table-style", "ts", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\t\t[def ]   - 默认样式\n"+
 		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
@@ -45,8 +47,8 @@ func init() {
 		"\t\t\t\t\t[none]   - 禁用表格样式", "def", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "文件目录大小计算工具, 计算指定文件或目录的大小，并以人类可读格式(B/KB/MB/GB/TB)显示",
-		Notes:      []string{"大小单位会自动选择最合适的(B/KB/MB/GB/TB)"},
+		Desc:       "文件目录大小计算工具, 计算指定文件或目录的大小",
+		Notes:      []string{"默认显示字节数，使用 -u/--human 转换为可读格式"},
 		UseChinese: true,
 	}
 
@@ -65,6 +67,7 @@ func runSize(cmd qflag.Command) error {
 		Color:      sizeColor.Get(),
 		TableStyle: sizeTableStyle.Get(),
 		Hidden:     sizeHidden.Get(),
+		Human:      sizeHuman.Get(),
 	}
 
 	return size.SizeCmdMain(cl, config)
