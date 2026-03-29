@@ -32,18 +32,20 @@ type HashConfig struct {
 // 返回值:
 //   - error: 哈希计算过程中可能发生的错误
 func HashCmdMain(cl *colorlib.ColorLib, config HashConfig) error {
+	// 未指定路径时默认匹配当前目录所有文件
 	targetPaths := config.TargetPaths
 	if len(targetPaths) == 0 {
 		targetPaths = []string{"*"}
 	}
 
 	if config.Write {
-		cl.PrintOk("正在将哈希值写入文件，请稍候...")
+		cl.Green("Generating checksum file...")
 	}
 
+	// 逐个处理目标路径，单个路径失败不影响其他路径
 	for _, targetPath := range targetPaths {
 		if err := processSinglePath(cl, filepath.Clean(targetPath), config); err != nil {
-			cl.PrintErrorf("处理路径 %s 时发生错误: %v\n", targetPath, err)
+			cl.Redf("处理路径 %s 时发生错误: %v\n", targetPath, err)
 		}
 	}
 
@@ -60,6 +62,7 @@ func HashCmdMain(cl *colorlib.ColorLib, config HashConfig) error {
 // 返回:
 //   - error: 错误信息
 func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConfig) error {
+	// 设置隐藏文件处理标志，供 collectFiles 使用
 	setHiddenFlag(config.Hidden)
 	files, err := collectFiles(targetPath, config.Recursion, cl)
 	if err != nil {
@@ -67,10 +70,11 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 	}
 
 	if len(files) == 0 {
-		cl.PrintWarnf("路径 %s 没有找到任何文件\n", targetPath)
+		cl.Yellowf("路径 %s 没有找到任何文件\n", targetPath)
 		return nil
 	}
 
+	// 便携模式需要将绝对路径转换为相对路径，便于跨机器使用
 	if config.Write && !config.Local {
 		files, err = convertToRelativePaths(files, config.BasePath)
 		if err != nil {
@@ -78,12 +82,12 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 		}
 	}
 
-	errors := hashRunTasksRefactored(files, config.Type, config)
+	processed, errors := hashRunTasksRefactored(files, config.Type, config)
 
 	if len(errors) > 0 {
 		printUniqueErrors(cl, errors)
 	} else if config.Write {
-		cl.PrintOkf("已将哈希值写入文件 %s, 共处理 %d 个文件\n", types.OutputFileName, len(files))
+		cl.Greenf("Checksum saved: %s (%d files)\n", types.OutputFileName, processed)
 	}
 
 	return nil
@@ -99,6 +103,7 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 //   - []string: 转换后的相对路径列表
 //   - error: 错误信息
 func convertToRelativePaths(files []string, basePath string) ([]string, error) {
+	// 未指定基准路径时使用当前工作目录
 	if basePath == "" {
 		var err error
 		basePath, err = os.Getwd()
@@ -121,6 +126,7 @@ func convertToRelativePaths(files []string, basePath string) ([]string, error) {
 			}
 		}
 
+		// 统一使用正斜杠，确保跨平台兼容性
 		relPath = filepath.ToSlash(relPath)
 		relativePaths = append(relativePaths, relPath)
 	}
@@ -147,7 +153,7 @@ func printUniqueErrors(cl *colorlib.ColorLib, errors []error) {
 		errStr := err.Error()
 		if _, exists := seen[errStr]; !exists {
 			seen[errStr] = struct{}{}
-			cl.PrintError(errStr)
+			cl.Red(errStr)
 		}
 	}
 }

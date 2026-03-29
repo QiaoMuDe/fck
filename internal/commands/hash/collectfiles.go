@@ -24,7 +24,7 @@ import (
 //   - []string: 收集到的文件路径列表
 //   - error: 如果发生错误，则返回错误信息
 func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
-	// 检查路径是否包含通配符
+	// 根据是否包含通配符选择不同的收集策略
 	if strings.ContainsAny(targetPath, "*?[]{}") {
 		return collectGlobFiles(targetPath, recursive, cl)
 	}
@@ -52,7 +52,7 @@ func collectGlobFiles(pattern string, recursive bool, cl *colorlib.ColorLib) ([]
 		return nil, fmt.Errorf("没有找到匹配的文件")
 	}
 
-	// 预估容量
+	// 聚合所有匹配路径下的文件
 	var allFiles []string
 
 	for _, path := range matchedPaths {
@@ -64,7 +64,7 @@ func collectGlobFiles(pattern string, recursive bool, cl *colorlib.ColorLib) ([]
 		if err != nil {
 			// 对于通配符匹配，如果是目录相关的错误，只打印警告而不中断整个过程
 			if isDirectorySkipError(err) {
-				cl.PrintWarn(err.Error())
+				cl.Yellow(err.Error())
 				continue
 			}
 			// 其他错误仍然返回
@@ -116,6 +116,7 @@ func collectSinglePath(targetPath string, recursive bool, cl *colorlib.ColorLib)
 //   - []string: 包含文件路径的切片
 //   - error: 错误信息，如果发生错误则返回非nil值
 func handleDirectory(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+	// 非递归模式下拒绝处理目录，提示用户使用 -r 选项
 	if !recursive {
 		return nil, fmt.Errorf("跳过目录: %s 请使用 -r 选项以递归方式处理", dirPath)
 	}
@@ -181,6 +182,7 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 		}
 
 		if shouldSkipHidden(path) {
+			// 隐藏目录使用 SkipDir 跳过整个目录树，避免不必要的遍历
 			if d.IsDir() {
 				return filepath.SkipDir
 			}
@@ -218,12 +220,13 @@ func walkDirNonRecursive(dirPath string, cl *colorlib.ColorLib) ([]string, error
 
 	var files []string
 	for _, entry := range entries {
+		// 注意：此处只传文件名而非完整路径，隐藏文件检测可能不完整
 		if shouldSkipHidden(entry.Name()) {
 			continue
 		}
 
 		if entry.IsDir() {
-			cl.PrintWarnf("跳过目录: %s 请使用 -r 选项以递归方式处理\n", entry.Name())
+			cl.Yellowf("跳过目录 %s 请使用 -r 选项以递归方式处理\n", entry.Name())
 			continue
 		}
 

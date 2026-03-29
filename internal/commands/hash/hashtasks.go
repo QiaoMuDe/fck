@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -97,6 +98,7 @@ func NewHashTaskManager(files []string, hashType string, config HashConfig) *Has
 func (m *HashTaskManager) Run() []error {
 	defer m.cancel(nil)
 
+	// 启动写入协程，负责将哈希结果写入文件
 	if m.config.Write {
 		m.writerWg.Go(
 			func() {
@@ -105,6 +107,7 @@ func (m *HashTaskManager) Run() []error {
 		)
 	}
 
+	// 启动结果收集协程，负责处理计算结果
 	var resultWg sync.WaitGroup
 	resultWg.Add(1)
 	go func() {
@@ -112,13 +115,16 @@ func (m *HashTaskManager) Run() []error {
 		m.resultCollector()
 	}()
 
+	// 启动计算工作池
 	m.startComputeWorkers()
 
+	// 等待所有计算任务完成
 	m.wg.Wait()
 	close(m.resultCh)
 
 	resultWg.Wait()
 
+	// 关闭写入通道并等待写入协程结束
 	if m.config.Write {
 		close(m.writeCh)
 		m.writerWg.Wait()
@@ -129,10 +135,10 @@ func (m *HashTaskManager) Run() []error {
 
 // startComputeWorkers 启动计算工作池
 func (m *HashTaskManager) startComputeWorkers() {
-	// 创建文件任务通道
+	// 创建文件任务通道，用于分发文件路径给工作协程
 	fileCh := make(chan string, m.concurrency)
 
-	// 启动工作协程
+	// 启动工作协程池，每个协程从通道中获取文件并计算哈希
 	for i := 0; i < m.concurrency; i++ {
 		m.wg.Go(
 			func() {
@@ -141,7 +147,7 @@ func (m *HashTaskManager) startComputeWorkers() {
 		)
 	}
 
-	// 分发文件任务
+	// 分发文件任务到通道
 	go func() {
 		defer close(fileCh)
 		for _, file := range m.files {
@@ -188,7 +194,8 @@ func (m *HashTaskManager) processFile(filePath string) {
 		}
 	}()
 
-	if skip, err := shouldSkipFile(filePath); err != nil {
+	// 检查文件是否应跳过处理
+	if skip, err := shouldSkipFile(filePath, m.config); err != nil {
 		result := HashResult{
 			FilePath: filePath,
 			Error:    fmt.Errorf("检查文件 %s 状态失败: %w", filePath, err),
@@ -203,6 +210,7 @@ func (m *HashTaskManager) processFile(filePath string) {
 		FilePath: filePath,
 	}
 
+	// 根据配置选择哈希计算方式
 	if m.config.Progress {
 		result.HashValue, result.Error = hash.ChecksumProgress(filePath, m.hashType)
 	} else {
@@ -226,6 +234,7 @@ func (m *HashTaskManager) sendResult(result HashResult) {
 }
 
 // resultCollector 结果收集协程
+// 负责从结果通道读取哈希计算结果，输出到终端或发送写入请求
 func (m *HashTaskManager) resultCollector() {
 	for result := range m.resultCh {
 		if result.Error != nil {
@@ -234,10 +243,12 @@ func (m *HashTaskManager) resultCollector() {
 			continue
 		}
 
+		// 非写入模式下直接输出到终端
 		if !m.config.Write {
 			fmt.Printf("%s\t%q\n", result.HashValue, result.FilePath)
 		}
 
+		// 写入模式下发送写入请求
 		if m.config.Write {
 			content := fmt.Sprintf("%s\t%q\n", result.HashValue, result.FilePath)
 			m.requestWrite(content)
@@ -248,6 +259,7 @@ func (m *HashTaskManager) resultCollector() {
 }
 
 // requestWrite 请求写入
+// 采用同步写入机制：发送请求后等待写入完成，确保写入顺序与计算顺序一致
 //
 // 参数:
 //   - content: 要写入的内容
@@ -303,7 +315,6 @@ func (m *HashTaskManager) writerWorker() {
 func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
 	file, err := os.OpenFile(types.OutputFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
-		_ = file.Close()
 		return nil, fmt.Errorf("打开文件 %s 失败: %w", types.OutputFileName, err)
 	}
 
@@ -425,30 +436,47 @@ func (m *HashTaskManager) GetStats() (processed, errors int64) {
 //   - hashType: 哈希类型函数
 //
 // 返回:
+//   - int64: 实际处理的文件数
 //   - []error: 错误列表
-func hashRunTasksRefactored(files []string, hashType string, config HashConfig) []error {
+func hashRunTasksRefactored(files []string, hashType string, config HashConfig) (int64, []error) {
 	if len(files) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	manager := NewHashTaskManager(files, hashType, config)
-	return manager.Run()
+	errors := manager.Run()
+	processed, _ := manager.GetStats()
+	return processed, errors
 }
 
 // shouldSkipFile 检查是否应该跳过文件
 //
 // 参数:
 //   - filePath: 文件路径
+//   - config: 哈希配置
 //
 // 返回:
 //   - bool: 如果应该跳过文件，则返回true；否则返回false
 //   - error: 错误信息，如果发生错误则返回非nil值
-func shouldSkipFile(filePath string) (bool, error) {
+func shouldSkipFile(filePath string, config HashConfig) (bool, error) {
 	fileInfo, err := os.Lstat(filePath)
 	if err != nil {
 		return false, err
 	}
 
 	// 跳过软链接
-	return fileInfo.Mode()&fs.ModeSymlink != 0, nil
+	if fileInfo.Mode()&fs.ModeSymlink != 0 {
+		return true, nil
+	}
+
+	// 写入模式下跳过输出文件，避免校验文件本身被计入
+	// 使用 filepath.Clean 清理路径后直接比较，零系统调用
+	if config.Write {
+		cleanedPath := filepath.Clean(filePath)
+		if cleanedPath == types.OutputFileName {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

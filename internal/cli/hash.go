@@ -18,6 +18,7 @@ var (
 	hashProgress  *qflag.BoolFlag
 	hashLocal     *qflag.BoolFlag
 	hashBasePath  *qflag.StringFlag
+	noColor       *qflag.BoolFlag
 )
 
 func init() {
@@ -30,6 +31,7 @@ func init() {
 	hashProgress = HashCmd.Bool("progress", "p", "显示文件哈希计算进度条, 推荐在大文件处理时使用", false)
 	hashLocal = HashCmd.Bool("local", "l", "生成本地模式校验文件，记录绝对路径和基准目录", false)
 	hashBasePath = HashCmd.String("base-path", "b", "指定基准路径(默认为当前工作目录)", "")
+	noColor = HashCmd.Bool("no-color", "n", "禁用颜色输出", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:       "文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理",
@@ -46,6 +48,11 @@ func init() {
 
 func runHash(cmd qflag.Command) error {
 	cl := colorlib.NewColorLib()
+
+	// 禁用颜色
+	if noColor.Get() {
+		cl.SetColor(!noColor.Get())
+	}
 
 	config := hash.HashConfig{
 		TargetPaths: cmd.Args(),
