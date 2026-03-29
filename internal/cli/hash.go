@@ -35,9 +35,10 @@ func init() {
 	noColor = HashCmd.Bool("no-color", "n", "禁用颜色输出", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "文件哈希计算工具, 计算指定文件或目录的哈希值，支持多种哈希算法和并发处理",
-		Notes:      []string{"哈希值计算基于文件内容，不包括元数据"},
-		UseChinese: true,
+		Desc:        "文件哈希计算工具, 计算指定文件哈希值，支持多种哈希算法和并发处理",
+		Notes:       []string{"哈希值计算基于文件内容，不包括元数据"},
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s hash [options] [target-path...]", qflag.Root.Name()),
 	}
 
 	if err := HashCmd.ApplyOpts(cmdOpts); err != nil {

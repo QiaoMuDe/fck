@@ -14,8 +14,7 @@ import (
 type CheckConfig struct {
 	CheckFile string // 校验文件路径
 	BaseDir   string // 基准目录
-	Quiet     bool   // 静默模式
-	Color     bool   // 颜色输出
+	Verbose   bool   // 详细模式（显示校验通过的文件）
 }
 
 // CheckCmdMain 执行校验命令
@@ -32,13 +31,11 @@ func CheckCmdMain(cl *colorlib.ColorLib, config CheckConfig) error {
 		checkFile = types.OutputFileName
 	}
 
-	cl.SetColor(config.Color)
-
 	if _, err := os.Stat(checkFile); err != nil {
-		return fmt.Errorf("指定的校验文件不存在: %s, 请确认文件路径是否正确", checkFile)
+		return fmt.Errorf("checksum file not found: %s", checkFile)
 	}
 
-	cl.Blue("正在校验完整性...")
+	cl.Blue("checking file integrity...")
 
 	parser := newHashFileParser(cl)
 
@@ -46,13 +43,13 @@ func CheckCmdMain(cl *colorlib.ColorLib, config CheckConfig) error {
 
 	hashMap, hashFunc, err := parser.parseFile(checkFile, userBaseDir)
 	if err != nil {
-		return fmt.Errorf("解析校验文件失败: %v", err)
+		return fmt.Errorf("failed to parse checksum file: %v", err)
 	}
 
-	checker := newFileChecker(cl, hashFunc, config.Quiet)
+	checker := newFileChecker(cl, hashFunc, config.Verbose)
 
 	if err := checker.checkFiles(hashMap); err != nil {
-		return fmt.Errorf("文件校验失败: %v", err)
+		return fmt.Errorf("checksum verification failed: %v", err)
 	}
 
 	return nil

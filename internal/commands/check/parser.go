@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
@@ -40,13 +41,13 @@ func newHashFileParser(cl *colorlib.ColorLib) *hashFileParser {
 func (p *hashFileParser) parseFile(checkFile string, userBaseDir string) (types.VirtualHashMap, string, error) {
 	// 检查文件是否存在
 	if _, err := os.Stat(checkFile); err != nil {
-		return nil, "", fmt.Errorf("指定的校验文件不存在: %s, 请确认文件路径是否正确", checkFile)
+		return nil, "", fmt.Errorf("file not found or inaccessible: %s", checkFile)
 	}
 
 	// 打开文件
 	file, err := os.Open(checkFile)
 	if err != nil {
-		return nil, "", fmt.Errorf("无法打开校验文件: %v", err)
+		return nil, "", fmt.Errorf("file open failed: %v", err)
 	}
 	defer func() { _ = file.Close() }()
 
@@ -65,7 +66,7 @@ func (p *hashFileParser) parseFile(checkFile string, userBaseDir string) (types.
 	}
 
 	if len(hashMap) == 0 {
-		return nil, "", fmt.Errorf("没有找到有效的校验文件内容")
+		return nil, "", fmt.Errorf("no valid content found")
 	}
 
 	return hashMap, headerInfo.HashType, nil
@@ -81,7 +82,7 @@ func (p *hashFileParser) parseFile(checkFile string, userBaseDir string) (types.
 //   - error: 错误信息
 func (p *hashFileParser) parseHeader(scanner *bufio.Scanner) (*types.ChecksumHeader, error) {
 	if !scanner.Scan() {
-		return nil, fmt.Errorf("校验文件为空")
+		return nil, fmt.Errorf("file is empty")
 	}
 
 	headerLine := scanner.Text()
@@ -91,7 +92,7 @@ func (p *hashFileParser) parseHeader(scanner *bufio.Scanner) (*types.ChecksumHea
 	matches := headerRegex.FindStringSubmatch(headerLine)
 
 	if matches == nil {
-		return nil, fmt.Errorf("校验文件头格式错误")
+		return nil, fmt.Errorf("header format error, must be #hashType#timestamp#mode#basePath or #hashType#timestamp#mode")
 	}
 
 	headerInfo := &types.ChecksumHeader{
@@ -101,11 +102,11 @@ func (p *hashFileParser) parseHeader(scanner *bufio.Scanner) (*types.ChecksumHea
 
 	// 检查哈希算法是否支持
 	if headerInfo.HashType == "" {
-		return nil, fmt.Errorf("校验文件头格式错误, 必须指定哈希算法")
+		return nil, fmt.Errorf("header format error, must specify hash algorithm")
 	}
 
 	if ok := hash.IsAlgorithmSupported(headerInfo.HashType); !ok {
-		return nil, fmt.Errorf("不支持的哈希算法: %s", headerInfo.HashType)
+		return nil, fmt.Errorf("unsupported hash algorithm: %s", headerInfo.HashType)
 	}
 
 	// 解析模式和基准路径
@@ -137,17 +138,22 @@ func (p *hashFileParser) parseContent(scanner *bufio.Scanner, headerInfo *types.
 	lineNum := 1 // 从第二行开始计数（第一行是头部）
 
 	for scanner.Scan() {
-		lineNum++
-		line := scanner.Text()
+		lineNum++              // 行数从1开始
+		line := scanner.Text() // 读取当前行内容
+
+		// 跳过注释行和空行
+		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
+			continue
+		}
 
 		// 验证并解析行内容
 		hash, filePath, err := p.validator.validateLine(line, lineNum)
 		if err != nil {
-			p.cl.PrintErrorf("解析错误: %v\n", err)
+			p.cl.PrintErrorf("parse error on line %d: %v\n", lineNum, err)
 			continue
 		}
 
-		// 跳过空行和注释行
+		// 跳过hash为空或文件路径为空的行
 		if hash == "" || filePath == "" {
 			continue
 		}
@@ -155,10 +161,11 @@ func (p *hashFileParser) parseContent(scanner *bufio.Scanner, headerInfo *types.
 		// 解析文件路径
 		resolvedPath, err := p.resolveFilePath(filePath, headerInfo, userBaseDir)
 		if err != nil {
-			p.cl.PrintErrorf("路径解析失败: %v\n", err)
+			p.cl.PrintErrorf("resolve file path error on line %d: %v\n", lineNum, err)
 			continue
 		}
 
+		// 添加到虚拟哈希映射表中
 		hashMap[filePath] = types.VirtualHashEntry{
 			RealPath: resolvedPath,
 			Hash:     hash,
@@ -166,7 +173,7 @@ func (p *hashFileParser) parseContent(scanner *bufio.Scanner, headerInfo *types.
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("读取校验文件时出错: %v", err)
+		return nil, fmt.Errorf("read file error: %v", err)
 	}
 
 	return hashMap, nil
@@ -196,7 +203,7 @@ func (p *hashFileParser) resolveFilePath(filePath string, headerInfo *types.Chec
 	// 3. 根据文件头模式自动处理
 	switch headerInfo.Mode {
 	case types.ChecksumModeLocal:
-		// LOCAL模式：使用文件头中的基准路径
+		// LOCAL模式: 使用文件头中的基准路径
 		if headerInfo.BasePath != "" {
 			return filepath.Join(headerInfo.BasePath, filePath), nil
 		}
@@ -206,6 +213,6 @@ func (p *hashFileParser) resolveFilePath(filePath string, headerInfo *types.Chec
 		// 直接使用当前目录作为基准目录
 		return filepath.Join(".", filePath), nil
 	default:
-		return "", fmt.Errorf("未知的校验文件模式: %s", headerInfo.Mode)
+		return "", fmt.Errorf("unknown checksum mode: %s", headerInfo.Mode)
 	}
 }

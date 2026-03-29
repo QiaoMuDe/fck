@@ -16,7 +16,7 @@ type hashLineValidator struct {
 
 // newHashLineValidator 创建新的行验证器
 func newHashLineValidator() *hashLineValidator {
-	// 匹配常见哈希格式：32位(MD5)、40位(SHA1)、64位(SHA256)、128位(SHA512)
+	// 匹配常见哈希格式: 32位(MD5)、40位(SHA1)、64位(SHA256)、128位(SHA512)
 	hashRegex := regexp.MustCompile(`^[a-fA-F0-9]{32}$|^[a-fA-F0-9]{40}$|^[a-fA-F0-9]{64}$|^[a-fA-F0-9]{128}$`)
 	return &hashLineValidator{
 		hashRegex: hashRegex,
@@ -32,7 +32,7 @@ func (v *hashLineValidator) validateLine(line string, lineNum int) (hash, filePa
 
 	parts := strings.Fields(line)
 	if len(parts) < 2 {
-		return "", "", fmt.Errorf("第%d行格式错误: 缺少哈希值或文件路径", lineNum)
+		return "", "", fmt.Errorf("line %d format error: missing hash or file path", lineNum)
 	}
 
 	hash = parts[0]
@@ -40,7 +40,7 @@ func (v *hashLineValidator) validateLine(line string, lineNum int) (hash, filePa
 
 	// 验证哈希值格式
 	if !v.hashRegex.MatchString(hash) {
-		return "", "", fmt.Errorf("第%d行哈希值格式无效: %s", lineNum, hash)
+		return "", "", fmt.Errorf("line %d hash format error: %s", lineNum, hash)
 	}
 
 	// 清理文件路径
@@ -54,7 +54,13 @@ func (v *hashLineValidator) validateLine(line string, lineNum int) (hash, filePa
 	return hash, filePath, nil
 }
 
-// cleanFilePath 清理文件路径
+// cleanFilePath 清理文件路径，移除引号和双反斜杠，返回清理后的路径字符串
+//
+// 示例：
+//
+//	"C:\Users\User\Documents\file.txt" -> C:\Users\User\Documents\file.txt
+//	"C:\\Users\\User\\Documents\\file.txt" -> C:\Users\User\Documents\file.txt
+//	"C:/Users/User/Documents/file.txt" -> C:\Users\User\Documents\file.txt
 func (v *hashLineValidator) cleanFilePath(filePath string) string {
 	// 去除引号
 	filePath = strings.Trim(filePath, `"`)
@@ -68,17 +74,17 @@ func (v *hashLineValidator) cleanFilePath(filePath string) string {
 func (v *hashLineValidator) validateFilePath(filePath string, lineNum int) error {
 	// 检查路径遍历攻击
 	if strings.Contains(filePath, "..") {
-		return fmt.Errorf("第%d行路径包含非法字符 '..': %s", lineNum, filePath)
+		return fmt.Errorf("line %d path contains invalid character '..': %s", lineNum, filePath)
 	}
 
 	// 检查空路径
 	if filePath == "" {
-		return fmt.Errorf("第%d行文件路径为空", lineNum)
+		return fmt.Errorf("line %d file path is empty", lineNum)
 	}
 
 	// 限制路径长度（防止过长路径攻击）
 	if len(filePath) > 4096 {
-		return fmt.Errorf("第%d行文件路径过长: %s", lineNum, filePath)
+		return fmt.Errorf("line %d file path is too long: %s", lineNum, filePath)
 	}
 
 	return nil

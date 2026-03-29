@@ -19,16 +19,16 @@ type fileChecker struct {
 	cl         *colorlib.ColorLib // 颜色库
 	hashType   string             // 哈希算法
 	maxWorkers int                // 最大并发数(默认: 逻辑处理器数量)
-	quiet      bool               // 静默模式
+	verbose    bool               // 详细模式（显示校验通过的文件）
 }
 
 // newFileChecker 创建新的文件校验器
-func newFileChecker(cl *colorlib.ColorLib, hashType string, quiet bool) *fileChecker {
+func newFileChecker(cl *colorlib.ColorLib, hashType string, verbose bool) *fileChecker {
 	return &fileChecker{
 		cl:         cl,
 		hashType:   hashType,
 		maxWorkers: runtime.NumCPU(),
-		quiet:      quiet,
+		verbose:    verbose,
 	}
 }
 
@@ -43,7 +43,7 @@ type checkResult struct {
 // checkFiles 并发校验文件
 func (c *fileChecker) checkFiles(hashMap types.VirtualHashMap) error {
 	if len(hashMap) == 0 {
-		c.cl.PrintWarnf("没有文件需要校验\n")
+		c.cl.Yellow("no files to check")
 		return nil
 	}
 
@@ -99,7 +99,7 @@ func (c *fileChecker) worker(jobs <-chan types.VirtualHashEntry, results chan<- 
 		// 计算文件哈希
 		actualHash, err := hash.Checksum(entry.RealPath, c.hashType)
 		if err != nil {
-			result.err = fmt.Errorf("计算文件哈希失败: %v", err)
+			result.err = fmt.Errorf("failed to calculate checksum: %v", err)
 		} else {
 			result.actualHash = actualHash
 		}
@@ -125,11 +125,12 @@ func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int)
 			// 检查是否是文件不存在错误
 			if os.IsNotExist(result.err) ||
 				strings.Contains(result.err.Error(), "不存在") ||
+				strings.Contains(result.err.Error(), "not found") ||
 				strings.Contains(result.err.Error(), "no such file") {
-				c.cl.Yellowf("文件 %s 不存在，跳过校验\n", result.filePath)
+				c.cl.Yellowf("file %s not found, skip verification\n", result.filePath)
 				notFoundCount++
 			} else {
-				c.cl.Redf("%s ✗ (错误: %v)\n", result.filePath, result.err)
+				c.cl.Redf("%s ✗ (error: %v)\n", result.filePath, result.err)
 				errorCount++
 			}
 			continue
@@ -137,10 +138,10 @@ func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int)
 
 		// 比较哈希值
 		if result.actualHash != result.expectedHash {
-			c.cl.Redf("%s ✗ (哈希不匹配, 文件可能已经被篡改)\n", result.filePath)
+			c.cl.Redf("%s ✗ (hash mismatch)\n", result.filePath)
 			mismatchCount++
 		} else {
-			if !c.quiet {
+			if c.verbose {
 				c.cl.Greenf("%s ✓\n", result.filePath)
 			}
 			passedCount++
@@ -155,23 +156,23 @@ func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int)
 
 // printSummary 打印校验结果摘要
 func (c *fileChecker) printSummary(passed, mismatched, notFound, errors, total int) {
-	c.cl.Bluef("校验完成: ")
-	c.cl.Greenf("%d个通过", passed)
+	c.cl.Bluef("verification completed: ")
+	c.cl.Greenf("%d passed", passed)
 
 	if mismatched > 0 {
 		fmt.Print(", ")
-		c.cl.Redf("%d个校验失败", mismatched)
+		c.cl.Redf("%d failed", mismatched)
 	}
 
 	if notFound > 0 {
 		fmt.Print(", ")
-		c.cl.Yellowf("%d个文件不存在", notFound)
+		c.cl.Yellowf("%d not found", notFound)
 	}
 
 	if errors > 0 {
 		fmt.Print(", ")
-		c.cl.Redf("%d个错误", errors)
+		c.cl.Redf("%d errors", errors)
 	}
 
-	c.cl.Whitef(" (总计: %d个文件)\n", total)
+	c.cl.Whitef(" (total: %d files)\n", total)
 }

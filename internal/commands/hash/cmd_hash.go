@@ -40,7 +40,7 @@ func HashCmdMain(cl *colorlib.ColorLib, config HashConfig) error {
 	}
 
 	if config.Write {
-		cl.Green("generating checksum file...")
+		cl.Blue("generating checksum file...")
 	}
 
 	// 逐个处理目标路径，单个路径失败不影响其他路径
@@ -88,7 +88,9 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 	if len(errors) > 0 {
 		printUniqueErrors(cl, errors)
 	} else if config.Write {
-		cl.Greenf("checksum file saved: %s (%d files)\n", types.OutputFileName, processed)
+		cl.Bluef("checksum file saved: ")
+		cl.Greenf(types.OutputFileName)
+		cl.Whitef(" (total: %d files)\n", processed)
 	}
 
 	return nil
