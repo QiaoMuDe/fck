@@ -188,7 +188,7 @@ func (m *HashTaskManager) processFile(filePath string) {
 		if r := recover(); r != nil {
 			result := HashResult{
 				FilePath: filePath,
-				Error:    fmt.Errorf("处理文件 %s 时发生panic: %v", filePath, r),
+				Error:    fmt.Errorf("panic when processing file %s: %v", filePath, r),
 			}
 			m.sendResult(result)
 		}
@@ -198,7 +198,7 @@ func (m *HashTaskManager) processFile(filePath string) {
 	if skip, err := shouldSkipFile(filePath, m.config); err != nil {
 		result := HashResult{
 			FilePath: filePath,
-			Error:    fmt.Errorf("检查文件 %s 状态失败: %w", filePath, err),
+			Error:    fmt.Errorf("failed to check file status %s: %w", filePath, err),
 		}
 		m.sendResult(result)
 		return
@@ -229,7 +229,7 @@ func (m *HashTaskManager) sendResult(result HashResult) {
 	case m.resultCh <- result:
 	case <-m.ctx.Done():
 		// 上下文已取消，记录错误
-		m.addError(fmt.Errorf("发送结果失败，任务已取消: %s", result.FilePath))
+		m.addError(fmt.Errorf("failed to send result %s: task cancelled", result.FilePath))
 	}
 }
 
@@ -279,14 +279,14 @@ func (m *HashTaskManager) requestWrite(content string) {
 	case m.writeCh <- req:
 		// 成功发送，等待写入完成
 		if err := <-req.Done; err != nil {
-			m.addError(fmt.Errorf("写入失败: %w", err))
+			m.addError(fmt.Errorf("failed to write content to file: %w", err))
 		}
 	case <-m.ctx.Done():
 		// 上下文已取消
 		return
 	default:
 		// 写入通道满或已关闭，记录警告
-		m.addError(fmt.Errorf("写入通道不可用，跳过内容写入"))
+		m.addError(fmt.Errorf("write channel is full or closed, skip content write"))
 	}
 }
 
@@ -295,7 +295,7 @@ func (m *HashTaskManager) writerWorker() {
 	// 初始化文件写入器
 	wrapper, err := m.initFileWriter()
 	if err != nil {
-		m.addError(fmt.Errorf("初始化文件写入器失败: %w", err))
+		m.addError(fmt.Errorf("failed to init file writer: %w", err))
 		return
 	}
 	defer m.closeWriter(wrapper)
@@ -315,12 +315,12 @@ func (m *HashTaskManager) writerWorker() {
 func (m *HashTaskManager) initFileWriter() (*FileWriterWrapper, error) {
 	file, err := os.OpenFile(types.OutputFileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
-		return nil, fmt.Errorf("打开文件 %s 失败: %w", types.OutputFileName, err)
+		return nil, fmt.Errorf("failed to open file %s: %w", types.OutputFileName, err)
 	}
 
 	if err := m.writeFileHeader(file, m.hashType); err != nil {
 		_ = file.Close()
-		return nil, fmt.Errorf("写入文件头失败: %w", err)
+		return nil, fmt.Errorf("failed to write file header: %w", err)
 	}
 
 	return &FileWriterWrapper{
@@ -354,7 +354,7 @@ func (m *HashTaskManager) writeFileHeader(file *os.File, hashType string) error 
 			var err error
 			header.BasePath, err = os.Getwd()
 			if err != nil {
-				return fmt.Errorf("获取当前工作目录失败: %v", err)
+				return fmt.Errorf("failed to get current working directory: %v", err)
 			}
 		}
 	} else {
@@ -364,7 +364,7 @@ func (m *HashTaskManager) writeFileHeader(file *os.File, hashType string) error 
 	headerStr := header.String()
 
 	if _, err := file.WriteString(headerStr); err != nil {
-		return fmt.Errorf("写入文件头失败: %v", err)
+		return fmt.Errorf("failed to write file header: %v", err)
 	}
 	return nil
 }
@@ -396,11 +396,11 @@ func (m *HashTaskManager) closeWriter(wrapper *FileWriterWrapper) {
 	var errs []error
 
 	if err := wrapper.writer.Flush(); err != nil {
-		errs = append(errs, fmt.Errorf("flush失败: %w", err))
+		errs = append(errs, fmt.Errorf("failed to flush writer: %w", err))
 	}
 
 	if err := wrapper.file.Close(); err != nil {
-		errs = append(errs, fmt.Errorf("关闭文件失败: %w", err))
+		errs = append(errs, fmt.Errorf("failed to close file: %w", err))
 	}
 
 	if len(errs) > 0 {

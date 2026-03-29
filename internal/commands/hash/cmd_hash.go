@@ -39,13 +39,13 @@ func HashCmdMain(cl *colorlib.ColorLib, config HashConfig) error {
 	}
 
 	if config.Write {
-		cl.Green("Generating checksum file...")
+		cl.Green("generating checksum file...")
 	}
 
 	// 逐个处理目标路径，单个路径失败不影响其他路径
 	for _, targetPath := range targetPaths {
 		if err := processSinglePath(cl, filepath.Clean(targetPath), config); err != nil {
-			cl.Redf("处理路径 %s 时发生错误: %v\n", targetPath, err)
+			cl.Redf("failed to process path %s: %v\n", targetPath, err)
 		}
 	}
 
@@ -66,11 +66,11 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 	setHiddenFlag(config.Hidden)
 	files, err := collectFiles(targetPath, config.Recursion, cl)
 	if err != nil {
-		return fmt.Errorf("收集文件失败: %w", err)
+		return fmt.Errorf("failed to collect files: %w", err)
 	}
 
 	if len(files) == 0 {
-		cl.Yellowf("路径 %s 没有找到任何文件\n", targetPath)
+		cl.Yellowf("No files found in path: %s\n", targetPath)
 		return nil
 	}
 
@@ -78,7 +78,7 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 	if config.Write && !config.Local {
 		files, err = convertToRelativePaths(files, config.BasePath)
 		if err != nil {
-			return fmt.Errorf("转换相对路径失败: %w", err)
+			return fmt.Errorf("failed to convert to relative paths: %w", err)
 		}
 	}
 
@@ -87,7 +87,7 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 	if len(errors) > 0 {
 		printUniqueErrors(cl, errors)
 	} else if config.Write {
-		cl.Greenf("Checksum saved: %s (%d files)\n", types.OutputFileName, processed)
+		cl.Greenf("checksum file saved: %s (%d files processed)\n", types.OutputFileName, processed)
 	}
 
 	return nil
@@ -108,7 +108,7 @@ func convertToRelativePaths(files []string, basePath string) ([]string, error) {
 		var err error
 		basePath, err = os.Getwd()
 		if err != nil {
-			return nil, fmt.Errorf("获取当前工作目录失败: %v", err)
+			return nil, fmt.Errorf("failed to get current working directory: %v", err)
 		}
 	}
 
@@ -122,7 +122,7 @@ func convertToRelativePaths(files []string, basePath string) ([]string, error) {
 			var err error
 			relPath, err = filepath.Rel(basePath, file)
 			if err != nil {
-				return nil, fmt.Errorf("无法转换路径 %s: %v", file, err)
+				return nil, fmt.Errorf("failed to convert path %s to relative: %v", file, err)
 			}
 		}
 

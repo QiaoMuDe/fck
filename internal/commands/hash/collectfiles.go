@@ -3,6 +3,7 @@
 package hash
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -45,11 +46,11 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 func collectGlobFiles(pattern string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
 	matchedPaths, err := filepath.Glob(pattern)
 	if err != nil {
-		return nil, fmt.Errorf("路径无效: %w", err)
+		return nil, fmt.Errorf("invalid path: %w", err)
 	}
 
 	if len(matchedPaths) == 0 {
-		return nil, fmt.Errorf("没有找到匹配的文件")
+		return nil, errors.New("no files matched")
 	}
 
 	// 聚合所有匹配路径下的文件
@@ -94,7 +95,7 @@ func collectSinglePath(targetPath string, recursive bool, cl *colorlib.ColorLib)
 	}
 
 	if shouldSkipHidden(targetPath) {
-		return nil, fmt.Errorf("跳过隐藏项: %s", targetPath)
+		return nil, fmt.Errorf("skipped hidden item: %s", targetPath)
 	}
 
 	if info.IsDir() {
@@ -116,9 +117,9 @@ func collectSinglePath(targetPath string, recursive bool, cl *colorlib.ColorLib)
 //   - []string: 包含文件路径的切片
 //   - error: 错误信息，如果发生错误则返回非nil值
 func handleDirectory(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
-	// 非递归模式下拒绝处理目录，提示用户使用 -r 选项
+	// 非递归模式下拒绝处理目录，提示用户使用 --recursion/-r 选项
 	if !recursive {
-		return nil, fmt.Errorf("跳过目录: %s 请使用 -r 选项以递归方式处理", dirPath)
+		return nil, fmt.Errorf("skipped directory %s (use -r for recursive)", dirPath)
 	}
 
 	return walkDir(dirPath, recursive, cl)
@@ -151,12 +152,12 @@ func shouldSkipHidden(path string) bool {
 //   - error: 处理后的错误对象
 func wrapStatError(err error, path string) error {
 	if os.IsPermission(err) {
-		return fmt.Errorf("权限不足: %s", path)
+		return fmt.Errorf("permission denied for: %s", path)
 	}
 	if os.IsNotExist(err) {
-		return fmt.Errorf("文件不存在: %s", path)
+		return fmt.Errorf("file not found: %s", path)
 	}
-	return fmt.Errorf("无法获取文件信息: %w", err)
+	return fmt.Errorf("failed to get file info: %w", err)
 }
 
 // walkDir 函数用于根据递归标志遍历指定目录并收集文件列表
@@ -215,7 +216,7 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 func walkDirNonRecursive(dirPath string, cl *colorlib.ColorLib) ([]string, error) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
-		return nil, fmt.Errorf("读取目录失败: %w", err)
+		return nil, fmt.Errorf("failed to read directory %s: %w", dirPath, err)
 	}
 
 	var files []string
@@ -226,7 +227,7 @@ func walkDirNonRecursive(dirPath string, cl *colorlib.ColorLib) ([]string, error
 		}
 
 		if entry.IsDir() {
-			cl.Yellowf("跳过目录 %s 请使用 -r 选项以递归方式处理\n", entry.Name())
+			cl.Yellowf("skipped directory %s (use -r for recursive)\n", entry.Name())
 			continue
 		}
 
@@ -246,12 +247,12 @@ func walkDirNonRecursive(dirPath string, cl *colorlib.ColorLib) ([]string, error
 //   - error: 处理后的错误对象
 func wrapWalkError(err error, dirPath string) error {
 	if os.IsPermission(err) {
-		return fmt.Errorf("权限不足: %s", dirPath)
+		return fmt.Errorf("permission denied for: %s", dirPath)
 	}
 	if os.IsNotExist(err) {
-		return fmt.Errorf("文件不存在: %s", dirPath)
+		return fmt.Errorf("file not found: %s", dirPath)
 	}
-	return fmt.Errorf("遍历目录失败: %w", err)
+	return fmt.Errorf("failed to walk directory %s: %w", dirPath, err)
 }
 
 // isDirectorySkipError 检查是否是目录跳过错误
@@ -263,5 +264,5 @@ func wrapWalkError(err error, dirPath string) error {
 //   - bool: 如果是目录跳过错误则返回true，否则返回false
 func isDirectorySkipError(err error) bool {
 	errStr := err.Error()
-	return strings.Contains(errStr, "跳过目录") || strings.Contains(errStr, "跳过隐藏项")
+	return strings.Contains(errStr, "skipped directory") || strings.Contains(errStr, "skipped hidden item")
 }
