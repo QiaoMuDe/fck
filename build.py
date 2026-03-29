@@ -18,7 +18,7 @@ BASE_OUTPUT_NAME = "fck"
 # 默认输出目录
 DEFAULT_OUTPUT_DIR = "output"
 # 默认入口文件的位置
-DEFAULT_ENTRY_FILE = "./main.go"
+DEFAULT_ENTRY_FILE = "./cmd/main.go"
 # 默认的 Go 编译器, 使用全局 PATH 中的 go
 DEFAULT_GO_COMPILER = "go"
 # 默认不使用 vendor 克隆依赖
