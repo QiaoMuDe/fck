@@ -56,7 +56,7 @@ func ListCmdMain(cl *colorlib.ColorLib, config ListConfig) error {
 		return err
 	}
 
-	isMultiPath := shouldGroupByPath(paths, expandedPaths, config)
+	isMultiPath := shouldGroupByPath(paths, config)
 
 	scanner := NewFileScanner()
 	files, err := scanner.ScanWithOriginalPaths(paths, expandedPaths, getScanOptions(config))
@@ -71,6 +71,13 @@ func ListCmdMain(cl *colorlib.ColorLib, config ListConfig) error {
 	return formatter.Render(processed, getFormatOptions(isMultiPath, config))
 }
 
+// getPaths 获取路径列表
+//
+// 参数:
+//   - args: 命令行参数
+//
+// 返回:
+//   - []string: 路径列表
 func getPaths(args []string) []string {
 	paths := args
 
@@ -86,6 +93,16 @@ func getPaths(args []string) []string {
 	return paths
 }
 
+// expandPaths 展开路径列表（处理通配符）
+//
+// 参数:
+//   - paths: 原始路径列表
+//   - cl: 颜色库
+//   - config: 列表配置
+//
+// 返回:
+//   - []string: 展开后的路径列表
+//   - error: 错误信息
 func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]string, error) {
 	var expandedPaths []string
 
@@ -141,6 +158,13 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 	return uniquePaths, nil
 }
 
+// getScanOptions 获取扫描选项
+//
+// 参数:
+//   - config: 列表配置
+//
+// 返回:
+//   - ScanOptions: 扫描选项
 func getScanOptions(config ListConfig) ScanOptions {
 	var fileTypes []string
 
@@ -156,6 +180,14 @@ func getScanOptions(config ListConfig) ScanOptions {
 	}
 }
 
+// getProcessOptions 获取处理选项
+//
+// 参数:
+//   - isMultiPath: 是否为多路径场景
+//   - config: 列表配置
+//
+// 返回:
+//   - ProcessOptions: 处理选项
 func getProcessOptions(isMultiPath bool, config ListConfig) ProcessOptions {
 	var sortBy string
 
@@ -178,6 +210,13 @@ func getProcessOptions(isMultiPath bool, config ListConfig) ProcessOptions {
 	}
 }
 
+// validateArgs 验证参数
+//
+// 参数:
+//   - config: 列表配置
+//
+// 返回:
+//   - error: 错误信息
 func validateArgs(config ListConfig) error {
 	if config.SortBySize && config.SortByTime {
 		return errors.New("不能同时指定 -s 和 -t 选项")
@@ -198,30 +237,36 @@ func validateArgs(config ListConfig) error {
 	return nil
 }
 
-func shouldGroupByPath(originalPaths, expandedPaths []string, config ListConfig) bool {
+// shouldGroupByPath 判断是否应该按路径分组
+//
+// 参数:
+//   - originalPaths: 原始路径列表
+//   - config: 列表配置
+//
+// 返回:
+//   - bool: 是否应该按路径分组
+func shouldGroupByPath(originalPaths []string, config ListConfig) bool {
 	if config.Recursion {
 		return false
 	}
 
+	// 多个原始路径（如: ls dir1 dir2）才需要分组
+	// 通配符展开的路径不需要分组，直接列出条目即可
 	if len(originalPaths) > 1 {
 		return true
-	}
-
-	if len(originalPaths) == 1 && len(expandedPaths) > 1 {
-		hasWildcard := strings.ContainsAny(originalPaths[0], "*?[]")
-		if hasWildcard {
-			for _, path := range expandedPaths {
-				if info, err := os.Stat(path); err == nil && info.IsDir() {
-					return true
-				}
-			}
-		}
-		return false
 	}
 
 	return false
 }
 
+// getFormatOptions 获取格式化选项
+//
+// 参数:
+//   - isMultiPath: 是否为多路径场景
+//   - config: 列表配置
+//
+// 返回:
+//   - FormatOptions: 格式化选项
 func getFormatOptions(isMultiPath bool, config ListConfig) FormatOptions {
 	shouldGroup := config.Recursion || isMultiPath
 

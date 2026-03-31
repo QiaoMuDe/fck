@@ -70,21 +70,19 @@ func (s *FileScanner) ScanWithOriginalPaths(originalPaths, expandedPaths []strin
 		// 找到对应的原始路径
 		originalPath := s.findOriginalPath(expandedPath, pathMapping)
 
-		// 检查是否为通配符展开的目录
-		isWildcardDir := strings.ContainsAny(originalPath, "*?[]")
-		if isWildcardDir {
+		// 为每个路径创建独立的选项副本
+		pathOpts := opts
+
+		// 检查是否为通配符展开的目录（非递归模式下只显示目录本身）
+		isWildcardMatch := strings.ContainsAny(originalPath, "*?[]")
+		if isWildcardMatch && !opts.Recursive {
 			if info, err := os.Stat(expandedPath); err == nil && info.IsDir() {
-				// 通配符展开的目录：扫描目录内容，但保持原始路径为目录路径
-				files, err := s.scanDirectoryWithOriginal(expandedPath, expandedPath, expandedPath, opts)
-				if err != nil {
-					return nil, fmt.Errorf("扫描目录 %s 失败: %v", expandedPath, err)
-				}
-				allFiles = append(allFiles, files...)
-				continue
+				// 通配符匹配的目录：非递归模式下只显示目录本身
+				pathOpts.DirItself = true
 			}
 		}
 
-		files, err := s.scanSinglePathWithOriginal(expandedPath, originalPath, opts)
+		files, err := s.scanSinglePathWithOriginal(expandedPath, originalPath, pathOpts)
 		if err != nil {
 			return nil, fmt.Errorf("扫描路径 %s 失败: %v", expandedPath, err)
 		}
