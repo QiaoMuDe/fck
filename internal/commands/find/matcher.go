@@ -8,8 +8,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"gitee.com/MM-Q/fck/internal/types"
 )
 
 // PatternMatcher 负责所有模式匹配逻辑，包含正则表达式缓存
@@ -87,7 +85,7 @@ func (m *PatternMatcher) GetRegex(pattern string) (*regexp.Regexp, error) {
 //
 // 返回:
 //   - bool: 是否匹配成功
-func (m *PatternMatcher) MatchName(name, pattern string, config *types.FindConfig) bool {
+func (m *PatternMatcher) MatchName(name, pattern string, config *FindConfig) bool {
 	return m.matchPattern(name, pattern, config.NameRegex, config)
 }
 
@@ -102,7 +100,7 @@ func (m *PatternMatcher) MatchName(name, pattern string, config *types.FindConfi
 //
 // 返回:
 //   - bool: 是否匹配成功
-func (m *PatternMatcher) MatchPath(path, pattern string, config *types.FindConfig) bool {
+func (m *PatternMatcher) MatchPath(path, pattern string, config *FindConfig) bool {
 	return m.matchPattern(path, pattern, config.PathRegex, config)
 }
 
@@ -117,14 +115,14 @@ func (m *PatternMatcher) MatchPath(path, pattern string, config *types.FindConfi
 //
 // 返回:
 //   - bool: 是否匹配成功
-func (m *PatternMatcher) matchPattern(input, pattern string, regex *regexp.Regexp, config *types.FindConfig) bool {
+func (m *PatternMatcher) matchPattern(input, pattern string, regex *regexp.Regexp, config *FindConfig) bool {
 	// 如果模式为空, 则不匹配
 	if pattern == "" {
 		return false
 	}
 
 	// 如果启用正则匹配, 使用正则表达式匹配
-	if config.IsRegex {
+	if config.Regex {
 		if regex == nil {
 			return false
 		}

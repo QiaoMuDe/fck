@@ -29,13 +29,10 @@ var (
 	findDelete        *qflag.BoolFlag        // 删除
 	findMove          *qflag.StringFlag      // 移动路径
 	findPrintActions  *qflag.BoolFlag        // 打印操作
-	findAnd           *qflag.BoolFlag        // AND条件
-	findOr            *qflag.BoolFlag        // OR条件
 	findMaxDepthLimit *qflag.IntFlag         // 最大深度限制
 	findCount         *qflag.BoolFlag        // 统计数量
 	findType          *qflag.EnumFlag        // 类型
 	findWholeWord     *qflag.BoolFlag        // 完整关键字
-	findUseShell      *qflag.BoolFlag        // 使用shell
 	findQuiet         *qflag.BoolFlag        // 静默模式
 )
 
@@ -59,8 +56,6 @@ func init() {
 	findDelete = FindCmd.Bool("delete", "d", "删除匹配的文件或目录", false)
 	findMove = FindCmd.String("move", "mv", "将匹配项移动到指定的路径", "")
 	findPrintActions = FindCmd.Bool("print-actions", "pa", "打印执行的操作详情(exec/delete/move)", false)
-	findAnd = FindCmd.Bool("and", "", "用于在-n和-p参数中组合条件, 默认为true, 表示所有条件必须满足", true)
-	findOr = FindCmd.Bool("or", "", "用于在-n和-p参数中组合条件, 默认为false, 表示只要满足任一条件即可", false)
 	findMaxDepthLimit = FindCmd.Int("max-depth-limit", "mdl", "指定软连接最大解析深度, 默认为32, 超过该深度将停止解析", 32)
 	findCount = FindCmd.Bool("count", "ct", "仅统计匹配项的数量而不显示具体路径", false)
 	findType = FindCmd.Enum("type", "t", "指定要查找的类型，支持以下选项：\n"+
@@ -79,7 +74,6 @@ func init() {
 		"\t\t\t\t\t[n | nonappend]  - 只查找非追加模式文件\n"+
 		"\t\t\t\t\t[u | exclusive]  - 只查找独占模式文件", "all", types.FindTypeLimits)
 	findWholeWord = FindCmd.Bool("whole-word", "W", "匹配完整关键字", false)
-	findUseShell = FindCmd.Bool("use-shell", "us", "通过系统shell执行命令, 支持管道、重定向等shell功能", false)
 	findQuiet = FindCmd.Bool("quiet", "q", "静默模式，不显示权限错误和警告信息", false)
 
 	cmdOpts := &qflag.CmdOpts{
@@ -117,15 +111,12 @@ func runFind(cmd qflag.Command) error {
 		Delete:         findDelete.Get(),
 		MovePath:       findMove.Get(),
 		PrintActions:   findPrintActions.Get(),
-		And:            findAnd.Get(),
-		Or:             findOr.Get(),
 		MaxDepthLimit:  findMaxDepthLimit.Get(),
 		Count:          findCount.Get(),
 		Type:           findType.Get(),
 		WholeWord:      findWholeWord.Get(),
-		UseShell:       findUseShell.Get(),
 		Quiet:          findQuiet.Get(),
 	}
 
-	return find.FindCmdMain(cl, config)
+	return find.FindCmdMain(cl, &config)
 }

@@ -16,13 +16,13 @@ import (
 
 // FileSearcher 负责核心搜索逻辑
 type FileSearcher struct {
-	config   *types.FindConfig // 查找配置
-	matcher  *PatternMatcher   // 模式匹配器
-	operator *FileOperator     // 文件操作器
+	config   *FindConfig     // 查找配置
+	matcher  *PatternMatcher // 模式匹配器
+	operator *FileOperator   // 文件操作器
 }
 
 // NewFileSearcher 创建新的文件搜索器
-func NewFileSearcher(config *types.FindConfig, matcher *PatternMatcher, operator *FileOperator) *FileSearcher {
+func NewFileSearcher(config *FindConfig, matcher *PatternMatcher, operator *FileOperator) *FileSearcher {
 	return &FileSearcher{
 		config:   config,
 		matcher:  matcher,
@@ -92,42 +92,21 @@ func (s *FileSearcher) Search(findPath string) error {
 // 返回:
 //   - error: 处理错误（如果有）
 func (s *FileSearcher) processEntry(entry os.DirEntry, path string) error {
-	if s.config.NamePattern != "" && s.config.PathPattern != "" && s.config.And {
-		if s.matcher.MatchName(entry.Name(), s.config.NamePattern, s.config) && s.matcher.MatchPath(path, s.config.PathPattern, s.config) {
-			if err := s.applyFilters(entry, path); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	if s.config.NamePattern != "" && s.config.PathPattern != "" && s.config.Or {
-		if s.matcher.MatchName(entry.Name(), s.config.NamePattern, s.config) || s.matcher.MatchPath(path, s.config.PathPattern, s.config) {
-			if err := s.applyFilters(entry, path); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
+	// 检查文件名模式（如果指定了）
 	if s.config.NamePattern != "" {
-		if s.matcher.MatchName(entry.Name(), s.config.NamePattern, s.config) {
-			if err := s.applyFilters(entry, path); err != nil {
-				return err
-			}
+		if !s.matcher.MatchName(entry.Name(), s.config.NamePattern, s.config) {
+			return nil
 		}
-		return nil
 	}
 
+	// 检查路径模式（如果指定了）
 	if s.config.PathPattern != "" {
-		if s.matcher.MatchPath(path, s.config.PathPattern, s.config) {
-			if err := s.applyFilters(entry, path); err != nil {
-				return err
-			}
+		if !s.matcher.MatchPath(path, s.config.PathPattern, s.config) {
+			return nil
 		}
-		return nil
 	}
 
+	// 通过所有模式匹配后，应用其他过滤器
 	if err := s.applyFilters(entry, path); err != nil {
 		return err
 	}
@@ -144,6 +123,7 @@ func (s *FileSearcher) processEntry(entry os.DirEntry, path string) error {
 // 返回:
 //   - error: 筛选错误（如果有）
 func (s *FileSearcher) applyFilters(entry os.DirEntry, path string) error {
+	// 默认隐藏文件或隐藏目录不参与匹配
 	if !s.config.Hidden && common.IsHidden(path) {
 		if entry.IsDir() {
 			return filepath.SkipDir
@@ -152,7 +132,7 @@ func (s *FileSearcher) applyFilters(entry os.DirEntry, path string) error {
 	}
 
 	// 如果指定了排除文件或目录名, 跳过匹配的文件或目录
-	if s.config.ExNamePattern != "" && s.matcher.MatchName(entry.Name(), s.config.ExNamePattern, s.config) {
+	if s.config.ExcludeName != "" && s.matcher.MatchName(entry.Name(), s.config.ExcludeName, s.config) {
 		if entry.IsDir() {
 			return filepath.SkipDir
 		}
@@ -160,7 +140,7 @@ func (s *FileSearcher) applyFilters(entry os.DirEntry, path string) error {
 	}
 
 	// 如果指定了排除路径, 跳过匹配的路径
-	if s.config.ExPathPattern != "" && s.matcher.MatchPath(path, s.config.ExPathPattern, s.config) {
+	if s.config.ExcludePath != "" && s.matcher.MatchPath(path, s.config.ExcludePath, s.config) {
 		if entry.IsDir() {
 			return filepath.SkipDir
 		}

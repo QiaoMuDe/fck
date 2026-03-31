@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/shellx"
+	"gitee.com/MM-Q/shellx/shx"
 )
 
 // FileOperator 负责所有文件操作：删除、移动、执行命令
@@ -17,15 +17,13 @@ type FileOperator struct {
 	cl           *colorlib.ColorLib
 	printActions bool
 	movePath     string
-	useShell     bool
 }
 
 // NewFileOperator 创建新的文件操作器
-func NewFileOperator(cl *colorlib.ColorLib, printActions, useShell bool, movePath string) *FileOperator {
+func NewFileOperator(cl *colorlib.ColorLib, printActions bool, movePath string) *FileOperator {
 	return &FileOperator{
 		cl:           cl,
 		printActions: printActions,
-		useShell:     useShell,
 		movePath:     movePath,
 	}
 }
@@ -141,7 +139,6 @@ func (o *FileOperator) Move(srcPath, targetPath string) error {
 //
 // 执行模式:
 //   - 默认直接执行: "cat {}" (更安全，性能更好)
-//   - 使用--use-shell/-us启用shell执行: 支持管道、重定向等shell功能
 func (o *FileOperator) Execute(cmdStr, path string) error {
 	// 检查cmdStr是否为空
 	if cmdStr == "" {
@@ -167,35 +164,18 @@ func (o *FileOperator) Execute(cmdStr, path string) error {
 	}
 
 	// 安全地替换{}为实际的文件路径
-	cmdStr = strings.ReplaceAll(cmdStr, "{}", filepath.Clean(path))
-
-	// 解析命令
-	cmds := shellx.Split(cmdStr)
-
-	// 检查命令是否存在, 仅对非shell执行有效
-	if !o.useShell {
-		if _, err := shellx.FindCmd(cmds[0]); err != nil {
-			return fmt.Errorf("找不到命令 %s: (提示: 对于内置命令如echo, 请使用--use-shell/-us标志)", cmds[0])
-		}
-	}
+	// 使用引号包裹路径，防止 Windows 下反斜杠被当作转义字符处理
+	cleanPath := filepath.Clean(path)
+	cmdStr = strings.ReplaceAll(cmdStr, "{}", fmt.Sprintf("%q", cleanPath))
 
 	// 如果启用了print-actions输出, 打印执行的命令
 	if o.printActions {
 		o.cl.Redf("exec: %v\n", cmdStr)
 	}
 
-	// 根据--use-shell/-us标志选择执行方式
-	if o.useShell {
-		// 使用shell执行
-		if err := shellx.NewCmdStr(cmdStr).WithStdout(os.Stdout).WithStderr(os.Stderr).Exec(); err != nil {
-			return fmt.Errorf("命令执行失败: %v", err)
-		}
-
-	} else {
-		// 原生直接执行
-		if err := shellx.NewCmds(cmds).WithStdout(os.Stdout).WithStderr(os.Stderr).WithShell(shellx.ShellNone).Exec(); err != nil {
-			return fmt.Errorf("命令执行失败: %v", err)
-		}
+	// 执行命令
+	if err := shx.RunToTerminal(cmdStr); err != nil {
+		return fmt.Errorf("命令执行失败: %v", err)
 	}
 
 	return nil

@@ -14,11 +14,11 @@ import (
 
 // ConfigValidator 负责验证find命令的所有参数
 type ConfigValidator struct {
-	config FindConfig
+	config *FindConfig
 }
 
 // NewConfigValidator 创建新的配置验证器
-func NewConfigValidator(config FindConfig) *ConfigValidator {
+func NewConfigValidator(config *FindConfig) *ConfigValidator {
 	return &ConfigValidator{
 		config: config,
 	}
@@ -72,10 +72,6 @@ func (v *ConfigValidator) ValidateFlags() error {
 
 	if !v.config.Hidden && (v.config.Type == types.FindTypeHidden || v.config.Type == types.FindTypeHiddenShort) {
 		return fmt.Errorf("必须指定 -H 标志才能使用 -type hidden 或 -type h 选项")
-	}
-
-	if v.config.Or {
-		v.config.And = false
 	}
 
 	if err := v.validateSizeFormat(); err != nil {

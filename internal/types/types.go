@@ -5,11 +5,7 @@ package types
 import (
 	_ "embed"
 	"os"
-	"regexp"
-	"sync"
-	"sync/atomic"
 
-	"gitee.com/MM-Q/colorlib"
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
@@ -414,38 +410,4 @@ var WindowsExecutableExts = map[string]bool{
 var WindowsSymlinkExts = map[string]bool{
 	".lnk": true, // 快捷方式
 	".url": true, // 链接文件
-}
-
-// FindConfig 用于封装find命令的配置参数和共享资源
-// 避免函数参数过多难以管理
-type FindConfig struct {
-	Cl              *colorlib.ColorLib // 颜色库实例
-	NameRegex       *regexp.Regexp     // 文件名匹配正则
-	ExNameRegex     *regexp.Regexp     // 排除文件名正则
-	PathRegex       *regexp.Regexp     // 路径匹配正则
-	ExPathRegex     *regexp.Regexp     // 排除路径正则
-	IsRegex         bool               // 是否启用正则匹配
-	WholeWord       bool               // 是否全词匹配
-	CaseSensitive   bool               // 是否区分大小写
-	MatchCount      *atomic.Int64      // 匹配计数原子变量
-	NamePattern     string             // 文件名匹配模式
-	PathPattern     string             // 路径匹配模式
-	ExNamePattern   string             // 排除文件名匹配模式
-	ExPathPattern   string             // 排除路径匹配模式
-	FindExtSliceMap sync.Map           // ext切片标志的映射
-	Quiet           bool               // 静默模式
-	MaxDepth        int                // 最大深度
-	Hidden          bool               // 显示隐藏文件
-	SizePattern     string             // 大小模式
-	ModTimePattern  string             // 修改时间模式
-	ExtSlice        []string           // 扩展名切片
-	Type            string             // 类型
-	Count           bool               // 统计数量
-	FullPath        bool               // 完整路径
-	Delete          bool               // 删除
-	MovePath        string             // 移动路径
-	ExecCmd         string             // 执行命令
-	And             bool               // AND条件
-	Or              bool               // OR条件
-	MaxDepthLimit   int                // 最大深度限制
 }
