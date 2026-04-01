@@ -17,14 +17,14 @@ func InitAndRun() (err error) {
 	}()
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "多功能文件处理工具集, 提供文件哈希计算、大小统计、查找和校验等实用功能",
+		Desc:       "一站式文件与系统管理工具集，集成文件操作、内容查看、压缩解压、哈希校验、系统信息等多种实用功能",
 		UseChinese: true,
 		Completion: true,
 		Version:    verman.V.Version(),
 		RunFunc:    run,
 		LogoText:   types.FckHelpLogo,
 		Notes: []string{
-			"各子命令有独立帮助文档，可通过-h参数查看, 例如 'fck <子命令> -h' 查看各子命令详细帮助",
+			fmt.Sprintf("各子命令有独立帮助文档，可通过 --help/-h 参数查看, 例如 '%s <子命令> -h' 查看各子命令详细帮助", qflag.Root.Name()),
 		},
 		SubCmds: []qflag.Command{
 			PackCmd,
@@ -53,12 +53,12 @@ func InitAndRun() (err error) {
 	}
 
 	if err := qflag.ApplyOpts(cmdOpts); err != nil {
-		err = fmt.Errorf("apply opts error: %v", err)
+		err = fmt.Errorf("err: %v", err)
 		return err
 	}
 
 	if err := qflag.ParseAndRoute(); err != nil {
-		err = fmt.Errorf("parse and route error: %v", err)
+		err = fmt.Errorf("err: %v", err)
 		return err
 	}
 
