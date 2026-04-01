@@ -46,6 +46,9 @@ func init() {
 			"显示换行符类型":  fmt.Sprintf("%s cat -N file.txt", qflag.Root.Name()),
 			"显示换行符和行尾": fmt.Sprintf("%s cat -N -E file.txt", qflag.Root.Name()),
 		},
+		Notes: []string{
+			"换行符检测仅支持 Windows(CRLF) 和 Unix(LF) 格式，不支持旧版 Mac(CR) 格式",
+		},
 	}
 
 	if err := CatCmd.ApplyOpts(cmdOpts); err != nil {
