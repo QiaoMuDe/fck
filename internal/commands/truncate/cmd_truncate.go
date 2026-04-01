@@ -24,7 +24,7 @@ type TruncateStats struct {
 // TruncateCmdMain 主函数
 func TruncateCmdMain(config TruncateConfig) error {
 	if len(config.Targets) == 0 {
-		return fmt.Errorf("未指定要截断的文件")
+		return fmt.Errorf("no target files specified")
 	}
 
 	size := config.Size
@@ -38,7 +38,7 @@ func TruncateCmdMain(config TruncateConfig) error {
 	}
 
 	if size < 0 {
-		return fmt.Errorf("文件大小不能为负数")
+		return fmt.Errorf("file size cannot be negative")
 	}
 
 	stats := &TruncateStats{}
@@ -52,9 +52,9 @@ func TruncateCmdMain(config TruncateConfig) error {
 	}
 
 	if config.Verbose {
-		fmt.Printf("操作完成: %d 个创建, %d 个修改", stats.Created, stats.Modified)
+		fmt.Printf("operation completed: %d created files, %d modified files", stats.Created, stats.Modified)
 		if stats.Errors > 0 {
-			fmt.Printf(", %d 个错误", stats.Errors)
+			fmt.Printf(", %d errors", stats.Errors)
 		}
 		fmt.Println()
 	}
@@ -67,17 +67,17 @@ func truncateFile(path string, size int64, create bool, verbose bool, stats *Tru
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		if !create {
-			return fmt.Errorf("文件不存在: %s", path)
+			return fmt.Errorf("file does not exist: %s", path)
 		}
 
 		file, err := os.Create(path)
 		if err != nil {
-			return fmt.Errorf("创建文件失败: %w", err)
+			return fmt.Errorf("create file failed, error: %w", err)
 		}
 		_ = file.Close()
 
 		if verbose {
-			fmt.Printf("创建文件: %s (%d)\n", path, size)
+			fmt.Printf("create file: %s (%d)\n", path, size)
 		}
 
 		stats.Created++
@@ -85,28 +85,28 @@ func truncateFile(path string, size int64, create bool, verbose bool, stats *Tru
 	}
 
 	if err != nil {
-		return fmt.Errorf("获取文件信息失败: %w", err)
+		return fmt.Errorf("error checking file: %w", err)
 	}
 
 	info, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("获取文件信息失败: %w", err)
+		return fmt.Errorf("error checking file: %w", err)
 	}
 	currentSize := info.Size()
 
 	if currentSize == size {
 		if verbose {
-			fmt.Printf("跳过: %s (大小已为 %d)\n", path, size)
+			fmt.Printf("skip: %s (already size %d)\n", path, size)
 		}
 		return nil
 	}
 
 	if err := os.Truncate(path, size); err != nil {
-		return fmt.Errorf("截断文件失败: %w", err)
+		return fmt.Errorf("truncate file failed, error: %w", err)
 	}
 
 	if verbose {
-		fmt.Printf("截断文件: %s (%d -> %d)\n", path, currentSize, size)
+		fmt.Printf("truncate file: %s (%d -> %d)\n", path, currentSize, size)
 	}
 
 	stats.Modified++
@@ -117,7 +117,7 @@ func truncateFile(path string, size int64, create bool, verbose bool, stats *Tru
 func getReferenceSize(refPath string) (int64, error) {
 	info, err := os.Stat(refPath)
 	if err != nil {
-		return 0, fmt.Errorf("获取参考文件信息失败: %w", err)
+		return 0, fmt.Errorf("error checking reference file: %w", err)
 	}
 	return info.Size(), nil
 }

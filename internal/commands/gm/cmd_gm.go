@@ -120,16 +120,16 @@ func getAllMetadata(config GmConfig) error {
 		// JSON格式输出：合并所有信息到一个JSON对象
 		var versionData, hashData, timeData, statusData map[string]interface{}
 		if err := json.Unmarshal([]byte(version), &versionData); err != nil {
-			return fmt.Errorf("解析版本号JSON失败: %v", err)
+			return fmt.Errorf("failed to parse version JSON: %v", err)
 		}
 		if err := json.Unmarshal([]byte(hash), &hashData); err != nil {
-			return fmt.Errorf("解析哈希JSON失败: %v", err)
+			return fmt.Errorf("failed to parse hash JSON: %v", err)
 		}
 		if err := json.Unmarshal([]byte(time), &timeData); err != nil {
-			return fmt.Errorf("解析时间JSON失败: %v", err)
+			return fmt.Errorf("failed to parse time JSON: %v", err)
 		}
 		if err := json.Unmarshal([]byte(status), &statusData); err != nil {
-			return fmt.Errorf("解析状态JSON失败: %v", err)
+			return fmt.Errorf("failed to parse status JSON: %v", err)
 		}
 
 		// 合并所有数据
@@ -149,15 +149,15 @@ func getAllMetadata(config GmConfig) error {
 
 		jsonData, err := json.MarshalIndent(allData, "", "  ")
 		if err != nil {
-			return fmt.Errorf("JSON序列化失败: %v", err)
+			return fmt.Errorf("failed to marshal JSON: %v", err)
 		}
 		fmt.Println(string(jsonData))
 	} else {
 		// 普通文本输出
-		fmt.Printf("版本号: %s\n", version)
-		fmt.Printf("提交哈希: %s\n", hash)
-		fmt.Printf("提交时间: %s\n", time)
-		fmt.Printf("仓库状态: %s\n", status)
+		fmt.Printf("Version: %s\n", version)
+		fmt.Printf("Hash: %s\n", hash)
+		fmt.Printf("Time: %s\n", time)
+		fmt.Printf("Status: %s\n", status)
 	}
 
 	return nil
@@ -171,7 +171,7 @@ func checkGitAvailable() (bool, error) {
 	cmd := shx.New("git --version")
 	_, err := cmd.ExecOutput()
 	if err != nil {
-		return false, fmt.Errorf("git命令未找到，请确保git已安装")
+		return false, fmt.Errorf("failed to execute git --version: %v", err)
 	}
 	return true, nil
 }
@@ -187,11 +187,11 @@ func checkGitRepo(workDir string) (bool, error) {
 	cmd := shx.New("git rev-parse --is-inside-work-tree").WithDir(workDir)
 	output, err := cmd.ExecOutput()
 	if err != nil {
-		return false, fmt.Errorf("不是git仓库: %s", workDir)
+		return false, fmt.Errorf("not a git repository: %s", workDir)
 	}
 
 	if strings.TrimSpace(string(output)) != "true" {
-		return false, fmt.Errorf("不是git仓库: %s", workDir)
+		return false, fmt.Errorf("not a git repository: %s", workDir)
 	}
 
 	return true, nil
@@ -220,7 +220,7 @@ func runGitCommand(workDir string, args ...string) (string, error) {
 	cmd := shx.NewArgs("git", args...).WithDir(workDir)
 	output, err := cmd.ExecOutput()
 	if err != nil {
-		return "", fmt.Errorf("git命令执行失败: %v", err)
+		return "", fmt.Errorf("failed to execute git command: %v", err)
 	}
 
 	return strings.TrimSpace(string(output)), nil
@@ -237,7 +237,7 @@ func runGitCommand(workDir string, args ...string) (string, error) {
 func getVersion(workDir string, config GmConfig) (string, error) {
 	version, err := runGitCommand(workDir, "describe", "--tags", "--always", "--dirty")
 	if err != nil {
-		return "", fmt.Errorf("无法获取版本信息: %v", err)
+		return "", fmt.Errorf("failed to get version info: %v", err)
 	}
 
 	if config.JSON {
@@ -245,7 +245,7 @@ func getVersion(workDir string, config GmConfig) (string, error) {
 		result := map[string]string{"version": version}
 		jsonData, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
-			return "", fmt.Errorf("JSON序列化失败: %v", err)
+			return "", fmt.Errorf("failed to marshal JSON version: %v", err)
 		}
 		return string(jsonData), nil
 	}
@@ -274,7 +274,7 @@ func getHash(workDir string, config GmConfig) (string, error) {
 	}
 
 	if err != nil {
-		return "", fmt.Errorf("无法获取提交哈希: %v", err)
+		return "", fmt.Errorf("failed to get hash: %v", err)
 	}
 
 	if config.JSON {
@@ -282,7 +282,7 @@ func getHash(workDir string, config GmConfig) (string, error) {
 		result := map[string]string{"hash": hash}
 		jsonData, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
-			return "", fmt.Errorf("JSON序列化失败: %v", err)
+			return "", fmt.Errorf("failed to marshal JSON hash: %v", err)
 		}
 		return string(jsonData), nil
 	}
@@ -308,13 +308,13 @@ func getTime(workDir string, config GmConfig) (string, error) {
 	// 执行git log命令获取提交时间
 	gitTime, err := runGitCommand(workDir, "log", "-1", "--format=%cd", "--date=iso")
 	if err != nil {
-		return "", fmt.Errorf("无法获取提交时间: %v", err)
+		return "", fmt.Errorf("failed to get time info: %v", err)
 	}
 
 	// 解析git时间格式
 	parsedTime, err := time.Parse("2006-01-02 15:04:05 -0700", gitTime)
 	if err != nil {
-		return "", fmt.Errorf("无法解析提交时间: %v", err)
+		return "", fmt.Errorf("failed to parse time info: %v", err)
 	}
 
 	// 格式化为用户指定的格式
@@ -325,7 +325,7 @@ func getTime(workDir string, config GmConfig) (string, error) {
 		result := map[string]string{"time": formattedTime}
 		jsonData, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
-			return "", fmt.Errorf("JSON序列化失败: %v", err)
+			return "", fmt.Errorf("failed to marshal JSON time: %v", err)
 		}
 		return string(jsonData), nil
 	}
@@ -344,7 +344,7 @@ func getTime(workDir string, config GmConfig) (string, error) {
 func getStatus(workDir string, config GmConfig) (string, error) {
 	status, err := runGitCommand(workDir, "status", "--porcelain")
 	if err != nil {
-		return "", fmt.Errorf("无法获取仓库状态: %v", err)
+		return "", fmt.Errorf("failed to get status info: %v", err)
 	}
 
 	// 判断仓库状态
@@ -360,7 +360,7 @@ func getStatus(workDir string, config GmConfig) (string, error) {
 		result := map[string]string{"status": repoStatus}
 		jsonData, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
-			return "", fmt.Errorf("JSON序列化失败: %v", err)
+			return "", fmt.Errorf("failed to marshal JSON status: %v", err)
 		}
 		return string(jsonData), nil
 	}

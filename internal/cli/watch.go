@@ -17,21 +17,9 @@ var (
 	watchExitErr    *qflag.BoolFlag
 	watchNoHeader   *qflag.BoolFlag
 	watchTimeout    *qflag.DurationFlag
-	watchShell      *qflag.EnumFlag
 	watchClearLines *qflag.IntFlag
 	watchQuiet      *qflag.BoolFlag
 )
-
-var supportedShells = []string{
-	"bash",
-	"cmd",
-	"pwsh",
-	"powershell",
-	"sh",
-	"none",
-	"def1",
-	"def2",
-}
 
 func init() {
 	WatchCmd = qflag.NewCmd("watch", "w", qflag.ExitOnError)
@@ -41,15 +29,6 @@ func init() {
 	watchExitErr = WatchCmd.Bool("exit-on-error", "e", "命令执行失败时退出", false)
 	watchNoHeader = WatchCmd.Bool("no-header", "nh", "轻度静默模式, 不显示标题栏和换行符, 但显示命令输出", false)
 	watchTimeout = WatchCmd.Duration("timeout", "t", "单次命令执行超时时间(秒), 默认30秒", 30*time.Second)
-	watchShell = WatchCmd.Enum("shell", "s", "指定使用的shell, 默认使用系统默认shell, 可选值:\n"+
-		"\t\t\t\t   [def1      ] - 默认值, 使用系统默认shell(win系统默认使用cmd, linux系统默认使用sh)\n"+
-		"\t\t\t\t   [def2      ] - 使用系统默认shell(win系统默认使用powershell, linux系统默认使用sh)\n"+
-		"\t\t\t\t   [bash      ] - bash shell\n"+
-		"\t\t\t\t   [cmd       ] - cmd shell\n"+
-		"\t\t\t\t   [pwsh      ] - pwsh shell\n"+
-		"\t\t\t\t   [powershell] - powershell shell\n"+
-		"\t\t\t\t   [sh        ] - sh shell\n"+
-		"\t\t\t\t   [none      ] - 不使用shell, 直接执行命令", "def1", supportedShells)
 	watchClearLines = WatchCmd.Int("clear-line", "cl", "每次执行前打印指定数量的换行符进行清屏, 0表示不清屏(默认)", 20)
 	watchQuiet = WatchCmd.Bool("quiet", "q", "完全静默模式, 不显示标题栏、换行符和命令输出", false)
 
@@ -86,7 +65,6 @@ func runWatch(cmd qflag.Command) error {
 		ExitOnError: watchExitErr.Get(),
 		NoHeader:    watchNoHeader.Get(),
 		Timeout:     watchTimeout.Get(),
-		Shell:       watchShell.Get(),
 		ClearLines:  watchClearLines.Get(),
 		Quiet:       watchQuiet.Get(),
 	}

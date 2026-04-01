@@ -124,11 +124,11 @@ func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) er
 		dirFileList := dirFiles[dir]
 		if opts.LongFormat {
 			if err := f.renderTable(dirFileList, opts); err != nil {
-				return fmt.Errorf("渲染目录 %s 表格失败: %v", dir, err)
+				return fmt.Errorf("render table for directory %s failed: %v", dir, err)
 			}
 		} else {
 			if err := f.renderGrid(dirFileList, opts); err != nil {
-				return fmt.Errorf("渲染目录 %s 网格失败: %v", dir, err)
+				return fmt.Errorf("render grid for directory %s failed: %v", dir, err)
 			}
 		}
 	}

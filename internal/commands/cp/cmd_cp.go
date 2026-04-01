@@ -27,11 +27,11 @@ type CpStats struct {
 // CpCmdMain 主函数
 func CpCmdMain(config CpConfig) error {
 	if len(config.Sources) == 0 {
-		return fmt.Errorf("未指定要复制的源文件")
+		return fmt.Errorf("no source files specified to copy")
 	}
 
 	if config.Target == "" {
-		return fmt.Errorf("未指定目标路径")
+		return fmt.Errorf("no destination path specified")
 	}
 
 	stats := &CpStats{}
@@ -45,9 +45,9 @@ func CpCmdMain(config CpConfig) error {
 	}
 
 	if config.Verbose {
-		fmt.Printf("操作完成: %d 个复制", stats.Copied)
+		fmt.Printf("operation completed: %d copies\n", stats.Copied)
 		if stats.Errors > 0 {
-			fmt.Printf(", %d 个错误", stats.Errors)
+			fmt.Printf(", %d errors", stats.Errors)
 		}
 		fmt.Println()
 	}
@@ -59,7 +59,7 @@ func CpCmdMain(config CpConfig) error {
 func copyItem(src, dst string, force, interactive, verbose bool, stats *CpStats) error {
 	srcInfo, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("获取源文件信息失败: %w", err)
+		return fmt.Errorf("failed to get source file info: %w", err)
 	}
 
 	dstInfo, err := os.Stat(dst)
@@ -70,22 +70,22 @@ func copyItem(src, dst string, force, interactive, verbose bool, stats *CpStats)
 			if interactive {
 				if !confirmOverwrite(dst) {
 					if verbose {
-						fmt.Printf("跳过: %s (用户取消)\n", dst)
+						fmt.Printf("skipped: %s (user cancelled)\n", dst)
 					}
 					return nil
 				}
 			} else if !force {
-				return fmt.Errorf("目标文件已存在: %s", dst)
+				return fmt.Errorf("destination file already exists: %s", dst)
 			}
 		}
 	}
 
 	if err := fs.CopyEx(src, dst, force); err != nil {
-		return fmt.Errorf("复制 '%s' 到 '%s' 失败: %v", src, dst, err)
+		return fmt.Errorf("copy failed: '%s' to '%s': %v", src, dst, err)
 	}
 
 	if verbose {
-		fmt.Printf("复制: %s -> %s\n", src, dst)
+		fmt.Printf("copy: %s -> %s\n", src, dst)
 	}
 
 	stats.Copied++
@@ -95,7 +95,7 @@ func copyItem(src, dst string, force, interactive, verbose bool, stats *CpStats)
 // confirmOverwrite 交互式覆盖确认
 func confirmOverwrite(dst string) bool {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("覆盖 %s? (y/n): ", dst)
+	fmt.Printf("overwrite %s? (y/n): ", dst)
 
 	response, err := reader.ReadString('\n')
 	if err != nil {

@@ -37,13 +37,13 @@ func resolveSymlinks(path string) (string, error) {
 func processPath(config PwdConfig) (string, error) {
 	cwd, err := getWorkingDirectory()
 	if err != nil {
-		return "", fmt.Errorf("获取当前工作目录失败: %w", err)
+		return "", fmt.Errorf("failed to get current working directory: %w", err)
 	}
 
 	if config.Physical {
 		resolved, err := resolveSymlinks(cwd)
 		if err != nil {
-			return "", fmt.Errorf("解析符号链接失败: %w", err)
+			return "", fmt.Errorf("failed to resolve symlinks: %w", err)
 		}
 		return resolved, nil
 	}

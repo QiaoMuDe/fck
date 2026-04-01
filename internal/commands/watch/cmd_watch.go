@@ -12,19 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	"gitee.com/MM-Q/shellx"
+	"gitee.com/MM-Q/shellx/shx"
 )
-
-var shellMap = map[string]shellx.ShellType{
-	"bash":       shellx.ShellBash,
-	"cmd":        shellx.ShellCmd,
-	"pwsh":       shellx.ShellPwsh,
-	"powershell": shellx.ShellPowerShell,
-	"sh":         shellx.ShellSh,
-	"none":       shellx.ShellNone,
-	"def1":       shellx.ShellDef1,
-	"def2":       shellx.ShellDef2,
-}
 
 // WatchConfig 监控配置结构体
 type WatchConfig struct {
@@ -34,7 +23,6 @@ type WatchConfig struct {
 	ExitOnError bool          // 是否在错误时退出
 	NoHeader    bool          // 轻度静默模式(不显示标题栏和换行符)
 	Timeout     time.Duration // 超时时间
-	Shell       string        // shell类型
 	ClearLines  int           // 清屏行数
 	Quiet       bool          // 静默模式
 }
@@ -53,7 +41,6 @@ func WatchCmdMain(config WatchConfig) error {
 	exitOnError := config.ExitOnError
 	noHeader := config.NoHeader
 	timeout := config.Timeout
-	shell := config.Shell
 	clearLines := config.ClearLines
 	quiet := config.Quiet
 
@@ -99,7 +86,7 @@ func WatchCmdMain(config WatchConfig) error {
 			fmt.Printf("Every %gs: %s [%s]\n\n", interval.Seconds(), time.Now().Format("2006-01-02 15:04:05"), command)
 		}
 
-		cmd := shellx.NewCmdStr(command).WithShell(shellMap[strings.ToLower(shell)]).WithTimeout(timeout)
+		cmd := shx.New(command).WithTimeout(timeout)
 		if !quiet {
 			cmd = cmd.WithStderr(os.Stderr).WithStdout(os.Stdout)
 		}

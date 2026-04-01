@@ -32,11 +32,11 @@ type PackConfig struct {
 //   - error: 打包过程中可能发生的错误
 func PackCmdMain(config PackConfig) error {
 	if config.PackPath == "" {
-		return errors.New("压缩包名称不能为空")
+		return errors.New("no pack path specified")
 	}
 
 	if config.SrcPath == "" {
-		return errors.New("源路径不能为空")
+		return errors.New("no src path specified")
 	}
 
 	filter := comprx.FilterOptions{
@@ -48,12 +48,12 @@ func PackCmdMain(config PackConfig) error {
 
 	compressionLevelVal, isValid := types.GetCompressionLevel(config.CompressionLevel)
 	if !isValid {
-		return fmt.Errorf("无效的压缩级别: %s", config.CompressionLevel)
+		return fmt.Errorf("invalid compression level: %s", config.CompressionLevel)
 	}
 
 	progressStyleVal, isValid := types.GetProgressStyle(config.ProgressStyle)
 	if !isValid {
-		return fmt.Errorf("无效的进度条样式: %s", config.ProgressStyle)
+		return fmt.Errorf("invalid progress style: %s", config.ProgressStyle)
 	}
 
 	opts := comprx.Options{

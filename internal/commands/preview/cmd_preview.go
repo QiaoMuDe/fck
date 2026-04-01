@@ -24,7 +24,7 @@ type PreviewConfig struct {
 //   - error: 预览过程中可能发生的错误
 func PreviewCmdMain(config PreviewConfig) error {
 	if config.PackPath == "" {
-		return errors.New("压缩包路径不能为空")
+		return errors.New("no pack path specified")
 	}
 
 	if config.Info {

@@ -45,7 +45,7 @@ func init() {
 func runCp(cmd qflag.Command) error {
 	args := cmd.Args()
 	if len(args) < 2 {
-		return fmt.Errorf("参数不足，至少需要指定源文件和目标路径")
+		return fmt.Errorf("insufficient arguments: at least source and destination required")
 	}
 
 	config := cp.CpConfig{

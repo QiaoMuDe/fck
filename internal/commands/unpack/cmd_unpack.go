@@ -31,7 +31,7 @@ type UnpackConfig struct {
 //   - error: 解包过程中可能发生的错误
 func UnpackCmdMain(config UnpackConfig) error {
 	if config.PackPath == "" {
-		return errors.New("压缩包名称不能为空")
+		return errors.New("pack path cannot be empty")
 	}
 
 	dstPath := config.DstPath
@@ -48,7 +48,7 @@ func UnpackCmdMain(config UnpackConfig) error {
 
 	progressStyleVal, isValid := types.GetProgressStyle(config.ProgressStyle)
 	if !isValid {
-		return fmt.Errorf("无效的进度条样式: %s", config.ProgressStyle)
+		return fmt.Errorf("invalid progress style: %s", config.ProgressStyle)
 	}
 
 	opts := comprx.Options{

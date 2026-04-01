@@ -44,7 +44,7 @@ func DateCmdMain(config DateConfig) error {
 	if config.Timestamp != "" {
 		t, err = parseTimestamp(config.Timestamp)
 		if err != nil {
-			return fmt.Errorf("解析时间戳失败: %w", err)
+			return fmt.Errorf("failed to parse timestamp: %w", err)
 		}
 	} else {
 		t = time.Now()
@@ -53,7 +53,7 @@ func DateCmdMain(config DateConfig) error {
 	// 设置时区
 	loc, err := getLocation(config)
 	if err != nil {
-		return fmt.Errorf("设置时区失败: %w", err)
+		return fmt.Errorf("failed to set timezone location: %w", err)
 	}
 
 	// 转换时区
@@ -83,7 +83,7 @@ func DateCmdMain(config DateConfig) error {
 func parseTimestamp(timestamp string) (time.Time, error) {
 	ts, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("无效的时间戳格式: %w", err)
+		return time.Time{}, fmt.Errorf("invalid timestamp format: %w", err)
 	}
 
 	if ts > 1e12 {

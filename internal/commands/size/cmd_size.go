@@ -48,7 +48,7 @@ func SizeCmdMain(cl *colorlib.ColorLib, config SizeConfig) error {
 
 		pathsToProcess, err := expandPath(targetPath)
 		if err != nil {
-			cl.PrintErrorf("展开路径失败: %v\n", err)
+			cl.PrintErrorf("failed to expand path: %v\n", err)
 			continue
 		}
 
@@ -75,7 +75,7 @@ func expandPath(path string) ([]string, error) {
 	}
 
 	if len(filePaths) == 0 {
-		return nil, fmt.Errorf("没有找到匹配的文件: %s", path)
+		return nil, fmt.Errorf("no matching files found: %s", path)
 	}
 
 	return filePaths, nil
@@ -88,7 +88,7 @@ func addPathToList(path string, itemList *items, cl *colorlib.ColorLib, config S
 
 	size, err := getPathSize(path, config)
 	if err != nil {
-		cl.PrintErrorf("计算大小失败: %s - %v\n", path, err)
+		cl.PrintErrorf("failed to calculate size of: %s - %v\n", path, err)
 		return
 	}
 
@@ -115,11 +115,11 @@ func getPathSize(path string, config SizeConfig) (int64, error) {
 	if err != nil {
 		switch {
 		case os.IsPermission(err):
-			return 0, fmt.Errorf("权限不足: 路径 %s", path)
+			return 0, fmt.Errorf("permission denied for: path %s", path)
 		case os.IsNotExist(err):
-			return 0, fmt.Errorf("文件不存在: 路径 %s", path)
+			return 0, fmt.Errorf("file not found: path %s", path)
 		default:
-			return 0, fmt.Errorf("获取文件信息失败: 路径 %s 错误: %v", path, err)
+			return 0, fmt.Errorf("failed to get file info: path %s, error: %v", path, err)
 		}
 	}
 
@@ -133,7 +133,7 @@ func getPathSize(path string, config SizeConfig) (int64, error) {
 	bar := progressbar.NewOptions64(
 		-1,
 		progressbar.OptionClearOnFinish(),
-		progressbar.OptionSetDescription(filepath.Base(path)+" 计算中"),
+		progressbar.OptionSetDescription(filepath.Base(path)+"++"),
 	)
 	defer func() {
 		_ = bar.Finish()
@@ -174,11 +174,11 @@ func getPathSize(path string, config SizeConfig) (int64, error) {
 	if walkErr != nil {
 		switch {
 		case os.IsPermission(walkErr):
-			return 0, fmt.Errorf("权限不足: 路径 %s", path)
+			return 0, fmt.Errorf("permission denied for: path %s", path)
 		case os.IsNotExist(walkErr):
-			return 0, fmt.Errorf("文件不存在: 路径 %s", path)
+			return 0, fmt.Errorf("file not found: path %s", path)
 		default:
-			return 0, fmt.Errorf("遍历目录失败: %v", walkErr)
+			return 0, fmt.Errorf("failed to walk directory path: %v", walkErr)
 		}
 	}
 

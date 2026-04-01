@@ -71,7 +71,7 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 	}
 
 	if len(files) == 0 {
-		cl.Yellowf("No files found in path: %s\n", targetPath)
+		cl.Yellowf("no files found in path: %s\n", targetPath)
 		return nil
 	}
 

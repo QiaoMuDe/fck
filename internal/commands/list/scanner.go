@@ -42,7 +42,7 @@ func (s *FileScanner) Scan(paths []string, opts ScanOptions) (FileInfoList, erro
 	for _, path := range paths {
 		files, err := s.scanSinglePathWithOriginal(path, path, opts)
 		if err != nil {
-			return nil, fmt.Errorf("扫描路径 %s 失败: %v", path, err)
+			return nil, fmt.Errorf("scan path failed %s failed: %v", path, err)
 		}
 		allFiles = append(allFiles, files...)
 	}
@@ -84,7 +84,7 @@ func (s *FileScanner) ScanWithOriginalPaths(originalPaths, expandedPaths []strin
 
 		files, err := s.scanSinglePathWithOriginal(expandedPath, originalPath, pathOpts)
 		if err != nil {
-			return nil, fmt.Errorf("扫描路径 %s 失败: %v", expandedPath, err)
+			return nil, fmt.Errorf("scan path failed %s failed: %v", expandedPath, err)
 		}
 		allFiles = append(allFiles, files...)
 	}
@@ -152,12 +152,12 @@ func (s *FileScanner) scanSinglePathWithOriginal(path string, originalPath strin
 	// 获取绝对路径
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return nil, fmt.Errorf("获取绝对路径失败: %v", err)
+		return nil, fmt.Errorf("get absolute path failed failed: %v", err)
 	}
 
 	// 检查是否为系统文件或目录
 	if common.IsSystemFileOrDir(filepath.Base(absPath)) {
-		return nil, fmt.Errorf("不能列出系统文件或目录: %s", absPath)
+		return nil, fmt.Errorf("can not list system file or directory: %s", absPath)
 	}
 
 	// 获取文件信息
@@ -235,7 +235,7 @@ func (s *FileScanner) scanDirectoryWithOriginal(dirPath, rootDir string, origina
 		if opts.Recursive && entry.IsDir() {
 			subFiles, err := s.scanDirectoryWithOriginal(absEntryPath, rootDir, originalPath, opts)
 			if err != nil {
-				return nil, fmt.Errorf("递归扫描目录 %s 失败: %v", absEntryPath, err)
+				return nil, fmt.Errorf("scan directory failed %s failed: %v", absEntryPath, err)
 			}
 			files = append(files, subFiles...)
 		}

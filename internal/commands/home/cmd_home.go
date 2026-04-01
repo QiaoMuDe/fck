@@ -13,7 +13,7 @@ type HomeConfig struct {
 func HomeCmdMain(config HomeConfig) error {
 	homeDir, err := getUserHomeDir()
 	if err != nil {
-		return fmt.Errorf("获取用户主目录失败: %w", err)
+		return fmt.Errorf("failed to get user home dir: %w", err)
 	}
 
 	fmt.Println(homeDir)

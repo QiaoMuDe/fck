@@ -114,12 +114,12 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 		if isWildcardPath {
 			matches, err := filepath.Glob(path)
 			if err != nil {
-				cl.PrintErrorf("路径模式错误 %q: %v\n", path, err)
+				cl.PrintErrorf("wildcard path error %q: %v\n", path, err)
 				continue
 			}
 
 			if len(matches) == 0 {
-				cl.PrintWarnf("通配符路径未匹配到任何文件: %s\n", path)
+				cl.PrintWarnf("wildcard path not match any files: %s\n", path)
 				continue
 			}
 
@@ -134,9 +134,9 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 
 		if _, err := os.Stat(path); err != nil {
 			if os.IsNotExist(err) {
-				cl.PrintWarnf("路径不存在: %s\n", path)
+				cl.PrintWarnf("path not exist: %s\n", path)
 			} else {
-				cl.PrintErrorf("无法访问路径 %q: %v\n", path, err)
+				cl.PrintErrorf("cannot access path %q: %v\n", path, err)
 			}
 			continue
 		}
@@ -219,19 +219,19 @@ func getProcessOptions(isMultiPath bool, config ListConfig) ProcessOptions {
 //   - error: 错误信息
 func validateArgs(config ListConfig) error {
 	if config.SortBySize && config.SortByTime {
-		return errors.New("不能同时指定 -s 和 -t 选项")
+		return errors.New("cannot specify both -s and -t options simultaneously")
 	}
 
 	if config.SortBySize && config.SortByName {
-		return errors.New("不能同时指定 -s 和 -n 选项")
+		return errors.New("cannot specify both -s and -n options simultaneously")
 	}
 
 	if config.SortByTime && config.SortByName {
-		return errors.New("不能同时指定 -t 和 -n 选项")
+		return errors.New("cannot specify both -t and -n options simultaneously")
 	}
 
 	if (config.Type == types.FindTypeHiddenShort || config.Type == types.FindTypeHidden) && !config.All {
-		return fmt.Errorf("必须指定 -a 选项才能使用 -type hidden 选项")
+		return fmt.Errorf("must specify -a option to use -type hidden option")
 	}
 
 	return nil

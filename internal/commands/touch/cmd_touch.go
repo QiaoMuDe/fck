@@ -29,7 +29,7 @@ type TouchStats struct {
 // TouchCmdMain 主函数
 func TouchCmdMain(config TouchConfig) error {
 	if len(config.Targets) == 0 {
-		return fmt.Errorf("未指定要操作的文件")
+		return fmt.Errorf("no targets specified to operate")
 	}
 
 	stats := &TouchStats{}
@@ -47,9 +47,9 @@ func TouchCmdMain(config TouchConfig) error {
 	}
 
 	if config.Verbose {
-		fmt.Printf("操作完成: %d 个创建, %d 个更新", stats.Created, stats.Updated)
+		fmt.Printf("operation completed: %d created files, %d updated files", stats.Created, stats.Updated)
 		if stats.Skipped > 0 {
-			fmt.Printf(", %d 个跳过", stats.Skipped)
+			fmt.Printf(", %d skipped", stats.Skipped)
 		}
 		fmt.Println()
 	}
@@ -64,7 +64,7 @@ func touchFile(path string, config TouchConfig, targetTime time.Time, stats *Tou
 		if os.IsNotExist(err) {
 			if config.NoCreate {
 				if config.Verbose {
-					fmt.Printf("跳过: %s (不存在)\n", path)
+					fmt.Printf("skip: %s (does not exist)\n", path)
 				}
 				stats.Skipped++
 				return nil
@@ -74,11 +74,11 @@ func touchFile(path string, config TouchConfig, targetTime time.Time, stats *Tou
 			}
 			return nil
 		}
-		return fmt.Errorf("访问文件失败: %w", err)
+		return fmt.Errorf("error checking file: %w", err)
 	}
 
 	if info.IsDir() {
-		return fmt.Errorf("路径是目录，不是文件: %s", path)
+		return fmt.Errorf("not a file: %s", path)
 	}
 
 	return updateFileTime(path, config, targetTime, stats)
@@ -88,12 +88,12 @@ func touchFile(path string, config TouchConfig, targetTime time.Time, stats *Tou
 func createFile(path string, config TouchConfig, stats *TouchStats) error {
 	file, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("创建文件失败: %w", err)
+		return fmt.Errorf("error creating file: %w", err)
 	}
 	_ = file.Close()
 
 	if config.Verbose {
-		fmt.Printf("创建文件: %s\n", path)
+		fmt.Printf("created file: %s\n", path)
 	}
 
 	stats.Created++
@@ -106,7 +106,7 @@ func updateFileTime(path string, config TouchConfig, targetTime time.Time, stats
 
 	info, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("获取文件信息失败: %w", err)
+		return fmt.Errorf("error checking file: %w", err)
 	}
 
 	if config.Access && !config.Modify {
@@ -121,11 +121,11 @@ func updateFileTime(path string, config TouchConfig, targetTime time.Time, stats
 	}
 
 	if err := os.Chtimes(path, atime, mtime); err != nil {
-		return fmt.Errorf("更新文件时间失败: %w", err)
+		return fmt.Errorf("error updating file time: %w", err)
 	}
 
 	if config.Verbose {
-		fmt.Printf("更新时间: %s\n", path)
+		fmt.Printf("updated time: %s\n", path)
 	}
 
 	stats.Updated++
@@ -140,39 +140,39 @@ func parseTime(timeStr string) (time.Time, error) {
 
 	timeStr = strings.ReplaceAll(timeStr, ".", "")
 	if len(timeStr) < 12 {
-		return time.Time{}, fmt.Errorf("时间格式错误，应为 YYYYMMDDHHMM.SS")
+		return time.Time{}, fmt.Errorf("time format error, should be: YYYYMMDDHHMM.SS")
 	}
 
 	year, err := strconv.Atoi(timeStr[0:4])
 	if err != nil {
-		return time.Time{}, fmt.Errorf("年份解析失败: %w", err)
+		return time.Time{}, fmt.Errorf("year parse error: %w", err)
 	}
 
 	month, err := strconv.Atoi(timeStr[4:6])
 	if err != nil {
-		return time.Time{}, fmt.Errorf("月份解析失败: %w", err)
+		return time.Time{}, fmt.Errorf("month parse error: %w", err)
 	}
 
 	day, err := strconv.Atoi(timeStr[6:8])
 	if err != nil {
-		return time.Time{}, fmt.Errorf("日期解析失败: %w", err)
+		return time.Time{}, fmt.Errorf("day parse error: %w", err)
 	}
 
 	hour, err := strconv.Atoi(timeStr[8:10])
 	if err != nil {
-		return time.Time{}, fmt.Errorf("小时解析失败: %w", err)
+		return time.Time{}, fmt.Errorf("hour parse error: %w", err)
 	}
 
 	minute, err := strconv.Atoi(timeStr[10:12])
 	if err != nil {
-		return time.Time{}, fmt.Errorf("分钟解析失败: %w", err)
+		return time.Time{}, fmt.Errorf("minute parse error: %w", err)
 	}
 
 	second := 0
 	if len(timeStr) >= 14 {
 		second, err = strconv.Atoi(timeStr[12:14])
 		if err != nil {
-			return time.Time{}, fmt.Errorf("秒数解析失败: %w", err)
+			return time.Time{}, fmt.Errorf("second parse error: %w", err)
 		}
 	}
 
