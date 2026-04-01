@@ -77,9 +77,16 @@ func init() {
 	findQuiet = FindCmd.Bool("quiet", "q", "静默模式，不显示权限错误和警告信息", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录",
-		Notes:      []string{"大小单位支持B/K/M/G/b/k/m/g", "时间参数以天为单位", "不能同时执行-exec和-delete以及-move标志", "如果不指定路径，默认为当前目录"},
-		UseChinese: true,
+		Desc:        "文件目录查找工具, 在指定目录及其子目录中按照多种条件查找文件和目录",
+		Notes:       []string{"大小单位支持B/K/M/G/b/k/m/g", "时间参数以天为单位", "不能同时执行-exec和-delete以及-move标志", "如果不指定路径，默认为当前目录"},
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s find [options] <path>", qflag.Root.Name()),
+		Examples: map[string]string{
+			"查找所有文件":             fmt.Sprintf("%s find", qflag.Root.Name()),
+			"查找指定路径下的所有文件":       fmt.Sprintf("%s find /opt/project", qflag.Root.Name()),
+			"查找所有的扩展名为py和go的文件":  fmt.Sprintf("%s find -e py,go", qflag.Root.Name()),
+			"删除当前目录下所有log扩展名的文件": fmt.Sprintf("%s find -e log -d", qflag.Root.Name()),
+		},
 	}
 
 	if err := FindCmd.ApplyOpts(cmdOpts); err != nil {

@@ -97,19 +97,19 @@ func (c *FindConfig) compileRegexes() error {
 	var err error
 
 	if c.NameRegex, err = compileRegexPattern(c.NamePattern, c.Regex, c.WholeWord, c.CaseSensitive); err != nil {
-		return fmt.Errorf("文件名正则表达式编译错误: %v", err)
+		return fmt.Errorf("failed to compile filename regex: %v", err)
 	}
 
 	if c.ExNameRegex, err = compileRegexPattern(c.ExcludeName, c.Regex, c.WholeWord, c.CaseSensitive); err != nil {
-		return fmt.Errorf("排除文件名正则表达式编译错误: %v", err)
+		return fmt.Errorf("failed to compile exclude filename regex: %v", err)
 	}
 
 	if c.PathRegex, err = compileRegexPattern(c.PathPattern, c.Regex, c.WholeWord, c.CaseSensitive); err != nil {
-		return fmt.Errorf("路径正则表达式编译错误: %v", err)
+		return fmt.Errorf("failed to compile path regex: %v", err)
 	}
 
 	if c.ExPathRegex, err = compileRegexPattern(c.ExcludePath, c.Regex, c.WholeWord, c.CaseSensitive); err != nil {
-		return fmt.Errorf("排除路径正则表达式编译错误: %v", err)
+		return fmt.Errorf("failed to compile exclude path regex: %v", err)
 	}
 
 	return nil

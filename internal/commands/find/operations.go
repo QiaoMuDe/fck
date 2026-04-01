@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/shellx/shx"
 )
 
@@ -31,7 +32,7 @@ func NewFileOperator(cl *colorlib.ColorLib, printActions bool, movePath string) 
 // Delete 删除匹配的文件或目录
 //
 // 参数:
-//   - path: 要删除的文件/目录
+//   - path: 要删除的文件/目录路径
 //
 // 返回:
 //   - error: 错误信息
@@ -41,7 +42,7 @@ func (o *FileOperator) Delete(path string) error {
 	}
 
 	if rmErr := os.RemoveAll(path); rmErr != nil {
-		return fmt.Errorf("删除失败: %s: %v", path, rmErr)
+		return fmt.Errorf("failed to delete: %s: %v", path, rmErr)
 	}
 
 	return nil
@@ -58,71 +59,44 @@ func (o *FileOperator) Delete(path string) error {
 func (o *FileOperator) Move(srcPath, targetPath string) error {
 	// 检查源路径是否为空
 	if srcPath == "" {
-		return fmt.Errorf("源路径为空")
+		return fmt.Errorf("source path is empty")
 	}
 
 	// 检查目标路径是否为空
 	if targetPath == "" {
-		return fmt.Errorf("没有指定目标路径")
+		return fmt.Errorf("target path is empty")
 	}
 
 	// 检查源路径是否存在
 	if _, err := os.Lstat(srcPath); err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("源文件/目录不存在: %s", srcPath)
+			return fmt.Errorf("source file or directory does not exist: %s", srcPath)
 		}
-		return fmt.Errorf("检查源文件/目录时出错: %s: %v", srcPath, err)
+		return fmt.Errorf("failed to check source file or directory: %s: %v", srcPath, err)
 	}
 
-	// 获取目标路径的绝对路径
-	absTargetPath, err := filepath.Abs(targetPath)
-	if err != nil {
-		return fmt.Errorf("获取目标路径绝对路径失败: %v", err)
-	}
-
-	// 获取源路径的绝对路径
-	absSearchPath, err := filepath.Abs(srcPath)
-	if err != nil {
-		return fmt.Errorf("获取源路径绝对路径失败: %v", err)
-	}
-
-	// 检查目标路径是否是源路径的子目录(防止循环移动)
-	if strings.HasPrefix(absTargetPath, absSearchPath) {
-		return fmt.Errorf("不能将目录移动到自身或其子目录中")
-	}
-
-	// 确保目标目录存在
-	if err := os.MkdirAll(filepath.Dir(absTargetPath), 0755); err != nil {
-		return fmt.Errorf("创建目标目录失败: %v", err)
-	}
-
-	// 组装完整的目标路径: 目标路径 + 源路径的文件名
-	if filepath.Base(absSearchPath) != "" {
-		absTargetPath = filepath.Join(absTargetPath, filepath.Base(absSearchPath))
-	}
-
-	// 检查目标文件是否已存在
-	if _, err := os.Stat(absTargetPath); err == nil {
-		if o.movePath != "" {
-			return nil
-		}
-		return fmt.Errorf("目标已存在: %s", absTargetPath)
-	}
+	// fs.MoveEx 会自动处理：
+	// 1. 空路径检查
+	// 2. 获取绝对路径
+	// 3. 循环移动检查（防止移动到子目录）
+	// 4. 如果目标是已存在的目录，自动追加源文件名
+	// 5. 如果目标不存在或不是目录，使用精确路径
+	// 6. 自动创建父目录
 
 	// 打印移动信息
 	if o.printActions {
-		o.cl.Redf("mv: %s -> %s\n", absSearchPath, absTargetPath)
+		o.cl.Redf("mv: %s -> %s\n", srcPath, targetPath)
 	}
 
 	// 执行移动操作
-	if err := os.Rename(absSearchPath, absTargetPath); err != nil {
+	if err := fs.MoveEx(srcPath, targetPath, false); err != nil {
 		if os.IsExist(err) {
-			return fmt.Errorf("目标文件已存在: %s -> %s", absSearchPath, absTargetPath)
+			return fmt.Errorf("target file already exists: %s -> %s", srcPath, targetPath)
 		}
 		if os.IsPermission(err) {
-			return fmt.Errorf("权限不足, 无法移动文件: %v", err)
+			return fmt.Errorf("permission denied, cannot move file: %v", err)
 		}
-		return fmt.Errorf("移动失败: %s -> %s: %v", absSearchPath, absTargetPath, err)
+		return fmt.Errorf("failed to move file: %s -> %s: %v", srcPath, targetPath, err)
 	}
 
 	return nil
@@ -142,25 +116,25 @@ func (o *FileOperator) Move(srcPath, targetPath string) error {
 func (o *FileOperator) Execute(cmdStr, path string) error {
 	// 检查cmdStr是否为空
 	if cmdStr == "" {
-		return fmt.Errorf("命令为空")
+		return fmt.Errorf("command is empty")
 	}
 
 	// 检查路径是否为空
 	if path == "" {
-		return fmt.Errorf("路径为空")
+		return fmt.Errorf("path is empty")
 	}
 
 	// 检查是否包含{}
 	if !strings.Contains(cmdStr, "{}") {
-		return fmt.Errorf("使用-exec标志时必须包含{}作为路径占位符")
+		return fmt.Errorf("command must contain {} as path placeholder when using -exec flag")
 	}
 
 	// 检查路径是否存在
 	if _, err := os.Lstat(path); err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("文件/目录不存在: %s", path)
+			return fmt.Errorf("file or directory does not exist: %s", path)
 		}
-		return fmt.Errorf("无法访问文件/目录: %s", path)
+		return fmt.Errorf("cannot access file or directory: %s", path)
 	}
 
 	// 安全地替换{}为实际的文件路径
@@ -175,7 +149,7 @@ func (o *FileOperator) Execute(cmdStr, path string) error {
 
 	// 执行命令
 	if err := shx.RunToTerminal(cmdStr); err != nil {
-		return fmt.Errorf("命令执行失败: %v", err)
+		return fmt.Errorf("failed to execute command: %v", err)
 	}
 
 	return nil

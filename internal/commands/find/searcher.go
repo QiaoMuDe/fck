@@ -46,12 +46,12 @@ func (s *FileSearcher) Search(findPath string) error {
 
 			if os.IsPermission(err) {
 				if !s.config.Quiet {
-					s.config.Cl.PrintErrorf("权限不足, 无法访问某些目录: %s\n", path)
+					s.config.Cl.PrintErrorf("permission denied, cannot access some directories: %s\n", path)
 				}
 				return nil
 			}
 
-			return fmt.Errorf("访问时出错：%s", err)
+			return fmt.Errorf("access error: %s", err)
 		}
 
 		if path == findPath {
@@ -77,7 +77,7 @@ func (s *FileSearcher) Search(findPath string) error {
 	})
 
 	if walkDirErr != nil {
-		return fmt.Errorf("遍历目录时出错: %v", walkDirErr)
+		return fmt.Errorf("error walking directory: %v", walkDirErr)
 	}
 
 	return nil
@@ -360,7 +360,7 @@ func (s *FileSearcher) executeAction(entry os.DirEntry, path string) error {
 
 		if s.config.ExecCmd != "" {
 			if err := s.operator.Execute(s.config.ExecCmd, path); err != nil {
-				return fmt.Errorf("执行-exec命令时发生了错误: %v", err)
+				return fmt.Errorf("failed to execute command -exec: %v", err)
 			}
 			return nil
 		}
