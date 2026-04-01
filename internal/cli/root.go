@@ -49,6 +49,7 @@ func InitAndRun() (err error) {
 			TestCmd,
 			GmCmd,
 			CatCmd,
+			GrepCmd,
 		},
 	}
 
