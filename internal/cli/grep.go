@@ -30,6 +30,9 @@ var (
 	grepIncludeDir    *qflag.StringSliceFlag // --include-dir 包含目录模式
 	grepExcludeDir    *qflag.StringSliceFlag // --exclude-dir 排除目录模式
 	grepNoMessages    *qflag.BoolFlag        // -s 静默模式
+
+	// 隐藏文件支持
+	grepHidden *qflag.BoolFlag // --hidden 处理隐藏文件/目录（默认跳过）
 )
 
 func init() {
@@ -56,6 +59,9 @@ func init() {
 	grepIncludeDir = GrepCmd.StringSlice("include-dir", "", "只进入匹配模式的目录，多个模式用逗号分隔", []string{})
 	grepExcludeDir = GrepCmd.StringSlice("exclude-dir", "", "排除匹配模式的目录，多个模式用逗号分隔", []string{})
 
+	// 隐藏文件相关标志
+	grepHidden = GrepCmd.Bool("hidden", "a", "处理隐藏文件/目录，默认跳过隐藏项", false)
+
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "文本搜索工具",
 		UseChinese:  true,
@@ -77,7 +83,7 @@ func init() {
 			"使用 -E 启用正则表达式匹配",
 			"默认高亮显示匹配关键字，使用 --no-color 禁用",
 			"不指定 file 时从标准输入读取",
-			"单文件场景，目录遍历请结合 find 使用",
+			"默认跳过隐藏文件/目录，使用 --hidden/-a 包含",
 		},
 	}
 
@@ -130,6 +136,7 @@ func runGrep(cmd qflag.Command) error {
 		IncludeDir:    grepIncludeDir.Get(),
 		ExcludeDir:    grepExcludeDir.Get(),
 		NoMessages:    grepNoMessages.Get(),
+		Hidden:        grepHidden.Get(),
 	}
 
 	return grep.GrepCmdMain(config)

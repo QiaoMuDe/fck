@@ -46,6 +46,9 @@ type GrepConfig struct {
 	ExcludeDir    []string // --exclude-dir 排除目录模式
 	NoMessages    bool     // -s 静默模式，不显示错误信息
 
+	// 隐藏文件支持
+	Hidden bool // --hidden 处理隐藏文件/目录（默认跳过）
+
 	// 运行时
 	compiledPattern *regexp.Regexp // 编译后的正则
 	matchCount      int            // 当前匹配计数
@@ -118,6 +121,14 @@ func GrepCmdMain(config GrepConfig) error {
 // 返回:
 //   - error: 处理错误 (如果 NoMessages 为 false)
 func processSingleFileWithError(path string, config *GrepConfig) error {
+	// 检查是否为隐藏文件（默认跳过）
+	if !config.Hidden && isHidden(filepath.Base(path)) {
+		if config.NoMessages {
+			return nil // 静默模式，跳过错误
+		}
+		return fmt.Errorf("hidden file skipped (use --hidden/-a to include): %s", path)
+	}
+
 	fileInfo, err := os.Stat(path)
 	if err != nil {
 		if config.NoMessages {
@@ -418,7 +429,8 @@ func printLine(line string, lineNum int, separator string, config *GrepConfig) {
 	}
 }
 
-// formatPathWithColor 格式化路径（目录蓝色 + 文件名白色）
+// formatPathWithColor 格式化路径（带颜色）
+// 整个路径统一使用蓝色
 //
 // 参数:
 //   - path: 文件路径
@@ -431,17 +443,8 @@ func formatPathWithColor(path string, noColor bool) string {
 		return path
 	}
 
-	// 分割目录和文件名
-	dir := filepath.Dir(path)
-	file := filepath.Base(path)
-
-	// 处理根目录情况
-	if dir == "." || dir == "/" || dir == "\\" {
-		return ColorWhite + file + ColorReset
-	}
-
-	// 目录加蓝色，文件名加白色
-	return ColorBlue + dir + string(filepath.Separator) + ColorReset + ColorWhite + file + ColorReset
+	// 整个路径统一蓝色
+	return ColorBlue + path + ColorReset
 }
 
 // printLineSingle 单文件模式输出行
@@ -455,7 +458,7 @@ func formatPathWithColor(path string, noColor bool) string {
 func printLineSingle(highlightedLine string, lineNum int, separator string, config *GrepConfig) {
 	var result string
 
-	// 文件名（目录蓝色 + 文件名白色）
+	// 文件名（蓝色）
 	if config.WithFilename {
 		result += formatPathWithColor(config.filename, config.NoColor)
 	}
@@ -497,7 +500,7 @@ func printLineRecursive(highlightedLine string, lineNum int, separator string, c
 		if config.lastPrintedFile != "" {
 			fmt.Println()
 		}
-		// 打印文件名（目录蓝色 + 文件名白色）
+		// 打印文件名（蓝色）
 		fmt.Println(formatPathWithColor(config.filename, config.NoColor))
 		config.lastPrintedFile = config.filename
 	}
@@ -515,4 +518,17 @@ func printLineRecursive(highlightedLine string, lineNum int, separator string, c
 		result = highlightedLine
 	}
 	fmt.Println(result)
+}
+
+// isHidden 判断文件或目录是否为隐藏项
+// 在 Unix/Linux 系统中，以 . 开头的文件/目录为隐藏项
+// 在 Windows 系统中，同样以 . 开头判断（大多数工具行为）
+//
+// 参数:
+//   - name: 文件或目录名称
+//
+// 返回:
+//   - bool: 是否为隐藏项
+func isHidden(name string) bool {
+	return strings.HasPrefix(name, ".")
 }

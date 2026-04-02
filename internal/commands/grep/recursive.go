@@ -83,6 +83,15 @@ func processPathRecursive(path string, config *GrepConfig) error {
 			return nil // 递归遍历中跳过错误
 		}
 
+		// 检查隐藏文件/目录（默认跳过）
+		// 跳过根目录 "." 的检查
+		if !config.Hidden && d.Name() != "." && isHidden(d.Name()) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		// 处理符号链接
 		if d.Type()&fs.ModeSymlink != 0 {
 			if !config.FollowSymlink {
