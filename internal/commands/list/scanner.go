@@ -74,7 +74,7 @@ func (s *FileScanner) ScanWithOriginalPaths(originalPaths, expandedPaths []strin
 		pathOpts := opts
 
 		// 检查是否为通配符展开的目录（非递归模式下只显示目录本身）
-		isWildcardMatch := strings.ContainsAny(originalPath, "*?[]")
+		isWildcardMatch := strings.ContainsAny(originalPath, wildcardPattern)
 		if isWildcardMatch && !opts.Recursive {
 			if info, err := os.Stat(expandedPath); err == nil && info.IsDir() {
 				// 通配符匹配的目录：非递归模式下只显示目录本身
@@ -106,7 +106,7 @@ func (s *FileScanner) createPathMapping(originalPaths, expandedPaths []string) m
 
 	// 处理通配符展开的情况
 	for _, originalPath := range originalPaths {
-		if strings.ContainsAny(originalPath, "*?[]") {
+		if strings.ContainsAny(originalPath, wildcardPattern) {
 			// 通配符路径，找到所有匹配的展开路径
 			matches, _ := filepath.Glob(originalPath)
 			for _, match := range matches {

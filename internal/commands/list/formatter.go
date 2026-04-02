@@ -77,7 +77,7 @@ func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) er
 			groupKey = dir
 
 		} else {
-			if strings.ContainsAny(file.OriginalPath, "*?[]") {
+			if strings.ContainsAny(file.OriginalPath, wildcardPattern) {
 				if file.EntryType == DirType {
 					groupKey = file.Path
 				} else {

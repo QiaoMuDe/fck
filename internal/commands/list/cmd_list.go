@@ -15,6 +15,9 @@ import (
 	common "gitee.com/MM-Q/fck/internal/utils"
 )
 
+// 定义匹配通配符的模式
+var wildcardPattern = `*?[]`
+
 // ListConfig 列表配置结构体
 type ListConfig struct {
 	Args          []string // 命令行参数
@@ -109,7 +112,7 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 	for _, path := range paths {
 		path = filepath.Clean(path)
 
-		isWildcardPath := strings.ContainsAny(path, "*?[]")
+		isWildcardPath := strings.ContainsAny(path, wildcardPattern)
 
 		if isWildcardPath {
 			matches, err := filepath.Glob(path)
