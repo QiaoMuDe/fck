@@ -364,11 +364,7 @@ func replaceN(s, old, new string, n int) string {
 	start := 0
 	count := 0
 
-	for {
-		if count >= n {
-			break
-		}
-
+	for count < n {
 		idx := strings.Index(s[start:], old)
 		if idx == -1 {
 			break
@@ -492,25 +488,33 @@ func writeFile(config *SedConfig, lines []string) error {
 	writer := bufio.NewWriter(tempFile)
 	for i, line := range lines {
 		if i > 0 {
-			writer.WriteByte('\n')
+			if err := writer.WriteByte('\n'); err != nil {
+				_ = tempFile.Close()
+				_ = os.Remove(tempPath)
+				return fmt.Errorf("failed to write temp file: %w", err)
+			}
 		}
-		writer.WriteString(line)
+		if _, err := writer.WriteString(line); err != nil {
+			_ = tempFile.Close()
+			_ = os.Remove(tempPath)
+			return fmt.Errorf("failed to write temp file: %w", err)
+		}
 	}
 
 	if err := writer.Flush(); err != nil {
-		tempFile.Close()
-		os.Remove(tempPath)
+		_ = tempFile.Close()
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to write temp file: %w", err)
 	}
 
 	if err := tempFile.Close(); err != nil {
-		os.Remove(tempPath)
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to close temp file: %w", err)
 	}
 
 	// 原子替换
 	if err := os.Rename(tempPath, config.Target); err != nil {
-		os.Remove(tempPath)
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -530,13 +534,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() { _ = sourceFile.Close() }()
 
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer func() { _ = destFile.Close() }()
 
 	_, err = destFile.ReadFrom(sourceFile)
 	return err

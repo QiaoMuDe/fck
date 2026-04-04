@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	SedCmd = qflag.NewCmd("sed", "s", qflag.ExitOnError)
+	SedCmd = qflag.NewCmd("sed", "", qflag.ExitOnError)
 
 	// 定义标志
 	sedPattern = SedCmd.String("pattern", "p", "匹配模式 (固定字符串或正则) ", "")
