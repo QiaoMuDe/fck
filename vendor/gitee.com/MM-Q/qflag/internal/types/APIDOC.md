@@ -10,7 +10,6 @@ types 包提供了整个项目的基础类型定义, 包括:
   - 标志类型和接口定义
   - 命令接口定义
   - 注册表接口定义
-  - 错误处理类型
 
 这些类型和接口构成了整个框架的核心抽象层,  为具体的实现提供了统一的规范和契约。
 
@@ -71,11 +70,10 @@ const (
 )
 ```
 
-### 帮助信息标题
+### 帮助信息标题 - 中文
 
 ```go
 const (
-    // 中文帮助信息标题
     HelpNameCN     = "名称:\n"
     HelpDescCN     = "\n描述:\n"
     HelpUsageCN    = "\n用法:\n"
@@ -83,8 +81,13 @@ const (
     HelpSubCmdsCN  = "\n子命令:\n"
     HelpExamplesCN = "\n示例:\n"
     HelpNotesCN    = "\n注意:\n"
+)
+```
 
-    // 英文帮助信息标题
+### 帮助信息标题 - 英文
+
+```go
+const (
     HelpNameEN     = "Name:\n"
     HelpDescEN     = "\nDesc:\n"
     HelpUsageEN    = "\nUsage:\n"
@@ -128,77 +131,6 @@ const HelpPrefix = "  "
 ---
 
 ## VARIABLES
-
-### 预定义错误码
-
-```go
-var (
-    // ErrInvalidFlagType 无效的标志类型错误
-    //
-    // 使用场景: 
-    //   - 传入不支持的标志类型
-    //   - 标志类型转换失败
-    ErrInvalidFlagType = NewError("INVALID_FLAG_TYPE", "invalid flag type", nil)
-
-    // ErrFlagNotFound 标志不存在错误
-    //
-    // 使用场景: 
-    //   - 查找不存在的标志
-    //   - 引用未注册的标志
-    ErrFlagNotFound = NewError("FLAG_NOT_FOUND", "flag not found", nil)
-
-    // ErrCmdNotFound 命令不存在错误
-    //
-    // 使用场景: 
-    //   - 查找不存在的命令
-    //   - 引用未注册的命令
-    ErrCmdNotFound = NewError("COMMAND_NOT_FOUND", "cmd not found", nil)
-
-    // ErrFlagAlreadyExists 标志已存在错误
-    //
-    // 使用场景: 
-    //   - 注册重复的标志
-    //   - 标志名称冲突
-    ErrFlagAlreadyExists = NewError("FLAG_ALREADY_EXISTS", "flag already exists", nil)
-
-    // ErrCmdAlreadyExists 命令已存在错误
-    //
-    // 使用场景: 
-    //   - 注册重复的命令
-    //   - 命令名称冲突
-    ErrCmdAlreadyExists = NewError("COMMAND_ALREADY_EXISTS", "cmd already exists", nil)
-
-    // ErrParseFailed 解析失败错误
-    //
-    // 使用场景: 
-    //   - 命令行参数解析失败
-    //   - 配置文件解析失败
-    ErrParseFailed = NewError("PARSE_FAILED", "parse failed", nil)
-
-    // ErrValidationFailed 验证失败错误
-    //
-    // 使用场景: 
-    //   - 标志值验证失败
-    //   - 业务规则验证失败
-    ErrValidationFailed = NewError("VALIDATION_FAILED", "validation failed", nil)
-
-    // ErrRequiredFlag 必填标志缺失错误
-    //
-    // 使用场景: 
-    //   - 必填标志未提供
-    //   - 必填标志值为空
-    ErrRequiredFlag = NewError("REQUIRED_FLAG", "required flag is missing", nil)
-
-    // ErrInvalidValue 无效值错误
-    //
-    // 使用场景: 
-    //   - 标志值格式错误
-    //   - 标志值超出范围
-    ErrInvalidValue = NewError("INVALID_VALUE", "invalid flag value", nil)
-)
-```
-
-以下是项目中常用的预定义错误, 可以直接使用或作为参考。 所有预定义错误都使用NewError创建, 保持一致的错误结构。
 
 ### 常见时间格式常量
 
@@ -285,30 +217,57 @@ var CommonTimeFormats = []string{
 }
 ```
 
-### 内置补全示例信息 - Linux
+### 内置补全示例信息 - Linux 中文
 
 ```go
-var HelpCompletionExampleLinux = map[string]string{
+var HelpCompletionExampleLinuxCN = map[string]string{
     "Linux 临时启用": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
     "Linux 永久启用": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bashrc", filepath.Base(os.Args[0])),
 }
 ```
 
-### 内置补全示例信息 - macOS
+### 内置补全示例信息 - Linux 英文
 
 ```go
-var HelpCompletionExampleMac = map[string]string{
+var HelpCompletionExampleLinuxEN = map[string]string{
+    "Linux (Temporary)": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
+    "Linux (Permanent)": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bashrc", filepath.Base(os.Args[0])),
+}
+```
+
+### 内置补全示例信息 - macOS 中文
+
+```go
+var HelpCompletionExampleMacCN = map[string]string{
     "macOS 临时启用": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
     "macOS 永久启用": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bash_profile", filepath.Base(os.Args[0])),
 }
 ```
 
-### 内置补全示例信息 - Windows
+### 内置补全示例信息 - macOS 英文
 
 ```go
-var HelpCompletionExampleWin = map[string]string{
+var HelpCompletionExampleMacEN = map[string]string{
+    "macOS (Temporary)": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
+    "macOS (Permanent)": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bash_profile", filepath.Base(os.Args[0])),
+}
+```
+
+### 内置补全示例信息 - Windows 中文
+
+```go
+var HelpCompletionExampleWinCN = map[string]string{
     "Windows 临时启用": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", filepath.Base(os.Args[0])),
     "Windows 永久启用": fmt.Sprintf("echo '%s --completion pwsh | Out-String | Invoke-Expression' >> $PROFILE", filepath.Base(os.Args[0])),
+}
+```
+
+### 内置补全示例信息 - Windows 英文
+
+```go
+var HelpCompletionExampleWinEN = map[string]string{
+    "Windows (Temporary)": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", filepath.Base(os.Args[0])),
+    "Windows (Permanent)": fmt.Sprintf("echo '%s --completion pwsh | Out-String | Invoke-Expression' >> $PROFILE", filepath.Base(os.Args[0])),
 }
 ```
 
@@ -345,79 +304,33 @@ CurrentShell 根据当前平台返回对应的Shell类型
 func GetCompletionExample() map[string]string
 ```
 
-GetCompletionExample 获取当前平台的补全示例信息
+GetCompletionExample 获取当前平台的补全示例信息（中文）
 
 **返回值:**
   - map[string]string: 包含补全示例信息的映射
 
-**功能说明: **
-  - 根据当前运行的操作系统返回对应的补全示例
+**功能说明:**
+  - 根据当前运行的操作系统返回对应的中文补全示例
   - 支持 Windows、Linux 和 macOS 平台
   - 提供临时启用和永久启用两种方式的示例
 
 ---
 
-### func IsNotFoundError(err error) bool
+### func GetCompletionExampleEN() map[string]string
 
 ```go
-func IsNotFoundError(err error) bool
+func GetCompletionExampleEN() map[string]string
 ```
 
-IsNotFoundError 判断是否为"未找到"错误
-
-**参数:**
-  - err: 要检查的错误
+GetCompletionExampleEN 获取当前平台的补全示例信息（英文）
 
 **返回值:**
-  - bool: 是否为未找到错误, true表示是
-
-**功能说明: **
-  - 检查错误码是否为FLAG_NOT_FOUND或COMMAND_NOT_FOUND
-  - 支持错误链检查
-  - 便于统一处理未找到类型的错误
-
-**使用场景: **
-  - 统一处理资源不存在的情况
-  - 区分未找到错误和其他错误
-  - 简化错误处理逻辑
-
----
-
-### func FormatError(err error) string
-
-```go
-func FormatError(err error) string
-```
-
-FormatError 格式化错误信息
-
-**参数:**
-  - err: 要格式化的错误
-
-**返回值:**
-  - string: 格式化的错误字符串
+  - map[string]string: 包含补全示例信息的映射
 
 **功能说明:**
-  - 将错误转换为可读的格式化字符串
-  - 如果是 *Error 类型, 返回详细的错误信息
-  - 如果不是 *Error 类型, 返回普通错误字符串
-
-**输出格式:**
-  - *Error 类型: "[错误码] 错误消息: 原始错误"
-  - 非 *Error 类型: 错误字符串
-
-**使用场景:**
-  - 日志记录
-  - 错误展示
-  - 调试输出
-  - API 响应
-
-**示例:**
-```go
-err := types.NewError("INVALID_VALUE", "invalid port value", nil)
-fmt.Println(types.FormatError(err))
-// 输出: [INVALID_VALUE] invalid port value
-```
+  - 根据当前运行的操作系统返回对应的英文补全示例
+  - 支持 Windows、Linux 和 macOS 平台
+  - 提供临时启用和永久启用两种方式的示例
 
 ---
 
@@ -467,34 +380,6 @@ ParseTimeWithFormats 尝试使用多种格式解析时间字符串
   - 按给定格式列表顺序尝试解析
   - 返回第一个成功解析的时间和格式
   - 如果所有格式都失败, 返回错误
-
----
-
-### func WrapParseError(err error, flagType, value string) *Error
-
-```go
-func WrapParseError(err error, flagType, value string) *Error
-```
-
-WrapParseError 包装解析错误, 专门用于标志解析场景
-
-**参数:**
-  - err: 原始解析错误
-  - flagType: 标志类型描述
-  - value: 解析失败的值
-
-**返回值:**
-  - *Error: 包装后的解析错误
-
-**功能说明: **
-  - 专门用于标志解析错误
-  - 自动生成描述性错误消息
-  - 保留原始错误信息
-
-**使用场景: **
-  - 标志值解析失败
-  - 类型转换错误
-  - 格式验证错误
 
 ---
 
@@ -632,6 +517,23 @@ NewCmdConfig 创建新的命令配置
 
 **返回值:**
   - *CmdConfig: 新创建的 CmdConfig 实例, 初始化为零值
+
+#### func (c *CmdConfig) Clone() *CmdConfig
+
+```go
+func (c *CmdConfig) Clone() *CmdConfig
+```
+
+Clone 克隆命令配置
+
+**返回值:**
+  - *CmdConfig: 克隆后的新 CmdConfig 实例
+
+**功能说明:**
+  - 创建当前配置的深拷贝
+  - 复制所有字段值
+  - 复制切片和映射时创建新的底层数组/映射
+  - 用于避免配置共享导致的副作用
 
 ---
 
@@ -805,12 +707,144 @@ type Command interface {
     SetLogoText(logo string)                // 设置命令logo文本
     Config() *CmdConfig                     // 获取命令配置
 
+    // 禁用标志解析
+    IsDisableFlagParsing() bool             // 检查是否禁用标志解析
+    SetDisableFlagParsing(disable bool)     // 设置是否禁用标志解析
+
+    // 隐藏命令
+    IsHidden() bool                         // 检查命令是否隐藏
+    SetHidden(hidden bool)                  // 设置命令是否隐藏
+
     // 环境变量绑定
     AutoBindAllEnv() // 为所有标志自动绑定环境变量
 }
 ```
 
 Command 接口定义了命令的核心行为
+
+#### 禁用标志解析相关方法
+
+##### func IsDisableFlagParsing() bool
+
+```go
+func IsDisableFlagParsing() bool
+```
+
+IsDisableFlagParsing 检查是否禁用标志解析
+
+**返回值:**
+  - bool: 如果禁用标志解析返回 true，否则返回 false
+
+**功能说明:**
+  - 获取命令的禁用标志解析状态
+  - 当返回 true 时，解析器会跳过标志解析阶段
+  - 所有参数（包括 `--flag` 形式）都作为位置参数处理
+  - 不影响子命令的路由功能
+
+**使用场景:**
+  - 包装外部命令（如 kubectl exec、docker run）
+  - 需要透传参数给子进程的场景
+  - Shell 脚本包装器
+
+**注意事项:**
+  - 默认值为 false（不禁用）
+  - 只影响当前命令的标志解析，不影响子命令
+  - 禁用后，`--help` 和 `--version` 等内置标志也不会被特殊处理
+
+---
+
+##### func SetDisableFlagParsing(disable bool)
+
+```go
+func SetDisableFlagParsing(disable bool)
+```
+
+SetDisableFlagParsing 设置是否禁用标志解析
+
+**参数:**
+  - disable: 是否禁用标志解析，true 表示禁用，false 表示不禁用
+
+**功能说明:**
+  - 设置命令的禁用标志解析状态
+  - 设置为 true 后，解析器会跳过标志解析阶段
+  - 所有参数原样保留为位置参数
+  - 子命令路由功能正常工作
+
+**使用示例:**
+```go
+cmd := NewCmd("exec", "e", ExitOnError)
+cmd.SetDisableFlagParsing(true)  // 禁用标志解析
+cmd.SetRun(func(c Command) error {
+    args := c.Args()  // 所有参数都作为位置参数
+    // 透传给外部命令
+    return nil
+})
+```
+
+**注意事项:**
+  - 应在解析前设置，通常在命令创建后立即设置
+  - 每个命令可以独立设置，父命令的设置不影响子命令
+  - 禁用后，环境变量绑定也会被跳过
+
+---
+
+#### 隐藏命令相关方法
+
+##### func IsHidden() bool
+
+```go
+func IsHidden() bool
+```
+
+IsHidden 检查命令是否隐藏
+
+**返回值:**
+  - bool: 如果命令是隐藏的返回 true，否则返回 false
+
+**功能说明:**
+  - 获取命令的隐藏状态
+  - 隐藏命令不会显示在帮助信息的子命令列表中
+  - 但仍可以通过命令行正常调用
+  - 默认值为 false（不隐藏）
+
+**使用场景:**
+  - 创建内部命令或调试命令
+  - 隐藏已弃用但仍需兼容的命令
+  - 隐藏高级或实验性功能
+
+---
+
+##### func SetHidden(hidden bool)
+
+```go
+func SetHidden(hidden bool)
+```
+
+SetHidden 设置命令是否隐藏
+
+**参数:**
+  - hidden: 是否隐藏命令，true 表示隐藏，false 表示不隐藏
+
+**功能说明:**
+  - 设置命令的隐藏状态
+  - 隐藏后命令不会出现在帮助信息中
+  - 不影响命令的正常执行和路由
+  - 子命令可以独立设置隐藏状态
+
+**使用示例:**
+```go
+cmd := NewCmd("debug", "d", ExitOnError)
+cmd.SetHidden(true)  // 隐藏调试命令
+cmd.SetRun(func(c Command) error {
+    // 执行调试逻辑
+    return nil
+})
+```
+
+**注意事项:**
+  - 隐藏命令仍可通过命令行正常调用
+  - 只是不在帮助信息的子命令列表中显示
+  - 适用于内部命令或高级功能
 
 ---
 

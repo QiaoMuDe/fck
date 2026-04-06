@@ -106,7 +106,7 @@ func (p *DefaultParser) buildSetFlagsMap(cmd types.Command) map[string]bool {
 //   - 如果 AllowNone 为 false, 则必须至少有一个标志被设置
 //
 // 错误处理:
-//   - 使用 types.NewError 创建结构化错误
+//   - 使用 fmt.Errorf 创建错误
 //   - 错误信息包含互斥组名称和冲突的标志列表
 //
 // 性能优化:
@@ -130,9 +130,7 @@ func (p *DefaultParser) validateMutexGroups(config *types.CmdConfig) error {
 			// 如果拿组里的标志没有获取到显示名称, 则表示为不是一个有效标志, 返回错误
 			displayName, ok := p.flagDisplayNames[flagName]
 			if !ok {
-				return types.NewError("INVALID_FLAG_NAME",
-					fmt.Sprintf("invalid flag name '%s' in mutex group '%s'", flagName, group.Name),
-					nil)
+				return fmt.Errorf("invalid flag '%s' in mutex group '%s'", flagName, group.Name)
 			}
 
 			// 如果标志被设置, 添加到已设置列表
@@ -150,16 +148,12 @@ func (p *DefaultParser) validateMutexGroups(config *types.CmdConfig) error {
 
 		// 如果互斥组中设置了多个标志, 返回错误
 		if setCount > 1 {
-			return types.NewError("MUTEX_GROUP_VIOLATION",
-				fmt.Sprintf("mutually exclusive flags %v in group '%s' cannot be used together", setFlagsList, group.Name),
-				nil)
+			return fmt.Errorf("mutually exclusive flags %v in group '%s' cannot be used together", setFlagsList, group.Name)
 		}
 
 		// 如果不允许为空, 且互斥组中没有设置任何标志, 返回错误
 		if !group.AllowNone && setCount == 0 {
-			return types.NewError("MUTEX_GROUP_REQUIRED",
-				fmt.Sprintf("one of the mutually exclusive flags %v in group '%s' must be set", group.Flags, group.Name),
-				nil)
+			return fmt.Errorf("one of flags %v in mutex group '%s' must be set", group.Flags, group.Name)
 		}
 	}
 
@@ -184,7 +178,7 @@ func (p *DefaultParser) validateMutexGroups(config *types.CmdConfig) error {
 //   - 条件性必需组：如果任何一个标志被设置，则所有标志都必须被设置
 //
 // 错误处理:
-//   - 使用 types.NewError 创建结构化错误
+//   - 使用 fmt.Errorf 创建错误
 //   - 错误信息包含必需组名称和未设置的标志列表
 //   - 条件性必需组的错误信息会明确指出是因为使用了某个标志而要求其他标志
 //
@@ -222,9 +216,7 @@ func (p *DefaultParser) validateRequiredGroups(config *types.CmdConfig) error {
 			// 如果拿组里的标志没有获取到显示名称, 则表示为不是一个有效标志, 返回错误
 			displayName, ok := p.flagDisplayNames[flagName]
 			if !ok {
-				return types.NewError("INVALID_FLAG_NAME",
-					fmt.Sprintf("invalid flag name '%s' in required group '%s'", flagName, group.Name),
-					nil)
+				return fmt.Errorf("invalid flag '%s' in required group '%s'", flagName, group.Name)
 			}
 
 			// 如果标志未被设置, 添加到未设置列表
@@ -239,14 +231,10 @@ func (p *DefaultParser) validateRequiredGroups(config *types.CmdConfig) error {
 
 		// 如果组中有未设置的标志, 返回错误
 		if len(unsetFlags) > 0 {
-			var errorMsg string
 			if group.Conditional {
-				errorMsg = fmt.Sprintf("since one of the flags in group '%s' is used, all flags %v must be set", group.Name, unsetFlags)
-			} else {
-				errorMsg = fmt.Sprintf("required flags %v in group '%s' must be set", unsetFlags, group.Name)
+				return fmt.Errorf("flags %v in group '%s' must all be set", unsetFlags, group.Name)
 			}
-
-			return types.NewError("REQUIRED_GROUP_VIOLATION", errorMsg, nil)
+			return fmt.Errorf("required flags %v in group '%s' must be set", unsetFlags, group.Name)
 		}
 	}
 

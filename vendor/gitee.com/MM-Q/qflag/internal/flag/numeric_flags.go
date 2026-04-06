@@ -1,6 +1,7 @@
 package flag
 
 import (
+	"fmt"
 	"strconv"
 
 	"gitee.com/MM-Q/qflag/internal/types"
@@ -63,12 +64,12 @@ func (f *IntFlag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_INT", "int value cannot be empty", nil)
+		return fmt.Errorf("empty int value for '%s'", f.Name())
 	}
 
 	n, err := strconv.ParseInt(value, 10, IntSize)
 	if err != nil {
-		return types.WrapParseError(err, "int", value)
+		return fmt.Errorf("parse int '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -132,12 +133,12 @@ func (f *Int64Flag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_INT64", "int64 value cannot be empty", nil)
+		return fmt.Errorf("empty int64 value for '%s'", f.Name())
 	}
 
 	n, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		return types.WrapParseError(err, "int64", value)
+		return fmt.Errorf("parse int64 '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -200,12 +201,12 @@ func (f *UintFlag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_UINT", "uint value cannot be empty", nil)
+		return fmt.Errorf("empty uint value for '%s'", f.Name())
 	}
 
 	n, err := strconv.ParseUint(value, 10, UintSize)
 	if err != nil {
-		return types.WrapParseError(err, "uint", value)
+		return fmt.Errorf("parse uint '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -268,12 +269,12 @@ func (f *Uint8Flag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_UINT8", "uint8 value cannot be empty", nil)
+		return fmt.Errorf("empty uint8 value for '%s'", f.Name())
 	}
 
 	n, err := strconv.ParseUint(value, 10, 8)
 	if err != nil {
-		return types.WrapParseError(err, "uint8", value)
+		return fmt.Errorf("parse uint8 '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -336,12 +337,12 @@ func (f *Uint16Flag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_UINT16", "uint16 value cannot be empty", nil)
+		return fmt.Errorf("empty uint16 value for '%s'", f.Name())
 	}
 
 	n, err := strconv.ParseUint(value, 10, 16)
 	if err != nil {
-		return types.WrapParseError(err, "uint16", value)
+		return fmt.Errorf("parse uint16 '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -404,12 +405,12 @@ func (f *Uint32Flag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_UINT32", "uint32 value cannot be empty", nil)
+		return fmt.Errorf("empty uint32 value for '%s'", f.Name())
 	}
 
 	n, err := strconv.ParseUint(value, 10, 32)
 	if err != nil {
-		return types.WrapParseError(err, "uint32", value)
+		return fmt.Errorf("parse uint32 '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -472,12 +473,12 @@ func (f *Uint64Flag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_UINT64", "uint64 value cannot be empty", nil)
+		return fmt.Errorf("empty uint64 value for '%s'", f.Name())
 	}
 
 	n, err := strconv.ParseUint(value, 10, 64)
 	if err != nil {
-		return types.WrapParseError(err, "uint64", value)
+		return fmt.Errorf("parse uint64 '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -543,12 +544,12 @@ func (f *Float64Flag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_FLOAT64", "float64 value cannot be empty", nil)
+		return fmt.Errorf("empty float64 value for '%s'", f.Name())
 	}
 
 	n, err := strconv.ParseFloat(value, 64)
 	if err != nil {
-		return types.WrapParseError(err, "float64", value)
+		return fmt.Errorf("parse float64 '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）

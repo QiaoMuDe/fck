@@ -53,6 +53,7 @@ type Command interface {
 	// 配置
 	SetParser(p Parser)                     // 设置解析器
 	SetDesc(desc string)                    // 设置命令描述
+	SetHidden(hidden bool)                  // 设置命令是否隐藏
 	SetVersion(version string)              // 设置命令版本
 	SetChinese(useChinese bool)             // 设置是否使用中文
 	SetEnvPrefix(prefix string)             // 设置环境变量前缀
@@ -63,6 +64,13 @@ type Command interface {
 	AddNotes(notes []string)                // 添加多条注意事项
 	SetLogoText(logo string)                // 设置命令logo文本
 	Config() *CmdConfig                     // 获取命令配置
+
+	// 隐藏状态
+	IsHidden() bool // 检查命令是否隐藏
+
+	// 标志解析控制
+	SetDisableFlagParsing(disable bool) // 设置是否禁用标志解析
+	IsDisableFlagParsing() bool         // 检查是否禁用标志解析
 
 	// 环境变量绑定
 	AutoBindAllEnv() // 为所有标志自动绑定环境变量

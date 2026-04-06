@@ -24,7 +24,9 @@ import (
 //	cmd.ApplyOpts(opts)
 type CmdOpts struct {
 	// 基本属性
-	Desc string // 命令描述
+	Desc               string // 命令描述
+	Hidden             bool   // 是否隐藏命令, 不在帮助信息中显示
+	DisableFlagParsing bool   // 是否禁用标志解析, 所有参数都作为位置参数
 
 	// 运行函数
 	RunFunc func(types.Command) error // 命令执行函数

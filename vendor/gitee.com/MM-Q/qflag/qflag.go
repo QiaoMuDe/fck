@@ -29,11 +29,11 @@ func init() {
 //
 // 功能说明:
 //   - 使用全局根命令解析命令行参数
-//   - 可以重复调用，会覆盖之前的解析结果
+//   - 可以重复调用, 会覆盖之前的解析结果
 //   - 递归解析所有子命令
 //
 // 注意事项:
-//   - 如果需要确保只解析一次，请使用 ParseOnce
+//   - 如果需要确保只解析一次, 请使用 ParseOnce
 func Parse() error {
 	return Root.Parse(os.Args[1:])
 }
@@ -50,8 +50,8 @@ func Parse() error {
 //   - 递归解析所有子命令
 //
 // 注意事项:
-//   - 建议在普通场景使用此方法，避免误用
-//   - 如果需要重复解析，请使用 Parse
+//   - 建议在普通场景使用此方法, 避免误用
+//   - 如果需要重复解析, 请使用 Parse
 func ParseOnce() error {
 	return Root.ParseOnce(os.Args[1:])
 }
@@ -63,11 +63,11 @@ func ParseOnce() error {
 //
 // 功能说明:
 //   - 使用全局根命令解析命令行参数
-//   - 可以重复调用，会覆盖之前的解析结果
+//   - 可以重复调用, 会覆盖之前的解析结果
 //   - 不处理子命令解析
 //
 // 注意事项:
-//   - 如果需要确保只解析一次，请使用 ParseOnlyOnce
+//   - 如果需要确保只解析一次, 请使用 ParseOnlyOnce
 func ParseOnly() error {
 	return Root.ParseOnly(os.Args[1:])
 }
@@ -84,8 +84,8 @@ func ParseOnly() error {
 //   - 不处理子命令解析
 //
 // 注意事项:
-//   - 建议在普通场景使用此方法，避免误用
-//   - 如果需要重复解析，请使用 ParseOnly
+//   - 建议在普通场景使用此方法, 避免误用
+//   - 如果需要重复解析, 请使用 ParseOnly
 func ParseOnlyOnce() error {
 	return Root.ParseOnlyOnce(os.Args[1:])
 }
@@ -97,11 +97,11 @@ func ParseOnlyOnce() error {
 //
 // 功能说明:
 //   - 使用全局根命令解析命令行参数
-//   - 可以重复调用，会覆盖之前的解析结果
+//   - 可以重复调用, 会覆盖之前的解析结果
 //   - 完整的解析和执行流程
 //
 // 注意事项:
-//   - 如果需要确保只解析一次，请使用 ParseAndRouteOnce
+//   - 如果需要确保只解析一次, 请使用 ParseAndRouteOnce
 func ParseAndRoute() error {
 	return Root.ParseAndRoute(os.Args[1:])
 }
@@ -118,8 +118,8 @@ func ParseAndRoute() error {
 //   - 完整的解析和执行流程
 //
 // 注意事项:
-//   - 建议在普通场景使用此方法，避免误用
-//   - 如果需要重复解析，请使用 ParseAndRoute
+//   - 建议在普通场景使用此方法, 避免误用
+//   - 如果需要重复解析, 请使用 ParseAndRoute
 func ParseAndRouteOnce() error {
 	return Root.ParseAndRouteOnce(os.Args[1:])
 }
@@ -162,7 +162,7 @@ func AddSubCmdFrom(cmds []Command) error {
 // 注意事项:
 //   - 标志名称必须是已注册的标志
 //   - 互斥组名称在命令中应该唯一
-//   - 如果组名已存在，返回错误
+//   - 如果组名已存在, 返回错误
 //
 // 返回值:
 //   - error: 添加失败时返回错误
@@ -175,18 +175,18 @@ func AddMutexGroup(name string, flags []string, allowNone bool) error {
 // 参数:
 //   - name: 必需组名称, 用于错误提示和标识
 //   - flags: 必需组中的标志名称列表
-//   - conditional: 是否为条件性必需组，如果为true，则只有当组中任何一个标志被设置时，才要求所有标志都被设置
+//   - conditional: 是否为条件性必需组, 如果为true, 则只有当组中任何一个标志被设置时, 才要求所有标志都被设置
 //
 // 功能说明:
 //   - 创建新的必需组并添加到命令配置中
 //   - 必需组中的所有标志都必须被设置
-//   - 如果是条件性必需组，则只有当组中任何一个标志被设置时，才要求所有标志都被设置
+//   - 如果是条件性必需组, 则只有当组中任何一个标志被设置时, 才要求所有标志都被设置
 //   - 使用写锁保护并发安全
 //
 // 注意事项:
 //   - 标志名称必须是已注册的标志
 //   - 必需组名称在命令中应该唯一
-//   - 如果组名已存在，返回错误
+//   - 如果组名已存在, 返回错误
 //
 // 返回值:
 //   - error: 添加失败时返回错误

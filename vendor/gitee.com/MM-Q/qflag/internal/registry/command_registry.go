@@ -13,6 +13,8 @@
 package registry
 
 import (
+	"fmt"
+
 	"gitee.com/MM-Q/qflag/internal/types"
 )
 
@@ -66,7 +68,7 @@ func NewCmdRegistry() types.CmdRegistry {
 //   - 命令对象只存储一次, 长名称和短名称都指向同一个对象
 func (r *CmdRegistryImpl) Register(cmd types.Command) error {
 	if cmd == nil {
-		return types.NewError("INVALID_COMMAND", "cmd cannot be nil", nil)
+		return fmt.Errorf("nil command")
 	}
 
 	longName := cmd.Name()

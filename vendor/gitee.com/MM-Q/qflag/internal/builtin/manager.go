@@ -63,6 +63,10 @@ func (m *BuiltinFlagManager) RegisterHandler(handler types.BuiltinFlagHandler) {
 //   - 创建并注册标志到命令中
 //   - 如果标志已存在, 则跳过注册, 支持重复解析
 func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
+	// 提前获取配置，避免重复调用
+	config := cmd.Config()
+	useChinese := config.UseChinese
+
 	for _, handler := range m.handlers {
 		// 检查是否应该注册标志, 如果不应该, 则跳过
 		if !handler.ShouldRegister(cmd) {
@@ -79,7 +83,7 @@ func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
 		case types.HelpFlag: // 注册帮助标志
 			// 根据命令的语言设置使用相应的描述信息
 			var desc string
-			if cmd.Config().UseChinese {
+			if useChinese {
 				desc = "显示帮助信息"
 			} else {
 				desc = "Show help information"
@@ -92,7 +96,7 @@ func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
 		case types.VersionFlag: // 注册版本标志
 			// 根据命令的语言设置使用相应的描述信息
 			var desc string
-			if cmd.Config().UseChinese {
+			if useChinese {
 				desc = "显示版本信息"
 			} else {
 				desc = "Show version information"
@@ -105,7 +109,7 @@ func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
 		case types.CompletionFlag: // 注册自动完成标志
 			// 根据命令的语言设置使用相应的描述信息
 			var desc string
-			if cmd.Config().UseChinese {
+			if useChinese {
 				desc = fmt.Sprintf("生成Shell自动补全脚本, 支持的Shell: %v", types.SupportedShells)
 			} else {
 				desc = fmt.Sprintf("Generate shell completion script. Supported shells: %v", types.SupportedShells)
@@ -116,7 +120,12 @@ func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
 			}
 
 			// 注册补全标志后注册内置的示例信息
-			cmd.AddExamples(types.GetCompletionExample())
+			// 根据语言设置选择对应的中英文示例
+			if useChinese {
+				cmd.AddExamples(types.GetCompletionExample())
+			} else {
+				cmd.AddExamples(types.GetCompletionExampleEN())
+			}
 		}
 	}
 

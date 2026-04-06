@@ -275,7 +275,7 @@ func (f *BaseFlag[T]) AutoBindEnv() {
 
 	// 必须有长名称
 	if f.longName == "" {
-		panic(types.NewError("EMPTY_LONG_NAME", "flag must have a long name for AutoBindEnv", nil))
+		panic(fmt.Sprintf("flag '%s' has no long name for AutoBindEnv", f.Name()))
 	}
 
 	// 使用长名称并转为大写

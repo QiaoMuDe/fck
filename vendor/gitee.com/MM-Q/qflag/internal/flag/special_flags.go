@@ -43,7 +43,7 @@ type EnumFlag struct {
 func NewEnumFlag(longName, shortName, desc, default_ string, allowedValues []string) *EnumFlag {
 	// 检查允许值列表不能为空
 	if len(allowedValues) == 0 {
-		panic(types.NewError("EMPTY_ENUM_VALUES", "allowed values cannot be empty for enum flag", nil))
+		panic(fmt.Sprintf("empty allowed values for enum '%s'", longName))
 	}
 
 	// 创建映射表用于快速查找
@@ -51,15 +51,14 @@ func NewEnumFlag(longName, shortName, desc, default_ string, allowedValues []str
 	for _, value := range allowedValues {
 		// 不允许空字符串作为枚举值
 		if value == "" {
-			panic(types.NewError("EMPTY_ENUM_VALUE", "empty string cannot be used as enum value", nil))
+			panic(fmt.Sprintf("empty enum value in allowed values for '%s'", longName))
 		}
 		allowedMap[value] = true
 	}
 
 	// 检查默认值是否在允许值中
 	if !allowedMap[default_] {
-		panic(types.NewError("INVALID_DEFAULT_ENUM",
-			fmt.Sprintf("default value '%s' must be in allowed values", default_), nil))
+		panic(fmt.Sprintf("default value '%s' not in allowed values for enum '%s'", default_, longName))
 	}
 
 	return &EnumFlag{
@@ -87,15 +86,13 @@ func (f *EnumFlag) Set(value string) error {
 
 	// 不允许空值
 	if value == "" {
-		return types.NewError("EMPTY_ENUM_VALUE", "empty value not allowed for enum flag", nil)
+		return fmt.Errorf("empty enum value for '%s'", f.Name())
 	}
 
 	// 使用映射表快速检查值是否在允许的枚举值中
 	if !f.allowedMap[value] {
 		// 值不在允许的枚举值中, 返回错误
-		return types.NewError("INVALID_ENUM_VALUE",
-			fmt.Sprintf("invalid enum value: %s, allowed values are: %s", value, strings.Join(f.getAllowedValues(), ", ")),
-			nil)
+		return fmt.Errorf("invalid enum value '%s' for '%s', allowed: %s", value, f.Name(), strings.Join(f.getAllowedValues(), ", "))
 	}
 
 	// 验证（如果设置了验证器）

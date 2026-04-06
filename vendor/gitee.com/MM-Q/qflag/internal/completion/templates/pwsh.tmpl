@@ -409,24 +409,28 @@ $scriptBlock = {
             }
         }
 
-        # 3. 获取当前上下文的可用选项 (优化版本) 
+        # 3. 获取当前上下文的可用选项 (优化版本)
         $currentContextItem = $script:{{.SanitizedName}}_contextIndex[$context]
         $currentOptions = if ($currentContextItem) { $currentContextItem.Options } else { @() }
 
+        # 判断当前是否正在输入标志值（前一个元素是标志，且当前输入不是标志）
+        $isTypingFlagValue = $prevElement -and $script:{{.SanitizedName}}_flagRegex.IsMatch($prevElement) -and -not $script:{{.SanitizedName}}_flagRegex.IsMatch($wordToComplete)
+
         # 4. 优先补全当前级别的所有选项 (子命令 + 标志) - 使用智能匹配
-        if ($currentOptions -and $currentOptions.Count -gt 0) {
+        # 只有当不是正在输入标志值时才执行此步骤
+        if (-not $isTypingFlagValue -and $currentOptions -and $currentOptions.Count -gt 0) {
             # 使用智能匹配获取最佳选项匹配 - 这是关键修复！
             $intelligentMatches = Get-{{.SanitizedName}}IntelligentMatches -Pattern $wordToComplete -Options $currentOptions
-            
+
             if ($intelligentMatches.Count -gt 0) {
                 # 使用ArrayList提高数组操作性能
                 $matchingOptions = [System.Collections.ArrayList]::new()
-                
+
                 foreach ($option in $intelligentMatches) {
                     $result = if ($script:{{.SanitizedName}}_flagRegex.IsMatch($option)) { $option } else { "$option " }
                     [void]$matchingOptions.Add($result)
                 }
-                
+
                 return $matchingOptions.ToArray()
             }
         }
@@ -444,12 +448,9 @@ $scriptBlock = {
                         $enumMatches = Get-{{.SanitizedName}}IntelligentMatches -Pattern $wordToComplete -Options $paramDef.Options
                         return $enumMatches
                     }
-                    'string' {
-                        # 字符串类型 - 使用专用函数提供文件和目录路径补全
-                        return Get-{{.SanitizedName}}PathCompletions -WordToComplete $wordToComplete
-                    }
                     default {
-                        # bool类型或其他非字符串类型标志后, 用户可能要输入新参数或路径, 使用专用函数提供文件路径补全
+                        # 字符串类型、bool类型或其他类型标志后, 用户可能要输入新参数或路径
+                        # 使用专用函数提供文件和目录路径补全
                         return Get-{{.SanitizedName}}PathCompletions -WordToComplete $wordToComplete
                     }
                 }

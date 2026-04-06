@@ -60,6 +60,13 @@ func NewDefaultParser(errorHandling types.ErrorHandling) types.Parser {
 //   - 不处理子命令路由
 //   - 使用defer确保命令状态和参数在函数返回时被设置
 func (p *DefaultParser) ParseOnly(cmd types.Command, args []string) error {
+	// 如果禁用标志解析，直接设置参数并返回
+	if cmd.IsDisableFlagParsing() {
+		cmd.SetParsed(true)
+		cmd.SetArgs(args)
+		return nil
+	}
+
 	// 创建新的 FlagSet 实例
 	p.flagSet = flag.NewFlagSet("", p.errorHandling)
 
@@ -102,7 +109,7 @@ func (p *DefaultParser) ParseOnly(cmd types.Command, args []string) error {
 	// 获取命令配置, 检查是否为nil
 	config := cmd.Config()
 	if config == nil {
-		return types.NewError("CONFIG_ERROR", "command config is nil", nil)
+		return fmt.Errorf("nil config in '%s'", cmd.Name())
 	}
 
 	// 加载环境变量 (仅在标志未被命令行参数设置时)
@@ -149,7 +156,7 @@ func (p *DefaultParser) ParseOnly(cmd types.Command, args []string) error {
 //   - 如果是子命令, 递归解析子命令
 //   - 不执行子命令的运行函数
 func (p *DefaultParser) Parse(cmd types.Command, args []string) error {
-	// 先解析参数
+	// 先解析参数 (ParseOnly 会处理禁用标志解析的情况)
 	if err := p.ParseOnly(cmd, args); err != nil {
 		return err
 	}
@@ -188,7 +195,7 @@ func (p *DefaultParser) Parse(cmd types.Command, args []string) error {
 //   - 如果不是子命令, 执行当前命令的运行函数
 //   - 如果命令没有设置运行函数, 返回错误
 func (p *DefaultParser) ParseAndRoute(cmd types.Command, args []string) error {
-	// 先解析参数
+	// 先解析参数 (ParseOnly 会处理禁用标志解析的情况)
 	if err := p.ParseOnly(cmd, args); err != nil {
 		return err
 	}

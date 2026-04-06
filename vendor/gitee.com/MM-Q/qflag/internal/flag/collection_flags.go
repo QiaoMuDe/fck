@@ -111,7 +111,7 @@ func (f *IntSliceFlag) Set(value string) error {
 
 		n, err := strconv.Atoi(part)
 		if err != nil {
-			return types.WrapParseError(err, "int slice", part)
+			return fmt.Errorf("parse int '%s': %w", part, err)
 		}
 		result = append(result, n)
 	}
@@ -183,7 +183,7 @@ func (f *Int64SliceFlag) Set(value string) error {
 
 		n, err := strconv.ParseInt(part, 10, 64)
 		if err != nil {
-			return types.WrapParseError(err, "int64 slice", part)
+			return fmt.Errorf("parse int64 '%s': %w", part, err)
 		}
 		result = append(result, n)
 	}
@@ -287,14 +287,14 @@ func (f *MapFlag) Set(value string) error {
 
 		parts := strings.SplitN(pair, "=", 2)
 		if len(parts) != 2 {
-			return types.NewError("INVALID_MAP_FORMAT", fmt.Sprintf("invalid map format: %s", pair), nil)
+			return fmt.Errorf("invalid map format '%s'", pair)
 		}
 
 		key := strings.TrimSpace(parts[0])
 		val := strings.TrimSpace(parts[1])
 
 		if key == "" {
-			return types.NewError("INVALID_MAP_KEY", fmt.Sprintf("empty key in map format: %s", pair), nil)
+			return fmt.Errorf("empty key in map '%s'", pair)
 		}
 
 		result[key] = val

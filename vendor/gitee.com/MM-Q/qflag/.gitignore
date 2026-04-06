@@ -17,9 +17,11 @@
 # IDE 配置
 .idea/
 .vscode/
+.codebuddy
 *.swp
 *.swo
 
 # 日志和临时文件
 logs/
 tmp/
+test/

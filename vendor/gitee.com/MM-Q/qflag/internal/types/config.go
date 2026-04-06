@@ -73,3 +73,56 @@ func NewCmdConfig() *CmdConfig {
 		Completion:     false,
 	}
 }
+
+// Clone 克隆命令配置
+//
+// 返回值:
+//   - *CmdConfig: 克隆后的新 CmdConfig 实例
+//
+// 功能说明:
+//   - 创建当前配置的深拷贝
+//   - 复制所有字段值
+//   - 复制切片和映射时创建新的底层数组/映射
+//   - 用于避免配置共享导致的副作用
+func (c *CmdConfig) Clone() *CmdConfig {
+	if c == nil {
+		return nil
+	}
+
+	clone := &CmdConfig{
+		Version:     c.Version,
+		UseChinese:  c.UseChinese,
+		EnvPrefix:   c.EnvPrefix,
+		UsageSyntax: c.UsageSyntax,
+		LogoText:    c.LogoText,
+		Completion:  c.Completion,
+	}
+
+	// 深拷贝 Example 映射
+	if len(c.Example) > 0 {
+		clone.Example = make(map[string]string, len(c.Example))
+		for k, v := range c.Example {
+			clone.Example[k] = v
+		}
+	}
+
+	// 深拷贝 Notes 切片
+	if len(c.Notes) > 0 {
+		clone.Notes = make([]string, len(c.Notes))
+		copy(clone.Notes, c.Notes)
+	}
+
+	// 深拷贝 MutexGroups 切片
+	if len(c.MutexGroups) > 0 {
+		clone.MutexGroups = make([]MutexGroup, len(c.MutexGroups))
+		copy(clone.MutexGroups, c.MutexGroups)
+	}
+
+	// 深拷贝 RequiredGroups 切片
+	if len(c.RequiredGroups) > 0 {
+		clone.RequiredGroups = make([]RequiredGroup, len(c.RequiredGroups))
+		copy(clone.RequiredGroups, c.RequiredGroups)
+	}
+
+	return clone
+}

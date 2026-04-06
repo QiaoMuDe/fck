@@ -13,6 +13,8 @@
 package registry
 
 import (
+	"fmt"
+
 	"gitee.com/MM-Q/qflag/internal/types"
 )
 
@@ -66,7 +68,7 @@ func NewFlagRegistry() types.FlagRegistry {
 //   - 标志对象只存储一次, 长名称和短名称都指向同一个对象
 func (r *FlagRegistryImpl) Register(flag types.Flag) error {
 	if flag == nil {
-		return types.NewError("INVALID_FLAG", "flag cannot be nil", nil)
+		return fmt.Errorf("nil flag")
 	}
 
 	longName := flag.Name()

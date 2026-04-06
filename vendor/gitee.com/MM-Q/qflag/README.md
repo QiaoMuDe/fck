@@ -26,7 +26,7 @@ QFlag 是一个专为 Go 语言设计的命令行参数解析库, 提供了丰�
 - **自动路由** - 智能路由子命令, 自动匹配并执行
 
 #### 🛡️ 错误和验证
-- **错误处理** - 结构化的错误类型, 便于调试和处理
+- **错误处理** - 使用标准 Go 错误处理, 简洁直观
 - **标志验证** - 丰富的内置验证器和自定义验证器支持
 - **互斥标志** - 支持标志互斥组, 确保组内只有一个标志被设置
 - **必需标志** - 支持标志必需组和条件性必需组, 灵活控制标志依赖关系
@@ -733,6 +733,8 @@ tagsFlag := cmd.IntSlice("tags", "", "标签列表", []int{})
 - ✅ 中文/英文双语支持
 - ✅ Logo 文本设置
 - ✅ 使用语法自定义
+- ✅ 禁用标志解析（DisableFlagParsing）
+- ✅ 隐藏命令（Hidden）
 
 ---
 
@@ -762,6 +764,8 @@ QFlag 提供了三种错误处理策略:
 | `UsageSyntax` | `string` | 命令使用语法 |
 | `LogoText` | `string` | Logo文本 |
 | `Completion` | `bool` | 是否启用自动补全标志 |
+| `DisableFlagParsing` | `bool` | 是否禁用标志解析，所有参数作为位置参数处理 |
+| `Hidden` | `bool` | 是否隐藏命令，不在帮助信息中显示 |
 | `AutoBindEnv` | `bool` | 是否自动绑定所有标志的环境变量 |
 | `Examples` | `map[string]string` | 示例使用 |
 | `Notes` | `[]string` | 注意事项 |
@@ -826,6 +830,104 @@ func main() {
 - **部分配置**: 未设置的属性不会被修改，保留原有值
 - **批量设置**: 一次性设置多个命令属性
 - **结构化管理**: 通过结构体集中管理配置
+
+### 禁用标志解析
+
+当需要将所有参数（包括 `--flag` 形式）作为位置参数处理时，可以禁用标志解析。
+
+```go
+package main
+
+import (
+    "fmt"
+    "gitee.com/MM-Q/qflag"
+)
+
+func main() {
+    // 创建命令并禁用标志解析
+    cmd := qflag.NewCmd("exec", "e", qflag.ExitOnError)
+    
+    // 方式1: 通过 CmdOpts 配置
+    opts := &qflag.CmdOpts{
+        Desc:               "执行外部命令",
+        DisableFlagParsing: true,  // 禁用标志解析
+    }
+    
+    if err := cmd.ApplyOpts(opts); err != nil {
+        fmt.Printf("应用配置失败: %v\n", err)
+        return
+    }
+    
+    cmd.SetRun(func(c qflag.Command) error {
+        // 所有参数都作为位置参数
+        args := c.Args()
+        fmt.Printf("执行命令: %v\n", args)
+        return nil
+    })
+    
+    // 使用: exec -- kubectl get pods -n default
+    // 所有参数（包括 --flag）都会作为位置参数
+    if err := cmd.ParseAndRoute(); err != nil {
+        fmt.Printf("错误: %v\n", err)
+    }
+}
+```
+
+**使用场景:**
+- 透传参数给外部命令（如 `kubectl exec`）
+- SSH 包装器
+- 任何需要保留原始参数的场景
+
+### 隐藏命令
+
+隐藏命令不会显示在帮助信息的子命令列表中，但仍可通过命令行正常调用。
+
+```go
+package main
+
+import (
+    "fmt"
+    "gitee.com/MM-Q/qflag"
+)
+
+func main() {
+    // 创建隐藏命令
+    debugCmd := qflag.NewCmd("debug", "d", qflag.ExitOnError)
+    
+    // 方式1: 通过 CmdOpts 配置
+    opts := &qflag.CmdOpts{
+        Desc:   "调试命令（内部使用）",
+        Hidden: true,  // 隐藏命令
+    }
+    
+    if err := debugCmd.ApplyOpts(opts); err != nil {
+        fmt.Printf("应用配置失败: %v\n", err)
+        return
+    }
+    
+    debugCmd.SetRun(func(c qflag.Command) error {
+        fmt.Println("调试模式已启用")
+        // 执行调试逻辑
+        return nil
+    })
+    
+    // 方式2: 通过方法设置
+    // debugCmd.SetHidden(true)
+    
+    // 添加到根命令
+    qflag.Root.AddSubCmds(debugCmd)
+    
+    // 调试命令可以通过命令行调用，但不会显示在帮助中
+    if err := qflag.ParseAndRoute(); err != nil {
+        fmt.Printf("错误: %v\n", err)
+    }
+}
+```
+
+**使用场景:**
+- 内部调试命令
+- 已弃用但仍需兼容的命令
+- 高级或实验性功能
 
 ---
 

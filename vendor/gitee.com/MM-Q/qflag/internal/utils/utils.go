@@ -246,25 +246,25 @@ func SortSubCmds(subCmds []types.SubCmdInfo) {
 //   - error: 如果验证失败返回错误, 成功返回 nil
 func ValidateFlagName(cmd types.Command, longName, shortName string) error {
 	if cmd == nil {
-		return types.NewError("INVALID_COMMAND", "cmd cannot be nil", nil)
+		return fmt.Errorf("nil command")
 	}
 
 	cmdName := cmd.Name()
 
 	if longName == "" && shortName == "" {
-		return types.NewError("INVALID_FLAG_NAME", fmt.Sprintf("cmd %q: flag name cannot be empty", cmdName), nil)
+		return fmt.Errorf("empty flag name in '%s'", cmdName)
 	}
 
 	// 分别检查长名称和短名称
 	if longName != "" {
 		if _, ok := cmd.GetFlag(longName); ok {
-			return types.NewError("FLAG_ALREADY_EXISTS", fmt.Sprintf("cmd %q: flag '--%s' already exists", cmdName, longName), nil)
+			return fmt.Errorf("flag '--%s' already exists in '%s'", longName, cmdName)
 		}
 	}
 
 	if shortName != "" {
 		if _, ok := cmd.GetFlag(shortName); ok {
-			return types.NewError("FLAG_ALREADY_EXISTS", fmt.Sprintf("cmd %q: flag '-%s' already exists", cmdName, shortName), nil)
+			return fmt.Errorf("flag '-%s' already exists in '%s'", shortName, cmdName)
 		}
 	}
 
@@ -300,13 +300,13 @@ func FormatFlagName(longName, shortName string) string {
 //   - error: 如果转换失败返回错误
 func ToStrSlice(slice any) ([]string, error) {
 	if slice == nil {
-		return nil, types.NewError("NIL_SLICE", "slice cannot be nil", nil)
+		return nil, fmt.Errorf("nil slice")
 	}
 
 	// 使用反射获取切片的值和类型
 	val := reflect.ValueOf(slice)
 	if val.Kind() != reflect.Slice {
-		return nil, types.NewError("NOT_SLICE", "input must be a slice", nil)
+		return nil, fmt.Errorf("not a slice")
 	}
 
 	result := make([]string, 0, val.Len())

@@ -1,6 +1,7 @@
 package flag
 
 import (
+	"fmt"
 	"strconv"
 
 	"gitee.com/MM-Q/qflag/internal/types"
@@ -119,7 +120,7 @@ func (f *BoolFlag) Set(value string) error {
 	// 解析布尔值
 	b, err := strconv.ParseBool(value)
 	if err != nil {
-		return types.WrapParseError(err, "bool", value)
+		return fmt.Errorf("parse bool '%s': %w", value, err)
 	}
 
 	// 验证（如果设置了验证器）

@@ -15,7 +15,7 @@
 package registry
 
 import (
-	"gitee.com/MM-Q/qflag/internal/types"
+	"fmt"
 )
 
 // registry 泛型注册表实现
@@ -78,19 +78,19 @@ func NewRegistry[T any]() *registry[T] {
 func (r *registry[T]) Register(item T, longName, shortName string) error {
 	// 第一步: 验证参数
 	if longName == "" && shortName == "" {
-		return types.NewError("INVALID_NAME", "long name and short name cannot both be empty", nil)
+		return fmt.Errorf("empty name and short name")
 	}
 
 	// 第二步: 检查名称冲突
 	if longName != "" {
 		if _, exists := r.nameIndex[longName]; exists {
-			return types.ErrFlagAlreadyExists
+			return fmt.Errorf("'%s' already exists", longName)
 		}
 	}
 
 	if shortName != "" {
 		if _, exists := r.nameIndex[shortName]; exists {
-			return types.ErrFlagAlreadyExists
+			return fmt.Errorf("'%s' already exists", shortName)
 		}
 	}
 
@@ -130,7 +130,7 @@ func (r *registry[T]) Register(item T, longName, shortName string) error {
 func (r *registry[T]) Unregister(name string) error {
 	id, exists := r.nameIndex[name]
 	if !exists {
-		return types.ErrFlagNotFound
+		return fmt.Errorf("'%s' not found", name)
 	}
 
 	// 找出所有指向该ID的名称并删除

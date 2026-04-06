@@ -51,6 +51,7 @@ func InitAndRun() (err error) {
 			CatCmd,
 			GrepCmd,
 			SedCmd,
+			XargsCmd,
 		},
 	}
 

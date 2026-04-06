@@ -1547,6 +1547,8 @@ func run(cmd qflag.Command) error {
 | 全局标志 | ✅ | 在根命令上定义，所有子命令可访问 |
 | 多级子命令 | ✅ | 支持二级及更多级子命令 |
 | 配置文件 | ✅ | 结合 `internal/config` 使用 |
+| 禁用标志解析 | ✅ | `DisableFlagParsing` 禁用标志解析，所有参数作为位置参数 |
+| 隐藏命令 | ✅ | `Hidden` 隐藏命令，不在帮助信息中显示 |
 
 ### 命名规范
 

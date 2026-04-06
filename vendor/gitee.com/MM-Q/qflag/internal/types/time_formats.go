@@ -105,9 +105,7 @@ func ParseTimeWithFormats(value string, formats []string) (time.Time, string, er
 			return t, format, nil
 		}
 	}
-	return time.Time{}, "", NewError("INVALID_TIME",
-		fmt.Sprintf("unable to parse time value: %s with any known format", value),
-		nil)
+	return time.Time{}, "", fmt.Errorf("unable to parse time '%s'", value)
 }
 
 // ParseTimeWithCommonFormats 尝试使用常见格式解析时间字符串

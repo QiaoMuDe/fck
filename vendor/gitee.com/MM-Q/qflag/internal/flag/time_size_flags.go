@@ -65,12 +65,12 @@ func (f *DurationFlag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_DURATION", "duration value cannot be empty", nil)
+		return fmt.Errorf("empty duration value for '%s'", f.Name())
 	}
 
 	d, err := time.ParseDuration(value)
 	if err != nil {
-		return types.WrapParseError(err, "duration", value)
+		return fmt.Errorf("parse duration '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -144,12 +144,12 @@ func (f *TimeFlag) Set(value string) error {
 	defer f.mu.Unlock()
 
 	if value == "" {
-		return types.NewError("INVALID_TIME", "time value cannot be empty", nil)
+		return fmt.Errorf("empty time value for '%s'", f.Name())
 	}
 
 	t, format, err := types.ParseTimeWithCommonFormats(value)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse time '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 验证（如果设置了验证器）
@@ -186,7 +186,7 @@ func (f *TimeFlag) SetWithFormat(value, format string) error {
 
 	t, err := time.Parse(format, value)
 	if err != nil {
-		return types.WrapParseError(err, "time", value)
+		return fmt.Errorf("parse time '%s' with format '%s' for '%s': %w", value, format, f.Name(), err)
 	}
 
 	*f.value = t
@@ -318,7 +318,7 @@ func (f *SizeFlag) Set(value string) error {
 
 	// 检查是否包含单位
 	if value == "" {
-		return types.NewError("INVALID_SIZE", "size value cannot be empty", nil)
+		return fmt.Errorf("empty size value for '%s'", f.Name())
 	}
 
 	// 提取数字部分和单位部分
@@ -343,12 +343,12 @@ func (f *SizeFlag) Set(value string) error {
 	// 解析数字部分
 	num, err := strconv.ParseFloat(numStr, 64)
 	if err != nil {
-		return types.WrapParseError(err, "size", value)
+		return fmt.Errorf("parse size '%s' for '%s': %w", value, f.Name(), err)
 	}
 
 	// 检查是否为负数
 	if num < 0 {
-		return types.NewError("INVALID_SIZE", "size value cannot be negative", nil)
+		return fmt.Errorf("negative size '%s' for '%s'", value, f.Name())
 	}
 
 	// 根据单位转换大小
@@ -377,12 +377,12 @@ func (f *SizeFlag) Set(value string) error {
 	case "PIB", "pib":
 		size = num * float64(types.PIB)
 	default:
-		return types.NewError("INVALID_SIZE", fmt.Sprintf("unknown size unit: %s", unit), nil)
+		return fmt.Errorf("unknown size unit '%s' in '%s' for '%s'", unit, value, f.Name())
 	}
 
 	// 检查是否超出int64范围
 	if size > float64(1<<63-1) {
-		return types.NewError("INVALID_SIZE", fmt.Sprintf("size value too large: %s", value), nil)
+		return fmt.Errorf("size too large '%s' for '%s'", value, f.Name())
 	}
 
 	// 验证（如果设置了验证器）

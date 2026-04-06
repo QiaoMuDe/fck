@@ -82,7 +82,7 @@ func Generate(cmd types.Command, shellType string) (string, error) {
 		generatePwshCompletion(&buf, params, rootCmdOpts, cmdTreeEntries.String(), programName)
 
 	default:
-		return "", types.NewError("UNSUPPORTED_SHELL", "unsupported shell", nil)
+		return "", fmt.Errorf("unsupported shell type '%s'", shellType)
 	}
 
 	// 返回自动补全脚本
