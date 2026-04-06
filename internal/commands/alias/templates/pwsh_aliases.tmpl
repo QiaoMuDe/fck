@@ -1,0 +1,122 @@
+# 函数定义
+function fck-cat {
+    fck cat @args
+}
+
+function fck-check {
+    fck check @args
+}
+
+function fck-cp {
+    fck cp @args
+}
+
+function fck-date {
+    fck date @args
+}
+
+function fck-echo {
+    fck echo @args
+}
+
+function fck-find {
+    fck find -c @args
+}
+
+function fck-grep {
+    fck grep -n -r -H @args
+}
+
+function fck-hash {
+    fck hash @args
+}
+
+function fck-home {
+    fck home @args
+}
+
+function fck-ll {
+    fck list -l -c -i @args
+}
+
+function fck-ls {
+    fck list -c -i @args
+}
+
+function fck-mkdir {
+    fck mkdir @args
+}
+
+function fck-mv {
+    fck mv @args
+}
+
+function fck-pack {
+    fck pack @args
+}
+
+function fck-preview {
+    fck preview @args
+}
+
+function fck-pwd {
+    fck pwd @args
+}
+
+function fck-rm {
+    fck rm @args
+}
+
+function fck-sed {
+    fck sed @args
+}
+
+function fck-size {
+    fck size -c -u -ts r @args
+}
+
+function fck-touch {
+    fck touch @args
+}
+
+function fck-truncate {
+    fck truncate @args
+}
+
+function fck-unpack {
+    fck unpack @args
+}
+
+function fck-watch {
+    fck watch @args
+}
+
+function fck-xargs {
+    fck xargs @args
+}
+
+# 设置别名
+Set-Alias -Name cat -Value fck-cat
+Set-Alias -Name check -Value fck-check
+Set-Alias -Name cp -Value fck-cp
+Set-Alias -Name date -Value fck-date
+Set-Alias -Name echo -Value fck-echo
+Set-Alias -Name find -Value fck-find
+Set-Alias -Name grep -Value fck-grep
+Set-Alias -Name hash -Value fck-hash
+Set-Alias -Name home -Value fck-home
+Set-Alias -Name ll -Value fck-ll
+Set-Alias -Name ls -Value fck-ls
+Set-Alias -Name mkdir -Value fck-mkdir
+Set-Alias -Name mv -Value fck-mv
+Set-Alias -Name pack -Value fck-pack
+Set-Alias -Name preview -Value fck-preview
+Set-Alias -Name pwd -Value fck-pwd
+Set-Alias -Name rm -Value fck-rm
+Set-Alias -Name sed -Value fck-sed
+Set-Alias -Name size -Value fck-size
+Set-Alias -Name touch -Value fck-touch
+Set-Alias -Name truncate -Value fck-truncate
+Set-Alias -Name unpack -Value fck-unpack
+Set-Alias -Name watch -Value fck-watch
+Set-Alias -Name xargs -Value fck-xargs

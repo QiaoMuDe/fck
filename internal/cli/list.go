@@ -74,7 +74,7 @@ func init() {
 	listDisableIndex = ListCmd.Bool("disable-index", "di", "禁用索引序号", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "文件目录列表工具, 列出指定目录中的文件和目录，并支持多种排序和过滤选项",
+		Desc:       "文件目录列表工具",
 		Notes:      []string{"如果不指定路径，默认为当前目录", "排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个"},
 		UseChinese: true,
 	}

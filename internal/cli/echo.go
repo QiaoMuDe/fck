@@ -31,7 +31,7 @@ func init() {
 	echoColor = EchoCmd.String("color", "c", "颜色输出（red, green, yellow, blue等）", "")
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "文本输出工具, 支持文本输出、格式化、特殊字符处理等功能",
+		Desc: "文本输出工具",
 		Notes: []string{
 			"支持转义字符: \\n(换行), \\t(制表符), \\r(回车), \\\\(反斜杠), \\\"(双引号)",
 			"支持颜色: black, red, green, yellow, blue, magenta, cyan, white",

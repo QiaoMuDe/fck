@@ -25,7 +25,7 @@ func init() {
 	previewLimit = PreviewCmd.Int("limit", "l", "限制显示的文件数量(0表示不限制)", 0)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "压缩包预览工具, 查看压缩包信息和文件列表",
+		Desc:       "压缩包预览工具",
 		Notes:      []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
 		UseChinese: true,
 	}

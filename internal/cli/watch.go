@@ -33,7 +33,7 @@ func init() {
 	watchQuiet = WatchCmd.Bool("quiet", "q", "完全静默模式, 不显示标题栏、换行符和命令输出", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "命令监控工具, 周期性执行指定命令并显示输出结果",
+		Desc:       "命令监控工具",
 		Notes:      []string{"如果不指定命令, 将提示输入要监控的命令", "使用 Ctrl+C 可以随时停止监控", "命令执行失败时默认继续监控, 除非使用 -e 标志"},
 		UseChinese: true,
 	}

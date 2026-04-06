@@ -104,7 +104,9 @@ func readArgs(config XargsConfig) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("打开文件失败: %w", err)
 		}
-		defer file.Close()
+		defer func() {
+			_ = file.Close()
+		}()
 		reader = bufio.NewReader(file)
 	} else {
 		reader = bufio.NewReader(os.Stdin)
@@ -160,12 +162,6 @@ func readArgs(config XargsConfig) ([]string, error) {
 func splitBatches(args []string, config XargsConfig) [][]string {
 	var batches [][]string
 	var currentBatch []string
-
-	// 确定每批大小
-	batchSize := config.MaxArgs
-	if batchSize <= 0 {
-		batchSize = len(args) // 默认全部一批
-	}
 
 	for i, arg := range args {
 		currentBatch = append(currentBatch, arg)

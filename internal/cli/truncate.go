@@ -25,9 +25,9 @@ func init() {
 	truncateVerbose = TruncateCmd.Bool("verbose", "v", "显示操作的文件", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "文件截断工具, 支持创建新文件、扩展文件、缩小文件等功能",
+		Desc: "文件截断工具",
 		Notes: []string{
-			"文件大小通过 -s 选项设置，支持单位：B、K、M、G、T",
+			"文件大小通过 -s 选项设置, 支持单位: B、K、M、G、T",
 			"目标通过位置参数传递，支持多个文件",
 			"使用 -c 选项在文件不存在时创建文件",
 			"使用 -r 选项参考其他文件的大小",

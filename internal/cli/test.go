@@ -23,7 +23,7 @@ func init() {
 	testLink = TestCmd.Bool("link", "l", "检查指定符号链接是否存在", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "路径检测工具, 支持检测文件、目录、符号链接是否存在",
+		Desc: "路径检测工具",
 		Notes: []string{
 			"路径通过位置参数传递",
 			"不指定标志时，检测路径是否存在",

@@ -23,7 +23,7 @@ func init() {
 	mvVerbose = MvCmd.Bool("verbose", "v", "显示移动的文件/目录", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "文件移动工具, 支持移动文件和目录, 支持文件重命名",
+		Desc: "文件移动工具",
 		Notes: []string{
 			"源文件通过位置参数传递，支持多个文件",
 			"目标通过最后一个位置参数传递",

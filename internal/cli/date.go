@@ -27,7 +27,7 @@ func init() {
 	dateUnix = DateCmd.Bool("unix", "U", "输出Unix时间戳", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "时间获取和格式化工具, 支持多种时间格式输出、时区转换、时间戳转换等功能",
+		Desc: "时间获取和格式化工具",
 		Notes: []string{
 			"预定义格式别名:\n" +
 				"\tiso - 2006-01-02T15:04:05Z07:00\n" +

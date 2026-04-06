@@ -33,7 +33,7 @@ func init() {
 	gmJSON = GmCmd.Bool("json", "j", "以JSON格式输出结果", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "获取Git仓库的各种元数据信息, 包括版本号、提交哈希、提交时间、仓库状态等",
+		Desc:       "获取Git仓库的各种元数据信息",
 		Notes:      []string{"不指定任何功能标志时, 默认获取所有元数据信息"},
 		UseChinese: true,
 	}

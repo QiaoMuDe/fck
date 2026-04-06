@@ -27,7 +27,7 @@ func init() {
 	touchVerbose = TouchCmd.Bool("verbose", "v", "显示操作的文件", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "文件创建和时间戳更新工具, 支持创建空文件、更新文件时间戳、设置特定时间等功能",
+		Desc: "文件创建和时间戳更新工具",
 		Notes: []string{
 			"目标通过位置参数传递，支持多个文件",
 			"默认创建空文件，使用 -c 选项仅更新时间戳",

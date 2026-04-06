@@ -24,7 +24,7 @@ func init() {
 	rmVerbose = RMCmd.Bool("verbose", "v", "显示删除的文件/目录", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "文件删除工具, 支持递归删除、强制删除、确认提示等功能",
+		Desc: "文件删除工具",
 		Notes: []string{
 			"目标通过位置参数传递，支持多个文件/目录",
 			"默认删除前需要确认，使用 -f 选项强制删除",

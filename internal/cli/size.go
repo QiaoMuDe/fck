@@ -47,7 +47,7 @@ func init() {
 		"\t\t\t\t\t[none]   - 禁用表格样式", "def", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "文件目录大小计算工具, 计算指定文件或目录的大小",
+		Desc:       "文件目录大小计算工具",
 		Notes:      []string{"默认显示字节数，使用 -u/--human 转换为可读格式"},
 		UseChinese: true,
 	}

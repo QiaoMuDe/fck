@@ -39,7 +39,7 @@ func init() {
 	unpackNoValidate = UnpackCmd.Bool("no-validate", "nv", "禁用路径验证", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "智能解压缩工具, 智能识别压缩文件格式并解压",
+		Desc:       "智能解压缩工具",
 		Notes:      []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
 		UseChinese: true,
 	}

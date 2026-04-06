@@ -21,7 +21,7 @@ func init() {
 	pwdLogical = PwdCmd.Bool("logical", "L", "显示逻辑路径（不解析符号链接）", true)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "打印当前工作目录, 支持显示物理路径和逻辑路径",
+		Desc: "打印当前工作目录",
 		Notes: []string{
 			"默认显示逻辑路径（不解析符号链接）",
 			"使用 -P 选项显示物理路径（解析符号链接）",

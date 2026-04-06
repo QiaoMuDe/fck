@@ -26,15 +26,15 @@ var (
 )
 
 func init() {
-	XargsCmd = qflag.NewCmd("xargs", "从标准输入读取参数并执行命令", qflag.ExitOnError)
+	XargsCmd = qflag.NewCmd("xargs", "", qflag.ExitOnError)
 
-	xargsDelimiter = XargsCmd.String("delimiter", "d", "输入分隔符（默认空格/换行/制表）", "")
+	xargsDelimiter = XargsCmd.String("delimiter", "d", "输入分隔符 (默认空格/换行/制表)", "")
 	xargsNull = XargsCmd.Bool("null", "0", "使用 \\0 作为分隔符", false)
 	xargsArgFile = XargsCmd.String("arg-file", "a", "从文件读取参数", "")
 	xargsMaxArgs = XargsCmd.Int("max-args", "n", "每批最大参数个数", 0)
 	xargsMaxLines = XargsCmd.Int("max-lines", "L", "每批最大行数", 0)
 	xargsMaxChars = XargsCmd.Int("max-chars", "s", "命令最大长度", 0)
-	xargsReplaceStr = XargsCmd.Bool("replace", "i", "启用占位符替换模式（默认占位符 {}）", false)
+	xargsReplaceStr = XargsCmd.Bool("replace", "i", "启用占位符替换模式 (默认占位符 {})", false)
 	xargsReplaceDelim = XargsCmd.String("replace-delim", "I", "自定义占位符字符串", "")
 	xargsMaxProcs = XargsCmd.Int("max-procs", "P", "并行进程数", 1)
 	xargsNoRunIfEmpty = XargsCmd.Bool("no-run-if-empty", "r", "空输入不执行", false)

@@ -23,7 +23,7 @@ func init() {
 	cpVerbose = CpCmd.Bool("verbose", "v", "显示复制的文件/目录", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "文件复制工具, 支持复制文件和目录, 自动递归复制目录并保留文件属性",
+		Desc: "文件目录复制工具",
 		Notes: []string{
 			"源文件通过位置参数传递，支持多个文件",
 			"目标通过最后一个位置参数传递",
