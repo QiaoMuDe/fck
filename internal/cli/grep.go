@@ -33,6 +33,10 @@ var (
 
 	// 隐藏文件支持
 	grepHidden *qflag.BoolFlag // --hidden 处理隐藏文件/目录（默认跳过）
+
+	// 二进制文件处理
+	grepText         *qflag.BoolFlag // -a, --text 强制将二进制文件视为文本处理
+	grepIgnoreBinary *qflag.BoolFlag // -I 忽略二进制文件（不输出提示）
 )
 
 func init() {
@@ -60,7 +64,11 @@ func init() {
 	grepExcludeDir = GrepCmd.StringSlice("exclude-dir", "", "排除匹配模式的目录，多个模式用逗号分隔", []string{})
 
 	// 隐藏文件相关标志
-	grepHidden = GrepCmd.Bool("hidden", "a", "处理隐藏文件/目录，默认跳过隐藏项", false)
+	grepHidden = GrepCmd.Bool("hidden", "hd", "处理隐藏文件/目录，默认跳过隐藏项", false)
+
+	// 二进制文件处理标志
+	grepText = GrepCmd.Bool("text", "a", "强制将二进制文件视为文本处理", false)
+	grepIgnoreBinary = GrepCmd.Bool("ignore-binary", "I", "完全忽略二进制文件，不输出提示", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "文本搜索工具",
@@ -80,10 +88,10 @@ func init() {
 		},
 		Notes: []string{
 			"默认使用固定字符串匹配，更轻量高效",
-			"使用 -E 启用正则表达式匹配",
 			"默认高亮显示匹配关键字，使用 --no-color 禁用",
 			"不指定 file 时从标准输入读取",
-			"默认跳过隐藏文件/目录，使用 --hidden/-a 包含",
+			"默认跳过隐藏文件/目录，使用 --hidden/-hd 包含",
+			"默认跳过二进制文件并输出提示，使用 -a 强制处理，使用 -I 静默跳过",
 		},
 	}
 
@@ -137,6 +145,8 @@ func runGrep(cmd qflag.Command) error {
 		ExcludeDir:    grepExcludeDir.Get(),
 		NoMessages:    grepNoMessages.Get(),
 		Hidden:        grepHidden.Get(),
+		Text:          grepText.Get(),
+		IgnoreBinary:  grepIgnoreBinary.Get(),
 	}
 
 	return grep.GrepCmdMain(config)

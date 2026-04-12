@@ -39,6 +39,14 @@ func processSingleFile(path string, config *GrepConfig) error {
 	}
 	defer func() { _ = file.Close() }()
 
+	skip, err := handleBinaryFile(file, path, config)
+	if err != nil {
+		return nil // 递归模式下跳过错误
+	}
+	if skip {
+		return nil
+	}
+
 	config.filename = path
 	return processFile(file, config)
 }

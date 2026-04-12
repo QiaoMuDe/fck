@@ -2,6 +2,7 @@ package grep
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -48,6 +49,10 @@ type GrepConfig struct {
 
 	// 隐藏文件支持
 	Hidden bool // --hidden 处理隐藏文件/目录（默认跳过）
+
+	// 二进制文件处理
+	Text         bool // -a, --text 强制将二进制文件视为文本处理
+	IgnoreBinary bool // -I 忽略二进制文件（不输出提示，静默跳过）
 
 	// 运行时
 	compiledPattern *regexp.Regexp // 编译后的正则
@@ -155,6 +160,14 @@ func processSingleFileWithError(path string, config *GrepConfig) error {
 	}
 	defer func() { _ = file.Close() }()
 
+	skip, err := handleBinaryFile(file, path, config)
+	if err != nil {
+		return err
+	}
+	if skip {
+		return nil
+	}
+
 	config.filename = path
 	return processFile(file, config)
 }
@@ -185,6 +198,94 @@ func compilePattern(config *GrepConfig) error {
 	}
 	config.compiledPattern = re
 	return nil
+}
+
+// handleBinaryFile 处理二进制文件检测和配置响应
+//
+// 根据 config.Text 和 config.IgnoreBinary 决定如何处理二进制文件
+//
+// 参数:
+//   - file: 已打开的文件句柄
+//   - path: 文件路径（用于输出提示）
+//   - config: 命令配置
+//
+// 返回:
+//   - skip: true 表示应跳过此文件, false 表示继续处理
+//   - err: 检测错误 (非静默模式下)
+func handleBinaryFile(file *os.File, path string, config *GrepConfig) (skip bool, err error) {
+	isBinary, err := isBinaryFile(file)
+	if err != nil {
+		if config.NoMessages {
+			return true, nil // 静默模式下跳过错误文件
+		}
+		return true, fmt.Errorf("failed to detect file type: %w", err)
+	}
+
+	if !isBinary {
+		return false, nil // 文本文件，继续处理
+	}
+
+	// 二进制文件，根据配置处理
+	if config.Text {
+		// -a/--text 模式：强制作为文本处理
+		return false, nil
+	}
+	if config.IgnoreBinary {
+		// -I 模式：静默跳过
+		return true, nil
+	}
+
+	// 默认行为：输出提示并跳过
+	if config.WithFilename {
+		fmt.Printf("Binary file %s matches\n", path)
+	} else {
+		fmt.Println("Binary file matches")
+	}
+	return true, nil
+}
+
+// isBinaryFile 检测文件是否为二进制文件
+//
+// 原理：读取文件前 8000 字节，检查是否包含空字符(\0)
+//
+// 注意：
+//   - 只支持普通文件, stdin/pipe 默认返回 false (视为文本)
+//   - 检测后会重置文件指针到开头
+//
+// 参数:
+//   - file: 已打开的文件句柄
+//
+// 返回:
+//   - bool: true 表示二进制文件, false 表示文本文件或无法检测
+//   - error: 读取或重置指针错误
+func isBinaryFile(file *os.File) (bool, error) {
+	// 获取文件信息，检查是否为普通文件
+	info, err := file.Stat()
+	if err != nil {
+		return false, err
+	}
+
+	// 非普通文件 (stdin、pipe、设备文件等) 默认视为文本
+	if !info.Mode().IsRegular() {
+		return false, nil
+	}
+
+	// 读取文件前 8000 字节
+	buf := make([]byte, 8000)
+	n, err := file.Read(buf)
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+
+	// 检查是否包含空字符（二进制文件特征）
+	isBinary := bytes.Contains(buf[:n], []byte{0})
+
+	// 重置文件指针到开头，供后续读取使用
+	if _, seekErr := file.Seek(0, io.SeekStart); seekErr != nil {
+		return false, seekErr
+	}
+
+	return isBinary, nil
 }
 
 // processFile 处理文件内容
