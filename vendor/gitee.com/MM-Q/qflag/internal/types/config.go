@@ -43,16 +43,17 @@ type RequiredGroup struct {
 
 // CmdConfig 命令配置类型
 type CmdConfig struct {
-	Version        string            // 版本号
-	UseChinese     bool              // 是否使用中文
-	EnvPrefix      string            // 环境变量前缀
-	UsageSyntax    string            // 命令使用语法
-	Example        map[string]string // 示例使用, key为描述, value为示例命令
-	Notes          []string          // 注意事项
-	LogoText       string            // 命令logo文本
-	MutexGroups    []MutexGroup      // 互斥组列表
-	RequiredGroups []RequiredGroup   // 必需组列表
-	Completion     bool              // 是否启用自动补全标志
+	Version           string            // 版本号
+	UseChinese        bool              // 是否使用中文
+	EnvPrefix         string            // 环境变量前缀
+	UsageSyntax       string            // 命令使用语法
+	Example           map[string]string // 示例使用, key为描述, value为示例命令
+	Notes             []string          // 注意事项
+	LogoText          string            // 命令logo文本
+	MutexGroups       []MutexGroup      // 互斥组列表
+	RequiredGroups    []RequiredGroup   // 必需组列表
+	Completion        bool              // 是否启用自动补全标志
+	DynamicCompletion bool              // 是否启用动态补全
 }
 
 // NewCmdConfig 创建新的命令配置
@@ -61,16 +62,17 @@ type CmdConfig struct {
 //   - *CmdConfig: 新创建的 CmdConfig 实例, 初始化为零值
 func NewCmdConfig() *CmdConfig {
 	return &CmdConfig{
-		Version:        "",
-		UseChinese:     false,
-		EnvPrefix:      "",
-		UsageSyntax:    "",
-		Example:        map[string]string{},
-		Notes:          []string{},
-		LogoText:       "",
-		MutexGroups:    []MutexGroup{},
-		RequiredGroups: []RequiredGroup{},
-		Completion:     false,
+		Version:           "",
+		UseChinese:        false,
+		EnvPrefix:         "",
+		UsageSyntax:       "",
+		Example:           map[string]string{},
+		Notes:             []string{},
+		LogoText:          "",
+		MutexGroups:       []MutexGroup{},
+		RequiredGroups:    []RequiredGroup{},
+		Completion:        false,
+		DynamicCompletion: false,
 	}
 }
 
@@ -90,12 +92,13 @@ func (c *CmdConfig) Clone() *CmdConfig {
 	}
 
 	clone := &CmdConfig{
-		Version:     c.Version,
-		UseChinese:  c.UseChinese,
-		EnvPrefix:   c.EnvPrefix,
-		UsageSyntax: c.UsageSyntax,
-		LogoText:    c.LogoText,
-		Completion:  c.Completion,
+		Version:           c.Version,
+		UseChinese:        c.UseChinese,
+		EnvPrefix:         c.EnvPrefix,
+		UsageSyntax:       c.UsageSyntax,
+		LogoText:          c.LogoText,
+		Completion:        c.Completion,
+		DynamicCompletion: c.DynamicCompletion,
 	}
 
 	// 深拷贝 Example 映射

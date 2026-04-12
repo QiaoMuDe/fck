@@ -1,0 +1,165 @@
+# ==================== File Path Completion Core Function ====================
+# Dedicated file path completion function - provides intelligent path completion for {{.SanitizedName}}
+# Parameter: $WordToComplete=the word currently being typed
+# Returns: Array of matching file and directory paths
+function Get-{{.SanitizedName}}PathCompletions {
+    param(
+        [string]$WordToComplete
+    )
+
+    $pathMatches = [System.Collections.ArrayList]::new()
+
+    # Get the directory portion of the current path
+    $basePath = if ($WordToComplete -and (Split-Path $WordToComplete -Parent)) {
+        Split-Path $WordToComplete -Parent
+    } else {
+        "."
+    }
+
+    # Get the filename portion for filtering
+    $fileName = if ($WordToComplete) {
+        Split-Path $WordToComplete -Leaf
+    } else {
+        ""
+    }
+
+    # Pre-compile filename matching pattern
+    $filePattern = "$fileName*"
+
+    try {
+        # Get directories and files
+        $items = Get-ChildItem -Path $basePath -ErrorAction SilentlyContinue | Where-Object {
+            $_.Name -like $filePattern
+        }
+
+        foreach ($item in $items) {
+            $fullPath = if ($basePath -eq ".") {
+                $item.Name
+            } else {
+                Join-Path $basePath $item.Name
+            }
+
+            # Add path separator for directories
+            if ($item.PSIsContainer) {
+                [void]$pathMatches.Add("$fullPath/")
+            } else {
+                [void]$pathMatches.Add($fullPath)
+            }
+        }
+    }
+    catch {
+        # Return empty array when path access fails - silently handle errors
+        Write-Debug "Path access failed: $($_.Exception.Message)"
+    }
+
+    return $pathMatches.ToArray()
+}
+
+# -------------------------- Completion Logic Implementation ------------------------
+$scriptBlock = {
+    param(
+        $wordToComplete,
+        $commandAst,
+        $cursorPosition
+    )
+
+    try {
+        # 1. Parse tokens
+        $tokens = $commandAst.CommandElements | ForEach-Object { $_.Extent.Text }
+        if (-not $tokens -or $tokens.Count -eq 0) {
+            return @()
+        }
+
+        # Calculate previous element and current index
+        # If $wordToComplete is empty, user just pressed space, entering a new argument
+        # In this case, the last element of $tokens is the previous argument and should be included in cmdArgs
+        # If $wordToComplete is not empty, user is currently typing an argument
+        # In this case, the last element of $tokens is the current argument being typed and should NOT be included in cmdArgs
+        $prevElement = $null
+        $currentIndex = $tokens.Count - 1
+
+        if ([string]::IsNullOrEmpty($wordToComplete)) {
+            # User pressed space, the last token is the previous argument
+            if ($tokens.Count -gt 0) {
+                $prevElement = $tokens[$tokens.Count - 1]
+            }
+            # All tokens should be included in cmdArgs (including the last one)
+            $currentIndex = $tokens.Count
+        } else {
+            # User is typing, the previous token is the previous argument
+            if ($currentIndex -ge 1) {
+                $prevElement = $tokens[$currentIndex - 1]
+            }
+            # The last token is the current input and should NOT be included in cmdArgs
+            $currentIndex = $tokens.Count - 1
+        }
+
+        # Fast path: if current input looks like a path, prioritize path completion
+        if ($wordToComplete -match '[/\~\.]' -or $wordToComplete -like './*' -or $wordToComplete -like '../*') {
+            return Get-{{.SanitizedName}}PathCompletions -WordToComplete $wordToComplete
+        }
+
+        # 2. Extract subcommand arguments (starting from index 1, skipping program name)
+        $cmdArgs = @()
+        for ($i = 1; $i -lt $currentIndex; $i++) {
+            $cmdArgs += $tokens[$i]
+        }
+
+        # ========== Use all instruction to get all completion info at once ==========
+        $result = & {{.ProgramName}} __complete all $wordToComplete $prevElement @cmdArgs
+
+        # Parse result
+        $candidates = @()
+        $enumValues = @()
+        $matchResults = @()
+        $isFlag = $false
+
+        foreach ($line in $result) {
+            if ($line -match '^CANDIDATES:(.*)$') {
+                $candidates = $matches[1] -split ' ' | Where-Object { $_ }
+            }
+            elseif ($line -match '^ENUM:(.*)$') {
+                $enumValues = $matches[1] -split ' ' | Where-Object { $_ }
+            }
+            elseif ($line -match '^MATCHES:(.*)$') {
+                $matchResults = $matches[1] -split ' ' | Where-Object { $_ }
+            }
+            elseif ($line -match '^IS_FLAG:(.+)$') {
+                $isFlag = [bool]::Parse($matches[1])
+            }
+        }
+
+        # 3. Decide completion behavior based on results
+        # IS_FLAG being true means current completion is for enum type flag value
+        if ($isFlag -and $enumValues.Count -gt 0) {
+            # Enum type flag, return matching results
+            return $matchResults
+        }
+        elseif ($matchResults.Count -gt 0) {
+            # Normal completion (including candidates after boolean flags), process matching results
+            $matchingOptions = [System.Collections.ArrayList]::new()
+            $flagRegex = [regex]::new('^-')
+            foreach ($match in $matchResults) {
+                $result = if ($flagRegex.IsMatch($match)) { $match } else { "$match " }
+                [void]$matchingOptions.Add($result)
+            }
+            return $matchingOptions.ToArray()
+        }
+        elseif ($prevElement -match '^-') {
+            # Non-enum type flags (like String/Int etc.), use path completion
+            return Get-{{.SanitizedName}}PathCompletions -WordToComplete $wordToComplete
+        }
+        else {
+            # No matching results, return empty array
+            return @()
+        }
+    }
+    catch {
+        Write-Debug "PowerShell completion error: $($_.Exception.Message)"
+        return @()
+    }
+}
+
+# Register completion function for both original name and sanitized name (without extension)
+Register-ArgumentCompleter -CommandName '{{.ProgramName}}' -ScriptBlock $scriptBlock
+Register-ArgumentCompleter -CommandName '{{.SanitizedName}}' -ScriptBlock $scriptBlock

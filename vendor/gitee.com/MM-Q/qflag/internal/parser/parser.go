@@ -3,6 +3,7 @@ package parser
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"gitee.com/MM-Q/qflag/internal/builtin"
 	"gitee.com/MM-Q/qflag/internal/types"
@@ -101,6 +102,11 @@ func (p *DefaultParser) ParseOnly(cmd types.Command, args []string) error {
 		p.registerFlag(f)
 	}
 
+	// 预检查：扫描未知标志
+	if err := checkUnknownFlags(cmd, args); err != nil {
+		return err
+	}
+
 	// 先解析命令行参数
 	if err := p.flagSet.Parse(args); err != nil {
 		return err
@@ -174,6 +180,17 @@ func (p *DefaultParser) Parse(cmd types.Command, args []string) error {
 		if subCmd, ok := cmdRegistry.Get(firstArg); ok {
 			return subCmd.Parse(remainingArgs[1:])
 		}
+
+		// 有子命令但没匹配上 → 纠错（但参数以 - 开头的不是子命令）
+		if len(cmd.SubCmds()) > 0 && !strings.HasPrefix(firstArg, "-") {
+			// 尝试纠错，如果有建议则返回错误，否则继续处理
+			if err := newUnknownSubcommandError(cmd, firstArg); err != nil {
+				return err
+			}
+			// 没有找到建议，不拦截，作为普通参数继续处理
+		}
+
+		// 没有子命令或参数以 - 开头 → 是普通参数，正常处理
 	}
 
 	return nil
@@ -212,6 +229,17 @@ func (p *DefaultParser) ParseAndRoute(cmd types.Command, args []string) error {
 		if subCmd, ok := cmdRegistry.Get(firstArg); ok {
 			return subCmd.ParseAndRoute(remainingArgs[1:])
 		}
+
+		// 有子命令但没匹配上 → 纠错（但参数以 - 开头的不是子命令）
+		if len(cmd.SubCmds()) > 0 && !strings.HasPrefix(firstArg, "-") {
+			// 尝试纠错，如果有建议则返回错误，否则继续处理
+			if err := newUnknownSubcommandError(cmd, firstArg); err != nil {
+				return err
+			}
+			// 没有找到建议，不拦截，作为普通参数继续处理
+		}
+
+		// 没有子命令或参数以 - 开头 → 是普通参数，正常处理
 	}
 
 	// 如果不是子命令, 执行当前命令的运行函数

@@ -112,16 +112,24 @@ func (r *CmdRegistryImpl) Get(name string) (types.Command, bool) {
 	return r.registry.Get(name)
 }
 
-// List 获取所有注册的命令列表
+// List 获取所有注册的命令列表（排除隐藏命令）
 //
 // 返回值:
-//   - []types.Command: 所有命令的切片
+//   - []types.Command: 所有非隐藏命令的切片
 //
 // 功能说明:
-//   - 返回注册表中所有命令
+//   - 返回注册表中所有非隐藏的命令
+//   - 自动过滤隐藏的命令（如 __complete）
 //   - 顺序不确定, 取决于map遍历顺序
 func (r *CmdRegistryImpl) List() []types.Command {
-	return r.registry.List()
+	all := r.registry.List()
+	result := make([]types.Command, 0, len(all))
+	for _, cmd := range all {
+		if !cmd.IsHidden() {
+			result = append(result, cmd)
+		}
+	}
+	return result
 }
 
 // Has 检查指定名称的命令是否存在
@@ -139,16 +147,22 @@ func (r *CmdRegistryImpl) Has(name string) bool {
 	return r.registry.Has(name)
 }
 
-// Count 获取注册表中的命令数量
+// Count 获取注册表中的命令数量（排除隐藏命令）
 //
 // 返回值:
-//   - int: 命令总数
+//   - int: 非隐藏命令数量
 //
 // 功能说明:
-//   - 返回当前注册的命令数量
-//   - 时间复杂度O(1)
+//   - 返回当前注册的非隐藏命令数量
+//   - 自动过滤隐藏的命令（如 __complete）
 func (r *CmdRegistryImpl) Count() int {
-	return r.registry.Count()
+	count := 0
+	for _, cmd := range r.registry.List() {
+		if !cmd.IsHidden() {
+			count++
+		}
+	}
+	return count
 }
 
 // Clear 清空注册表中的所有命令

@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+const (
+	BashFlagParamItem = "{{.ProgramName}}_flag_params[%q]=%q\n"  // 标志参数项格式
+	BashEnumOptions   = "{{.ProgramName}}_enum_options[%q]=%q\n" // 枚举选项格式
+)
+
 // generateBashCommandTreeEntry 生成Bash命令树条目
 //
 // 参数:
@@ -103,7 +108,22 @@ func generateBashCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 	_, _ = tmpl.WriteString(buf, bashTemplate)
 }
 
-const (
-	BashFlagParamItem = "{{.ProgramName}}_flag_params[%q]=%q\n"  // 标志参数项格式
-	BashEnumOptions   = "{{.ProgramName}}_enum_options[%q]=%q\n" // 枚举选项格式
-)
+// generateBashDynamicCompletion 生成使用动态补全的Bash脚本
+// 新模板不再需要静态数据，只需要程序名称
+//
+// 参数:
+//   - programName: 程序名称
+//
+// 返回值:
+//   - string: 生成的补全脚本
+//   - error: 生成失败时返回错误
+func generateBashDynamicCompletion(programName string) (string, error) {
+	// 使用命名模板生成Bash自动补全脚本
+	tmpl := strings.NewReplacer(
+		"{{.ProgramName}}", programName, // 程序名称
+	)
+
+	var buf bytes.Buffer
+	_, err := tmpl.WriteString(&buf, bashDynamicTemplate)
+	return buf.String(), err
+}

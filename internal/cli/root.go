@@ -17,12 +17,13 @@ func InitAndRun() (err error) {
 	}()
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "一站式文件与系统管理工具集，集成文件操作、内容查看、压缩解压、哈希校验、系统信息等多种实用功能",
-		UseChinese: true,
-		Completion: true,
-		Version:    verman.V.Version(),
-		RunFunc:    run,
-		LogoText:   types.FckHelpLogo,
+		Desc:              "一站式文件与系统管理工具集，集成文件操作、内容查看、压缩解压、哈希校验、系统信息等多种实用功能",
+		UseChinese:        true,
+		Completion:        true,
+		DynamicCompletion: true,
+		Version:           verman.V.Version(),
+		RunFunc:           run,
+		LogoText:          types.FckHelpLogo,
 		Notes: []string{
 			fmt.Sprintf("各子命令有独立帮助文档，可通过 --help/-h 参数查看, 例如 '%s <子命令> -h' 查看各子命令详细帮助", qflag.Root.Name()),
 		},

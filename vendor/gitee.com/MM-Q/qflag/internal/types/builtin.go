@@ -152,3 +152,34 @@ const (
 	// 防止循环引用导致的无限递归, 一般CLI工具很少超过20层
 	MaxTraverseDepth = 50
 )
+
+// __complete 子命令的指令常量定义
+const (
+	// InstructionFuzzy 模糊匹配指令
+	// 用法: __complete fuzzy <模式> <候选1> [候选2] ...
+	// 输出: 每行一个匹配结果（按匹配质量降序）
+	InstructionFuzzy = "fuzzy"
+
+	// InstructionContext 上下文计算指令
+	// 用法: __complete context <arg0> [arg1] ...
+	// 输出: 上下文路径，如 "/server/start/"
+	InstructionContext = "context"
+
+	// InstructionCandidates 候选选项获取指令
+	// 用法: __complete candidates <context>
+	// 输出: 空格分隔的候选选项列表
+	InstructionCandidates = "candidates"
+
+	// InstructionEnum 枚举值获取指令
+	// 用法: __complete enum <context> <flag-name>
+	// 输出: 空格分隔的枚举值列表
+	InstructionEnum = "enum"
+
+	// InstructionAll 统一补全指令
+	// 用法: __complete all <cur> <prev> [cmd_args...]
+	// 输出: 多行格式，包含 CONTEXT, CUR, PREV, CANDIDATES, ENUM, MATCHES, IS_FLAG
+	InstructionAll = "all"
+)
+
+// CompleteCmdName 补全命令名称
+const CompleteCmdName = "__complete"

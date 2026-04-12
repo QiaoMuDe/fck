@@ -810,10 +810,16 @@ func init() {
 
 ```go
 rootCmdOpts := &qflag.CmdOpts{
-    Completion: true,  // 启用自动补全
+    Completion:              true,  // 启用自动补全
+    DynamicCompletion: true,  // 启用动态补全（可选）
     // ...
 }
 ```
+
+**动态补全说明**：
+- 动态补全将跨平台补全逻辑统一到内部 `__complete` 子命令实现
+- 提升补全一致性，降低生成脚本体积，加快 Shell 加载速度
+- 必须先启用 `Completion` 才能启用 `DynamicCompletion`
 
 ### 生成补全脚本
 
@@ -1542,7 +1548,8 @@ func run(cmd qflag.Command) error {
 |------|------|------|
 | 互斥组 | ✅ | `MutexGroups` 确保组内最多一个标志 |
 | 必需组 | ✅ | `RequiredGroups` 确保组内所有标志 |
-| 自动补全 | ✅ | `--completion bash/pwsh/fish` |
+| 自动补全 | ✅ | `Completion: true` 启用，`--completion` 生成脚本 |
+| 动态补全 | ✅ | `DynamicCompletion: true` 启用，统一补全逻辑 |
 | 标志验证 | ✅ | 使用 `SetValidator()` 设置验证器 |
 | 全局标志 | ✅ | 在根命令上定义，所有子命令可访问 |
 | 多级子命令 | ✅ | 支持二级及更多级子命令 |
@@ -1595,7 +1602,9 @@ import (
 - [ ] 是否添加了必要的验证器
 - [ ] 是否配置了互斥组和必需组（如需要）
 - [ ] 是否编写了单元测试
-- [ ] 是否生成了自动补全脚本
+- [ ] 是否启用了自动补全（`Completion: true`）
+- [ ] 是否启用了动态补全（`DynamicCompletion: true`，可选）
+- [ ] 是否生成了补全脚本（`--completion`）
 - [ ] 是否添加了代码注释
 - [ ] 是否更新了 README 文档
 

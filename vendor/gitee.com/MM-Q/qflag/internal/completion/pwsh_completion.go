@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+const (
+	// 标志参数条目(含枚举选项)
+	PwshFlagParamItem = "	@{ Context = \"{{.Context}}\"; Parameter = \"{{.Parameter}}\"; ParamType = \"{{.ParamType}}\"; ValueType = \"{{.ValueType}}\"; Options = @({{.Options}}) }"
+	// 命令树条目
+	PwshCmdTreeItem = "	@{ Context = \"{{.Context}}\"; Options = @({{.Options}}) }"
+)
+
 // formatOptions 将选项列表格式化为PowerShell数组字符串
 //
 // 参数:
@@ -136,9 +143,26 @@ func generatePwshCompletion(buf *bytes.Buffer, params []FlagParam, rootCmdOpts [
 	_, _ = buf.WriteString(completionReplacer.Replace(pwshTemplate))
 }
 
-const (
-	// 标志参数条目(含枚举选项)
-	PwshFlagParamItem = "	@{ Context = \"{{.Context}}\"; Parameter = \"{{.Parameter}}\"; ParamType = \"{{.ParamType}}\"; ValueType = \"{{.ValueType}}\"; Options = @({{.Options}}) }"
-	// 命令树条目
-	PwshCmdTreeItem = "	@{ Context = \"{{.Context}}\"; Options = @({{.Options}}) }"
-)
+// generatePwshDynamicCompletion 生成使用动态补全的PowerShell脚本
+// 新模板不再需要静态数据，只需要程序名称
+//
+// 参数:
+//   - programName: 程序名称
+//
+// 返回值:
+//   - string: 生成的补全脚本
+//   - error: 生成失败时返回错误
+func generatePwshDynamicCompletion(programName string) (string, error) {
+	// 清理程序名, 去除可能的后缀
+	sanitizedProgramName := strings.TrimSuffix(programName, filepath.Ext(programName))
+
+	// 使用命名占位符替换位置参数
+	completionReplacer := strings.NewReplacer(
+		"{{.SanitizedName}}", sanitizedProgramName, // 替换程序名称
+		"{{.ProgramName}}", programName, // 替换程序名称
+	)
+
+	var buf bytes.Buffer
+	_, err := buf.WriteString(completionReplacer.Replace(pwshDynamicTemplate))
+	return buf.String(), err
+}

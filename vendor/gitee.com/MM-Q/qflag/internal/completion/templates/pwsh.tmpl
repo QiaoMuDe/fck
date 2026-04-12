@@ -1,48 +1,48 @@
 # -------------------------- Configuration Area (Need to be modified according to actual commands) --------------------------
-# 命令名称
+# Command name
 ${{.SanitizedName}}_commandName = "{{.ProgramName}}"
 
-# 1. 命令树结构
+# 1. Command tree structure
 ${{.SanitizedName}}_cmdTree = @(
 {{.CmdTree}}
 )
 
-# 2. 标志参数定义
+# 2. Flag parameter definitions
 ${{.SanitizedName}}_flagParams = @(
 {{.FlagParams}}
 )
 
 # -----------------------------------------------------------------------------------
 
-# ==================== 模糊补全配置参数 ====================
-# 模糊补全功能开关 (设置为$false禁用, $true启用)
+# ==================== Fuzzy Completion Configuration Parameters ====================
+# Fuzzy completion feature switch (set to $false to disable, $true to enable)
 $script:{{.SanitizedName}}_FUZZY_COMPLETION_ENABLED = $true
 
-# 启用模糊补全的最大候选项数量阈值
-# 超过此数量将回退到传统前缀匹配以保证性能
+# Maximum candidate count threshold for enabling fuzzy completion
+# Falls back to traditional prefix matching when exceeded to ensure performance
 $script:{{.SanitizedName}}_FUZZY_MAX_CANDIDATES = 120
 
-# 模糊匹配的最小输入长度 (小于此长度不启用模糊匹配)
+# Minimum input length for fuzzy matching (fuzzy matching disabled below this length)
 $script:{{.SanitizedName}}_FUZZY_MIN_PATTERN_LENGTH = 2
 
-# 模糊匹配分数阈值 (0-100, 分数低于此值的匹配将被过滤)
+# Fuzzy matching score threshold (0-100, matches below this score will be filtered)
 $script:{{.SanitizedName}}_FUZZY_SCORE_THRESHOLD = 25
 
-# 模糊匹配最大返回结果数
+# Maximum number of fuzzy matching results to return
 $script:{{.SanitizedName}}_FUZZY_MAX_RESULTS = 10
 
-# 缓存大小控制参数
-# 缓存条目数量超过此阈值时将清空缓存以防止内存无限增长
+# Cache size control parameter
+# Cache will be cleared when entry count exceeds this threshold to prevent unlimited memory growth
 $script:{{.SanitizedName}}_FUZZY_CACHE_MAX_SIZE = 500
 
-# 模糊匹配结果缓存 (格式: "pattern|candidate" -> score)
+# Fuzzy matching result cache (format: "pattern|candidate" -> score)
 $script:{{.SanitizedName}}_fuzzyCache = @{}
 
-# ==================== 模糊匹配核心算法 ====================
+# ==================== Fuzzy Matching Core Algorithm ====================
 
-# 高性能模糊评分函数 - 使用优化的字符串操作
-# 参数: $Pattern=输入模式, $Candidate=候选字符串
-# 返回: 0-100的整数分数
+# High-performance fuzzy scoring function - uses optimized string operations
+# Parameters: $Pattern=input pattern, $Candidate=candidate string
+# Returns: Integer score from 0-100
 function Get-{{.SanitizedName}}FuzzyScoreFast {
     param(
         [string]$Pattern,
@@ -52,39 +52,39 @@ function Get-{{.SanitizedName}}FuzzyScoreFast {
     $patternLen = $Pattern.Length
     $candidateLen = $Candidate.Length
     
-    # 快速路径1: 空模式检查
+    # Fast path 1: Empty pattern check
     if ($patternLen -eq 0) {
         return 100
     }
     
-    # 性能优化1: 长度预检查 - 候选项太短直接返回0
+    # Performance optimization 1: Length pre-check - return 0 if candidate is too short
     if ($candidateLen -lt $patternLen) {
         return 0
     }
     
-    # 性能优化2: 完全匹配检查 - 避免不必要的复杂计算
+    # Performance optimization 2: Exact match check - avoid unnecessary complex calculations
     if ($Candidate.StartsWith($Pattern, [System.StringComparison]::OrdinalIgnoreCase)) {
-        return 100  # 前缀完全匹配给最高分
+        return 100  # Give highest score for exact prefix match
     }
     
-    # 内存访问优化: 预转换字符数组, 避免重复字符串索引访问
+    # Memory access optimization: Pre-convert to char arrays to avoid repeated string indexing
     $patternLower = $Pattern.ToLowerInvariant()
     $candidateLower = $Candidate.ToLowerInvariant()
     $patternChars = $patternLower.ToCharArray()
     $candidateChars = $candidateLower.ToCharArray()
     
-    # 快速路径2: 单字符匹配优化
+    # Fast path 2: Single character match optimization
     if ($patternLen -eq 1) {
         for ($i = 0; $i -lt $candidateLen; $i++) {
             if ($candidateChars[$i] -eq $patternChars[0]) {
-                return 100 - $i  # 位置越靠前分数越高
+                return 100 - $i  # Higher score for earlier position
             }
         }
         return 0
     }
     
-    # 性能优化3: 字符存在性预检查 - 快速排除不可能的匹配
-    # 使用字符数组访问而非字符串索引, 减少内存开销
+    # Performance optimization 3: Character existence pre-check - quickly exclude impossible matches
+    # Use char array access instead of string indexing to reduce memory overhead
     foreach ($char in $patternChars) {
         $found = $false
         foreach ($candidateChar in $candidateChars) {
@@ -94,18 +94,18 @@ function Get-{{.SanitizedName}}FuzzyScoreFast {
             }
         }
         if (-not $found) {
-            return 0  # 必需字符不存在, 直接返回
+            return 0  # Required character doesn't exist, return immediately
         }
     }
     
-    # 核心匹配算法 - 计算字符匹配度和连续性
-    $matched = 0           # 匹配的字符数
-    $consecutive = 0       # 当前连续匹配长度
-    $maxConsecutive = 0    # 最大连续匹配长度
-    $candidatePos = 0      # 候选字符串当前搜索位置
-    $startBonus = 0        # 起始位置奖励
+    # Core matching algorithm - calculate character match degree and continuity
+    $matched = 0           # Number of matched characters
+    $consecutive = 0       # Current consecutive match length
+    $maxConsecutive = 0    # Maximum consecutive match length
+    $candidatePos = 0      # Current search position in candidate string
+    $startBonus = 0        # Starting position bonus
     
-    # 检查是否从开头匹配 (大小写不敏感) - 使用字符数组更高效
+    # Check if matches from beginning (case-insensitive) - using char arrays is more efficient
     $startsWithPattern = $true
     if ($patternLen -le $candidateLen) {
         for ($i = 0; $i -lt $patternLen; $i++) {
@@ -115,61 +115,61 @@ function Get-{{.SanitizedName}}FuzzyScoreFast {
             }
         }
         if ($startsWithPattern) {
-            $startBonus = 20  # 起始匹配给20分奖励
+            $startBonus = 20  # Give 20 points bonus for starting match
         }
     }
     
-    # 逐字符匹配算法 - 使用预转换的字符数组, 减少内存访问开销
+    # Character-by-character matching algorithm - using pre-converted char arrays reduces memory access overhead
     for ($i = 0; $i -lt $patternLen; $i++) {
         $patternChar = $patternChars[$i]
         $found = $false
         
-        # 在候选字符串中查找当前模式字符
+        # Search for current pattern character in candidate string
         for ($j = $candidatePos; $j -lt $candidateLen; $j++) {
             if ($candidateChars[$j] -eq $patternChar) {
                 $matched++
                 $found = $true
                 
-                # 连续性检查 - 连续匹配的字符得分更高
+                # Continuity check - consecutive matching characters score higher
                 if ($j -eq $candidatePos) {
                     $consecutive++
                     if ($consecutive -gt $maxConsecutive) {
                         $maxConsecutive = $consecutive
                     }
                 } else {
-                    $consecutive = 1  # 重置连续计数
+                    $consecutive = 1  # Reset consecutive count
                 }
                 
-                $candidatePos = $j + 1  # 更新搜索位置
+                $candidatePos = $j + 1  # Update search position
                 break
             }
         }
         
-        # 如果某个字符未找到, 重置连续计数
+        # Reset consecutive count if character not found
         if (-not $found) {
             $consecutive = 0
         }
     }
     
-    # 评分计算 - 使用整数运算
-    # 基础分数: (匹配字符数 / 模式长度) * 60
+    # Score calculation - use integer arithmetic
+    # Base score: (matched characters / pattern length) * 60
     $baseScore = [Math]::Floor(($matched * 60) / $patternLen)
     
-    # 连续性奖励: (最大连续长度 / 模式长度) * 20
+    # Consecutive bonus: (max consecutive length / pattern length) * 20
     $consecutiveBonus = [Math]::Floor(($maxConsecutive * 20) / $patternLen)
     
-    # 长度惩罚: 候选字符串越长, 分数略微降低
+    # Length penalty: longer candidate strings get slightly lower scores
     $lengthPenalty = [Math]::Min(($candidateLen - $patternLen), 10)
     
-    # 最终分数计算
+    # Final score calculation
     $finalScore = $baseScore + $consecutiveBonus + $startBonus - $lengthPenalty
     
-    # 确保分数在0-100范围内
+    # Ensure score is within 0-100 range
     return [Math]::Max(0, [Math]::Min(100, $finalScore))
 }
 
-# 带缓存的模糊评分函数 - 避免重复计算提高性能
-# 参数: $Pattern=输入模式, $Candidate=候选字符串
+# Cached fuzzy scoring function - avoids repeated calculations to improve performance
+# Parameters: $Pattern=input pattern, $Candidate=candidate string
 function Get-{{.SanitizedName}}FuzzyScoreCached {
     param(
         [string]$Pattern,
@@ -178,25 +178,25 @@ function Get-{{.SanitizedName}}FuzzyScoreCached {
     
     $cacheKey = "$Pattern|$Candidate"
     
-    # 缓存命中检查
+    # Cache hit check
     if ($script:{{.SanitizedName}}_fuzzyCache.ContainsKey($cacheKey)) {
         return $script:{{.SanitizedName}}_fuzzyCache[$cacheKey]
     }
     
-    # 计算分数并缓存
+    # Calculate score and cache
     $score = Get-{{.SanitizedName}}FuzzyScoreFast -Pattern $Pattern -Candidate $Candidate
     
-    # 缓存大小控制 - 防止内存无限增长
+    # Cache size control - prevent unlimited memory growth
     if ($script:{{.SanitizedName}}_fuzzyCache.Count -gt $script:{{.SanitizedName}}_FUZZY_CACHE_MAX_SIZE) {
-        $script:{{.SanitizedName}}_fuzzyCache.Clear()  # 清空缓存
+        $script:{{.SanitizedName}}_fuzzyCache.Clear()  # Clear cache
     }
     
     $script:{{.SanitizedName}}_fuzzyCache[$cacheKey] = $score
     return $score
 }
 
-# 智能补全匹配函数 - 重构版匹配策略
-# 参数: $Pattern=输入模式, $Options=候选选项数组  
+# Intelligent completion matching function - refactored matching strategy
+# Parameters: $Pattern=input pattern, $Options=candidate options array
 function Get-{{.SanitizedName}}IntelligentMatches {
     param(
         [string]$Pattern,
@@ -206,14 +206,14 @@ function Get-{{.SanitizedName}}IntelligentMatches {
     $patternLen = $Pattern.Length
     $totalCandidates = $Options.Count
     
-    # 空模式时返回所有选项 (用于Tab补全初始状态) 
+    # Return all options when pattern is empty (for initial Tab completion state)
     if ([string]::IsNullOrEmpty($Pattern)) {
         return $Options
     }
     
-    # 🔥 新的智能匹配策略: 多层级渐进式匹配
+    # New intelligent matching strategy: Multi-level progressive matching
     
-    # 第1级: 精确前缀匹配 (最高优先级) 
+    # Level 1: Exact prefix matching (highest priority)
     $exactPrefixMatches = [System.Collections.ArrayList]::new()
     foreach ($option in $Options) {
         if ($option.StartsWith($Pattern, [System.StringComparison]::Ordinal)) {
@@ -221,12 +221,12 @@ function Get-{{.SanitizedName}}IntelligentMatches {
         }
     }
     
-    # 精确前缀匹配如果有结果, 优先返回 (但不过度限制数量) 
+    # If there are exact prefix matches, return them first (but don't limit quantity too much)
     if ($exactPrefixMatches.Count -gt 0) {
         return $exactPrefixMatches.ToArray()
     }
     
-    # 第2级: 大小写不敏感前缀匹配
+    # Level 2: Case-insensitive prefix matching
     $caseInsensitiveMatches = [System.Collections.ArrayList]::new()
     foreach ($option in $Options) {
         if ($option.StartsWith($Pattern, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -234,12 +234,12 @@ function Get-{{.SanitizedName}}IntelligentMatches {
         }
     }
     
-    # 大小写不敏感匹配如果有结果, 返回
+    # If there are case-insensitive matches, return
     if ($caseInsensitiveMatches.Count -gt 0) {
         return $caseInsensitiveMatches.ToArray()
     }
     
-    # 第3级: 子字符串匹配 (基本模糊匹配) 🔥重新加入
+    # Level 3: Substring matching (basic fuzzy matching) - re-added
     $substringMatches = [System.Collections.ArrayList]::new()
     $patternLower = $Pattern.ToLowerInvariant()
     foreach ($option in $Options) {
@@ -248,19 +248,19 @@ function Get-{{.SanitizedName}}IntelligentMatches {
         }
     }
     
-    # 子字符串匹配如果有结果, 返回
+    # If there are substring matches, return
     if ($substringMatches.Count -gt 0) {
         return $substringMatches.ToArray()
     }
     
-    # 第4级: 智能模糊匹配 (高级模糊匹配) 
+    # Level 4: Smart fuzzy matching (advanced fuzzy matching)
     if ($script:{{.SanitizedName}}_FUZZY_COMPLETION_ENABLED -and $patternLen -ge $script:{{.SanitizedName}}_FUZZY_MIN_PATTERN_LENGTH -and $totalCandidates -le $script:{{.SanitizedName}}_FUZZY_MAX_CANDIDATES) {
         $scoredMatches = [System.Collections.ArrayList]::new()
         
         foreach ($option in $Options) {
             $score = Get-{{.SanitizedName}}FuzzyScoreCached -Pattern $Pattern -Candidate $option
             
-            # 🔥降低阈值, 提高匹配率 (原阈值可能太高) 
+            # Lower threshold to improve match rate (original threshold might be too high)
             if ($score -ge ($script:{{.SanitizedName}}_FUZZY_SCORE_THRESHOLD * 0.7)) {
                 [void]$scoredMatches.Add(@{
                     Option = $option
@@ -270,7 +270,7 @@ function Get-{{.SanitizedName}}IntelligentMatches {
         }
         
         if ($scoredMatches.Count -gt 0) {
-            # 按分数排序, 返回前N个最佳匹配
+            # Sort by score, return top N best matches
             $sortedMatches = $scoredMatches | Sort-Object Score -Descending
             
             $fuzzyResults = [System.Collections.ArrayList]::new()
@@ -285,15 +285,15 @@ function Get-{{.SanitizedName}}IntelligentMatches {
         }
     }
     
-    # 🔥 最终 fallback: 返回空数组 (让用户知道没有匹配到) 
+    # Final fallback: return empty array (let user know no match found)
     return @()
 }
 
-# ==================== 文件路径补全核心函数 ====================
+# ==================== File Path Completion Core Function ====================
 
-# 专用文件路径补全函数 - 为{{.SanitizedName}}提供智能路径补全
-# 参数: $WordToComplete=当前输入的单词
-# 返回: 匹配的文件和目录路径数组
+# Dedicated file path completion function - provides intelligent path completion for {{.SanitizedName}}
+# Parameter: $WordToComplete=the word currently being typed
+# Returns: Array of matching file and directory paths
 function Get-{{.SanitizedName}}PathCompletions {
     param(
         [string]$WordToComplete
@@ -301,25 +301,25 @@ function Get-{{.SanitizedName}}PathCompletions {
     
     $pathMatches = [System.Collections.ArrayList]::new()
     
-    # 获取当前路径的目录部分
+    # Get the directory portion of the current path
     $basePath = if ($WordToComplete -and (Split-Path $WordToComplete -Parent)) {
         Split-Path $WordToComplete -Parent
     } else {
         "."
     }
     
-    # 获取文件名部分用于过滤
+    # Get the filename portion for filtering
     $fileName = if ($WordToComplete) {
         Split-Path $WordToComplete -Leaf
     } else {
         ""
     }
     
-    # 预编译文件名匹配模式
+    # Pre-compile filename matching pattern
     $filePattern = "$fileName*"
     
     try {
-        # 获取目录和文件
+        # Get directories and files
         $items = Get-ChildItem -Path $basePath -ErrorAction SilentlyContinue | Where-Object {
             $_.Name -like $filePattern
         }
@@ -331,7 +331,7 @@ function Get-{{.SanitizedName}}PathCompletions {
                 Join-Path $basePath $item.Name
             }
             
-            # 目录添加路径分隔符
+            # Add path separator for directories
             if ($item.PSIsContainer) {
                 [void]$pathMatches.Add("$fullPath/")
             } else {
@@ -340,8 +340,8 @@ function Get-{{.SanitizedName}}PathCompletions {
         }
     }
     catch {
-        # 路径访问失败时返回空数组 - 静默处理错误
-        Write-Debug "路径访问失败: $($_.Exception.Message)"
+        # Return empty array when path access fails - silently handle errors
+        Write-Debug "Path access failed: $($_.Exception.Message)"
     }
     
     return $pathMatches.ToArray()
@@ -355,22 +355,22 @@ $scriptBlock = {
         $cursorPosition
     )
 
-    # 初始化缓存和索引 (仅在首次调用时创建) 
+    # Initialize cache and index (only created on first call)
     if (-not $script:{{.SanitizedName}}_contextIndex) {
         $script:{{.SanitizedName}}_contextIndex = @{}
         $script:{{.SanitizedName}}_flagIndex = @{}
         
-        # 预编译正则表达式以提高性能
+        # Pre-compile regex for better performance
         $script:{{.SanitizedName}}_flagRegex = [regex]::new('^-', [System.Text.RegularExpressions.RegexOptions]::Compiled)
         
-        # 构建上下文索引以提高查找性能
+        # Build context index for better lookup performance
         foreach ($item in ${{.SanitizedName}}_cmdTree) {
             if ($item.Context) {
                 $script:{{.SanitizedName}}_contextIndex[$item.Context] = $item
             }
         }
         
-        # 构建标志索引以提高查找性能
+        # Build flag index for better lookup performance
         foreach ($flag in ${{.SanitizedName}}_flagParams) {
             if ($flag.Context -and $flag.Parameter) {
                 $key = "$($flag.Context)|$($flag.Parameter)"
@@ -380,7 +380,7 @@ $scriptBlock = {
     }
 
     try {
-        # 1. 解析令牌
+        # 1. Parse tokens
         $tokens = $commandAst.CommandElements | ForEach-Object { $_.Extent.Text }
         if (-not $tokens -or $tokens.Count -eq 0) {
             return @()
@@ -389,19 +389,19 @@ $scriptBlock = {
         $currentIndex = $tokens.Count - 1
         $prevElement = if ($currentIndex -ge 1) { $tokens[$currentIndex - 1] } else { $null }
 
-        # 快速路径: 如果当前输入看起来像是路径, 优先提供路径补全
+        # Fast path: if current input looks like a path, prioritize path completion
         if ($wordToComplete -match '[/\~\.]' -or $wordToComplete -like './*' -or $wordToComplete -like '../*') {
             return Get-{{.SanitizedName}}PathCompletions -WordToComplete $wordToComplete
         }
 
-        # 2. 计算当前命令上下文 (优化版本) 
+        # 2. Calculate current command context (optimized version)
         $context = "/"
         for ($i = 1; $i -le $currentIndex; $i++) {
             $elem = $tokens[$i]
             if ($script:{{.SanitizedName}}_flagRegex.IsMatch($elem)) { break }
             
             $nextContext = "$context$elem/"
-            # 使用索引进行O(1)查找
+            # Use index for O(1) lookup
             if ($script:{{.SanitizedName}}_contextIndex.ContainsKey($nextContext)) {
                 $context = $nextContext
             } else {
@@ -409,21 +409,21 @@ $scriptBlock = {
             }
         }
 
-        # 3. 获取当前上下文的可用选项 (优化版本)
+        # 3. Get available options for current context (optimized version)
         $currentContextItem = $script:{{.SanitizedName}}_contextIndex[$context]
         $currentOptions = if ($currentContextItem) { $currentContextItem.Options } else { @() }
 
-        # 判断当前是否正在输入标志值（前一个元素是标志，且当前输入不是标志）
+        # Determine if currently typing flag value (previous element is flag, current input is not flag)
         $isTypingFlagValue = $prevElement -and $script:{{.SanitizedName}}_flagRegex.IsMatch($prevElement) -and -not $script:{{.SanitizedName}}_flagRegex.IsMatch($wordToComplete)
 
-        # 4. 优先补全当前级别的所有选项 (子命令 + 标志) - 使用智能匹配
-        # 只有当不是正在输入标志值时才执行此步骤
+        # 4. Prioritize completing all options at current level (subcommands + flags) - use intelligent matching
+        # Only execute this step when not typing flag value
         if (-not $isTypingFlagValue -and $currentOptions -and $currentOptions.Count -gt 0) {
-            # 使用智能匹配获取最佳选项匹配 - 这是关键修复！
+            # Use intelligent matching to get best option matches - this is the key fix!
             $intelligentMatches = Get-{{.SanitizedName}}IntelligentMatches -Pattern $wordToComplete -Options $currentOptions
 
             if ($intelligentMatches.Count -gt 0) {
-                # 使用ArrayList提高数组操作性能
+                # Use ArrayList to improve array operation performance
                 $matchingOptions = [System.Collections.ArrayList]::new()
 
                 foreach ($option in $intelligentMatches) {
@@ -435,7 +435,7 @@ $scriptBlock = {
             }
         }
 
-        # 5. 枚举/预设值补全
+        # 5. Enum/preset value completion
         if ($prevElement -and $script:{{.SanitizedName}}_flagRegex.IsMatch($prevElement)) {
             $flagKey = "$context|$prevElement"
             $paramDef = $script:{{.SanitizedName}}_flagIndex[$flagKey]
@@ -443,23 +443,23 @@ $scriptBlock = {
             if ($paramDef) {
                 switch ($paramDef.ValueType) {
                     'enum' {
-                        # 统一使用智能匹配进行枚举值补全
-                        # 空值时会智能返回所有枚举值, 有值时进行智能匹配
+                        # Use intelligent matching for enum value completion uniformly
+                        # Returns all enum values when empty, performs intelligent matching when has value
                         $enumMatches = Get-{{.SanitizedName}}IntelligentMatches -Pattern $wordToComplete -Options $paramDef.Options
                         return $enumMatches
                     }
                     default {
-                        # 字符串类型、bool类型或其他类型标志后, 用户可能要输入新参数或路径
-                        # 使用专用函数提供文件和目录路径补全
+                        # After string type, bool type or other type flags, user may want to input new parameter or path
+                        # Use dedicated function to provide file and directory path completion
                         return Get-{{.SanitizedName}}PathCompletions -WordToComplete $wordToComplete
                     }
                 }
             }
         }
 
-         # 6. 补全标志本身 (如 --ty -> --type) - 使用智能匹配
+         # 6. Complete flags themselves (e.g. --ty -> --type) - use intelligent matching
         if ($script:{{.SanitizedName}}_flagRegex.IsMatch($wordToComplete)) {
-            # 收集当前上下文的所有标志 - 使用ArrayList优化性能
+            # Collect all flags for current context - use ArrayList for performance optimization
             $contextFlags = [System.Collections.ArrayList]::new()
             foreach ($flag in ${{.SanitizedName}}_flagParams) {
                 if ($flag.Context -eq $context) {
@@ -468,7 +468,7 @@ $scriptBlock = {
             }
             
             if ($contextFlags.Count -gt 0) {
-                # 使用智能匹配获取最佳标志匹配
+                # Use intelligent matching to get best flag matches
                 $flagMatches = Get-{{.SanitizedName}}IntelligentMatches -Pattern $wordToComplete -Options $contextFlags.ToArray()
                 if ($flagMatches.Count -gt 0) {
                     return $flagMatches
@@ -476,37 +476,32 @@ $scriptBlock = {
             }
         }
 
-        # 7. 无匹配
+        # 7. No match
         return @()
     }
     catch {
-        # 错误处理: 返回空数组而不是抛出异常
-        Write-Debug "PowerShell补全错误: $($_.Exception.Message)"
+        # Error handling: return empty array instead of throwing exception
+        Write-Debug "PowerShell completion error: $($_.Exception.Message)"
         return @()
     }
 }
 
-# ==================== 调试和诊断功能 ====================
+# ==================== Debug and Diagnostic Functions ====================
 
-# 补全系统健康检查函数 (可选, 用于调试)
+# Completion system health check function (optional, for debugging)
 function Get-{{.SanitizedName}}CompletionDebug {
-    Write-Host "=== {{.SanitizedName}} PowerShell补全系统诊断 ===" -ForegroundColor Cyan
-    Write-Host "PowerShell版本: $($PSVersionTable.PSVersion)" -ForegroundColor Green
-    Write-Host "补全函数状态: $(if (Get-Command Register-ArgumentCompleter -ErrorAction SilentlyContinue) { '已注册' } else { '未注册' })" -ForegroundColor Green
-    Write-Host "命令树条目数: $(${{.SanitizedName}}_cmdTree.Count)" -ForegroundColor Green
-    Write-Host "标志参数数: $(${{.SanitizedName}}_flagParams.Count)" -ForegroundColor Green
-    Write-Host "模糊补全状态: $(if ($script:{{.SanitizedName}}_FUZZY_COMPLETION_ENABLED) { '启用' } else { '禁用' })" -ForegroundColor Green
-    Write-Host "候选项阈值: $script:{{.SanitizedName}}_FUZZY_MAX_CANDIDATES" -ForegroundColor Green
-    Write-Host "缓存条目数: $($script:{{.SanitizedName}}_fuzzyCache.Count)" -ForegroundColor Green
+    Write-Host "=== {{.SanitizedName}} PowerShell Completion System Diagnostics ===" -ForegroundColor Cyan
+    Write-Host "PowerShell version: $($PSVersionTable.PSVersion)" -ForegroundColor Green
+    Write-Host "Completion function status: $(if (Get-Command Register-ArgumentCompleter -ErrorAction SilentlyContinue) { 'Registered' } else { 'Not registered' })" -ForegroundColor Green
+    Write-Host "Command tree entry count: $(${{.SanitizedName}}_cmdTree.Count)" -ForegroundColor Green
+    Write-Host "Flag parameter count: $(${{.SanitizedName}}_flagParams.Count)" -ForegroundColor Green
+    Write-Host "Fuzzy completion status: $(if ($script:{{.SanitizedName}}_FUZZY_COMPLETION_ENABLED) { 'Enabled' } else { 'Disabled' })" -ForegroundColor Green
+    Write-Host "Candidate threshold: $script:{{.SanitizedName}}_FUZZY_MAX_CANDIDATES" -ForegroundColor Green
+    Write-Host "Cache entry count: $($script:{{.SanitizedName}}_fuzzyCache.Count)" -ForegroundColor Green
     Write-Host ""
-    Write-Host "使用方法: 在PowerShell中输入 'Get-{{.SanitizedName}}CompletionDebug' 查看此信息" -ForegroundColor Yellow
+    Write-Host "Usage: Type 'Get-{{.SanitizedName}}CompletionDebug' in PowerShell to view this information" -ForegroundColor Yellow
 }
 
-# 注册补全函数-带原始名称 (可能包含扩展名) 
-Register-ArgumentCompleter -CommandName ${{.SanitizedName}}_commandName -ScriptBlock $scriptBlock
-
-# 注册补全函数-不带扩展名 (仅当与原始名称不同时才注册) 
-${{.SanitizedName}}_withoutExt = [System.IO.Path]::GetFileNameWithoutExtension("{{.ProgramName}}")
-if (${{.SanitizedName}}_withoutExt -ne ${{.SanitizedName}}_commandName) {
-    Register-ArgumentCompleter -CommandName ${{.SanitizedName}}_withoutExt -ScriptBlock $scriptBlock
-}
+# Register completion function for both original name and sanitized name (without extension)
+Register-ArgumentCompleter -CommandName '{{.ProgramName}}' -ScriptBlock $scriptBlock
+Register-ArgumentCompleter -CommandName '{{.SanitizedName}}' -ScriptBlock $scriptBlock

@@ -6,10 +6,11 @@ import "gitee.com/MM-Q/qflag/internal/types"
 
 Package types 定义了qflag项目的核心类型和接口
 
-types 包提供了整个项目的基础类型定义, 包括: 
+types 包提供了整个项目的基础类型定义, 包括:
   - 标志类型和接口定义
   - 命令接口定义
   - 注册表接口定义
+  - 智能纠错错误类型（UnknownSubcommandError, UnknownFlagError）
 
 这些类型和接口构成了整个框架的核心抽象层,  为具体的实现提供了统一的规范和契约。
 
@@ -126,6 +127,44 @@ const HelpOptionSubCmdSpace = "      "
 
 const HelpPrefix = "  "
     统一的前缀, 缩进两个空格
+```
+
+### __complete 子命令指令常量
+
+```go
+const (
+    // InstructionFuzzy 模糊匹配指令
+    // 用法: __complete fuzzy <模式> <候选1> [候选2] ...
+    // 输出: 每行一个匹配结果（按匹配质量降序）
+    InstructionFuzzy = "fuzzy"
+
+    // InstructionContext 上下文计算指令
+    // 用法: __complete context <arg0> [arg1] ...
+    // 输出: 上下文路径，如 "/server/start/"
+    InstructionContext = "context"
+
+    // InstructionCandidates 候选选项获取指令
+    // 用法: __complete candidates <context>
+    // 输出: 空格分隔的候选选项列表
+    InstructionCandidates = "candidates"
+
+    // InstructionEnum 枚举值获取指令
+    // 用法: __complete enum <context> <flag-name>
+    // 输出: 空格分隔的枚举值列表
+    InstructionEnum = "enum"
+
+    // InstructionAll 统一补全指令
+    // 用法: __complete all <cur> <prev> [cmd_args...]
+    // 输出: 多行格式，包含 CONTEXT, CUR, PREV, CANDIDATES, ENUM, MATCHES, IS_FLAG
+    InstructionAll = "all"
+)
+```
+
+### 补全命令名称常量
+
+```go
+const CompleteCmdName = "__complete"
+    // 补全子命令名称，用于 Shell 自动补全脚本
 ```
 
 ---
@@ -385,6 +424,87 @@ ParseTimeWithFormats 尝试使用多种格式解析时间字符串
 
 ## TYPES
 
+### type UnknownFlagError struct
+
+```go
+type UnknownFlagError struct {
+    Command     string   // 当前命令名
+    Input       string   // 用户输入的错误标志
+    Suggestions []string // 相似标志建议列表
+}
+```
+
+UnknownFlagError 未知标志错误
+
+当用户输入的标志不存在时返回此错误, 包含相似标志建议。
+
+**字段说明:**
+  - Command: 当前命令名
+  - Input: 用户输入的错误标志
+  - Suggestions: 相似标志建议列表
+
+**错误格式示例:**
+```
+myapp: unknown flag: '--verboose'
+
+The most similar flags are
+	--verbose
+	-v
+```
+
+#### func (e *UnknownFlagError) Error() string
+
+```go
+func (e *UnknownFlagError) Error() string
+```
+
+Error 实现 error 接口, 返回格式化的错误信息
+
+**返回值:**
+  - string: 格式化的错误信息, 包含建议列表
+
+---
+
+### type UnknownSubcommandError struct
+
+```go
+type UnknownSubcommandError struct {
+    Command     string   // 当前命令名
+    Input       string   // 用户输入的错误子命令
+    Suggestions []string // 相似子命令建议列表
+}
+```
+
+UnknownSubcommandError 未知子命令错误
+
+当用户输入的子命令不存在时返回此错误, 包含相似子命令建议。
+
+**字段说明:**
+  - Command: 当前命令名
+  - Input: 用户输入的错误子命令
+  - Suggestions: 相似子命令建议列表
+
+**错误格式示例:**
+```
+myapp: 'cnfig' is not a valid command. See 'myapp --help'.
+
+The most similar commands are
+	config
+```
+
+#### func (e *UnknownSubcommandError) Error() string
+
+```go
+func (e *UnknownSubcommandError) Error() string
+```
+
+Error 实现 error 接口, 返回格式化的错误信息
+
+**返回值:**
+  - string: 格式化的错误信息, 包含建议列表
+
+---
+
 ### type BuiltinFlagHandler interface
 
 ```go
@@ -502,6 +622,7 @@ type CmdConfig struct {
     MutexGroups    []MutexGroup      // 互斥组列表
     RequiredGroups []RequiredGroup   // 必需组列表
     Completion     bool              // 是否启用自动补全标志
+    DynamicCompletion bool           // 是否启用动态补全
 }
 ```
 

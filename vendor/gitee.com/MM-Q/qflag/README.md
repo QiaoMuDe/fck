@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8E6?style=flat&logo=go)](https://golang.org/) [![MIT License](https://img.shields.io/badge/License-MIT-green?style=flat)](https://opensource.org/licenses/MIT) [![Gitee](https://img.shields.io/badge/Gitee-qflag-red?style=flat)](https://gitee.com/MM-Q/qflag) [![GitHub](https://img.shields.io/badge/GitHub-qflag-black?style=flat)](https://github.com/QiaoMuDe/qflag) [![Ask DeepWiki](https://deepwiki.com/badge.svg?style=flat)](https://deepwiki.com/QiaoMuDe/qflag)
 
-*泛型设计 • 自动路由 • 类型安全 • 并发安全 • 自动补全 • 子命令管理*
+*泛型设计 • 自动路由 • 类型安全 • 并发安全 • 自动补全 • 智能纠错*
 
 </div>
 
@@ -45,9 +45,16 @@ QFlag 是一个专为 Go 语言设计的命令行参数解析库, 提供了丰�
 - **全局根命令** - 提供全局根命令实例, 简化使用方式
 
 #### 📝 补全和文档
-- **自动补全** - 生成 Bash 和 PowerShell 补全脚本
-- **命令别名** - 支持命令长名和短名, 提供灵活的调用方式
-- **标志别名** - 支持标志长名和短名, 提供灵活的调用方式
+- **Shell 补全** - 支持 Bash、Pwsh 的补全脚本生成
+- **静态补全**   - 生成包含完整命令树的补全脚本，适用于命令结构固定的场景
+- **动态补全**   - 脚本通过调用内部子命令实时获取命令树，适用于频繁变更命令结构的场景
+- **命令别名**   - 支持命令长名和短名, 提供灵活的调用方式
+- **标志别名**   - 支持标志长名和短名, 提供灵活的调用方式
+
+#### 🧠 智能纠错
+- **子命令纠错** - 输入错误的子命令时，自动推荐相似的子命令
+- **标志纠错**   - 输入错误的标志时，自动推荐相似的标志
+- **模糊匹配**   - 使用前缀优先的模糊匹配算法，提供准确的建议
 
 #### 🌳 命令和标志
 - **子命令** - 完整的子命令支持, 支持嵌套子命令
@@ -189,6 +196,29 @@ func main() {
 ```
 
 ### 高级用法
+
+#### 智能纠错功能
+
+QFlag 内置智能纠错功能，当用户输入错误的子命令或标志时，会自动推荐相似的选项。
+
+```bash
+# 子命令纠错示例
+$ myapp cnfig
+myapp: 'cnfig' is not a valid command. See 'myapp --help'.
+
+The most similar commands are
+        config
+
+# 标志纠错示例
+$ myapp config --verb
+myapp: unknown flag: '--verb'
+
+The most similar flags are
+        --verbose
+        -v
+```
+
+智能纠错功能无需额外配置，自动集成在解析流程中。
 
 #### 使用全局根命令的子命令支持
 
@@ -494,11 +524,7 @@ func main() {
 
 #### 环境变量绑定
 
-QFlag 提供了三种环境变量绑定方式，满足不同场景需求。
-
-##### 方式一：手动指定环境变量名
-
-通过 `BindEnv()` 方法手动指定环境变量名称：
+QFlag 支持通过环境变量设置标志值，优先级：命令行参数 > 环境变量 > 默认值。
 
 ```go
 package main
@@ -515,44 +541,18 @@ func main() {
     // 设置环境变量前缀
     cmd.SetEnvPrefix("MYAPP")
 
-    // 手动指定环境变量名绑定
-    dbFlag := cmd.String("database", "d", "数据库地址", "localhost")
-    dbFlag.BindEnv("DATABASE_URL")  // 绑定到 MYAPP_DATABASE_URL
-    
-    if err := cmd.Parse(os.Args[1:]); err != nil {
-        fmt.Printf("错误: %v\n", err)
-        return
-    }
-
-    fmt.Printf("数据库地址: %s\n", dbFlag.GetStr())
-}
-```
-
-##### 方式二：标志自动绑定
-
-通过 `AutoBindEnv()` 方法自动使用标志长名称的大写形式作为环境变量名：
-
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    cmd := qflag.NewCmd("app", "", qflag.ContinueOnError)
-    cmd.SetEnvPrefix("MYAPP")
-
     // 创建标志
     hostFlag := cmd.String("host", "H", "主机地址", "localhost")
     portFlag := cmd.Int("port", "p", "端口号", 8080)
 
-    // 自动绑定：使用长名称大写作为环境变量名
-    // host -> MYAPP_HOST, port -> MYAPP_PORT
-    hostFlag.AutoBindEnv()
-    portFlag.AutoBindEnv()
+    // 方式1: 手动指定环境变量名
+    hostFlag.BindEnv("HOST_ADDR")  // 绑定到 MYAPP_HOST_ADDR
+    
+    // 方式2: 自动绑定（使用标志长名称大写）
+    portFlag.AutoBindEnv()  // 绑定到 MYAPP_PORT
+    
+    // 方式3: 批量自动绑定所有标志
+    // cmd.AutoBindAllEnv()
     
     if err := cmd.Parse(os.Args[1:]); err != nil {
         fmt.Printf("错误: %v\n", err)
@@ -563,52 +563,13 @@ func main() {
 }
 ```
 
-##### 方式三：命令批量自动绑定
+**三种绑定方式对比：**
 
-通过 `AutoBindAllEnv()` 方法一次性为命令的所有标志自动绑定环境变量：
-
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    cmd := qflag.NewCmd("app", "", qflag.ContinueOnError)
-    cmd.SetEnvPrefix("MYAPP")
-
-    // 创建多个标志
-    cmd.String("host", "H", "主机地址", "localhost")
-    cmd.Int("port", "p", "端口号", 8080)
-    cmd.String("user", "u", "用户名", "admin")
-    cmd.String("password", "P", "密码", "")
-
-    // 批量自动绑定所有标志的环境变量
-    // host -> MYAPP_HOST
-    // port -> MYAPP_PORT
-    // user -> MYAPP_USER
-    // password -> MYAPP_PASSWORD
-    cmd.AutoBindAllEnv()
-    
-    if err := cmd.Parse(os.Args[1:]); err != nil {
-        fmt.Printf("错误: %v\n", err)
-        return
-    }
-
-    fmt.Printf("主机: %s, 端口: %d\n", cmd.GetString("host"), cmd.GetInt("port"))
-}
-```
-
-##### 三种方式对比
-
-| 方式 | 方法 | 适用场景 | 特点 |
-|------|------|----------|------|
-| 手动指定 | `BindEnv("NAME")` | 需要自定义环境变量名 | 灵活，可指定任意名称 |
-| 标志自动绑定 | `AutoBindEnv()` | 单个标志自动绑定 | 使用长名称大写，简洁 |
-| 命令批量绑定 | `AutoBindAllEnv()` | 批量绑定所有标志 | 一次性绑定，高效 |
+| 方式 | 方法 | 适用场景 | 环境变量名 |
+|------|------|----------|------------|
+| 手动指定 | `BindEnv("NAME")` | 需要自定义名称 | `前缀_NAME` |
+| 自动绑定 | `AutoBindEnv()` | 单个标志绑定 | `前缀_标志长名大写` |
+| 批量绑定 | `AutoBindAllEnv()` | 批量绑定所有标志 | `前缀_标志长名大写` |
 
 ---
 
@@ -668,6 +629,7 @@ if err := qflag.Parse(); err != nil {
 - **Flag (标志)** - 命令行参数的抽象, 支持多种数据类型
 - **MutexGroup (互斥组)** - 确保组内只有一个标志被设置
 - **RequiredGroup (必需组)** - 确保组内所有标志都被设置, 支持普通必需组和条件性必需组两种模式
+- **智能纠错** - 输入错误的子命令或标志时，自动推荐相似的选项
 
 ### 便捷方法
 
@@ -750,28 +712,7 @@ QFlag 提供了三种错误处理策略:
 
 ### CmdOpts 配置选项
 
-`CmdOpts` 提供了配置现有命令的方式，包含命令的所有可配置属性。
-
-#### 字段说明
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `Desc` | `string` | 命令描述 |
-| `RunFunc` | `func(Command) error` | 命令执行函数 |
-| `Version` | `string` | 版本号 |
-| `UseChinese` | `bool` | 是否使用中文 |
-| `EnvPrefix` | `string` | 环境变量前缀 |
-| `UsageSyntax` | `string` | 命令使用语法 |
-| `LogoText` | `string` | Logo文本 |
-| `Completion` | `bool` | 是否启用自动补全标志 |
-| `DisableFlagParsing` | `bool` | 是否禁用标志解析，所有参数作为位置参数处理 |
-| `Hidden` | `bool` | 是否隐藏命令，不在帮助信息中显示 |
-| `AutoBindEnv` | `bool` | 是否自动绑定所有标志的环境变量 |
-| `Examples` | `map[string]string` | 示例使用 |
-| `Notes` | `[]string` | 注意事项 |
-| `SubCmds` | `[]Command` | 子命令列表 |
-| `MutexGroups` | `[]MutexGroup` | 互斥组列表 |
-| `RequiredGroups` | `[]RequiredGroup` | 必需组列表 |
+`CmdOpts` 提供了配置现有命令的方式，包含命令的所有可配置属性。完整字段说明请参考 [APIDOC.md](APIDOC.md)。
 
 #### 使用示例
 
@@ -833,170 +774,43 @@ func main() {
 
 ### 禁用标志解析
 
-当需要将所有参数（包括 `--flag` 形式）作为位置参数处理时，可以禁用标志解析。
-
-```go
-package main
-
-import (
-    "fmt"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    // 创建命令并禁用标志解析
-    cmd := qflag.NewCmd("exec", "e", qflag.ExitOnError)
-    
-    // 方式1: 通过 CmdOpts 配置
-    opts := &qflag.CmdOpts{
-        Desc:               "执行外部命令",
-        DisableFlagParsing: true,  // 禁用标志解析
-    }
-    
-    if err := cmd.ApplyOpts(opts); err != nil {
-        fmt.Printf("应用配置失败: %v\n", err)
-        return
-    }
-    
-    cmd.SetRun(func(c qflag.Command) error {
-        // 所有参数都作为位置参数
-        args := c.Args()
-        fmt.Printf("执行命令: %v\n", args)
-        return nil
-    })
-    
-    // 使用: exec -- kubectl get pods -n default
-    // 所有参数（包括 --flag）都会作为位置参数
-    if err := cmd.ParseAndRoute(); err != nil {
-        fmt.Printf("错误: %v\n", err)
-    }
-}
-```
+通过设置 `DisableFlagParsing: true` 可将所有参数（包括 `--flag` 形式）作为位置参数处理。
 
 **使用场景:**
 - 透传参数给外部命令（如 `kubectl exec`）
 - SSH 包装器
-- 任何需要保留原始参数的场景
+- 需要保留原始参数的场景
+
+**配置方式:**
+```go
+opts := &qflag.CmdOpts{
+    DisableFlagParsing: true,
+}
+cmd.ApplyOpts(opts)
+```
+
+完整示例请参考 [examples/cmdopts](examples/cmdopts) 目录。
 
 ### 隐藏命令
 
-隐藏命令不会显示在帮助信息的子命令列表中，但仍可通过命令行正常调用。
-
-```go
-package main
-
-import (
-    "fmt"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    // 创建隐藏命令
-    debugCmd := qflag.NewCmd("debug", "d", qflag.ExitOnError)
-    
-    // 方式1: 通过 CmdOpts 配置
-    opts := &qflag.CmdOpts{
-        Desc:   "调试命令（内部使用）",
-        Hidden: true,  // 隐藏命令
-    }
-    
-    if err := debugCmd.ApplyOpts(opts); err != nil {
-        fmt.Printf("应用配置失败: %v\n", err)
-        return
-    }
-    
-    debugCmd.SetRun(func(c qflag.Command) error {
-        fmt.Println("调试模式已启用")
-        // 执行调试逻辑
-        return nil
-    })
-    
-    // 方式2: 通过方法设置
-    // debugCmd.SetHidden(true)
-    
-    // 添加到根命令
-    qflag.Root.AddSubCmds(debugCmd)
-    
-    // 调试命令可以通过命令行调用，但不会显示在帮助中
-    if err := qflag.ParseAndRoute(); err != nil {
-        fmt.Printf("错误: %v\n", err)
-    }
-}
-```
+设置 `Hidden: true` 后，命令不会显示在帮助信息中，但仍可通过命令行正常调用。
 
 **使用场景:**
 - 内部调试命令
 - 已弃用但仍需兼容的命令
 - 高级或实验性功能
 
----
-
-## 📁 项目结构
-
-```
-qflag/
-├── internal/              # 内部实现
-│   ├── builtin/          # 内置标志
-│   ├── cmd/              # 命令实现
-│   ├── completion/       # 自动补全脚本生成
-│   │   └── templates/    # 补全脚本模板
-│   ├── flag/             # 标志类型实现
-│   ├── help/             # 帮助文档生成
-│   ├── mock/             # Mock 测试工具
-│   ├── parser/           # 参数解析器
-│   ├── registry/         # 注册表实现
-│   ├── types/            # 类型定义
-│   └── utils/            # 工具函数
-├── validators/           # 验证器
-├── examples/             # 使用示例
-│   ├── builtin-flags/    # 内置标签示例
-│   ├── cmdopts/          # 命令选项示例
-│   ├── error-formatting/ # 错误格式化示例
-│   ├── flag-constructors/# 标志构造器示例
-│   ├── mutex-group/      # 互斥组示例
-│   ├── nested-commands/  # 嵌套命令示例
-│   └── required-groups/  # 必需组示例
-├── docs/                 # 设计文档
-├── qflag-cli/            # AI 技能包
-│   └── references/       # 参考文档
-├── exports.go            # 公共 API 导出
-├── qflag.go              # 全局根命令和便捷函数
-├── APIDOC.md             # API 文档
-├── FLAG_USAGE.md         # 标志用法文档
-├── qflag命令开发规范.md   # 命令开发规范
-├── qflag命令行工具开发规范.md # 命令行工具开发规范
-├── go.mod                # Go 模块文件
-└── README.md             # 项目文档
+**配置方式:**
+```go
+opts := &qflag.CmdOpts{
+    Hidden: true,
+}
+cmd.ApplyOpts(opts)
+// 或
+cmd.SetHidden(true)
 ```
 
----
-
-## 🧪 测试说明
-
-### 运行测试
-
-```bash
-# 运行所有测试
-go test ./...
-
-# 运行特定包的测试
-go test ./internal/cmd
-
-# 运行测试并显示覆盖率
-go test -cover ./...
-
-# 生成覆盖率报告
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-```
-
-### 测试覆盖
-
-项目使用全面的测试套件, 包括: 
-- 单元测试
-- 集成测试
-- 边界条件测试
-- 错误处理测试
+完整示例请参考 [examples/cmdopts](examples/cmdopts) 目录。
 
 ---
 

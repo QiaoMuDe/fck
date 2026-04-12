@@ -32,12 +32,13 @@ type CmdOpts struct {
 	RunFunc func(types.Command) error // 命令执行函数
 
 	// 配置选项
-	Version     string // 版本号
-	UseChinese  bool   // 是否使用中文
-	EnvPrefix   string // 环境变量前缀
-	UsageSyntax string // 命令使用语法
-	LogoText    string // Logo文本
-	Completion  bool   // 是否启用自动补全标志
+	Version           string // 版本号
+	UseChinese        bool   // 是否使用中文
+	EnvPrefix         string // 环境变量前缀
+	UsageSyntax       string // 命令使用语法
+	LogoText          string // Logo文本
+	Completion        bool   // 是否启用自动补全标志
+	DynamicCompletion bool   // 是否启用动态补全
 
 	// 环境变量绑定
 	AutoBindEnv bool // 是否自动绑定所有标志的环境变量

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# ==================== Main Completion Function ====================
+_{{.ProgramName}}_complete() {
+	local cur prev words cword i
+	COMPREPLY=()
+
+	# Use _get_comp_words_by_ref to get completion arguments for better robustness
+	if declare -F _get_comp_words_by_ref >/dev/null 2>&1; then
+		_get_comp_words_by_ref -n =: cur prev words cword
+	else
+		# Compatibility with older Bash completion environments
+		words=("${COMP_WORDS[@]}")
+		cword=$COMP_CWORD
+		cur="${words[cword]}"
+		prev="${words[cword-1]}"
+	fi
+
+	# Input validation
+	if [[ $cword -lt 0 || ${#words[@]} -eq 0 ]]; then
+		return 1
+	fi
+
+	# Fast path: if current input looks like a path, prioritize path completion
+	if [[ "$cur" == *"/"* || "$cur" == *"."* || "$cur" == *"~"* ]]; then
+		COMPREPLY=($(compgen -f -d -- "$cur"))
+		return 0
+	fi
+
+	# Extract subcommand arguments (starting from index 1, skipping program name)
+	local cmd_args=()
+	for ((i=1; i < cword; i++)); do
+		cmd_args+=("${words[i]}")
+	done
+
+	# ========== Use all instruction to get all completion info at once ==========
+	local result candidates enum_values matches is_flag
+	result=$({{.ProgramName}} __complete all "$cur" "$prev" "${cmd_args[@]}")
+
+	# Parse result (read by line, extract based on prefix)
+	while IFS= read -r line; do
+		case "$line" in
+			CANDIDATES:*) candidates="${line#CANDIDATES:}" ;;
+			ENUM:*) enum_values="${line#ENUM:}" ;;
+			MATCHES:*) matches="${line#MATCHES:}" ;;
+			IS_FLAG:*) is_flag="${line#IS_FLAG:}" ;;
+		esac
+	done <<< "$result"
+
+	# Decide completion behavior based on results
+	# IS_FLAG is true means current completion is for enum type flag value
+	if [[ "$is_flag" == "true" ]]; then
+		# Enum type flag, display matching results
+		if [[ -n "$matches" ]]; then
+			read -ra COMPREPLY <<< "$matches"
+		fi
+	elif [[ -n "$matches" ]]; then
+		# Normal completion (including candidates after boolean flags), display matching results
+		read -ra COMPREPLY <<< "$matches"
+	elif [[ "$prev" =~ ^- ]]; then
+		# Non-enum type flags (like String/Int etc.), use path completion
+		COMPREPLY=($(compgen -f -d -- "$cur"))
+	fi
+
+	return 0
+}
+
+# Register completion function
+complete -F _{{.ProgramName}}_complete {{.ProgramName}}

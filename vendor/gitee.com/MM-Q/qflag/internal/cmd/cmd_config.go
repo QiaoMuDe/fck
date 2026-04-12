@@ -46,6 +46,39 @@ func (c *Cmd) Config() *types.CmdConfig {
 	return c.config.Clone()
 }
 
+// SetDynamicCompletion 设置是否启用动态补全
+//
+// 参数:
+//   - enable: 是否启用动态补全
+//
+// 功能说明:
+//   - 动态补全需要先启用自动补全标志
+//   - 只能在根命令上启用动态补全, 子命令上无效
+func (c *Cmd) SetDynamicCompletion(enable bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// 只有根命令才能启用动态补全
+	if c.parent != nil {
+		// 静默忽略或返回错误
+		return
+	}
+
+	// 如果启用动态补全没有启用自动补全, 则panic
+	if enable && !c.config.Completion {
+		panic("dynamic completion cannot be enabled when completion is disabled")
+	}
+
+	// 设置动态补全并创建动态补全命令
+	c.config.DynamicCompletion = enable
+	if enable {
+		if err := createCompleteCmd(c); err != nil {
+			panic(err)
+		}
+	}
+
+}
+
 // SetDesc 设置命令描述
 //
 // 参数:
@@ -139,11 +172,17 @@ func (c *Cmd) SetChinese(useChinese bool) {
 // 功能说明:
 //   - 控制是否注册 --completion 标志
 //   - 默认为 false, 不启用自动补全
-//   - 存储在配置中
+//   - 只有根命令才能启用自动补全
 //   - 支持并发安全的设置
 func (c *Cmd) SetCompletion(enable bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// 只能在根命令上启用自动补全
+	if c.parent != nil {
+		return
+	}
+
 	c.config.Completion = enable
 }
 
@@ -434,9 +473,10 @@ func (c *Cmd) ApplyOpts(opts *CmdOpts) error {
 		c.SetLogoText(opts.LogoText)
 	}
 	c.SetChinese(opts.UseChinese)
-	c.SetCompletion(opts.Completion)
 	c.SetHidden(opts.Hidden)
 	c.SetDisableFlagParsing(opts.DisableFlagParsing)
+	c.SetCompletion(opts.Completion)
+	c.SetDynamicCompletion(opts.DynamicCompletion)
 
 	// 3. 添加示例和说明 - 调用现有方法
 	if len(opts.Examples) > 0 {
