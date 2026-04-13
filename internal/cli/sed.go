@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"gitee.com/MM-Q/fck/internal/commands/sed"
 	"gitee.com/MM-Q/fck/internal/types"
@@ -89,8 +90,24 @@ func runSed(cmd qflag.Command) error {
 		return fmt.Errorf("buffer size must be greater than %d bytes", types.InitialBufferSize)
 	}
 
-	config := sed.SedConfig{
-		Target:      args[0],
+	// 展开通配符并收集所有文件
+	var targets []string
+	for _, arg := range args {
+		matches, err := filepath.Glob(arg)
+		if err != nil {
+			fmt.Printf("error globbing %s: %v\n", arg, err)
+			continue
+		}
+		if len(matches) == 0 {
+			// 没有匹配，保留原参数（让 core 层处理文件不存在错误）
+			targets = append(targets, arg)
+		} else {
+			targets = append(targets, matches...)
+		}
+	}
+
+	// 准备基础配置（所有文件共用）
+	baseConfig := sed.SedConfig{
 		Pattern:     sedPattern.Get(),
 		Replacement: sedReplacement.Get(),
 		Regexp:      sedRegexp.Get(),
@@ -102,5 +119,31 @@ func runSed(cmd qflag.Command) error {
 		MaxBuffer:   maxBuffer,
 	}
 
-	return sed.SedCmdMain(config)
+	// 处理多个文件
+	var hasError bool
+	for _, target := range targets {
+		config := baseConfig
+		config.Target = target
+
+		// 多文件时打印文件名（预览模式）
+		if len(targets) > 1 && !config.InPlace {
+			fmt.Printf("==> %s <==\n", target)
+		}
+
+		if err := sed.SedCmdMain(config); err != nil {
+			fmt.Printf("error processing %s: %v\n", target, err)
+			hasError = true
+			// 继续处理下一个文件
+		}
+
+		// 多文件预览时添加空行分隔
+		if len(targets) > 1 && !config.InPlace {
+			fmt.Println()
+		}
+	}
+
+	if hasError {
+		return fmt.Errorf("some files failed to process")
+	}
+	return nil
 }

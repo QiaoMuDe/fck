@@ -63,7 +63,10 @@ func SedCmdMain(config SedConfig) error {
 		}
 	}
 
-	// 4. 处理文件
+	// 4. 重置替换计数（每个文件独立计数）
+	config.replaceCount = 0
+
+	// 5. 处理文件
 	return processFile(&config)
 }
 
