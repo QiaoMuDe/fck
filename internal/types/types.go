@@ -25,6 +25,18 @@ const (
 	// 校验文件模式
 	ChecksumModePortable = "PORTABLE"
 	ChecksumModeLocal    = "LOCAL"
+
+	// 行缓冲区初始大小 (64KB)
+	InitialBufferSize = 64 * 1024
+
+	// 行缓冲区默认最大大小 (10MB)
+	DefaultMaxBufferSize = 10 * 1024 * 1024
+
+	// Sed 命令备份文件后缀
+	SedBackupSuffix = ".bak"
+
+	// Sed 命令临时文件前缀模式
+	SedTempFilePattern = ".sed-*.tmp"
 )
 
 // 虚拟哈希表条目

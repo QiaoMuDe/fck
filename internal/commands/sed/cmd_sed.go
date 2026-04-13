@@ -1,5 +1,5 @@
 // Package sed 实现文本替换功能
-// 提供对文件进行文本替换的能力，支持正则表达式和行号范围
+// 提供对文件进行文本替换的能力, 支持正则表达式和行号范围
 package sed
 
 import (
@@ -10,6 +10,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/go-kit/fs"
 )
 
 // SedConfig sed 命令配置
@@ -24,11 +27,12 @@ type SedConfig struct {
 	Backup      bool   // -b 创建备份
 	MaxCount    int    // -c 最大替换次数
 	IgnoreCase  bool   // -I 忽略大小写
+	MaxBuffer   int64  // --buffer-size 最大行缓冲区大小(字节)
 
 	// 运行时
 	compiledPattern *regexp.Regexp // 编译后的正则
 	lineStart       int            // 起始行号
-	lineEnd         int            // 结束行号（0表示到末尾）
+	lineEnd         int            // 结束行号 (0表示到末尾)
 	replaceCount    int            // 当前已替换次数
 }
 
@@ -179,7 +183,7 @@ func compilePattern(config *SedConfig) error {
 }
 
 // processFile 处理文件
-// 根据配置选择预览模式或原地修改模式，采用流式处理避免大文件OOM
+// 根据配置选择预览模式或原地修改模式, 采用流式处理避免大文件OOM
 //
 // 参数:
 //   - config: 命令配置指针
@@ -187,14 +191,17 @@ func compilePattern(config *SedConfig) error {
 // 返回:
 //   - error: 处理错误
 func processFile(config *SedConfig) error {
+	// 原地修改模式
 	if config.InPlace {
 		return processFileInPlace(config)
 	}
+
+	// 预览模式
 	return processFilePreview(config)
 }
 
 // processFilePreview 预览模式处理文件
-// 边读取边处理边输出到标准输出，不缓存任何行，内存占用O(1)
+// 边读取边处理边输出到标准输出, 不缓存任何行, 内存占用O(1)
 //
 // 参数:
 //   - config: 命令配置指针
@@ -208,12 +215,12 @@ func processFilePreview(config *SedConfig) error {
 	}
 	defer func() { _ = file.Close() }()
 
-	// 设置大缓冲区，避免超长行问题
+	// 设置动态缓冲区: 初始64KB, 最大可扩容到配置值
 	scanner := bufio.NewScanner(file)
-	const maxCapacity = 1024 * 1024 // 1MB 缓冲区
-	buf := make([]byte, maxCapacity)
-	scanner.Buffer(buf, maxCapacity)
+	buf := make([]byte, types.InitialBufferSize)
+	scanner.Buffer(buf, int(config.MaxBuffer))
 
+	// 遍历文件行, 边读边处理边输出
 	lineNum := 0
 	for scanner.Scan() {
 		lineNum++
@@ -467,18 +474,19 @@ func replaceRegexN(line string, re *regexp.Regexp, replacement string, n int) st
 }
 
 // processFileInPlace 原地修改模式处理文件
-// 边读取边处理边写入临时文件，最后原子替换，内存占用O(1)
+// 边读取边处理边写入临时文件, 最后原子替换, 内存占用O(1)
 //
 // 参数:
 //   - config: 命令配置指针
 //
 // 返回:
 //   - error: 处理错误
-func processFileInPlace(config *SedConfig) error {
-	// 如果需要备份，先创建备份（此时源文件还未打开）
+func processFileInPlace(config *SedConfig) (err error) {
+	// 如果需要备份, 先创建备份（此时源文件还未打开）
+	// 使用 CopyEx 允许覆盖已存在的备份文件, 与 Linux sed 行为一致
 	if config.Backup {
-		backupPath := config.Target + ".bak"
-		if err := copyFile(config.Target, backupPath); err != nil {
+		backupPath := config.Target + types.SedBackupSuffix
+		if err := fs.CopyEx(config.Target, backupPath, true); err != nil {
 			return fmt.Errorf("failed to create backup: %w", err)
 		}
 	}
@@ -489,27 +497,27 @@ func processFileInPlace(config *SedConfig) error {
 		return fmt.Errorf("cannot open file: %w", err)
 	}
 
-	// 创建临时文件（在同一目录，确保原子重命名有效）
+	// 创建临时文件（在同一目录, 确保原子重命名有效）
 	dir := filepath.Dir(config.Target)
-	tempFile, err := os.CreateTemp(dir, ".sed-*.tmp")
+	tempFile, err := os.CreateTemp(dir, types.SedTempFilePattern)
 	if err != nil {
 		_ = sourceFile.Close()
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tempPath := tempFile.Name()
 
-	// 确保临时文件在出错时被清理
-	cleanup := func() {
-		_ = tempFile.Close()
-		_ = os.Remove(tempPath)
-	}
-	defer cleanup()
+	// 延迟清理: 只在出错时删除临时文件
+	defer func() {
+		if err != nil {
+			_ = tempFile.Close()
+			_ = os.Remove(tempPath)
+		}
+	}()
 
-	// 设置大缓冲区
+	// 设置动态缓冲区: 初始64KB, 最大可扩容到配置值
 	scanner := bufio.NewScanner(sourceFile)
-	const maxCapacity = 1024 * 1024 // 1MB 缓冲区
-	buf := make([]byte, maxCapacity)
-	scanner.Buffer(buf, maxCapacity)
+	buf := make([]byte, types.InitialBufferSize)
+	scanner.Buffer(buf, int(config.MaxBuffer))
 
 	// 使用缓冲写入器提高性能
 	writer := bufio.NewWriter(tempFile)
@@ -521,7 +529,7 @@ func processFileInPlace(config *SedConfig) error {
 		line := scanner.Text()
 		processedLine, _ := processLine(line, config, lineNum)
 
-		// 除第一行外，每行前面添加换行符
+		// 除第一行外, 每行前面添加换行符
 		if !firstLine {
 			if err := writer.WriteByte('\n'); err != nil {
 				_ = sourceFile.Close()
@@ -546,49 +554,19 @@ func processFileInPlace(config *SedConfig) error {
 	}
 
 	// 刷新缓冲区
-	if err := writer.Flush(); err != nil {
+	if err = writer.Flush(); err != nil {
 		return fmt.Errorf("failed to flush temp file: %w", err)
 	}
 
 	// 关闭临时文件
-	if err := tempFile.Close(); err != nil {
+	if err = tempFile.Close(); err != nil {
 		return fmt.Errorf("failed to close temp file: %w", err)
 	}
 
-	// 取消自动清理（准备提交）
-	cleanup = func() {}
-
 	// 原子替换
-	if err := os.Rename(tempPath, config.Target); err != nil {
-		// 替换失败，清理临时文件
-		_ = os.Remove(tempPath)
+	if err = os.Rename(tempPath, config.Target); err != nil {
 		return fmt.Errorf("failed to replace file: %w", err)
 	}
 
 	return nil
-}
-
-// copyFile 复制文件
-//
-// 参数:
-//   - src: 源文件路径
-//   - dst: 目标文件路径
-//
-// 返回:
-//   - error: 复制错误
-func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = sourceFile.Close() }()
-
-	destFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = destFile.Close() }()
-
-	_, err = destFile.ReadFrom(sourceFile)
-	return err
 }

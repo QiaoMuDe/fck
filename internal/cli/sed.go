@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/sed"
+	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -20,6 +21,7 @@ var (
 	sedBackup      *qflag.BoolFlag   // -b 创建备份
 	sedMaxCount    *qflag.IntFlag    // -c 最大替换次数
 	sedIgnoreCase  *qflag.BoolFlag   // -I 忽略大小写
+	sedMaxBuffer   *qflag.SizeFlag   // --buffer-size 最大行缓冲区
 )
 
 func init() {
@@ -34,6 +36,7 @@ func init() {
 	sedBackup = SedCmd.Bool("backup", "b", "修改前创建 .bak 备份", false)
 	sedMaxCount = SedCmd.Int("count", "c", "最大替换次数 (0表示无限制) ", 0)
 	sedIgnoreCase = SedCmd.Bool("ignore-case", "I", "忽略大小写", false)
+	sedMaxBuffer = SedCmd.Size("buffer-size", "bs", "最大行缓冲区大小", types.DefaultMaxBufferSize)
 
 	// 命令配置
 	cmdOpts := &qflag.CmdOpts{
@@ -80,6 +83,12 @@ func runSed(cmd qflag.Command) error {
 		return fmt.Errorf("no target file specified")
 	}
 
+	// 检查缓冲区大小（不能小于等于初始缓冲区大小）
+	maxBuffer := sedMaxBuffer.Get()
+	if maxBuffer <= types.InitialBufferSize {
+		return fmt.Errorf("buffer size must be greater than %d bytes", types.InitialBufferSize)
+	}
+
 	config := sed.SedConfig{
 		Target:      args[0],
 		Pattern:     sedPattern.Get(),
@@ -90,6 +99,7 @@ func runSed(cmd qflag.Command) error {
 		Backup:      sedBackup.Get(),
 		MaxCount:    sedMaxCount.Get(),
 		IgnoreCase:  sedIgnoreCase.Get(),
+		MaxBuffer:   maxBuffer,
 	}
 
 	return sed.SedCmdMain(config)

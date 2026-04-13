@@ -96,23 +96,33 @@ func GrepCmdMain(config GrepConfig) error {
 	}
 
 	// 4. 确定输入源并处理
-	switch {
-	case config.Target == "" && (config.Recursive || config.FollowSymlink):
-		// 递归模式未指定目标，默认使用当前目录
-		config.Target = "."
+	// 情况1: 未指定目标文件
+	if config.Target == "" {
+		// 递归标志与管道输入冲突时，优先处理管道
+		if (config.Recursive || config.FollowSymlink) && isStdinPipe() {
+			if !config.NoMessages {
+				fmt.Fprintln(os.Stderr, "-r/-R flags ignored when reading from stdin")
+			}
+			config.Recursive = false
+			config.FollowSymlink = false
+		}
 
-	case config.Target == "":
-		// 非递归模式未指定目标，从标准输入读取
-		config.filename = "(standard input)"
-		return processFile(os.Stdin, &config)
+		// 从标准输入读取
+		if !config.Recursive && !config.FollowSymlink {
+			config.filename = "(standard input)"
+			return processFile(os.Stdin, &config)
+		}
+
+		// 递归模式默认使用当前目录
+		config.Target = "."
 	}
 
-	// 检查是否为递归模式
+	// 情况2: 递归模式处理目录
 	if config.Recursive || config.FollowSymlink {
 		return processPathRecursive(config.Target, &config)
 	}
 
-	// 单文件模式
+	// 情况3: 单文件模式
 	return processSingleFileWithError(config.Target, &config)
 }
 
@@ -242,6 +252,19 @@ func handleBinaryFile(file *os.File, path string, config *GrepConfig) (skip bool
 		fmt.Println("Binary file matches")
 	}
 	return true, nil
+}
+
+// isStdinPipe 检查标准输入是否为管道/重定向（而非终端）
+//
+// 返回:
+//   - bool: true 表示 stdin 是管道或文件重定向，false 表示是终端输入
+func isStdinPipe() bool {
+	info, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	// 检查是否为命名管道或常规文件（重定向）
+	return info.Mode()&os.ModeNamedPipe != 0 || info.Mode().IsRegular()
 }
 
 // isBinaryFile 检测文件是否为二进制文件
