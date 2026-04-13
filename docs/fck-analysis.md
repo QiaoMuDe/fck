@@ -669,6 +669,66 @@ python3 build.py -batch -z
 
 ---
 
+---
+
+## 九、近期更新记录
+
+### 2026-04-14 - Sed 命令增强
+
+#### 9.1.1 二进制文件检测支持
+
+为 sed 命令添加了二进制文件检测功能，与 grep 命令保持一致的行为：
+
+**新增功能**:
+- `-a/--text`: 强制将二进制文件视为文本处理
+- `--ignore-binary`: 静默跳过二进制文件，不输出提示
+
+**实现细节**:
+- 使用 `utils.IsBinaryFile()` 检测二进制文件（检查前 8000 字节是否包含空字符）
+- 默认行为：检测到二进制文件输出 `bin file <name> matches` 并跳过
+- 原地修改模式在创建备份前进行二进制检测
+
+**修改文件**:
+- `internal/cli/sed.go`: 添加二进制文件处理标志
+- `internal/commands/sed/cmd_sed.go`: 添加检测逻辑和配置字段
+
+#### 9.1.2 管道输入支持
+
+为 sed 命令添加了管道输入支持，允许从标准输入读取内容：
+
+**使用方式**:
+```bash
+echo "hello world" | fck sed -p "hello" -r "hi"
+cat file.txt | fck sed -p "old" -r "new"
+```
+
+**实现细节**:
+- 使用 `utils.IsStdinPipe()` 检测管道输入
+- 使用 `"-"` 作为 stdin 的标识
+- 管道模式与 `-i` 互斥（会报错）
+- stdin 不检测二进制，默认视为文本
+
+**新增函数**:
+- `processStdin()`: 处理标准输入
+- `processScanner()`: 通用的扫描器处理函数（提取公共逻辑）
+
+**修改文件**:
+- `internal/cli/sed.go`: 添加管道检测和 stdin 处理分支
+- `internal/commands/sed/cmd_sed.go`: 添加 stdin 支持，提取 `processScanner` 公共函数
+
+#### 9.1.3 代码重构
+
+**提取公共函数**:
+- 将 `processStdin` 和 `processFilePreview` 中的重复逻辑提取为 `processScanner`
+- 统一错误信息格式：`error reading %s`
+
+**工具函数迁移**:
+- 将 `IsStdinPipe()` 和 `IsBinaryFile()` 迁移到 `internal/utils` 包
+- grep 和 sed 命令共享这些工具函数
+
+---
+
 **报告完成时间**: 2026-04-13  
+**最近更新**: 2026-04-14  
 **分析师**: Claude Code  
-**版本**: v1.0
+**版本**: v1.1

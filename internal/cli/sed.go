@@ -7,6 +7,7 @@ import (
 
 	"gitee.com/MM-Q/fck/internal/commands/sed"
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/fck/internal/utils"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -88,15 +89,45 @@ func init() {
 func runSed(cmd qflag.Command) error {
 	args := cmd.Args()
 
-	// 检查文件参数
-	if len(args) < 1 {
-		return fmt.Errorf("no target file specified")
-	}
-
 	// 检查缓冲区大小（不能小于等于初始缓冲区大小）
 	maxBuffer := sedMaxBuffer.Get()
 	if maxBuffer <= types.InitialBufferSize {
 		return fmt.Errorf("buffer size must be greater than %d bytes", types.InitialBufferSize)
+	}
+
+	// 检测是否为管道输入
+	isPipe := utils.IsStdinPipe()
+
+	// === 管道输入模式 ===
+	if isPipe {
+		// 检查冲突标志
+		if sedInPlace.Get() {
+			return fmt.Errorf("cannot use -i flag when reading from stdin")
+		}
+
+		// 准备配置
+		config := sed.SedConfig{
+			Target:       "-", // 使用 "-" 表示 stdin
+			Pattern:      sedPattern.Get(),
+			Replacement:  sedReplacement.Get(),
+			Regexp:       sedRegexp.Get(),
+			LineRange:    sedLineRange.Get(),
+			InPlace:      false, // 管道模式强制预览
+			Backup:       false,
+			MaxCount:     sedMaxCount.Get(),
+			IgnoreCase:   sedIgnoreCase.Get(),
+			MaxBuffer:    maxBuffer,
+			Text:         sedText.Get(),
+			IgnoreBinary: sedIgnoreBinary.Get(),
+		}
+
+		return sed.SedCmdMain(config)
+	}
+
+	// === 文件模式 ===
+	// 检查文件参数（非管道模式下需要）
+	if len(args) < 1 {
+		return fmt.Errorf("no target file specified")
 	}
 
 	// 展开通配符并收集所有文件

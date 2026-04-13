@@ -83,16 +83,26 @@ func SedCmdMain(config SedConfig) error {
 // 返回:
 //   - error: 验证错误
 func validateConfig(config *SedConfig) error {
-	if config.Target == "" {
-		return fmt.Errorf("no target file specified")
-	}
-
 	if config.Pattern == "" {
 		return fmt.Errorf("please use -p to specify the pattern")
 	}
 
 	if config.Replacement == "" {
 		return fmt.Errorf("please use -r to specify the replacement")
+	}
+
+	// stdin 模式不需要检查文件存在性
+	if config.Target == "-" {
+		// 管道模式不支持原地修改
+		if config.InPlace {
+			return fmt.Errorf("cannot use -i flag when reading from stdin")
+		}
+		return nil
+	}
+
+	// 检查目标文件
+	if config.Target == "" {
+		return fmt.Errorf("no target file specified")
 	}
 
 	// 检查文件是否存在
@@ -117,7 +127,7 @@ func validateConfig(config *SedConfig) error {
 func parseLineRange(config *SedConfig) error {
 	rangeStr := config.LineRange
 
-	// 处理 "5," 格式（从第5行到末尾）
+	// 处理 "5," 格式 (从第5行到末尾)
 	if strings.HasSuffix(rangeStr, ",") {
 		startStr := strings.TrimSuffix(rangeStr, ",")
 		start, err := strconv.Atoi(startStr)
@@ -199,6 +209,11 @@ func compilePattern(config *SedConfig) error {
 // 返回:
 //   - error: 处理错误
 func processFile(config *SedConfig) error {
+	// stdin 模式
+	if config.Target == "-" {
+		return processStdin(config)
+	}
+
 	// 原地修改模式
 	if config.InPlace {
 		return processFileInPlace(config)
@@ -206,6 +221,51 @@ func processFile(config *SedConfig) error {
 
 	// 预览模式
 	return processFilePreview(config)
+}
+
+// processStdin 处理标准输入
+// 从 stdin 读取，处理后输出到 stdout
+//
+// 参数:
+//   - config: 命令配置指针
+//
+// 返回:
+//   - error: 处理错误
+func processStdin(config *SedConfig) error {
+	// stdin 不检测二进制（管道输入视为文本）
+	scanner := bufio.NewScanner(os.Stdin)
+	return processScanner(scanner, config, "stdin")
+}
+
+// processScanner 处理扫描器输入
+// 通用的行处理逻辑，从 scanner 读取，处理后输出到 stdout
+//
+// 参数:
+//   - scanner: 行扫描器
+//   - config: 命令配置指针
+//   - source: 输入源名称（用于错误信息）
+//
+// 返回:
+//   - error: 处理错误
+func processScanner(scanner *bufio.Scanner, config *SedConfig, source string) error {
+	// 设置动态缓冲区
+	buf := make([]byte, types.InitialBufferSize)
+	scanner.Buffer(buf, int(config.MaxBuffer))
+
+	// 遍历输入行，边读边处理边输出
+	lineNum := 0
+	for scanner.Scan() {
+		lineNum++
+		line := scanner.Text()
+		processedLine, _ := processLine(line, config, lineNum)
+		fmt.Println(processedLine)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading %s: %w", source, err)
+	}
+
+	return nil
 }
 
 // processFilePreview 预览模式处理文件
@@ -242,25 +302,9 @@ func processFilePreview(config *SedConfig) error {
 		}
 	}
 
-	// 设置动态缓冲区: 初始64KB, 最大可扩容到配置值
+	// 使用公共函数处理扫描器
 	scanner := bufio.NewScanner(file)
-	buf := make([]byte, types.InitialBufferSize)
-	scanner.Buffer(buf, int(config.MaxBuffer))
-
-	// 遍历文件行, 边读边处理边输出
-	lineNum := 0
-	for scanner.Scan() {
-		lineNum++
-		line := scanner.Text()
-		processedLine, _ := processLine(line, config, lineNum)
-		fmt.Println(processedLine)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading file: %w", err)
-	}
-
-	return nil
+	return processScanner(scanner, config, "file")
 }
 
 // processFileInPlace 原地修改模式处理文件
@@ -354,7 +398,7 @@ func processFileInPlace(config *SedConfig) (err error) {
 		}
 	}
 
-	// 关闭源文件（Windows 上必须先关闭才能重命名）
+	// 关闭源文件 (Windows 上必须先关闭才能重命名)
 	if err := sourceFile.Close(); err != nil {
 		return fmt.Errorf("failed to close source file: %w", err)
 	}
