@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 
 	"gitee.com/MM-Q/colorlib"
-	common "gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/fck/internal/utils"
 )
 
 // FindConfig 统一的查找配置结构体
@@ -146,6 +146,6 @@ func compileRegexPattern(pattern string, isRegex, wholeWord, caseSensitive bool)
 		return nil, nil
 	}
 
-	escapedPattern := common.RegexBuilder(pattern, isRegex, wholeWord, caseSensitive)
-	return common.CompileRegex(escapedPattern)
+	escapedPattern := utils.RegexBuilder(pattern, isRegex, wholeWord, caseSensitive)
+	return utils.CompileRegex(escapedPattern)
 }

@@ -11,7 +11,7 @@ import (
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
-	common "gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/fck/internal/utils"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/schollz/progressbar/v3"
@@ -82,7 +82,7 @@ func expandPath(path string) ([]string, error) {
 }
 
 func addPathToList(path string, itemList *items, cl *colorlib.ColorLib, config SizeConfig) {
-	if !config.Hidden && common.IsHidden(path) {
+	if !config.Hidden && utils.IsHidden(path) {
 		return
 	}
 
@@ -107,7 +107,7 @@ func addPathToList(path string, itemList *items, cl *colorlib.ColorLib, config S
 
 func getPathSize(path string, config SizeConfig) (int64, error) {
 	includeHidden := config.Hidden
-	if !includeHidden && common.IsHidden(path) {
+	if !includeHidden && utils.IsHidden(path) {
 		return 0, nil
 	}
 
@@ -152,7 +152,7 @@ func getPathSize(path string, config SizeConfig) (int64, error) {
 			return nil
 		}
 
-		if !includeHidden && common.IsHidden(filePath) {
+		if !includeHidden && utils.IsHidden(filePath) {
 			return nil
 		}
 
@@ -238,7 +238,7 @@ func printSizeTable(its items, cl *colorlib.ColorLib, config SizeConfig) {
 
 	for i := range its {
 		colorSize := cl.Swhite(its[i].Size)
-		colorName := common.SprintStringColor(its[i].Name, its[i].Name, cl)
+		colorName := utils.SprintStringColor(its[i].Name, its[i].Name, cl)
 		t.AppendRow(table.Row{colorSize, colorName})
 	}
 

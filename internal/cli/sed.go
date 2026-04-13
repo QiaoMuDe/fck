@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"gitee.com/MM-Q/fck/internal/commands/sed"
@@ -95,7 +96,7 @@ func runSed(cmd qflag.Command) error {
 	for _, arg := range args {
 		matches, err := filepath.Glob(arg)
 		if err != nil {
-			fmt.Printf("error globbing %s: %v\n", arg, err)
+			fmt.Fprintf(os.Stderr, "error globbing %s: %v\n", arg, err)
 			continue
 		}
 		if len(matches) == 0 {
@@ -131,7 +132,7 @@ func runSed(cmd qflag.Command) error {
 		}
 
 		if err := sed.SedCmdMain(config); err != nil {
-			fmt.Printf("error processing %s: %v\n", target, err)
+			fmt.Fprintf(os.Stderr, "error processing %s: %v\n", target, err)
 			hasError = true
 			// 继续处理下一个文件
 		}

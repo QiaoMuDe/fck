@@ -209,7 +209,7 @@ import (
 ```go
 // 示例: commands/find/cmd_find.go
 import (
-    common "gitee.com/MM-Q/fck/internal/utils"  // 通用工具
+    "gitee.com/MM-Q/fck/internal/utils"  // 通用工具
 )
 ```
 

@@ -12,7 +12,7 @@ import (
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
-	common "gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/fck/internal/utils"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"golang.org/x/term"
@@ -494,7 +494,7 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 		// 目标路径颜色（含引号）
 		var sourcePath string
 		if targetExists {
-			sourcePath = common.SprintStringColor(info.LinkTargetPath, targetQuoted, f.colorLib)
+			sourcePath = utils.SprintStringColor(info.LinkTargetPath, targetQuoted, f.colorLib)
 		} else {
 			sourcePath = f.colorLib.Sgray(targetQuoted)
 		}

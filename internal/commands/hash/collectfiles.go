@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
-	common "gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/fck/internal/utils"
 )
 
 // collectFiles 函数用于收集指定路径下的所有文件
@@ -139,7 +139,7 @@ func setHiddenFlag(hidden bool) {
 }
 
 func shouldSkipHidden(path string) bool {
-	return !hiddenFlag && common.IsHidden(path)
+	return !hiddenFlag && utils.IsHidden(path)
 }
 
 // wrapStatError 统一处理 os.Stat 错误

@@ -10,7 +10,7 @@ import (
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
-	common "gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/fck/internal/utils"
 )
 
 const (
@@ -132,7 +132,7 @@ func printColorByExtension(p string, ext string, cl *colorlib.ColorLib) {
 	}
 	dir, file := filepath.Split(p)
 	// 仅对文件名部分着色，目录部分保持蓝色
-	coloredFile := common.GetFileColorByExtension(ext, file, cl)
+	coloredFile := utils.GetFileColorByExtension(ext, file, cl)
 	if dir == "" {
 		fmt.Println(coloredFile)
 		return

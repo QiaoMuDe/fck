@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"gitee.com/MM-Q/fck/internal/commands/grep"
 	"gitee.com/MM-Q/qflag"
@@ -117,15 +119,34 @@ func runGrep(cmd qflag.Command) error {
 		return fmt.Errorf("no pattern specified")
 	}
 
+	// 提取模式参数
 	pattern := args[0]
-	target := ""
+
+	// 收集文件参数（从 args[1] 开始）
+	var fileArgs []string
 	if len(args) >= 2 {
-		target = args[1]
+		fileArgs = args[1:]
 	}
 
-	config := grep.GrepConfig{
+	// 展开通配符
+	var targets []string
+	for _, arg := range fileArgs {
+		matches, err := filepath.Glob(arg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error globbing %s: %v\n", arg, err)
+			continue
+		}
+		if len(matches) == 0 {
+			// 没有匹配，保留原参数（让 core 层处理文件不存在错误）
+			targets = append(targets, arg)
+		} else {
+			targets = append(targets, matches...)
+		}
+	}
+
+	// 准备基础配置
+	baseConfig := grep.GrepConfig{
 		Pattern:       pattern,
-		Target:        target,
 		IgnoreCase:    grepIgnoreCase.Get(),
 		InvertMatch:   grepInvertMatch.Get(),
 		LineNumber:    grepLineNumber.Get(),
@@ -149,5 +170,34 @@ func runGrep(cmd qflag.Command) error {
 		IgnoreBinary:  grepIgnoreBinary.Get(),
 	}
 
-	return grep.GrepCmdMain(config)
+	// 无文件参数：从 stdin 读取
+	if len(targets) == 0 {
+		baseConfig.Target = ""
+		return grep.GrepCmdMain(baseConfig)
+	}
+
+	// 单文件：保持原有行为
+	if len(targets) == 1 {
+		baseConfig.Target = targets[0]
+		return grep.GrepCmdMain(baseConfig)
+	}
+
+	// 多目标：循环处理（支持文件和目录共存）
+	var hasError bool
+	for _, target := range targets {
+		config := baseConfig
+		config.Target = target
+		// 多文件时强制显示文件名
+		config.WithFilename = true
+
+		if err := grep.GrepCmdMain(config); err != nil {
+			fmt.Fprintf(os.Stderr, "error processing %s: %v\n", target, err)
+			hasError = true
+		}
+	}
+
+	if hasError {
+		return fmt.Errorf("some files failed to process")
+	}
+	return nil
 }

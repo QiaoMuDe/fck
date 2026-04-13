@@ -4,7 +4,7 @@ package list
 
 import (
 	"gitee.com/MM-Q/colorlib"
-	common "gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/fck/internal/utils"
 )
 
 // GetColorString 根据文件信息返回带有相应颜色的路径字符串
@@ -46,7 +46,7 @@ func GetColorString(info FileInfo, path string, cl *colorlib.ColorLib) string {
 		return cl.Sgray(path)
 	case FileType:
 		// 2. 普通文件按扩展名分类
-		return common.GetFileColorByExtension(info.FileExt, path, cl)
+		return utils.GetFileColorByExtension(info.FileExt, path, cl)
 	default:
 		// 未知类型使用白色
 		return cl.Swhite(path)

@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"gitee.com/MM-Q/fck/internal/types"
-	common "gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/fck/internal/utils"
 )
 
 // FileScanner 文件扫描器
@@ -156,14 +156,14 @@ func (s *FileScanner) scanSinglePathWithOriginal(path string, originalPath strin
 	}
 
 	// 检查是否为系统文件或目录
-	if common.IsSystemFileOrDir(filepath.Base(absPath)) {
+	if utils.IsSystemFileOrDir(filepath.Base(absPath)) {
 		return nil, fmt.Errorf("can not list system file or directory: %s", absPath)
 	}
 
 	// 获取文件信息
 	pathInfo, err := s.getFileInfo(absPath)
 	if err != nil {
-		return nil, common.HandleError(absPath, err)
+		return nil, utils.HandleError(absPath, err)
 	}
 
 	if s.shouldSkipFile(absPath, pathInfo.IsDir(), pathInfo, true, opts) {
@@ -204,7 +204,7 @@ func (s *FileScanner) scanDirectoryWithOriginal(dirPath, rootDir string, origina
 	// 读取目录内容
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
-		return nil, common.HandleError(dirPath, err)
+		return nil, utils.HandleError(dirPath, err)
 	}
 
 	// 处理目录中的每个条目
@@ -216,7 +216,7 @@ func (s *FileScanner) scanDirectoryWithOriginal(dirPath, rootDir string, origina
 		}
 
 		// 检查是否为系统文件
-		if common.IsSystemFileOrDir(filepath.Base(absEntryPath)) {
+		if utils.IsSystemFileOrDir(filepath.Base(absEntryPath)) {
 			continue
 		}
 
@@ -290,14 +290,14 @@ func (s *FileScanner) getFileInfo(path string) (os.FileInfo, error) {
 //   - bool: 是否应该跳过
 func (s *FileScanner) shouldSkipFile(path string, isDir bool, fileInfo os.FileInfo, isMain bool, opts ScanOptions) bool {
 	// 隐藏文件检查
-	if !opts.ShowHidden && common.IsHidden(path) {
+	if !opts.ShowHidden && utils.IsHidden(path) {
 		return true
 	}
 
 	// 如果显示隐藏文件但指定了隐藏文件类型过滤
 	if opts.ShowHidden && len(opts.FileTypes) > 0 {
 		for _, fileType := range opts.FileTypes {
-			if (fileType == types.FindTypeHiddenShort || fileType == types.FindTypeHidden) && !common.IsHidden(path) {
+			if (fileType == types.FindTypeHiddenShort || fileType == types.FindTypeHidden) && !utils.IsHidden(path) {
 				return true
 			}
 		}
@@ -320,7 +320,7 @@ func (s *FileScanner) shouldSkipFile(path string, isDir bool, fileInfo os.FileIn
 					return true
 				}
 			case types.FindTypeReadonly, types.FindTypeReadonlyShort:
-				if !common.IsReadOnly(path) {
+				if !utils.IsReadOnly(path) {
 					return true
 				}
 			}
@@ -368,7 +368,7 @@ func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath st
 	}
 
 	// 获取文件所有者信息
-	owner, group := common.GetFileOwner(absPath)
+	owner, group := utils.GetFileOwner(absPath)
 
 	return FileInfo{
 		EntryType:      entryType,                       // 文件类型

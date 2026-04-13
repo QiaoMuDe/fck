@@ -1,8 +1,8 @@
 //go:build darwin
 
-// Package common 提供了 Unix/Darwin 系统特定的文件属性检查功能。
+// Package utils 提供了 Unix/Darwin 系统特定的文件属性检查功能。
 // 该文件实现了 macOS 平台下的隐藏文件检测、只读属性检查和文件所有者获取等系统相关功能。
-package common
+package utils
 
 import (
 	"fmt"

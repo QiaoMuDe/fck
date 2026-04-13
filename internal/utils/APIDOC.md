@@ -1,8 +1,8 @@
-# Package common
+# Package utils
 
-Package common 提供了 Windows 系统特定的文件属性检查功能。该文件实现了 Windows 平台下的隐藏文件检测、只读属性检查等系统相关功能。
+Package utils 提供了 Windows 系统特定的文件属性检查功能。该文件实现了 Windows 平台下的隐藏文件检测、只读属性检查等系统相关功能。
 
-Package common 提供了跨模块共享的通用工具函数和实用程序。该文件包含文件哈希计算、路径处理、错误处理、颜色输出等常用功能。
+Package utils 提供了跨模块共享的通用工具函数和实用程序。该文件包含文件哈希计算、路径处理、错误处理、颜色输出等常用功能。
 
 ## CONSTANTS
 
