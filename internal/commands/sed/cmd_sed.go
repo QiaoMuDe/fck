@@ -179,6 +179,7 @@ func compilePattern(config *SedConfig) error {
 }
 
 // processFile 处理文件
+// 根据配置选择预览模式或原地修改模式，采用流式处理避免大文件OOM
 //
 // 参数:
 //   - config: 命令配置指针
@@ -186,37 +187,43 @@ func compilePattern(config *SedConfig) error {
 // 返回:
 //   - error: 处理错误
 func processFile(config *SedConfig) error {
-	// 打开文件
+	if config.InPlace {
+		return processFileInPlace(config)
+	}
+	return processFilePreview(config)
+}
+
+// processFilePreview 预览模式处理文件
+// 边读取边处理边输出到标准输出，不缓存任何行，内存占用O(1)
+//
+// 参数:
+//   - config: 命令配置指针
+//
+// 返回:
+//   - error: 处理错误
+func processFilePreview(config *SedConfig) error {
 	file, err := os.Open(config.Target)
 	if err != nil {
 		return fmt.Errorf("cannot open file: %w", err)
 	}
 	defer func() { _ = file.Close() }()
 
-	// 读取并处理每一行
-	var resultLines []string
+	// 设置大缓冲区，避免超长行问题
 	scanner := bufio.NewScanner(file)
-	lineNum := 0
+	const maxCapacity = 1024 * 1024 // 1MB 缓冲区
+	buf := make([]byte, maxCapacity)
+	scanner.Buffer(buf, maxCapacity)
 
+	lineNum := 0
 	for scanner.Scan() {
 		lineNum++
 		line := scanner.Text()
 		processedLine, _ := processLine(line, config, lineNum)
-		resultLines = append(resultLines, processedLine)
+		fmt.Println(processedLine)
 	}
 
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("error reading file: %w", err)
-	}
-
-	// 输出或写入文件
-	if config.InPlace {
-		return writeFile(config, resultLines)
-	}
-
-	// 输出到标准输出
-	for _, line := range resultLines {
-		fmt.Println(line)
 	}
 
 	return nil
@@ -459,16 +466,16 @@ func replaceRegexN(line string, re *regexp.Regexp, replacement string, n int) st
 	return result.String()
 }
 
-// writeFile 写入文件（原地修改）
+// processFileInPlace 原地修改模式处理文件
+// 边读取边处理边写入临时文件，最后原子替换，内存占用O(1)
 //
 // 参数:
 //   - config: 命令配置指针
-//   - lines: 要写入的行列表
 //
 // 返回:
-//   - error: 写入错误
-func writeFile(config *SedConfig, lines []string) error {
-	// 如果需要备份
+//   - error: 处理错误
+func processFileInPlace(config *SedConfig) error {
+	// 如果需要备份，先创建备份（此时源文件还未打开）
 	if config.Backup {
 		backupPath := config.Target + ".bak"
 		if err := copyFile(config.Target, backupPath); err != nil {
@@ -476,46 +483,86 @@ func writeFile(config *SedConfig, lines []string) error {
 		}
 	}
 
-	// 创建临时文件
+	// 打开源文件
+	sourceFile, err := os.Open(config.Target)
+	if err != nil {
+		return fmt.Errorf("cannot open file: %w", err)
+	}
+
+	// 创建临时文件（在同一目录，确保原子重命名有效）
 	dir := filepath.Dir(config.Target)
 	tempFile, err := os.CreateTemp(dir, ".sed-*.tmp")
 	if err != nil {
+		_ = sourceFile.Close()
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tempPath := tempFile.Name()
 
-	// 写入内容
+	// 确保临时文件在出错时被清理
+	cleanup := func() {
+		_ = tempFile.Close()
+		_ = os.Remove(tempPath)
+	}
+	defer cleanup()
+
+	// 设置大缓冲区
+	scanner := bufio.NewScanner(sourceFile)
+	const maxCapacity = 1024 * 1024 // 1MB 缓冲区
+	buf := make([]byte, maxCapacity)
+	scanner.Buffer(buf, maxCapacity)
+
+	// 使用缓冲写入器提高性能
 	writer := bufio.NewWriter(tempFile)
-	for i, line := range lines {
-		if i > 0 {
+
+	lineNum := 0
+	firstLine := true
+	for scanner.Scan() {
+		lineNum++
+		line := scanner.Text()
+		processedLine, _ := processLine(line, config, lineNum)
+
+		// 除第一行外，每行前面添加换行符
+		if !firstLine {
 			if err := writer.WriteByte('\n'); err != nil {
-				_ = tempFile.Close()
-				_ = os.Remove(tempPath)
+				_ = sourceFile.Close()
 				return fmt.Errorf("failed to write temp file: %w", err)
 			}
 		}
-		if _, err := writer.WriteString(line); err != nil {
-			_ = tempFile.Close()
-			_ = os.Remove(tempPath)
+		firstLine = false
+
+		if _, err := writer.WriteString(processedLine); err != nil {
+			_ = sourceFile.Close()
 			return fmt.Errorf("failed to write temp file: %w", err)
 		}
 	}
 
-	if err := writer.Flush(); err != nil {
-		_ = tempFile.Close()
-		_ = os.Remove(tempPath)
-		return fmt.Errorf("failed to write temp file: %w", err)
+	// 关闭源文件（Windows 上必须先关闭才能重命名）
+	if err := sourceFile.Close(); err != nil {
+		return fmt.Errorf("failed to close source file: %w", err)
 	}
 
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading file: %w", err)
+	}
+
+	// 刷新缓冲区
+	if err := writer.Flush(); err != nil {
+		return fmt.Errorf("failed to flush temp file: %w", err)
+	}
+
+	// 关闭临时文件
 	if err := tempFile.Close(); err != nil {
-		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to close temp file: %w", err)
 	}
 
+	// 取消自动清理（准备提交）
+	cleanup = func() {}
+
 	// 原子替换
 	if err := os.Rename(tempPath, config.Target); err != nil {
+		// 替换失败，清理临时文件
 		_ = os.Remove(tempPath)
-		return fmt.Errorf("failed to write file: %w", err)
+		return fmt.Errorf("failed to replace file: %w", err)
 	}
 
 	return nil
