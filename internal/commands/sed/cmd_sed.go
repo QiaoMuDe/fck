@@ -236,6 +236,42 @@ func processFilePreview(config *SedConfig) error {
 	return nil
 }
 
+// inLineRange 检查行号是否在指定范围内
+//
+// 参数:
+//   - config: 命令配置指针
+//   - lineNum: 当前行号
+//
+// 返回:
+//   - bool: true 表示在范围内, false 表示不在
+func inLineRange(config *SedConfig, lineNum int) bool {
+	if config.lineStart == 0 {
+		return true // 未指定范围
+	}
+	if lineNum < config.lineStart {
+		return false
+	}
+	if config.lineEnd > 0 && lineNum > config.lineEnd {
+		return false
+	}
+	return true
+}
+
+// calcActualReplaceCount 计算实际可替换次数
+//
+// 参数:
+//   - desired: 期望替换次数
+//   - remaining: 剩余可替换次数
+//
+// 返回:
+//   - int: 实际可替换次数
+func calcActualReplaceCount(desired, remaining int) int {
+	if desired > remaining {
+		return remaining
+	}
+	return desired
+}
+
 // processLine 处理单行替换
 //
 // 参数:
@@ -247,26 +283,40 @@ func processFilePreview(config *SedConfig) error {
 //   - string: 处理后的行内容
 //   - bool: 是否发生了替换
 func processLine(line string, config *SedConfig, lineNum int) (string, bool) {
-	// 检查行号范围
-	if config.lineStart > 0 {
-		if lineNum < config.lineStart {
-			return line, false
-		}
-		if config.lineEnd > 0 && lineNum > config.lineEnd {
-			return line, false
-		}
+	// 1. 行范围检查
+	if !inLineRange(config, lineNum) {
+		return line, false
 	}
 
-	// 检查最大替换次数
+	// 2. 全局替换次数检查（快速路径）
 	if config.MaxCount > 0 && config.replaceCount >= config.MaxCount {
 		return line, false
 	}
 
-	// 执行替换
+	// 3. 执行替换
+	var result string
+	var count int
+
 	if config.Regexp {
-		return replaceWithRegex(line, config)
+		// 正则模式 (-E):忽略大小写通过 (?i) 前缀在编译时处理
+		result, count = replaceWithRegex(line, config)
+
+	} else if config.IgnoreCase {
+		// 字符串模式 + 忽略大小写 (-I 但无 -E)
+		result, count = replaceStringIgnoreCase(line, config)
+
+	} else {
+		// 普通字符串模式 (无 -E 无 -I)
+		result, count = replaceWithString(line, config)
 	}
-	return replaceWithString(line, config)
+
+	// 4. 更新全局计数
+	if count > 0 {
+		config.replaceCount += count
+		return result, true
+	}
+
+	return line, false
 }
 
 // replaceWithString 使用字符串替换
@@ -277,86 +327,93 @@ func processLine(line string, config *SedConfig, lineNum int) (string, bool) {
 //
 // 返回:
 //   - string: 处理后的行内容
-//   - bool: 是否发生了替换
-func replaceWithString(line string, config *SedConfig) (string, bool) {
+//   - int: 本次替换次数
+func replaceWithString(line string, config *SedConfig) (string, int) {
 	pattern := config.Pattern
 	replacement := config.Replacement
 
-	// 处理忽略大小写
-	if config.IgnoreCase {
-		// 使用大小写不敏感的方式替换
-		return replaceStringIgnoreCase(line, pattern, replacement, config)
+	// 统计匹配次数
+	count := strings.Count(line, pattern)
+	if count == 0 {
+		return line, 0
 	}
 
-	// 检查最大替换次数
+	// 计算实际可替换次数（考虑全局限制）
+	actual := count
 	if config.MaxCount > 0 {
-		count := strings.Count(line, pattern)
-		if count == 0 {
-			return line, false
-		}
-
 		remaining := config.MaxCount - config.replaceCount
-		if count > remaining {
-			// 只替换前 remaining 个
-			result := replaceN(line, pattern, replacement, remaining)
-			config.replaceCount += remaining
-			return result, true
-		}
-
-		result := strings.ReplaceAll(line, pattern, replacement)
-		config.replaceCount += count
-		return result, true
+		actual = calcActualReplaceCount(count, remaining)
 	}
 
-	// 无限制替换
-	if !strings.Contains(line, pattern) {
-		return line, false
+	if actual <= 0 {
+		return line, 0
 	}
 
-	result := strings.ReplaceAll(line, pattern, replacement)
-	return result, true
+	result := replaceN(line, pattern, replacement, actual)
+	return result, actual
 }
 
 // replaceStringIgnoreCase 大小写不敏感的字符串替换
 //
 // 参数:
 //   - line: 原始行内容
-//   - pattern: 匹配模式
-//   - replacement: 替换内容
 //   - config: 命令配置指针
 //
 // 返回:
 //   - string: 处理后的行内容
-//   - bool: 是否发生了替换
-func replaceStringIgnoreCase(line, pattern, replacement string, config *SedConfig) (string, bool) {
+//   - int: 本次替换次数
+func replaceStringIgnoreCase(line string, config *SedConfig) (string, int) {
+	pattern := config.Pattern
+	replacement := config.Replacement
+
 	lowerLine := strings.ToLower(line)
 	lowerPattern := strings.ToLower(pattern)
 
-	var result strings.Builder
+	// 统计匹配次数
+	count := 0
 	start := 0
-	replaced := false
-
 	for {
 		idx := strings.Index(lowerLine[start:], lowerPattern)
 		if idx == -1 {
 			break
 		}
+		count++
+		start += idx + len(pattern)
+	}
 
-		// 检查最大替换次数
-		if config.MaxCount > 0 && config.replaceCount >= config.MaxCount {
+	if count == 0 {
+		return line, 0
+	}
+
+	// 计算实际可替换次数
+	actual := count
+	if config.MaxCount > 0 {
+		remaining := config.MaxCount - config.replaceCount
+		actual = calcActualReplaceCount(count, remaining)
+	}
+
+	if actual <= 0 {
+		return line, 0
+	}
+
+	// 执行替换
+	var result strings.Builder
+	start = 0
+	replaced := 0
+	for replaced < actual {
+		idx := strings.Index(lowerLine[start:], lowerPattern)
+		if idx == -1 {
 			break
 		}
-
 		actualIdx := start + idx
 		result.WriteString(line[start:actualIdx])
 		result.WriteString(replacement)
 		start = actualIdx + len(pattern)
-		config.replaceCount++
-		replaced = true
+		replaced++
 	}
-
 	result.WriteString(line[start:])
-	return result.String(), replaced
+
+	return result.String(), actual
 }
 
 // replaceN 替换前 N 个匹配项
@@ -403,40 +460,39 @@ func replaceN(s, old, new string, n int) string {
 //
 // 返回:
 //   - string: 处理后的行内容
-//   - bool: 是否发生了替换
-func replaceWithRegex(line string, config *SedConfig) (string, bool) {
+//   - int: 本次替换次数
+func replaceWithRegex(line string, config *SedConfig) (string, int) {
 	if config.compiledPattern == nil {
-		return line, false
+		return line, 0
 	}
 
 	// 检查是否有匹配
-	if !config.compiledPattern.MatchString(line) {
-		return line, false
+	matches := config.compiledPattern.FindAllStringIndex(line, -1)
+	if len(matches) == 0 {
+		return line, 0
 	}
 
-	// 处理最大替换次数
+	// 计算实际可替换次数
+	actual := len(matches)
 	if config.MaxCount > 0 {
-		// 计算匹配次数
-		matches := config.compiledPattern.FindAllStringIndex(line, -1)
-		if len(matches) == 0 {
-			return line, false
-		}
-
 		remaining := config.MaxCount - config.replaceCount
-		if len(matches) > remaining {
-			// 只替换前 remaining 个
-			result := replaceRegexN(line, config.compiledPattern, config.Replacement, remaining)
-			config.replaceCount += remaining
-			return result, true
-		}
+		actual = calcActualReplaceCount(len(matches), remaining)
 	}
 
-	// 无限制替换
-	result := config.compiledPattern.ReplaceAllString(line, config.Replacement)
-	if config.MaxCount > 0 {
-		config.replaceCount += len(config.compiledPattern.FindAllString(line, -1))
+	if actual <= 0 {
+		return line, 0
 	}
-	return result, true
+
+	// 执行替换
+	if actual == len(matches) {
+		// 全部替换
+		result := config.compiledPattern.ReplaceAllString(line, config.Replacement)
+		return result, actual
+	}
+
+	// 部分替换
+	result := replaceRegexN(line, config.compiledPattern, config.Replacement, actual)
+	return result, actual
 }
 
 // replaceRegexN 替换正则前 N 个匹配项
