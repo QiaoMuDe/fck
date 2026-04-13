@@ -87,6 +87,13 @@ func init() {
 			"查找所有的扩展名为py和go的文件":  fmt.Sprintf("%s find -e py,go", qflag.Root.Name()),
 			"删除当前目录下所有log扩展名的文件": fmt.Sprintf("%s find -e log -d", qflag.Root.Name()),
 		},
+		MutexGroups: []qflag.MutexGroup{
+			{
+				Name:      "action",
+				Flags:     []string{"exec", "delete", "move", "count"},
+				AllowNone: true,
+			},
+		},
 	}
 
 	if err := FindCmd.ApplyOpts(cmdOpts); err != nil {

@@ -70,26 +70,39 @@ func (v *ConfigValidator) ValidateFlags() error {
 		return fmt.Errorf("invalid type flag: %s, please use %s", v.config.Type, types.GetSupportedFindTypes()[:])
 	}
 
+	// 验证隐藏文件标志
 	if !v.config.Hidden && (v.config.Type == types.FindTypeHidden || v.config.Type == types.FindTypeHiddenShort) {
 		return fmt.Errorf("must specify -H flag to use -type hidden or -type h")
 	}
 
+	// 验证文件大小格式
 	if err := v.validateSizeFormat(); err != nil {
 		return err
 	}
 
+	// 验证修改时间格式
 	if err := v.validateTimeFormat(); err != nil {
 		return err
 	}
 
+	// 验证exec相关参数
 	if err := v.validateExecFlags(); err != nil {
 		return err
 	}
 
-	if err := v.validateOperationFlags(); err != nil {
-		return err
+	// 验证mv标志参数
+	if v.config.MovePath != "" {
+		if info, err := os.Stat(v.config.MovePath); err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("path does not exist: %s", v.config.MovePath)
+			}
+			return fmt.Errorf("error checking path: %v", err)
+		} else if !info.IsDir() {
+			return fmt.Errorf("-mv flag specified path must be a directory")
+		}
 	}
 
+	// 验证扩展名参数
 	if err := v.validateExtensions(); err != nil {
 		return err
 	}
@@ -137,38 +150,6 @@ func (v *ConfigValidator) validateTimeFormat() error {
 func (v *ConfigValidator) validateExecFlags() error {
 	if v.config.ExecCmd != "" && !strings.Contains(v.config.ExecCmd, "{}") {
 		return fmt.Errorf("invalid exec command, must contain {} as path placeholder when using -exec flag")
-	}
-
-	return nil
-}
-
-// validateOperationFlags 验证操作标志之间的冲突
-func (v *ConfigValidator) validateOperationFlags() error {
-	if v.config.ExecCmd != "" && (v.config.Delete || v.config.MovePath != "") {
-		return fmt.Errorf("invalid exec command, cannot use -delete or -mv flag with -exec flag")
-	}
-
-	if v.config.Delete && (v.config.ExecCmd != "" || v.config.MovePath != "") {
-		return fmt.Errorf("invalid delete flag, cannot use -exec or -mv flag with -delete flag")
-	}
-
-	if v.config.MovePath != "" && (v.config.ExecCmd != "" || v.config.Delete) {
-		return fmt.Errorf("invalid mv flag, cannot use -exec or -delete flag with -mv flag")
-	}
-
-	if v.config.MovePath != "" {
-		if info, err := os.Stat(v.config.MovePath); err != nil {
-			if os.IsNotExist(err) {
-				return fmt.Errorf("path does not exist: %s", v.config.MovePath)
-			}
-			return fmt.Errorf("error checking path: %v", err)
-		} else if !info.IsDir() {
-			return fmt.Errorf("-mv flag specified path must be a directory")
-		}
-	}
-
-	if v.config.Count && (v.config.ExecCmd != "" || v.config.MovePath != "" || v.config.Delete) {
-		return fmt.Errorf("cannot use -count flag with -exec, -mv, or -delete flags")
 	}
 
 	return nil
