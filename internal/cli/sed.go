@@ -24,6 +24,10 @@ var (
 	sedMaxCount    *qflag.IntFlag    // -c 最大替换次数
 	sedIgnoreCase  *qflag.BoolFlag   // -I 忽略大小写
 	sedMaxBuffer   *qflag.SizeFlag   // --buffer-size 最大行缓冲区
+
+	// 二进制文件处理
+	sedText         *qflag.BoolFlag // -a, --text 强制将二进制文件视为文本处理
+	sedIgnoreBinary *qflag.BoolFlag // --ignore-binary 忽略二进制文件（不输出提示）
 )
 
 func init() {
@@ -37,8 +41,12 @@ func init() {
 	sedInPlace = SedCmd.Bool("in-place", "i", "原地修改文件 (默认输出到屏幕) ", false)
 	sedBackup = SedCmd.Bool("backup", "b", "修改前创建 .bak 备份", false)
 	sedMaxCount = SedCmd.Int("count", "c", "最大替换次数 (0表示无限制) ", 0)
-	sedIgnoreCase = SedCmd.Bool("ignore-case", "I", "忽略大小写", false)
+	sedIgnoreCase = SedCmd.Bool("ignore-case", "ic", "忽略大小写", false)
 	sedMaxBuffer = SedCmd.Size("buffer-size", "bs", "最大行缓冲区大小", types.DefaultMaxBufferSize)
+
+	// 二进制文件处理标志
+	sedText = SedCmd.Bool("text", "a", "强制将二进制文件视为文本处理", false)
+	sedIgnoreBinary = SedCmd.Bool("ignore-binary", "I", "完全忽略二进制文件，不输出提示", false)
 
 	// 命令配置
 	cmdOpts := &qflag.CmdOpts{
@@ -53,7 +61,7 @@ func init() {
 			"只替换第 5 行":   fmt.Sprintf("%s sed -p \"old\" -r \"new\" -n 5 file.txt", qflag.Root.Name()),
 			"替换 1-10 行":  fmt.Sprintf("%s sed -p \"old\" -r \"new\" -n 1,10 file.txt", qflag.Root.Name()),
 			"只替换前 3 处":   fmt.Sprintf("%s sed -p \"old\" -r \"new\" -c 3 file.txt", qflag.Root.Name()),
-			"忽略大小写":      fmt.Sprintf("%s sed -I -p \"hello\" -r \"world\" file.txt", qflag.Root.Name()),
+			"忽略大小写":      fmt.Sprintf("%s sed -ic -p \"hello\" -r \"world\" file.txt", qflag.Root.Name()),
 		},
 		Notes: []string{
 			"默认输出到屏幕预览, 使用 -i 才修改原文件",
@@ -109,15 +117,17 @@ func runSed(cmd qflag.Command) error {
 
 	// 准备基础配置（所有文件共用）
 	baseConfig := sed.SedConfig{
-		Pattern:     sedPattern.Get(),
-		Replacement: sedReplacement.Get(),
-		Regexp:      sedRegexp.Get(),
-		LineRange:   sedLineRange.Get(),
-		InPlace:     sedInPlace.Get(),
-		Backup:      sedBackup.Get(),
-		MaxCount:    sedMaxCount.Get(),
-		IgnoreCase:  sedIgnoreCase.Get(),
-		MaxBuffer:   maxBuffer,
+		Pattern:      sedPattern.Get(),
+		Replacement:  sedReplacement.Get(),
+		Regexp:       sedRegexp.Get(),
+		LineRange:    sedLineRange.Get(),
+		InPlace:      sedInPlace.Get(),
+		Backup:       sedBackup.Get(),
+		MaxCount:     sedMaxCount.Get(),
+		IgnoreCase:   sedIgnoreCase.Get(),
+		MaxBuffer:    maxBuffer,
+		Text:         sedText.Get(),
+		IgnoreBinary: sedIgnoreBinary.Get(),
 	}
 
 	// 处理多个文件

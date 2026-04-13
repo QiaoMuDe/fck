@@ -39,6 +39,7 @@ func processSingleFile(path string, config *GrepConfig) error {
 	}
 	defer func() { _ = file.Close() }()
 
+	// 处理二进制文件
 	skip, err := handleBinaryFile(file, path, config)
 	if err != nil {
 		return nil // 递归模式下跳过错误

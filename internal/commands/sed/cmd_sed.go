@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/fck/internal/utils"
 	"gitee.com/MM-Q/go-kit/fs"
 )
 
@@ -28,6 +29,10 @@ type SedConfig struct {
 	MaxCount    int    // -c 最大替换次数
 	IgnoreCase  bool   // -I 忽略大小写
 	MaxBuffer   int64  // --buffer-size 最大行缓冲区大小(字节)
+
+	// 二进制文件处理
+	Text         bool // -a, --text 强制将二进制文件视为文本处理
+	IgnoreBinary bool // --ignore-binary 忽略二进制文件（不输出提示）
 
 	// 运行时
 	compiledPattern *regexp.Regexp // 编译后的正则
@@ -218,6 +223,25 @@ func processFilePreview(config *SedConfig) error {
 	}
 	defer func() { _ = file.Close() }()
 
+	// 检测二进制文件
+	isBinary, err := utils.IsBinaryFile(file)
+	if err != nil {
+		return fmt.Errorf("failed to detect file type: %w", err)
+	}
+
+	if isBinary {
+		if config.Text {
+			// -a/--text 模式：强制作为文本处理，继续执行
+		} else if config.IgnoreBinary {
+			// --ignore-binary 模式：静默跳过
+			return nil
+		} else {
+			// 默认行为：输出提示并跳过
+			fmt.Printf("bin file %s matches\n", config.Target)
+			return nil
+		}
+	}
+
 	// 设置动态缓冲区: 初始64KB, 最大可扩容到配置值
 	scanner := bufio.NewScanner(file)
 	buf := make([]byte, types.InitialBufferSize)
@@ -248,19 +272,39 @@ func processFilePreview(config *SedConfig) error {
 // 返回:
 //   - error: 处理错误
 func processFileInPlace(config *SedConfig) (err error) {
-	// 如果需要备份, 先创建备份（此时源文件还未打开）
-	// 使用 CopyEx 允许覆盖已存在的备份文件, 与 Linux sed 行为一致
-	if config.Backup {
-		backupPath := config.Target + types.SedBackupSuffix
-		if err := fs.CopyEx(config.Target, backupPath, true); err != nil {
-			return fmt.Errorf("failed to create backup: %w", err)
-		}
-	}
-
 	// 打开源文件
 	sourceFile, err := os.Open(config.Target)
 	if err != nil {
 		return fmt.Errorf("cannot open file: %w", err)
+	}
+
+	// 检测二进制文件（在创建备份之前）
+	isBinary, err := utils.IsBinaryFile(sourceFile)
+	if err != nil {
+		_ = sourceFile.Close()
+		return fmt.Errorf("failed to detect file type: %w", err)
+	}
+
+	// 处理二进制文件情况
+	if isBinary && !config.Text {
+		_ = sourceFile.Close()
+		if config.IgnoreBinary {
+			// --ignore-binary 模式：静默跳过
+			return nil
+		}
+		// 默认行为：输出提示并跳过
+		fmt.Printf("bin file %s matches\n", config.Target)
+		return nil
+	}
+
+	// 如果需要备份, 先创建备份（此时源文件已打开）
+	// 使用 CopyEx 允许覆盖已存在的备份文件, 与 Linux sed 行为一致
+	if config.Backup {
+		backupPath := config.Target + types.SedBackupSuffix
+		if err := fs.CopyEx(config.Target, backupPath, true); err != nil {
+			_ = sourceFile.Close()
+			return fmt.Errorf("failed to create backup: %w", err)
+		}
 	}
 
 	// 创建临时文件（在同一目录, 确保原子重命名有效）

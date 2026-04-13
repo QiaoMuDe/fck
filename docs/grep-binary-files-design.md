@@ -95,9 +95,9 @@ func processFile(file *os.File, config *GrepConfig) error {
         } else {
             // 默认行为：输出提示并跳过
             if config.WithFilename || config.filename != "" {
-                fmt.Printf("Binary file %s matches\n", config.filename)
+                fmt.Printf("bin file %s matches\n", config.filename)
             } else {
-                fmt.Println("Binary file matches")
+                fmt.Println("bin file matches")
             }
             return nil
         }
