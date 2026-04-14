@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"gitee.com/MM-Q/fck/internal/utils"
 )
 
 // CatConfig cat 命令配置
@@ -21,6 +23,8 @@ type CatConfig struct {
 	HeadLines    int      // --head 显示前N行 (0表示全部)
 	TailLines    int      // --tail 显示后N行 (0表示全部)
 	Quiet        bool     // -q 静默模式 (不显示错误信息)
+	Text         bool     // -a, --text 强制将二进制文件视为文本处理
+	IgnoreBinary bool     // -I, --ignore-binary 完全忽略二进制文件
 
 	// 运行时
 	LineCounter int // 行号计数器
@@ -129,6 +133,28 @@ func processFile(path string, config *CatConfig) error {
 	}
 	if info.IsDir() {
 		return fmt.Errorf("%s is a directory", path)
+	}
+
+	// 二进制文件检测 (除非强制文本模式)
+	if !config.Text {
+		isBinary, err := utils.IsBinaryFile(file)
+		if err != nil {
+			return fmt.Errorf("cannot detect file type for %s: %w", path, err)
+		}
+
+		// 处理二进制文件
+		if isBinary {
+			// -I 模式：静默跳过
+			if config.IgnoreBinary {
+				return nil
+			}
+
+			// 默认行为：输出提示并跳过
+			if !config.Quiet {
+				fmt.Printf("bin file %s matches\n", path)
+			}
+			return nil
+		}
 	}
 
 	// 根据 head/tail 选项处理
