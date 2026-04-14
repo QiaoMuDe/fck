@@ -726,9 +726,61 @@ cat file.txt | fck sed -p "old" -r "new"
 - 将 `IsStdinPipe()` 和 `IsBinaryFile()` 迁移到 `internal/utils` 包
 - grep 和 sed 命令共享这些工具函数
 
+#### 9.1.4 cat 命令二进制检测功能
+
+**需求分析**:
+- 为 cat 命令添加二进制文件检测功能，避免直接输出二进制文件产生乱码
+- 参考 grep 命令的实现方式，提供灵活的二进制文件处理选项
+
+**新增标志**:
+| 标志 | 长格式 | 说明 |
+|------|--------|------|
+| `-a` | `--text` | 强制将二进制文件视为文本处理 |
+| `-I` | `--ignore-binary` | 完全忽略二进制文件，不输出提示 |
+
+**默认行为**:
+- 检测到二进制文件时输出提示 `bin file <filename> matches`，然后跳过内容
+- 与 grep 命令保持一致的用户体验
+
+**实现文件**:
+- `internal/cli/cat.go`: 添加 `-a` 和 `-I` flag 定义，更新 help 文档和示例
+- `internal/commands/cat/cmd_cat.go`: 添加二进制检测逻辑
+
+**代码逻辑**:
+```go
+// 二进制文件检测 (除非强制文本模式)
+if !config.Text {
+    isBinary, err := utils.IsBinaryFile(file)
+    if err != nil {
+        return fmt.Errorf("cannot detect file type for %s: %w", path, err)
+    }
+
+    // 处理二进制文件
+    if isBinary {
+        // -I 模式：静默跳过
+        if config.IgnoreBinary {
+            return nil
+        }
+
+        // 默认行为：输出提示并跳过
+        if !config.Quiet {
+            fmt.Printf("bin file %s matches\n", path)
+        }
+        return nil
+    }
+}
+```
+
+**与 grep 对比**:
+| 场景 | grep | cat |
+|------|------|-----|
+| `-I` | 静默跳过 | 静默跳过 |
+| 默认 | 输出提示 + 跳过 | 输出提示 + 跳过 |
+| `-a` | 强制处理 | 强制处理 |
+
 ---
 
 **报告完成时间**: 2026-04-13  
 **最近更新**: 2026-04-14  
 **分析师**: Claude Code  
-**版本**: v1.1
+**版本**: v1.2
