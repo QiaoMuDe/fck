@@ -75,7 +75,7 @@ FCK 项目包含 **26 个功能模块**，按功能领域分类如下：
 | **mkdir** | 目录创建 | `cli/mkdir.go` + `commands/mkdir/cmd_mkdir.go` | 标准库 os.MkdirAll |
 | **touch** | 文件创建/时间戳更新 | `cli/touch.go` + `commands/touch/cmd_touch.go` | 标准库 os.Chtimes |
 | **truncate** | 文件截断 | `cli/truncate.go` + `commands/truncate/cmd_truncate.go` | 标准库 os.Truncate |
-| **cat** | 文件内容查看 | `cli/cat.go` + `commands/cat/cmd_cat.go` | bufio.Reader |
+| **cat** | 文件内容查看 | `cli/cat.go` + `commands/cat/cmd_cat.go` | bufio.Reader, oviewer |
 | **list** | 目录列表（增强版 ls） | `cli/list.go` + `commands/list/*.go` | go-pretty/table |
 
 #### 2.1.2 文件查找与处理类（3个）
@@ -409,6 +409,7 @@ flowchart TD
 | **进度条** | progressbar | v3.19.0 | 进度显示 | ⭐⭐⭐⭐ 活跃 |
 | **系统调用** | golang.org/x/sys | v0.42.0 | 系统级操作 | ⭐⭐⭐⭐⭐ 官方维护 |
 | **终端** | golang.org/x/term | v0.41.0 | 终端控制 | ⭐⭐⭐⭐⭐ 官方维护 |
+| **分页器** | oviewer | v0.51.1 | 终端分页查看 | ⭐⭐⭐⭐⭐ 活跃 |
 
 ### 5.2 技术栈选择评估
 
@@ -783,11 +784,60 @@ if !config.Text {
 **报告完成时间**: 2026-04-13  
 **最近更新**: 2026-04-15  
 **分析师**: Claude Code  
-**版本**: v1.4
+**版本**: v1.5
 
 ---
 
 ## 七、开发记录
+
+### 2026-04-15 cat 命令添加 ov 分页支持
+
+#### 7.0.1 功能概述
+
+为 cat 命令添加了基于 `noborus/ov` 库的分页查看功能，提供类似 `less` 的专业分页体验。
+
+**新增标志**:
+| 标志 | 说明 |
+|------|------|
+| `--ov` | 使用 ov 库进行分页查看 |
+
+**使用方式**:
+```bash
+fck cat --ov file.txt
+```
+
+#### 7.0.2 ov 库特性
+
+- 支持超大文件（超过内存）
+- 支持压缩文件（gzip, bzip2, zstd, lz4, xz）
+- Unicode 和东亚宽字符支持
+- 固定表头/列模式
+- 类似 `less` 的快捷键（`q` 退出，`/` 搜索等）
+
+#### 7.0.3 实现文件
+
+- `internal/cli/cat.go`: 添加 `--ov` flag 定义和示例
+- `internal/commands/cat/cmd_cat.go`: 添加 `UseOV` 配置字段和调用逻辑
+- `internal/commands/cat/ov_pager.go`: ov 分页实现（新增文件）
+
+#### 7.0.4 依赖更新
+
+```bash
+go get github.com/noborus/ov/oviewer
+go mod vendor
+```
+
+新增依赖：
+- `github.com/noborus/ov v0.51.1`
+- `github.com/gdamore/tcell/v2 v2.13.8`（终端控制）
+- 及其他相关依赖
+
+#### 7.0.5 限制说明
+
+- `--ov` 模式目前只支持单个文件
+- 与 `--head`、`-u`、`--tail`、`-d` 等标志互斥（ov 模式优先）
+
+---
 
 ### 2026-04-15 xargs 命令重构
 
