@@ -63,6 +63,24 @@ func init() {
 			"使用 -0 可以处理包含空格或特殊字符的文件名",
 			"使用 -P 可以并行执行，提高处理速度",
 		},
+		MutexGroups: []qflag.MutexGroup{
+			{
+				Name: "replace-max-args",
+				Flags: []string{
+					"replace",
+					"max-args",
+				},
+				AllowNone: true,
+			},
+			{
+				Name: "replace-delim-max-args",
+				Flags: []string{
+					"replace-delim",
+					"max-args",
+				},
+				AllowNone: true,
+			},
+		},
 	}
 
 	if err := XargsCmd.ApplyOpts(cmdOpts); err != nil {
