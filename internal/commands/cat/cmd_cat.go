@@ -25,6 +25,7 @@ type CatConfig struct {
 	Quiet        bool     // -q 静默模式 (不显示错误信息)
 	Text         bool     // -a, --text 强制将二进制文件视为文本处理
 	IgnoreBinary bool     // -I, --ignore-binary 完全忽略二进制文件
+	UseOV        bool     // --ov 使用 ov 库进行分页查看
 
 	// 运行时
 	LineCounter int // 行号计数器
@@ -49,23 +50,28 @@ func CatCmdMain(config CatConfig) error {
 		return fmt.Errorf("no files specified")
 	}
 
-	// 2. 处理标志冲突 (-b 优先级高于 -n)
+	// 2. 如果使用 ov 分页模式，直接调用 ov 查看
+	if config.UseOV {
+		return runOVMode(config)
+	}
+
+	// 3. 处理标志冲突 (-b 优先级高于 -n)
 	if config.ShowNonBlank {
 		config.ShowLineNum = false
 	}
 
-	// 3. 处理 --show-all
+	// 4. 处理 --show-all
 	if config.ShowAll {
 		config.ShowEnd = true
 		config.ShowTabs = true
 	}
 
-	// 4. 验证 head/tail 互斥
+	// 5. 验证 head/tail 互斥
 	if config.HeadLines > 0 && config.TailLines > 0 {
 		return fmt.Errorf("cannot use --head (-u) and --tail (-d) together")
 	}
 
-	// 5. 处理每个文件
+	// 6. 处理每个文件
 	for _, target := range config.Targets {
 		if err := processFile(target, &config); err != nil {
 			if !config.Quiet {
