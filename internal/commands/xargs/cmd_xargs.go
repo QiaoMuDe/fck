@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"sync"
 
@@ -19,7 +20,6 @@ type XargsConfig struct {
 
 	// 批量控制
 	MaxArgs  int // 每批最大参数
-	MaxLines int // 每批最大行数
 	MaxChars int // 命令最大长度
 
 	// 执行配置
@@ -27,9 +27,9 @@ type XargsConfig struct {
 	ReplaceDelim string // 自定义占位符字符串
 	MaxProcs     int    // 并行数
 	NoRunIfEmpty bool   // 空输入不执行
-	Interactive  bool   // 确认模式
 	Verbose      bool   // 显示命令
 	ExitOnError  bool   // 出错停止
+	Shell        bool   // 通过 shell 执行
 
 	// 目标命令
 	Command     string   // 要执行的命令
@@ -174,11 +174,6 @@ func splitBatches(args []string, config XargsConfig) [][]string {
 			shouldSplit = true
 		}
 
-		// 按行数
-		if config.MaxLines > 0 && len(currentBatch) >= config.MaxLines {
-			shouldSplit = true
-		}
-
 		// 按命令长度
 		if config.MaxChars > 0 {
 			cmdLen := calculateCmdLen(config, currentBatch)
@@ -297,39 +292,107 @@ func runParallel(batches [][]string, config XargsConfig, stats *XargsStats) erro
 //
 // 返回:
 //   - error: 执行错误
+//   - error: 执行错误
 func executeBatch(batch []string, config XargsConfig, stats *XargsStats) error {
 	stats.Executed++
 
-	// 构建命令
-	cmdStr := buildCommand(batch, config)
+	// 根据模式选择执行方式
+	if config.Shell {
+		return executeWithShell(batch, config, stats)
+	}
+	return executeDirectly(batch, config, stats)
+}
 
-	// 显示命令
+// executeDirectly 直接执行命令（安全模式）
+//
+// 参数:
+//   - batch: 批次参数
+//   - config: 命令配置
+//   - stats: 执行统计
+//
+// 返回:
+//   - error: 执行错误
+func executeDirectly(batch []string, config XargsConfig, stats *XargsStats) error {
+	// 替换模式：每个参数单独执行
+	if config.ReplaceStr != "" || config.ReplaceDelim != "" {
+		placeholder := config.ReplaceStr
+		if placeholder == "" {
+			placeholder = config.ReplaceDelim
+		}
+		if placeholder == "" {
+			placeholder = "{}"
+		}
+
+		for _, arg := range batch {
+			// 构建参数列表
+			var args []string
+
+			// 处理 CommandArgs 中的占位符
+			for _, fixedArg := range config.CommandArgs {
+				replacedArg := strings.ReplaceAll(fixedArg, placeholder, arg)
+				args = append(args, replacedArg)
+			}
+
+			// 替换 Command 中的占位符
+			cmdName := strings.ReplaceAll(config.Command, placeholder, arg)
+			cmdStr := cmdName + " " + strings.Join(args, " ")
+			if config.Verbose {
+				fmt.Fprintln(os.Stderr, cmdStr)
+			}
+
+			cmd := exec.Command(cmdName, args...)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+
+			if err := cmd.Run(); err != nil {
+				stats.Failed++
+				return fmt.Errorf("执行失败: %w", err)
+			}
+		}
+		return nil
+	}
+
+	// 默认模式：所有参数追加到命令后
+	args := append(config.CommandArgs, batch...)
+	cmdStr := config.Command + " " + strings.Join(args, " ")
 	if config.Verbose {
 		fmt.Fprintln(os.Stderr, cmdStr)
 	}
 
-	// 确认模式
-	if config.Interactive {
-		fmt.Fprintf(os.Stderr, "执行? (y/n): ")
-		var response string
-		if _, err := fmt.Scanln(&response); err != nil {
-			return fmt.Errorf("读取确认失败: %w", err)
-		}
-		if response != "y" && response != "Y" {
-			return nil
-		}
+	cmd := exec.Command(config.Command, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		stats.Failed++
+		return fmt.Errorf("执行失败: %w", err)
+	}
+	return nil
+}
+
+// executeWithShell 通过 shell 执行命令（兼容模式）
+//
+// 参数:
+//   - batch: 批次参数
+//   - config: 命令配置
+//   - stats: 执行统计
+//
+// 返回:
+//   - error: 执行错误
+func executeWithShell(batch []string, config XargsConfig, stats *XargsStats) error {
+	cmdStr := buildCommandString(batch, config)
+	if config.Verbose {
+		fmt.Fprintln(os.Stderr, cmdStr)
 	}
 
-	// 执行命令
 	if err := shx.RunToTerminal(cmdStr); err != nil {
 		stats.Failed++
 		return fmt.Errorf("执行失败: %w", err)
 	}
-
 	return nil
 }
 
-// buildCommand 构建命令字符串
+// buildCommandString 构建命令字符串（供 shell 模式使用）
 //
 // 参数:
 //   - batch: 批次参数
@@ -337,7 +400,7 @@ func executeBatch(batch []string, config XargsConfig, stats *XargsStats) error {
 //
 // 返回:
 //   - string: 命令字符串
-func buildCommand(batch []string, config XargsConfig) string {
+func buildCommandString(batch []string, config XargsConfig) string {
 	// 确定占位符
 	placeholder := config.ReplaceStr
 	if placeholder == "" {

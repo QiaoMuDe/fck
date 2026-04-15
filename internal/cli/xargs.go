@@ -14,15 +14,14 @@ var (
 	xargsNull         *qflag.BoolFlag   // -0, --null       使用 \0 作为分隔符
 	xargsArgFile      *qflag.StringFlag // -a, --arg-file   从文件读取参数
 	xargsMaxArgs      *qflag.IntFlag    // -n, --max-args   每批最大参数个数
-	xargsMaxLines     *qflag.IntFlag    // -L, --max-lines  每批最大行数
 	xargsMaxChars     *qflag.IntFlag    // -s, --max-chars  命令最大长度
 	xargsReplaceStr   *qflag.BoolFlag   // -i, --replace    启用占位符替换模式
 	xargsReplaceDelim *qflag.StringFlag // -I, --replace-delim  自定义占位符字符串
 	xargsMaxProcs     *qflag.IntFlag    // -P, --max-procs  并行进程数
 	xargsNoRunIfEmpty *qflag.BoolFlag   // -r, --no-run-if-empty  空输入不执行
-	xargsInteractive  *qflag.BoolFlag   // -p, --interactive 执行前确认
 	xargsVerbose      *qflag.BoolFlag   // -t, --verbose    打印执行的命令
 	xargsExitOnError  *qflag.BoolFlag   // -e, --exit-on-error  出错立即停止
+	xargsShell        *qflag.BoolFlag   // --shell 通过 shell 执行命令
 )
 
 func init() {
@@ -32,15 +31,14 @@ func init() {
 	xargsNull = XargsCmd.Bool("null", "0", "使用 \\0 作为分隔符", false)
 	xargsArgFile = XargsCmd.String("arg-file", "a", "从文件读取参数", "")
 	xargsMaxArgs = XargsCmd.Int("max-args", "n", "每批最大参数个数", 0)
-	xargsMaxLines = XargsCmd.Int("max-lines", "L", "每批最大行数", 0)
 	xargsMaxChars = XargsCmd.Int("max-chars", "s", "命令最大长度", 0)
 	xargsReplaceStr = XargsCmd.Bool("replace", "i", "启用占位符替换模式 (默认占位符 {})", false)
 	xargsReplaceDelim = XargsCmd.String("replace-delim", "I", "自定义占位符字符串", "")
 	xargsMaxProcs = XargsCmd.Int("max-procs", "P", "并行进程数", 1)
 	xargsNoRunIfEmpty = XargsCmd.Bool("no-run-if-empty", "r", "空输入不执行", false)
-	xargsInteractive = XargsCmd.Bool("interactive", "p", "执行前确认", false)
 	xargsVerbose = XargsCmd.Bool("verbose", "t", "打印执行的命令", false)
 	xargsExitOnError = XargsCmd.Bool("exit-on-error", "e", "出错立即停止", false)
+	xargsShell = XargsCmd.Bool("shell", "", "通过 shell 执行命令（支持管道、重定向等）", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:       "从标准输入或文件读取参数，批量执行指定命令",
@@ -53,15 +51,19 @@ func init() {
 			"并行执行":   `cat urls.txt | fck xargs -P 4 curl -O`,
 			"从文件读取":  `fck xargs -a files.txt rm`,
 			"空分隔符":   `find . -print0 | fck xargs -0 rm`,
-			"执行前确认":  `echo file1 | fck xargs -p rm`,
 			"限制命令长度": `fck xargs -s 1024 echo`,
 			"组合使用":   `find . -name "*.tmp" | fck xargs -0 -i -P 4 mv {} /backup/`,
+			"使用管道":   `echo "file.txt" | fck xargs -i --shell "cat {} | grep pattern"`,
+			"使用重定向":  `echo "file.txt" | fck xargs -i --shell "cat {} > output.txt"`,
 		},
 		Notes: []string{
 			"默认模式：所有参数追加到命令后，执行一次",
 			"-i 模式：每个参数单独替换占位符，执行多次",
 			"使用 -0 可以处理包含空格或特殊字符的文件名",
 			"使用 -P 可以并行执行，提高处理速度",
+			"默认使用直接执行模式，避免 shell 注入风险",
+			"如需使用管道、重定向等 shell 特性，请添加 --shell 标志",
+			"--shell 模式下请注意输入安全性",
 		},
 		MutexGroups: []qflag.MutexGroup{
 			{
@@ -111,15 +113,14 @@ func runXargs(cmd qflag.Command) error {
 		NullMode:     xargsNull.Get(),
 		ArgFile:      xargsArgFile.Get(),
 		MaxArgs:      xargsMaxArgs.Get(),
-		MaxLines:     xargsMaxLines.Get(),
 		MaxChars:     xargsMaxChars.Get(),
 		ReplaceStr:   replaceStr,
 		ReplaceDelim: replaceDelim,
 		MaxProcs:     xargsMaxProcs.Get(),
 		NoRunIfEmpty: xargsNoRunIfEmpty.Get(),
-		Interactive:  xargsInteractive.Get(),
 		Verbose:      xargsVerbose.Get(),
 		ExitOnError:  xargsExitOnError.Get(),
+		Shell:        xargsShell.Get(),
 		Command:      args[0],
 		CommandArgs:  args[1:],
 	}
