@@ -781,6 +781,104 @@ if !config.Text {
 ---
 
 **报告完成时间**: 2026-04-13  
-**最近更新**: 2026-04-14  
+**最近更新**: 2026-04-15  
 **分析师**: Claude Code  
-**版本**: v1.2
+**版本**: v1.4
+
+---
+
+## 七、开发记录
+
+### 2026-04-15 xargs 命令重构
+
+#### 7.1 新增功能
+
+| 功能 | 说明 | 相关文件 |
+|------|------|----------|
+| `--shell` 标志 | 支持通过 shell 执行命令，可使用管道、重定向等特性 | `cli/xargs.go`, `commands/xargs/cmd_xargs.go` |
+| 双模式执行 | 默认直接执行（安全），`--shell` 模式通过 shell 执行（兼容） | `commands/xargs/cmd_xargs.go` |
+| 错误去重 | 相同错误只显示一次，带重复次数统计 | `commands/xargs/cmd_xargs.go` |
+
+#### 7.2 移除功能
+
+| 功能 | 原因 | 相关文件 |
+|------|------|----------|
+| `-p, --interactive` | 与管道输入冲突，stdin 被耗尽后无法读取确认 | `cli/xargs.go`, `commands/xargs/cmd_xargs.go` |
+| `-L, --max-lines` | 实现复杂，需按行处理输入，与当前架构不兼容 | `cli/xargs.go`, `commands/xargs/cmd_xargs.go` |
+
+#### 7.3 Bug 修复
+
+| 问题 | 修复内容 | 文件 |
+|------|----------|------|
+| EOF 判断不健壮 | `err.Error() != "EOF"` → `!errors.Is(err, io.EOF)` | `commands/xargs/cmd_xargs.go` |
+| 命令长度计算不准确 | `calculateCmdLen` 现在考虑占位符替换后的实际长度 | `commands/xargs/cmd_xargs.go` |
+| 占位符替换不完整 | `executeDirectly` 现在同时替换 `Command` 和 `CommandArgs` 中的占位符 | `commands/xargs/cmd_xargs.go` |
+| 并行执行取消机制 | 添加 `atomic.Bool` 取消标志，出错时停止新任务启动 | `commands/xargs/cmd_xargs.go` |
+
+#### 7.4 代码重构
+
+| 重构项 | 说明 | 文件 |
+|--------|------|------|
+| 提取公共函数 | `getPlaceholder()` 和 `isReplaceMode()` 消除重复代码 | `commands/xargs/cmd_xargs.go` |
+| 错误信息国际化 | 所有错误信息改为英文 | `commands/xargs/cmd_xargs.go` |
+| 错误信息格式化 | 结构化输出，支持去重和重复次数统计 | `commands/xargs/cmd_xargs.go` |
+
+#### 7.5 代码结构优化
+
+```
+commands/xargs/cmd_xargs.go
+├── XargsConfig          # 配置结构体
+├── XargsStats           # 统计结构体（新增 Errors 字段）
+├── XargsCmdMain         # 主入口
+├── readArgs             # 读取参数（支持文件/stdin）
+├── splitBatches         # 分批处理（支持 -n, -s）
+├── calculateCmdLen      # 计算命令长度（考虑占位符替换）
+├── runSequential        # 顺序执行
+├── runParallel          # 并行执行（支持 -P，带取消机制）
+├── executeBatch         # 执行单个批次
+├── executeDirectly      # 直接执行（安全模式）
+├── executeWithShell     # Shell 执行（兼容模式）
+├── buildCommandString   # 构建命令字符串
+├── getPlaceholder       # 获取占位符（新增）
+└── isReplaceMode        # 检查替换模式（新增）
+```
+
+#### 7.6 当前支持的标志
+
+| 标志 | 功能 | 实现状态 |
+|------|------|----------|
+| `-0, --null` | 使用 `\0` 作为分隔符 | ✅ |
+| `-a, --arg-file` | 从文件读取参数 | ✅ |
+| `-d, --delimiter` | 输入分隔符 | ✅ |
+| `-e, --exit-on-error` | 出错立即停止 | ✅ |
+| `-h, --help` | 显示帮助信息 | ✅ |
+| `-i, --replace` | 启用占位符替换模式 | ✅ |
+| `-I, --replace-delim` | 自定义占位符字符串 | ✅ |
+| `-n, --max-args` | 每批最大参数个数 | ✅ |
+| `-P, --max-procs` | 并行进程数 | ✅ |
+| `-r, --no-run-if-empty` | 空输入不执行 | ✅ |
+| `-s, --max-chars` | 命令最大长度 | ✅ |
+| `-t, --verbose` | 打印执行的命令 | ✅ |
+| `--shell` | 通过 shell 执行命令 | ✅ |
+
+#### 7.7 错误输出格式
+
+```
+err: execution completed: 0 succeeded, 1 failed
+
+Errors (1 unique):
+  1. exec: "echo 这是1 1 1": executable file not found in %PATH%
+```
+
+重复错误显示次数：
+```
+Errors (1 unique):
+  1. exec: "echo 这是1 1 1": executable file not found in %PATH% (x4)
+```
+
+---
+
+**报告完成时间**: 2026-04-13  
+**最近更新**: 2026-04-15  
+**分析师**: Claude Code  
+**版本**: v1.4

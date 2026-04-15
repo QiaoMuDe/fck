@@ -2,11 +2,14 @@ package xargs
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"gitee.com/MM-Q/shellx/shx"
 )
@@ -38,8 +41,9 @@ type XargsConfig struct {
 
 // XargsStats 执行统计
 type XargsStats struct {
-	Executed int // 执行次数
-	Failed   int // 失败次数
+	Executed int      // 执行次数
+	Failed   int      // 失败次数
+	Errors   []string // 错误信息列表
 }
 
 // XargsCmdMain 执行xargs命令
@@ -61,7 +65,7 @@ func XargsCmdMain(config XargsConfig) error {
 		if config.NoRunIfEmpty {
 			return nil
 		}
-		return fmt.Errorf("没有输入参数")
+		return fmt.Errorf("no input arguments")
 	}
 
 	// 按规则分批
@@ -81,7 +85,31 @@ func XargsCmdMain(config XargsConfig) error {
 
 	// 如果有失败，返回错误
 	if stats.Failed > 0 {
-		return fmt.Errorf("执行完成，%d 次成功，%d 次失败", stats.Executed-stats.Failed, stats.Failed)
+		if len(stats.Errors) > 0 {
+			// 使用 map 去重相同的错误
+			uniqueErrors := make(map[string]int)
+			for _, errMsg := range stats.Errors {
+				uniqueErrors[errMsg]++
+			}
+
+			// 格式化错误详情，带序号缩进
+			var errDetails strings.Builder
+			i := 0
+			for errMsg, count := range uniqueErrors {
+				if i > 0 {
+					fmt.Fprintln(&errDetails)
+				}
+				if count > 1 {
+					fmt.Fprintf(&errDetails, "  %d. %s (x%d)", i+1, errMsg, count)
+				} else {
+					fmt.Fprintf(&errDetails, "  %d. %s", i+1, errMsg)
+				}
+				i++
+			}
+			return fmt.Errorf("execution completed: %d succeeded, %d failed\n\nErrors (%d unique):\n%s",
+				stats.Executed-stats.Failed, stats.Failed, len(uniqueErrors), errDetails.String())
+		}
+		return fmt.Errorf("execution completed: %d succeeded, %d failed", stats.Executed-stats.Failed, stats.Failed)
 	}
 
 	return nil
@@ -132,7 +160,7 @@ func readArgs(config XargsConfig) ([]string, error) {
 	} else {
 		// 自定义分隔符
 		data, err := reader.ReadString('\x00')
-		if err != nil && err.Error() != "EOF" {
+		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("读取输入失败: %w", err)
 		}
 		// 移除末尾的 \x00
@@ -206,6 +234,35 @@ func splitBatches(args []string, config XargsConfig) [][]string {
 	return batches
 }
 
+// getPlaceholder 获取占位符字符串
+// 优先级: ReplaceStr > ReplaceDelim > 默认"{}"
+//
+// 参数:
+//   - config: 命令配置
+//
+// 返回:
+//   - string: 占位符字符串
+func getPlaceholder(config XargsConfig) string {
+	if config.ReplaceStr != "" {
+		return config.ReplaceStr
+	}
+	if config.ReplaceDelim != "" {
+		return config.ReplaceDelim
+	}
+	return "{}"
+}
+
+// isReplaceMode 检查是否启用替换模式
+//
+// 参数:
+//   - config: 命令配置
+//
+// 返回:
+//   - bool: 是否启用替换模式
+func isReplaceMode(config XargsConfig) bool {
+	return config.ReplaceStr != "" || config.ReplaceDelim != ""
+}
+
 // calculateCmdLen 计算命令长度
 //
 // 参数:
@@ -215,13 +272,40 @@ func splitBatches(args []string, config XargsConfig) [][]string {
 // 返回:
 //   - int: 命令长度
 func calculateCmdLen(config XargsConfig, batch []string) int {
-	length := len(config.Command)
-	for _, arg := range config.CommandArgs {
-		length += len(arg) + 1 // +1 for space
+	// 确定占位符
+	placeholder := getPlaceholder(config)
+
+	// 检查是否启用替换模式
+	replaceMode := isReplaceMode(config)
+
+	// 计算 Command 长度（考虑占位符替换）
+	var cmdLen int
+	if replaceMode && len(batch) > 0 {
+		// 替换模式：使用 batch 中第一个参数替换占位符
+		cmdLen = len(strings.ReplaceAll(config.Command, placeholder, batch[0]))
+	} else {
+		// 默认模式：直接使用 Command 长度
+		cmdLen = len(config.Command)
 	}
+
+	length := cmdLen
+
+	// 计算 CommandArgs 长度（考虑占位符替换）
+	for _, fixedArg := range config.CommandArgs {
+		if replaceMode && len(batch) > 0 {
+			// 替换模式：替换占位符后计算长度
+			length += len(strings.ReplaceAll(fixedArg, placeholder, batch[0])) + 1 // +1 for space
+		} else {
+			// 默认模式：直接使用参数长度
+			length += len(fixedArg) + 1 // +1 for space
+		}
+	}
+
+	// 计算 batch 参数长度
 	for _, arg := range batch {
 		length += len(arg) + 1 // +1 for space
 	}
+
 	return length
 }
 
@@ -240,7 +324,8 @@ func runSequential(batches [][]string, config XargsConfig, stats *XargsStats) er
 			if config.ExitOnError {
 				return err
 			}
-			// 继续执行下一批
+			// 收集错误信息
+			stats.Errors = append(stats.Errors, err.Error())
 		}
 	}
 	return nil
@@ -260,8 +345,14 @@ func runParallel(batches [][]string, config XargsConfig, stats *XargsStats) erro
 	semaphore := make(chan struct{}, config.MaxProcs)
 	var mu sync.Mutex
 	var firstErr error
+	var cancelled atomic.Bool
 
 	for _, batch := range batches {
+		// 检查是否已取消
+		if cancelled.Load() {
+			break
+		}
+
 		wg.Add(1)
 		semaphore <- struct{}{} // 获取信号量
 
@@ -269,10 +360,19 @@ func runParallel(batches [][]string, config XargsConfig, stats *XargsStats) erro
 			defer wg.Done()
 			defer func() { <-semaphore }() // 释放信号量
 
+			// 检查是否已取消
+			if cancelled.Load() {
+				return
+			}
+
 			if err := executeBatch(b, config, stats); err != nil {
 				mu.Lock()
 				if config.ExitOnError && firstErr == nil {
 					firstErr = err
+					cancelled.Store(true) // 设置取消标志
+				} else if !config.ExitOnError {
+					// 收集错误信息
+					stats.Errors = append(stats.Errors, err.Error())
 				}
 				mu.Unlock()
 			}
@@ -291,7 +391,6 @@ func runParallel(batches [][]string, config XargsConfig, stats *XargsStats) erro
 //   - stats: 执行统计
 //
 // 返回:
-//   - error: 执行错误
 //   - error: 执行错误
 func executeBatch(batch []string, config XargsConfig, stats *XargsStats) error {
 	stats.Executed++
@@ -314,14 +413,8 @@ func executeBatch(batch []string, config XargsConfig, stats *XargsStats) error {
 //   - error: 执行错误
 func executeDirectly(batch []string, config XargsConfig, stats *XargsStats) error {
 	// 替换模式：每个参数单独执行
-	if config.ReplaceStr != "" || config.ReplaceDelim != "" {
-		placeholder := config.ReplaceStr
-		if placeholder == "" {
-			placeholder = config.ReplaceDelim
-		}
-		if placeholder == "" {
-			placeholder = "{}"
-		}
+	if isReplaceMode(config) {
+		placeholder := getPlaceholder(config)
 
 		for _, arg := range batch {
 			// 构建参数列表
@@ -346,7 +439,7 @@ func executeDirectly(batch []string, config XargsConfig, stats *XargsStats) erro
 
 			if err := cmd.Run(); err != nil {
 				stats.Failed++
-				return fmt.Errorf("执行失败: %w", err)
+				return fmt.Errorf("%w", err)
 			}
 		}
 		return nil
@@ -365,7 +458,7 @@ func executeDirectly(batch []string, config XargsConfig, stats *XargsStats) erro
 
 	if err := cmd.Run(); err != nil {
 		stats.Failed++
-		return fmt.Errorf("执行失败: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 	return nil
 }
@@ -387,7 +480,7 @@ func executeWithShell(batch []string, config XargsConfig, stats *XargsStats) err
 
 	if err := shx.RunToTerminal(cmdStr); err != nil {
 		stats.Failed++
-		return fmt.Errorf("执行失败: %w", err)
+		return fmt.Errorf("execution failed: %w", err)
 	}
 	return nil
 }
@@ -402,16 +495,10 @@ func executeWithShell(batch []string, config XargsConfig, stats *XargsStats) err
 //   - string: 命令字符串
 func buildCommandString(batch []string, config XargsConfig) string {
 	// 确定占位符
-	placeholder := config.ReplaceStr
-	if placeholder == "" {
-		placeholder = config.ReplaceDelim
-	}
-	if placeholder == "" {
-		placeholder = "{}"
-	}
+	placeholder := getPlaceholder(config)
 
 	// 替换模式
-	if config.ReplaceStr != "" || config.ReplaceDelim != "" {
+	if isReplaceMode(config) {
 		// 每个参数单独替换，执行多次
 		var cmds []string
 		for _, arg := range batch {
