@@ -1,12 +1,14 @@
 package cat
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
 
+	"gitee.com/MM-Q/go-kit/utils"
 	"github.com/alecthomas/chroma/v2/formatters"
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
@@ -37,7 +39,18 @@ func NewFileViewer(config *CatConfig) *FileViewer {
 // 返回:
 //   - error: 处理错误
 func (v *FileViewer) View(path string) error {
-	// 1. 读取文件
+	// 1. 检查文件大小
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("failed to stat file %s: %w", path, err)
+	}
+
+	if info.Size() > v.config.MaxSize {
+		return fmt.Errorf("file too large (%s), use -l flag for large files or increase limit with -S flag",
+			utils.FormatBytes(info.Size()))
+	}
+
+	// 2. 读取文件
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read file %s: %w", path, err)
@@ -140,6 +153,11 @@ func (v *FileViewer) applySpecialFlags(lines [][]byte) [][]byte {
 // 返回:
 //   - error: 输出错误
 func (v *FileViewer) outputPlain(lines [][]byte) error {
+	writer := bufio.NewWriter(os.Stdout)
+	defer func() {
+		_ = writer.Flush()
+	}()
+
 	lineNum := 0
 
 	for _, line := range lines {
@@ -149,11 +167,11 @@ func (v *FileViewer) outputPlain(lines [][]byte) error {
 		// 处理行号 (-n 或 -b)
 		if v.config.ShowLineNum || (v.config.ShowNonBlank && !isBlank) {
 			lineNum++
-			fmt.Printf("%6d\t", lineNum)
+			_, _ = fmt.Fprintf(writer, "%6d\t", lineNum)
 		}
 
 		// 输出内容
-		fmt.Println(content)
+		_, _ = fmt.Fprintln(writer, content)
 	}
 
 	return nil
@@ -182,6 +200,11 @@ func (v *FileViewer) outputHighlighted(lines [][]byte, path string) error {
 	hlLines := bytes.Split(hlContent, []byte("\n"))
 
 	// 4. 输出行（带行号）
+	writer := bufio.NewWriter(os.Stdout)
+	defer func() {
+		_ = writer.Flush()
+	}()
+
 	lineNum := 0
 
 	for _, line := range hlLines {
@@ -192,11 +215,11 @@ func (v *FileViewer) outputHighlighted(lines [][]byte, path string) error {
 		// 处理行号 (-n 或 -b)
 		if v.config.ShowLineNum || (v.config.ShowNonBlank && !isBlank) {
 			lineNum++
-			fmt.Printf("%6d\t", lineNum)
+			_, _ = fmt.Fprintf(writer, "%6d\t", lineNum)
 		}
 
 		// 输出高亮内容
-		fmt.Println(content)
+		_, _ = fmt.Fprintln(writer, content)
 	}
 
 	return nil

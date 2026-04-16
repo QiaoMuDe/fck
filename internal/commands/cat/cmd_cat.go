@@ -23,6 +23,7 @@ type CatConfig struct {
 	IgnoreBinary bool     // -I, --ignore-binary 完全忽略二进制文件
 	UseLess      bool     // -l, --less 使用分页器查看文件内容
 	Highlight    bool     // -H, --highlight 启用语法高亮
+	MaxSize      int64    // -S, --max-size 最大文件大小 (字节)
 
 	// 运行时
 	LineCounter int // 行号计数器

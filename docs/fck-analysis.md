@@ -2,7 +2,7 @@
 
 > **项目定位**: 一站式文件与系统管理工具集  
 > **技术栈**: Go 1.25.0  
-> **分析日期**: 2026-04-13  
+> **分析日期**: 2026-04-17  
 > **分析范围**: 完整代码库（含 vendor 依赖）
 
 ---
@@ -75,7 +75,7 @@ FCK 项目包含 **26 个功能模块**，按功能领域分类如下：
 | **mkdir** | 目录创建 | `cli/mkdir.go` + `commands/mkdir/cmd_mkdir.go` | 标准库 os.MkdirAll |
 | **touch** | 文件创建/时间戳更新 | `cli/touch.go` + `commands/touch/cmd_touch.go` | 标准库 os.Chtimes |
 | **truncate** | 文件截断 | `cli/truncate.go` + `commands/truncate/cmd_truncate.go` | 标准库 os.Truncate |
-| **cat** | 文件内容查看（支持语法高亮、分页、head/tail） | `cli/cat.go` + `commands/cat/*.go` | bufio.Reader, oviewer, chroma |
+| **cat** | 文件内容查看（支持语法高亮、分页、head/tail、文件大小限制） | `cli/cat.go` + `commands/cat/*.go` | bufio, oviewer, chroma, stripansi |
 | **list** | 目录列表（增强版 ls） | `cli/list.go` + `commands/list/*.go` | go-pretty/table |
 
 #### 2.1.2 文件查找与处理类（3个）
@@ -554,6 +554,8 @@ defer func() {
 - ✅ find 命令使用 WalkDir（比 Walk 更高效）
 - ✅ 使用 sync.Pool 复用对象（go-kit/pool）
 - ✅ 大目录扫描使用流式处理，避免内存溢出
+- ✅ cat 命令使用 bufio.Writer 批量输出，减少系统调用
+- ✅ cat 命令添加文件大小限制（-S/--max-size），防止大文件内存溢出
 
 **可优化**:
 - ⚠️ grep 递归搜索可考虑并行化
@@ -597,6 +599,7 @@ defer cancel()
 | P3 | 常量定义 | 将 magic number 提取为常量 |
 | P4 | 接口抽象 | 抽象 colorlib 依赖，便于测试 |
 | P5 | 文档分类 | docs 目录按功能分类，便于查找 |
+| P6 | cat 大文件流式处理 | head/tail 模式下使用流式读取，避免加载整个文件 |
 
 ### 7.3 关键记忆点
 
@@ -612,6 +615,8 @@ defer cancel()
 - CLI 框架: `gitee.com/MM-Q/qflag`
 - 颜色输出: `gitee.com/MM-Q/colorlib`
 - 文件操作: `gitee.com/MM-Q/go-kit/fs`
+- 语法高亮: `github.com/alecthomas/chroma/v2`
+- ANSI 处理: `github.com/acarl005/stripansi`
 - 压缩解压: `gitee.com/MM-Q/comprx`
 - Shell 执行: `gitee.com/MM-Q/shellx`
 

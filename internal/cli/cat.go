@@ -28,6 +28,9 @@ var (
 
 	// 语法高亮
 	catHighlight *qflag.BoolFlag // -H, --highlight 启用语法高亮
+
+	// 文件大小限制
+	catMaxSize *qflag.SizeFlag // -S, --max-size 最大文件大小 (默认100MB)
 )
 
 func init() {
@@ -52,6 +55,9 @@ func init() {
 	// 语法高亮标志
 	catHighlight = CatCmd.Bool("highlight", "H", "启用语法高亮", false)
 
+	// 文件大小限制标志
+	catMaxSize = CatCmd.Size("max-size", "S", "最大文件大小 (如: 50m, 100m, 1g)", 100*1024*1024)
+
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "显示文件内容",
 		UseChinese:  true,
@@ -74,6 +80,11 @@ func init() {
 			{
 				Name:      "head-tail",
 				Flags:     []string{"head", "tail"},
+				AllowNone: true,
+			},
+			{
+				Name:      "line-number",
+				Flags:     []string{"number", "number-nonblank"},
 				AllowNone: true,
 			},
 			{
@@ -116,6 +127,7 @@ func runCat(cmd qflag.Command) error {
 		ShowTabs:     catShowTabs.Get(),
 		ShowAll:      catShowAll.Get(),
 		HeadLines:    catHeadLines.Get(),
+		MaxSize:      catMaxSize.Get(),
 		TailLines:    catTailLines.Get(),
 		Quiet:        catQuiet.Get(),
 		Text:         catText.Get(),
