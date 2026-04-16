@@ -25,7 +25,7 @@ type CatConfig struct {
 	Quiet        bool     // -q 静默模式 (不显示错误信息)
 	Text         bool     // -a, --text 强制将二进制文件视为文本处理
 	IgnoreBinary bool     // -I, --ignore-binary 完全忽略二进制文件
-	UseOV        bool     // --ov 使用 ov 库进行分页查看
+	UseLess      bool     // -l, --less 使用分页器查看文件内容
 
 	// 运行时
 	LineCounter int // 行号计数器
@@ -50,8 +50,8 @@ func CatCmdMain(config CatConfig) error {
 		return fmt.Errorf("no files specified")
 	}
 
-	// 2. 如果使用 ov 分页模式，直接调用 ov 查看
-	if config.UseOV {
+	// 2. 如果使用分页器模式，直接调用分页器查看
+	if config.UseLess {
 		return runOVMode(config)
 	}
 

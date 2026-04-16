@@ -10,6 +10,7 @@ require (
 	gitee.com/MM-Q/qflag v0.5.15
 	gitee.com/MM-Q/shellx v1.0.18
 	gitee.com/MM-Q/verman v0.0.19
+	github.com/alecthomas/chroma/v2 v2.23.1
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/noborus/ov v0.51.1
 	github.com/schollz/progressbar/v3 v3.19.0
@@ -22,6 +23,7 @@ require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/creack/pty v1.1.24 // indirect
+	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/gdamore/tcell/v2 v2.13.8 // indirect

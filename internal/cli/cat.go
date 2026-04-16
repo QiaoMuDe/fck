@@ -25,7 +25,7 @@ var (
 	catIgnoreBinary *qflag.BoolFlag // -I, --ignore-binary 忽略二进制文件
 
 	// 分页查看
-	catUseOV *qflag.BoolFlag // --ov 使用 ov 库进行分页查看
+	catUseLess *qflag.BoolFlag // -l, --less 使用分页器查看文件内容
 )
 
 func init() {
@@ -46,22 +46,22 @@ func init() {
 	catIgnoreBinary = CatCmd.Bool("ignore-binary", "I", "完全忽略二进制文件，不输出提示", false)
 
 	// 分页查看标志
-	catUseOV = CatCmd.Bool("ov", "", "使用 ov 库进行分页查看", false)
+	catUseLess = CatCmd.Bool("less", "l", "使用分页器查看文件内容", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "显示文件内容",
 		UseChinese:  true,
 		UsageSyntax: fmt.Sprintf("%s cat [options] <file...>", qflag.Root.Name()),
 		Examples: map[string]string{
-			"显示文件内容":     fmt.Sprintf("%s cat file.txt", qflag.Root.Name()),
-			"显示行号":       fmt.Sprintf("%s cat -n file.txt", qflag.Root.Name()),
-			"显示前10行":     fmt.Sprintf("%s cat -u 10 file.txt", qflag.Root.Name()),
-			"显示后5行":      fmt.Sprintf("%s cat -d 5 file.txt", qflag.Root.Name()),
-			"显示换行符类型":    fmt.Sprintf("%s cat -N file.txt", qflag.Root.Name()),
-			"显示换行符和行尾":   fmt.Sprintf("%s cat -N -E file.txt", qflag.Root.Name()),
-			"静默跳过二进制文件":  fmt.Sprintf("%s cat -I file.bin", qflag.Root.Name()),
-			"强制显示二进制内容":  fmt.Sprintf("%s cat -a file.bin", qflag.Root.Name()),
-			"使用 ov 分页查看": fmt.Sprintf("%s cat --ov file.txt", qflag.Root.Name()),
+			"显示文件内容":    fmt.Sprintf("%s cat file.txt", qflag.Root.Name()),
+			"显示行号":      fmt.Sprintf("%s cat -n file.txt", qflag.Root.Name()),
+			"显示前10行":    fmt.Sprintf("%s cat -u 10 file.txt", qflag.Root.Name()),
+			"显示后5行":     fmt.Sprintf("%s cat -d 5 file.txt", qflag.Root.Name()),
+			"显示换行符类型":   fmt.Sprintf("%s cat -N file.txt", qflag.Root.Name()),
+			"显示换行符和行尾":  fmt.Sprintf("%s cat -N -E file.txt", qflag.Root.Name()),
+			"静默跳过二进制文件": fmt.Sprintf("%s cat -I file.bin", qflag.Root.Name()),
+			"强制显示二进制内容": fmt.Sprintf("%s cat -a file.bin", qflag.Root.Name()),
+			"使用分页器查看":   fmt.Sprintf("%s cat -l file.txt", qflag.Root.Name()),
 		},
 		Notes: []string{
 			"换行符检测仅支持 Windows(CRLF) 和 Unix(LF) 格式，不支持旧版 Mac(CR) 格式",
@@ -90,7 +90,7 @@ func runCat(cmd qflag.Command) error {
 		Quiet:        catQuiet.Get(),
 		Text:         catText.Get(),
 		IgnoreBinary: catIgnoreBinary.Get(),
-		UseOV:        catUseOV.Get(),
+		UseLess:      catUseLess.Get(),
 	}
 
 	return cat.CatCmdMain(config)

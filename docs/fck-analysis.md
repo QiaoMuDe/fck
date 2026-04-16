@@ -75,7 +75,7 @@ FCK 项目包含 **26 个功能模块**，按功能领域分类如下：
 | **mkdir** | 目录创建 | `cli/mkdir.go` + `commands/mkdir/cmd_mkdir.go` | 标准库 os.MkdirAll |
 | **touch** | 文件创建/时间戳更新 | `cli/touch.go` + `commands/touch/cmd_touch.go` | 标准库 os.Chtimes |
 | **truncate** | 文件截断 | `cli/truncate.go` + `commands/truncate/cmd_truncate.go` | 标准库 os.Truncate |
-| **cat** | 文件内容查看 | `cli/cat.go` + `commands/cat/cmd_cat.go` | bufio.Reader, oviewer |
+| **cat** | 文件内容查看 | `cli/cat.go` + `commands/cat/cmd_cat.go` | bufio.Reader, oviewer, chroma |
 | **list** | 目录列表（增强版 ls） | `cli/list.go` + `commands/list/*.go` | go-pretty/table |
 
 #### 2.1.2 文件查找与处理类（3个）
@@ -410,6 +410,7 @@ flowchart TD
 | **系统调用** | golang.org/x/sys | v0.42.0 | 系统级操作 | ⭐⭐⭐⭐⭐ 官方维护 |
 | **终端** | golang.org/x/term | v0.41.0 | 终端控制 | ⭐⭐⭐⭐⭐ 官方维护 |
 | **分页器** | oviewer | v0.51.1 | 终端分页查看 | ⭐⭐⭐⭐⭐ 活跃 |
+| **语法高亮** | chroma | v2.23.1 | 代码语法高亮 | ⭐⭐⭐⭐⭐ 活跃 |
 
 ### 5.2 技术栈选择评估
 
@@ -839,6 +840,90 @@ go mod vendor
 
 ---
 
+### 2026-04-16 cat 命令添加语法高亮支持
+
+#### 7.1.1 功能概述
+
+为 cat 命令的分页查看模式添加了基于 `alecthomas/chroma` 库的语法高亮功能，支持 200+ 编程语言的自动检测和高亮显示。
+
+**特性**:
+- 根据文件扩展名自动检测语言
+- 使用 256 色 ANSI 终端格式输出
+- 默认使用 `monokai` 主题
+- 高亮失败时优雅降级，显示原内容
+
+**使用方式**:
+```bash
+fck cat --ov main.go      # 自动检测并高亮 Go 文件
+fck cat --ov script.py    # 自动检测并高亮 Python 文件
+fck cat --ov file.txt     # 不支持高亮的文件，正常显示
+```
+
+#### 7.1.2 实现文件
+
+- `internal/commands/cat/syntax_highlight.go`: 语法高亮核心逻辑（新增文件）
+- `internal/commands/cat/ov_pager.go`: 集成高亮功能到分页器
+
+#### 7.1.3 核心 API
+
+```go
+// 检测文件类型是否支持高亮
+lexer := lexers.Match(filename)
+if lexer == nil {
+    // 不支持，返回原内容
+}
+
+// 执行高亮
+iterator, _ := lexer.Tokenise(nil, code)
+formatter.Format(writer, style, iterator)
+```
+
+#### 7.1.4 依赖更新
+
+```bash
+go get github.com/alecthomas/chroma/v2/formatters
+go get github.com/alecthomas/chroma/v2/lexers
+go get github.com/alecthomas/chroma/v2/styles
+go mod vendor
+```
+
+新增依赖：
+- `github.com/alecthomas/chroma/v2 v2.23.1`
+- `github.com/dlclark/regexp2 v1.11.5`（chroma 依赖）
+
+---
+
+### 2026-04-16 cat 命令标志变更
+
+#### 7.2.1 变更内容
+
+将分页查看标志从 `--ov` 改为 `-l, --less`，更符合 Unix 惯例。
+
+| 旧标志 | 新标志 | 说明 |
+|--------|--------|------|
+| `--ov` | `-l, --less` | 使用分页器查看文件内容 |
+
+**使用方式**:
+```bash
+# 新用法
+fck cat -l file.txt
+fck cat --less file.go
+
+# 支持语法高亮
+fck cat -l main.go
+```
+
+#### 7.2.2 修改文件
+
+- `internal/cli/cat.go`: 修改 flag 定义和示例
+- `internal/commands/cat/cmd_cat.go`: 修改配置字段名 `UseOV` -> `UseLess`
+
+#### 7.2.3 向后兼容性
+
+- `--ov` 标志已移除，请使用 `-l` 或 `--less`
+
+---
+
 ### 2026-04-15 xargs 命令重构
 
 #### 7.1 新增功能
@@ -929,6 +1014,6 @@ Errors (1 unique):
 ---
 
 **报告完成时间**: 2026-04-13  
-**最近更新**: 2026-04-15  
+**最近更新**: 2026-04-16  
 **分析师**: Claude Code  
-**版本**: v1.4
+**版本**: v1.5
