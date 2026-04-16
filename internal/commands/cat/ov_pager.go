@@ -38,11 +38,11 @@ func runOVMode(config CatConfig) error {
 
 	doc.FileName = filename
 
-	// 判断是否进行语法高亮
+	// 判断是否进行语法高亮（根据 Highlight 标志）
 	var reader io.Reader
-	hlConfig := DefaultHighlightConfig()
 
-	if shouldHighlight(filename) {
+	if config.Highlight && shouldHighlight(filename) {
+		hlConfig := DefaultHighlightConfig()
 		hlContent, ok, hlErr := highlightContent(content, filename, hlConfig)
 		if hlErr != nil {
 			// 高亮失败，输出警告但继续使用原内容

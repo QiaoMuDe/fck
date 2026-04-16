@@ -75,7 +75,7 @@ FCK 项目包含 **26 个功能模块**，按功能领域分类如下：
 | **mkdir** | 目录创建 | `cli/mkdir.go` + `commands/mkdir/cmd_mkdir.go` | 标准库 os.MkdirAll |
 | **touch** | 文件创建/时间戳更新 | `cli/touch.go` + `commands/touch/cmd_touch.go` | 标准库 os.Chtimes |
 | **truncate** | 文件截断 | `cli/truncate.go` + `commands/truncate/cmd_truncate.go` | 标准库 os.Truncate |
-| **cat** | 文件内容查看 | `cli/cat.go` + `commands/cat/cmd_cat.go` | bufio.Reader, oviewer, chroma |
+| **cat** | 文件内容查看（支持语法高亮、分页、head/tail） | `cli/cat.go` + `commands/cat/*.go` | bufio.Reader, oviewer, chroma |
 | **list** | 目录列表（增强版 ls） | `cli/list.go` + `commands/list/*.go` | go-pretty/table |
 
 #### 2.1.2 文件查找与处理类（3个）
@@ -1013,7 +1013,87 @@ Errors (1 unique):
 
 ---
 
+### 2026-04-17 cat 命令重构 - 统一查看器设计
+
+#### 8.1 架构重构
+
+**重构目标**: 统一高亮模式和非高亮模式的文件处理逻辑
+
+**重构前问题**:
+- 高亮模式和非高亮模式的 head/tail 逻辑不一致
+- 代码重复，维护困难
+- 文件指针管理混乱
+
+**重构后架构**:
+```
+commands/cat/
+├── cmd_cat.go      # 简化后的主逻辑（仅参数处理和文件检查）
+├── viewer.go       # 统一查看器（FileViewer）
+│   ├── View()              # 统一入口
+│   ├── sliceLines()        # head/tail 切片
+│   ├── applySpecialFlags() # -E/-T 处理
+│   ├── outputPlain()       # 普通输出
+│   └── outputHighlighted() # 高亮输出
+└── ov_pager.go     # 分页器模式（oviewer）
+```
+
+#### 8.2 核心设计
+
+**FileViewer 结构体**:
+```go
+type FileViewer struct {
+    config   *CatConfig    // CLI 配置
+    hlConfig HighlightConfig  // 高亮配置
+}
+```
+
+**统一处理流程**:
+1. 读取文件内容
+2. 统一换行符（`\r\n` → `\n`）
+3. 按行分割
+4. 根据 head/tail 切片
+5. 非高亮模式：应用 `-E`/`-T` 标志
+6. 根据模式选择输出方式
+
+#### 8.3 功能变更
+
+| 变更类型 | 内容 | 原因 |
+|----------|------|------|
+| 移除 | `-N, --show-newline` 标志 | 简化实现，换行符统一处理后无法精准显示原换行符 |
+| 优化 | `stripANSI` 函数 | 使用正则表达式替代循环，更精确匹配 ANSI 序列 |
+| 修复 | 互斥组配置 | 高亮标志与每个特殊标志（-A/-E/-T）单独互斥 |
+
+#### 8.4 互斥组配置
+
+```go
+MutexGroups: []qflag.MutexGroup{
+    {Name: "head-tail", Flags: []string{"head", "tail"}},
+    {Name: "highlight-show-all", Flags: []string{"highlight", "show-all"}},
+    {Name: "highlight-show-ends", Flags: []string{"highlight", "show-ends"}},
+    {Name: "highlight-show-tabs", Flags: []string{"highlight", "show-tabs"}},
+}
+```
+
+#### 8.5 当前 cat 命令支持的所有标志
+
+| 标志 | 长选项 | 功能 | 互斥关系 |
+|------|--------|------|----------|
+| `-n` | `--number` | 显示所有行号 | - |
+| `-b` | `--number-nonblank` | 显示非空行行号 | 与 `-n` 互斥（优先级更高） |
+| `-E` | `--show-ends` | 行尾显示 `$` | 与 `-H` 互斥 |
+| `-T` | `--show-tabs` | 制表符显示为 `^I` | 与 `-H` 互斥 |
+| `-A` | `--show-all` | 等价于 `-ET` | 与 `-H` 互斥 |
+| `-u` | `--head` | 显示前 N 行 | 与 `-d` 互斥 |
+| `-d` | `--tail` | 显示后 N 行 | 与 `-u` 互斥 |
+| `-q` | `--quiet` | 静默模式 | - |
+| `-a` | `--text` | 强制处理二进制文件 | - |
+| `-I` | `--ignore-binary` | 忽略二进制文件 | - |
+| `-l` | `--less` | 使用分页器查看 | - |
+| `-H` | `--highlight` | 启用语法高亮 | 与 `-A/-E/-T` 互斥 |
+
+---
+
 **报告完成时间**: 2026-04-13  
-**最近更新**: 2026-04-16  
+**最近更新**: 2026-04-17  
 **分析师**: Claude Code  
-**版本**: v1.5
+**版本**: v1.6
