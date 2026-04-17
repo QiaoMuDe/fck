@@ -31,7 +31,6 @@ func InitAndRun() (err error) {
 			PackCmd,
 			PreviewCmd,
 			UnpackCmd,
-			WatchCmd,
 			CheckCmd,
 			FindCmd,
 			HashCmd,
@@ -55,6 +54,7 @@ func InitAndRun() (err error) {
 			XargsCmd,
 			AliasCmd,
 			MdCmd,
+			WatchCmd,
 		},
 	}
 

@@ -12,30 +12,64 @@ import (
 var WatchCmd *qflag.Cmd
 
 var (
-	watchInterval   *qflag.DurationFlag
-	watchMaxCount   *qflag.IntFlag
-	watchExitErr    *qflag.BoolFlag
-	watchNoHeader   *qflag.BoolFlag
-	watchTimeout    *qflag.DurationFlag
-	watchClearLines *qflag.IntFlag
-	watchQuiet      *qflag.BoolFlag
+	watchInterval    *qflag.DurationFlag
+	watchMaxCount    *qflag.IntFlag
+	watchExitErr     *qflag.BoolFlag
+	watchNoHeader    *qflag.BoolFlag
+	watchTimeout     *qflag.DurationFlag
+	watchClearScreen *qflag.BoolFlag
+	watchQuiet       *qflag.BoolFlag
+	watchDiff        *qflag.BoolFlag
+	watchCumulative  *qflag.BoolFlag
+	watchBeep        *qflag.BoolFlag
+	watchPrecise     *qflag.BoolFlag
+	watchNoColor     *qflag.BoolFlag
 )
 
 func init() {
 	WatchCmd = qflag.NewCmd("watch", "w", qflag.ExitOnError)
 
-	watchInterval = WatchCmd.Duration("interval", "i", "执行间隔时间(秒), 默认1秒", 1*time.Second)
-	watchMaxCount = WatchCmd.Int("count", "n", "执行次数限制, -1表示无限制(默认)", -1)
-	watchExitErr = WatchCmd.Bool("exit-on-error", "e", "命令执行失败时退出", false)
-	watchNoHeader = WatchCmd.Bool("no-header", "nh", "轻度静默模式, 不显示标题栏和换行符, 但显示命令输出", false)
-	watchTimeout = WatchCmd.Duration("timeout", "t", "单次命令执行超时时间(秒), 默认30秒", 30*time.Second)
-	watchClearLines = WatchCmd.Int("clear-line", "cl", "每次执行前打印指定数量的换行符进行清屏, 0表示不清屏(默认)", 20)
-	watchQuiet = WatchCmd.Bool("quiet", "q", "完全静默模式, 不显示标题栏、换行符和命令输出", false)
+	// 基本配置
+	watchInterval = WatchCmd.Duration("interval", "n", "执行间隔时间，默认2秒", 2*time.Second)
+	watchMaxCount = WatchCmd.Int("count", "c", "执行次数限制，-1表示无限制(默认)", -1)
+	watchTimeout = WatchCmd.Duration("timeout", "t", "单次命令执行超时时间，默认30秒", 30*time.Second)
+
+	// 显示控制
+	watchNoHeader = WatchCmd.Bool("no-title", "", "不显示标题栏", false)
+	watchQuiet = WatchCmd.Bool("quiet", "q", "静默模式，不显示标题栏和命令输出", false)
+	watchClearScreen = WatchCmd.Bool("clear", "", "每次执行前清屏(默认true)", true)
+	watchNoColor = WatchCmd.Bool("no-color", "", "禁用颜色输出", false)
+
+	// 差异高亮
+	watchDiff = WatchCmd.Bool("differences", "d", "高亮显示变化的行", false)
+	watchCumulative = WatchCmd.Bool("cumulative", "", "累积显示所有变化过的行", false)
+
+	// 执行控制
+	watchExitErr = WatchCmd.Bool("errexit", "e", "命令执行失败时退出", false)
+	watchPrecise = WatchCmd.Bool("precise", "p", "精确计时模式，补偿命令执行耗时", false)
+
+	// 通知
+	watchBeep = WatchCmd.Bool("beep", "b", "输出变化时响铃提示", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "命令监控工具",
-		Notes:      []string{"如果不指定命令, 将提示输入要监控的命令", "使用 Ctrl+C 可以随时停止监控", "命令执行失败时默认继续监控, 除非使用 -e 标志"},
+		Desc: "命令监控工具 - 周期性执行命令并显示输出",
+		Notes: []string{
+			"类似于 Linux 系统的 watch 命令",
+			"使用 Ctrl+C 可以随时停止监控",
+			"命令执行失败时默认继续监控，除非使用 -e 标志",
+			"如果监控的命令包含以 - 开头的参数，请使用 -- 分隔，如: fck watch -- ls -la",
+		},
 		UseChinese: true,
+		Examples: map[string]string{
+			"每隔 2 秒执行 ls -la": "fck watch -n 2 -- ls -la",
+			"高亮显示变化的行":        "fck watch -d date",
+			"累积显示所有变化过的行":     "fck watch -d --cumulative ps aux",
+			"精确计时模式（补偿执行耗时）":  "fck watch -p -n 1 ./benchmark.sh",
+			"输出变化时响铃提示":       "fck watch -b cat /proc/loadavg",
+			"执行 10 次后退出":      "fck watch -c 10 -n 5 -- curl -s http://api.example.com/status",
+			"出错时立即退出":         "fck watch -e kubectl get pods",
+			"静默模式（无标题栏）":      "fck watch -t ./monitor.sh",
+		},
 	}
 
 	if err := WatchCmd.ApplyOpts(cmdOpts); err != nil {
@@ -51,6 +85,7 @@ func runWatch(cmd qflag.Command) error {
 		return fmt.Errorf("缺少要监控的命令参数")
 	}
 
+	// 组合命令参数
 	var command string
 	if len(args) == 1 {
 		command = args[0]
@@ -58,15 +93,36 @@ func runWatch(cmd qflag.Command) error {
 		command = strings.Join(args, " ")
 	}
 
+	// 确定差异模式
+	diffMode := watch.DiffModeNone
+	if watchDiff.Get() {
+		if watchCumulative.Get() {
+			diffMode = watch.DiffModeCumulative
+		} else {
+			diffMode = watch.DiffModeLine
+		}
+	}
+
+	// 静默模式覆盖其他显示选项
+	noHeader := watchNoHeader.Get()
+	quiet := watchQuiet.Get()
+	if quiet {
+		noHeader = true
+	}
+
 	config := watch.WatchConfig{
-		Command:     command,
-		Interval:    watchInterval.Get(),
-		MaxCount:    watchMaxCount.Get(),
-		ExitOnError: watchExitErr.Get(),
-		NoHeader:    watchNoHeader.Get(),
-		Timeout:     watchTimeout.Get(),
-		ClearLines:  watchClearLines.Get(),
-		Quiet:       watchQuiet.Get(),
+		Command:      command,
+		Interval:     watchInterval.Get(),
+		MaxCount:     watchMaxCount.Get(),
+		ExitOnError:  watchExitErr.Get(),
+		NoHeader:     noHeader,
+		NoColor:      watchNoColor.Get() || quiet,
+		ClearScreen:  watchClearScreen.Get() && !quiet,
+		Diff:         diffMode,
+		Cumulative:   watchCumulative.Get(),
+		Timeout:      watchTimeout.Get(),
+		Precise:      watchPrecise.Get(),
+		BeepOnChange: watchBeep.Get() && !quiet,
 	}
 
 	return watch.WatchCmdMain(config)
