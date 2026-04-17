@@ -478,7 +478,12 @@ func executeWithShell(batch []string, config XargsConfig, stats *XargsStats) err
 		fmt.Fprintln(os.Stderr, cmdStr)
 	}
 
-	if err := shx.RunToTerminal(cmdStr); err != nil {
+	// 使用 shx.New 链式调用，断开 stdin 避免子命令继承 xargs 的管道输入
+	// 但保持 stdout/stderr 输出到终端
+	if err := shx.New(cmdStr).
+		WithStdout(os.Stdout).
+		WithStderr(os.Stderr).
+		Exec(); err != nil {
 		stats.Failed++
 		return fmt.Errorf("execution failed: %w", err)
 	}
