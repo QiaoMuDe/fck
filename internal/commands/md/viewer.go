@@ -3,6 +3,7 @@ package md
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,10 +86,37 @@ func checkFileType(filename string) {
 // 返回值:
 //   - error: 运行错误
 func (v *MdViewer) Run() error {
+	if v.config.UsePipe {
+		return v.runFromPipe()
+	}
 	if v.config.UsePager {
 		return v.runWithPager()
 	}
 	return v.runDirect()
+}
+
+// runFromPipe 从管道读取并处理
+//
+// 返回值:
+//   - error: 运行错误
+func (v *MdViewer) runFromPipe() error {
+	// 从 stdin 读取全部内容
+	source, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return fmt.Errorf("failed to read from pipe: %w", err)
+	}
+
+	if v.config.UsePager {
+		return v.runPagerWithContent(source, "stdin")
+	}
+
+	// 直接输出模式
+	rendered, err := v.renderer.RenderBytes(source)
+	if err != nil {
+		return fmt.Errorf("failed to render: %w", err)
+	}
+	fmt.Print(string(rendered))
+	return nil
 }
 
 // runDirect 直接输出到终端
@@ -126,7 +154,7 @@ func (v *MdViewer) runDirect() error {
 	return nil
 }
 
-// runWithPager 使用分页器查看
+// runWithPager 使用分页器查看文件
 //
 // 返回值:
 //   - error: 运行错误
@@ -141,32 +169,44 @@ func (v *MdViewer) runWithPager() error {
 		return fmt.Errorf("failed to read %s: %w", file, err)
 	}
 
+	return v.runPagerWithContent(source, file)
+}
+
+// runPagerWithContent 使用分页器查看内容（统一处理文件和管道）
+//
+// 参数:
+//   - content: 文件内容
+//   - filename: 显示的文件名
+//
+// 返回值:
+//   - error: 运行错误
+func (v *MdViewer) runPagerWithContent(content []byte, filename string) error {
 	// 创建渲染版文档
 	renderDoc, err := oviewer.NewDocument()
 	if err != nil {
 		return fmt.Errorf("failed to create render document: %w", err)
 	}
-	renderDoc.FileName = file + " (rendered)"
+	renderDoc.FileName = filename + " (rendered)"
 
-	rendered, err := v.renderer.RenderBytes(source)
+	rendered, err := v.renderer.RenderBytes(content)
 	if err != nil {
-		return fmt.Errorf("failed to render markdown: %w", err)
+		return fmt.Errorf("failed to render: %w", err)
 	}
 
 	if err := renderDoc.ControlReader(bytes.NewBuffer(rendered), nil); err != nil {
 		return fmt.Errorf("failed to load rendered content: %w", err)
 	}
 
-	// 根据配置决定是否加载原始版文档
+	// 根据配置决定是否加载原始版
 	if v.config.ShowRaw {
 		// 创建原始版文档
 		originalDoc, err := oviewer.NewDocument()
 		if err != nil {
 			return fmt.Errorf("failed to create original document: %w", err)
 		}
-		originalDoc.FileName = file
+		originalDoc.FileName = filename
 
-		if err := originalDoc.ControlReader(bytes.NewBuffer(source), nil); err != nil {
+		if err := originalDoc.ControlReader(bytes.NewBuffer(content), nil); err != nil {
 			return fmt.Errorf("failed to load original content: %w", err)
 		}
 

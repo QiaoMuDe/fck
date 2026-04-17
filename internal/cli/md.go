@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/md"
+	"gitee.com/MM-Q/fck/internal/utils"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -35,12 +36,15 @@ func init() {
 			"指定样式":     "fck md -s dark README.md",
 			"指定宽度":     "fck md -w 100 README.md",
 			"分页器+暗色主题": "fck md -l -s dark README.md",
+			"管道输入":     "echo '# Hello' | fck md",
+			"管道+分页器":   "cat README.md | fck md -l",
 		},
 		Notes: []string{
 			"支持 glamour 的所有内置样式: auto, dark, light, dracula, pink, notty",
 			"默认使用 auto 样式，根据终端背景自动选择",
 			"默认直接输出到终端，使用 -l 启用分页器查看",
 			"使用 -r 标志在分页器中同时加载原始文件，按 ] 切换视图",
+			"支持从管道读取内容，此时不能指定文件参数",
 			"文件大小超过限制时，提示使用 -l 标志通过分页器查看",
 		},
 	}
@@ -53,16 +57,27 @@ func init() {
 }
 
 func runMd(cmd qflag.Command) error {
-	args := cmd.Args()
-	if len(args) == 0 {
-		return fmt.Errorf("no markdown file specified")
-	}
-	if len(args) > 1 {
-		return fmt.Errorf("only one markdown file can be specified at a time")
+	file := cmd.Arg(0)
+
+	// 检测管道输入
+	isPipe := utils.IsStdinPipe()
+
+	if isPipe {
+		// 管道模式：不能指定文件参数
+		if file != "" {
+			return fmt.Errorf("cannot specify file when reading from pipe")
+		}
+		file = "stdin"
+	} else {
+		// 文件模式：必须指定文件
+		if file == "" {
+			return fmt.Errorf("no markdown file specified")
+		}
 	}
 
 	config := md.MdConfig{
-		File:      args[0],
+		File:      file,
+		UsePipe:   isPipe,
 		UsePager:  mdLess.Get(),
 		ShowRaw:   mdRaw.Get(),
 		Style:     mdStyle.Get(),

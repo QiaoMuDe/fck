@@ -6,7 +6,8 @@ import (
 
 // MdConfig md 命令配置
 type MdConfig struct {
-	File      string // 要预览的文件
+	File      string // 要预览的文件（管道模式为空）
+	UsePipe   bool   // 是否从管道读取
 	UsePager  bool   // 使用分页器
 	ShowRaw   bool   // 分页器中显示原始文件
 	Style     string // 渲染样式
