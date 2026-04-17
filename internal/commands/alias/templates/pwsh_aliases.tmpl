@@ -43,6 +43,10 @@ function fck-ls {
     fck list -c -i @args
 }
 
+function fck-md {
+    fck md @args
+}
+
 function fck-mkdir {
     fck mkdir @args
 }
@@ -107,6 +111,7 @@ Set-Alias -Name hash -Value fck-hash
 Set-Alias -Name home -Value fck-home
 Set-Alias -Name ll -Value fck-ll
 Set-Alias -Name ls -Value fck-ls
+Set-Alias -Name fmd -Value fck-md
 Set-Alias -Name mkdir -Value fck-mkdir
 Set-Alias -Name mv -Value fck-mv
 Set-Alias -Name pack -Value fck-pack

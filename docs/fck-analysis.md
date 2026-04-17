@@ -1098,7 +1098,121 @@ MutexGroups: []qflag.MutexGroup{
 
 ---
 
+### 2026-04-17 md 命令新增 - Markdown 预览工具
+
+#### 9.1 功能概述
+
+新增 `md` 子命令，用于预览 Markdown 文件，结合 glamour 和 oviewer 实现渲染和分页查看。
+
+**命令别名**: `md`, `mdv`
+
+#### 9.2 核心特性
+
+| 特性 | 说明 |
+|------|------|
+| **渲染引擎** | glamour（支持多种主题样式） |
+| **分页器** | oviewer（支持双文档切换） |
+| **样式支持** | auto, dark, light, dracula, pink, notty |
+| **宽度控制** | 支持自定义换行宽度 |
+| **文件限制** | 默认 100MB 大小限制 |
+
+#### 9.3 命令行标志
+
+| 标志 | 长选项 | 功能 | 默认值 |
+|------|--------|------|--------|
+| `-l` | `--less` | 使用分页器查看 | false |
+| `-r` | `--raw` | 分页器中显示原始文件（按 `]` 切换） | false |
+| `-s` | `--style` | 渲染样式 | auto |
+| `-w` | `--width` | 换行宽度（0 表示自动） | 0 |
+| `-S` | `--max-size` | 最大文件大小 | 100MB |
+
+#### 9.4 使用示例
+
+```bash
+# 直接预览
+fck md README.md
+
+# 使用分页器
+fck md -l README.md
+
+# 指定样式和宽度
+fck md -s dark -w 100 README.md
+
+# 分页器 + 原始视图切换
+fck md -l -r README.md
+```
+
+#### 9.5 架构设计
+
+```
+commands/md/
+├── cmd_md.go    # 配置结构体和主入口
+└── viewer.go    # MdViewer 实现
+    ├── Run()              # 统一入口
+    ├── runDirect()        # 直接输出到终端
+    ├── runWithPager()     # 使用分页器
+    └── runPagerWithContent()  # 统一分页处理
+```
+
+#### 9.6 管道输入支持
+
+支持从标准输入读取 Markdown 内容：
+
+```bash
+# 管道输入
+echo "# Hello" | fck md
+cat README.md | fck md -l
+
+# 管道与文件互斥
+echo "# Hello" | fck md file.md  # 错误：cannot specify file when reading from pipe
+```
+
+**实现要点**:
+- 使用 `utils.IsStdinPipe()` 检测管道输入
+- 管道模式自动设置文件名为 "stdin"
+- 管道输入时禁用文件参数
+
+---
+
+### 2026-04-17 Bug 修复 - xargs shell 模式管道传递问题
+
+#### 10.1 问题描述
+
+当使用 `xargs --shell` 执行 `fck md` 等支持管道输入的命令时，子命令会继承 xargs 的 stdin，导致误判为管道模式。
+
+**复现命令**:
+```bash
+fck ls | fck xargs -i --shell 'fck md {}'
+# 错误：cannot specify file when reading from pipe
+```
+
+#### 10.2 根因分析
+
+`executeWithShell` 使用 `shx.RunToTerminal()`，它会继承父进程的 stdin（即 xargs 的管道输入），导致子命令 `fck md` 检测到管道输入而报错。
+
+#### 10.3 修复方案
+
+修改 `executeWithShell` 函数，显式断开 stdin 连接：
+
+```go
+// 修改前
+if err := shx.RunToTerminal(cmdStr); err != nil {
+
+// 修改后
+if err := shx.New(cmdStr).
+    WithStdout(os.Stdout).
+    WithStderr(os.Stderr).
+    Exec(); err != nil {
+```
+
+**关键变更**:
+- 不设置 `WithStdin()`，使子命令的 stdin 为 nil
+- 子命令不再继承 xargs 的管道输入
+- 保持 stdout/stderr 输出到终端
+
+---
+
 **报告完成时间**: 2026-04-13  
 **最近更新**: 2026-04-17  
 **分析师**: Claude Code  
-**版本**: v1.6
+**版本**: v1.7
