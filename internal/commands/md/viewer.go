@@ -4,11 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"gitee.com/MM-Q/go-kit/utils"
 	"github.com/charmbracelet/glamour"
 	"github.com/noborus/ov/oviewer"
 )
+
+// 支持的 Markdown 文件扩展名
+var mdExtensions = []string{".md", ".markdown", ".mdown", ".mkd", ".mkdn", ".mdwn"}
 
 // MdViewer Markdown 查看器
 type MdViewer struct {
@@ -47,6 +52,34 @@ func NewMdViewer(config MdConfig) (*MdViewer, error) {
 	return viewer, nil
 }
 
+// isMarkdownFile 检查文件是否是 Markdown 文件
+//
+// 参数:
+//   - filename: 文件名
+//
+// 返回值:
+//   - bool: 是否是 Markdown 文件
+func isMarkdownFile(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	for _, mdExt := range mdExtensions {
+		if ext == mdExt {
+			return true
+		}
+	}
+	return false
+}
+
+// checkFileType 检查文件类型并输出警告
+//
+// 参数:
+//   - filename: 文件名
+func checkFileType(filename string) {
+	if !isMarkdownFile(filename) {
+		fmt.Fprintf(os.Stderr, "warn: %s does not appear to be a markdown file (expected extension: %s)\n",
+			filename, strings.Join(mdExtensions, ", "))
+	}
+}
+
 // Run 启动查看器
 //
 // 返回值:
@@ -64,6 +97,9 @@ func (v *MdViewer) Run() error {
 //   - error: 运行错误
 func (v *MdViewer) runDirect() error {
 	file := v.config.File
+
+	// 检查文件类型
+	checkFileType(file)
 
 	// 检查文件大小
 	fileInfo, err := os.Stat(file)
@@ -97,6 +133,9 @@ func (v *MdViewer) runDirect() error {
 func (v *MdViewer) runWithPager() error {
 	file := v.config.File
 
+	// 检查文件类型
+	checkFileType(file)
+
 	source, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("failed to read %s: %w", file, err)
@@ -118,21 +157,30 @@ func (v *MdViewer) runWithPager() error {
 		return fmt.Errorf("failed to load rendered content: %w", err)
 	}
 
-	// 创建原始版文档
-	originalDoc, err := oviewer.NewDocument()
-	if err != nil {
-		return fmt.Errorf("failed to create original document: %w", err)
-	}
-	originalDoc.FileName = file
+	// 根据配置决定是否加载原始版文档
+	if v.config.ShowRaw {
+		// 创建原始版文档
+		originalDoc, err := oviewer.NewDocument()
+		if err != nil {
+			return fmt.Errorf("failed to create original document: %w", err)
+		}
+		originalDoc.FileName = file
 
-	if err := originalDoc.ControlReader(bytes.NewBuffer(source), nil); err != nil {
-		return fmt.Errorf("failed to load original content: %w", err)
+		if err := originalDoc.ControlReader(bytes.NewBuffer(source), nil); err != nil {
+			return fmt.Errorf("failed to load original content: %w", err)
+		}
+
+		ov, err := oviewer.NewOviewer(renderDoc, originalDoc)
+		if err != nil {
+			return fmt.Errorf("failed to create oviewer: %w", err)
+		}
+		return ov.Run()
 	}
 
-	ov, err := oviewer.NewOviewer(renderDoc, originalDoc)
+	// 仅渲染版
+	ov, err := oviewer.NewOviewer(renderDoc)
 	if err != nil {
 		return fmt.Errorf("failed to create oviewer: %w", err)
 	}
-
 	return ov.Run()
 }

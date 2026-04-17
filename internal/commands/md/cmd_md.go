@@ -8,6 +8,7 @@ import (
 type MdConfig struct {
 	File      string // 要预览的文件
 	UsePager  bool   // 使用分页器
+	ShowRaw   bool   // 分页器中显示原始文件
 	Style     string // 渲染样式
 	WordWidth int    // 换行宽度
 	MaxSize   int64  // 最大文件大小（字节）
