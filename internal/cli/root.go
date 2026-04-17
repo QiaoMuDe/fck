@@ -54,6 +54,7 @@ func InitAndRun() (err error) {
 			SedCmd,
 			XargsCmd,
 			AliasCmd,
+			MdCmd,
 		},
 	}
 
