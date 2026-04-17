@@ -40,7 +40,7 @@ gitee.com/MM-Q/qflag/internal/parser
 gitee.com/MM-Q/qflag/internal/registry
 gitee.com/MM-Q/qflag/internal/types
 gitee.com/MM-Q/qflag/internal/utils
-# gitee.com/MM-Q/shellx v1.0.18
+# gitee.com/MM-Q/shellx v1.0.19
 ## explicit; go 1.25.0
 gitee.com/MM-Q/shellx/shx
 # gitee.com/MM-Q/verman v0.0.19

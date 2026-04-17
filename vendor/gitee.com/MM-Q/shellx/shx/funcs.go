@@ -35,7 +35,6 @@ func Run(cmd string) error {
 //	err := shx.RunToTerminal("echo hello")
 func RunToTerminal(cmd string) error {
 	return New(cmd).
-		WithStdin(os.Stdin).
 		WithStdout(os.Stdout).
 		WithStderr(os.Stderr).
 		Exec()
