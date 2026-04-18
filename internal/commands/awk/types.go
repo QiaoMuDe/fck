@@ -9,10 +9,3 @@ type AwkConfig struct {
 	ShowLineNum bool     // 显示行号
 	Files       []string // 输入文件列表
 }
-
-// AwkStats 执行统计
-type AwkStats struct {
-	ProcessedLines int // 处理行数
-	MatchedLines   int // 匹配行数
-	OutputLines    int // 输出行数
-}

@@ -1327,14 +1327,15 @@ echo "# Hello" | fck md file.md  # 错误：cannot specify file when reading fro
 - 字段处理（`-f` 字段索引，可多次使用）
 - 打印整行或指定字段
 - 内置变量支持（`0`=整行, `-1`=最后一个字段）
+- 多文件处理（支持通配符展开）
 
 **CLI 标志**:
 | 标志 | 短标志 | 说明 |
 |------|--------|------|
 | `--pattern` | `-p` | 正则匹配模式 |
-| `--field` | `-f` | 字段索引（1-based，可多次使用） |
+| `--field` | `-f` | 字段索引（1-based，可多次使用，默认 `[0]` 输出整行） |
 | `--separator` | `-F` | 输入分隔符（默认任意空白） |
-| `--output-separator` | `-O` | 输出分隔符 |
+| `--output-separator` | `-O` | 输出字段分隔符 |
 | `--line-number` | `-n` | 显示行号 |
 
 **使用示例**:
@@ -1356,13 +1357,21 @@ fck awk -p "error" -f 2 log.txt
 
 # 管道输入
 echo "hello world" | fck awk -f 1
+
+# 多文件处理
+fck awk -f 1 file1.txt file2.txt file3.txt
+
+# 通配符支持（跨平台兼容）
+fck awk -f 1 *.txt
+fck awk -f 1 logs/*.log
 ```
 
 **技术特点**:
 - 使用 `bufio.Reader` 支持大文件和任意行长度
 - 管道输入优先于文件参数
 - 默认使用任意空白作为分隔符（与传统 awk 一致）
-- 未指定字段时默认输出整行
+- 使用 `filepath.Glob` 实现跨平台通配符展开
+- 未指定字段时默认输出整行（`[]int{0}`）
 
 **文件结构**:
 ```

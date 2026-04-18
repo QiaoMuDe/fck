@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -29,11 +30,9 @@ func AwkCmdMain(config AwkConfig) error {
 		}
 	}
 
-	stats := &AwkStats{}
-
 	// 优先判断管道输入（管道输入覆盖文件参数）
 	if utils.IsStdinPipe() {
-		return processInput(os.Stdin, "-", config, re, stats)
+		return processInput(os.Stdin, config, re)
 	}
 
 	// 无管道输入时，处理文件
@@ -41,8 +40,23 @@ func AwkCmdMain(config AwkConfig) error {
 		return fmt.Errorf("no input file specified and no pipe input detected")
 	}
 
-	for _, file := range config.Files {
-		if err := processFile(file, config, re, stats); err != nil {
+	// 展开通配符并收集所有文件
+	var allFiles []string
+	for _, pattern := range config.Files {
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			return fmt.Errorf("invalid pattern %s: %w", pattern, err)
+		}
+		if len(matches) == 0 {
+			// 没有匹配到文件，尝试直接作为文件名处理
+			allFiles = append(allFiles, pattern)
+		} else {
+			allFiles = append(allFiles, matches...)
+		}
+	}
+
+	for _, file := range allFiles {
+		if err := processFile(file, config, re); err != nil {
 			return err
 		}
 	}
@@ -56,11 +70,10 @@ func AwkCmdMain(config AwkConfig) error {
 //   - filename: 文件名
 //   - config: 命令配置
 //   - re: 正则表达式（可为 nil）
-//   - stats: 统计信息
 //
 // 返回值:
 //   - error: 处理错误
-func processFile(filename string, config AwkConfig, re *regexp.Regexp, stats *AwkStats) error {
+func processFile(filename string, config AwkConfig, re *regexp.Regexp) error {
 	file, err := os.Open(filename)
 	if err != nil {
 		return fmt.Errorf("cannot open file %s: %w", filename, err)
@@ -69,7 +82,7 @@ func processFile(filename string, config AwkConfig, re *regexp.Regexp, stats *Aw
 		_ = file.Close()
 	}()
 
-	return processInput(file, filename, config, re, stats)
+	return processInput(file, config, re)
 }
 
 // processInput 处理输入流（支持大文件和管道）
@@ -78,14 +91,12 @@ func processFile(filename string, config AwkConfig, re *regexp.Regexp, stats *Aw
 //
 // 参数:
 //   - input: 输入文件
-//   - name: 输入名称（用于错误信息）
 //   - config: 命令配置
 //   - re: 正则表达式（可为 nil）
-//   - stats: 统计信息
 //
 // 返回值:
 //   - error: 处理错误
-func processInput(input *os.File, name string, config AwkConfig, re *regexp.Regexp, stats *AwkStats) error {
+func processInput(input *os.File, config AwkConfig, re *regexp.Regexp) error {
 	reader := bufio.NewReader(input)
 	lineNum := 0
 
@@ -96,7 +107,7 @@ func processInput(input *os.File, name string, config AwkConfig, re *regexp.Rege
 				// 处理最后一行（可能没有换行符）
 				if len(line) > 0 {
 					lineNum++
-					if err := processLine(lineNum, line, config, re, stats); err != nil {
+					if err := processLine(lineNum, line, config, re); err != nil {
 						return err
 					}
 				}
@@ -110,7 +121,7 @@ func processInput(input *os.File, name string, config AwkConfig, re *regexp.Rege
 		line = strings.TrimSuffix(line, "\r") // Windows 兼容
 
 		lineNum++
-		if err := processLine(lineNum, line, config, re, stats); err != nil {
+		if err := processLine(lineNum, line, config, re); err != nil {
 			return err
 		}
 	}
@@ -125,18 +136,14 @@ func processInput(input *os.File, name string, config AwkConfig, re *regexp.Rege
 //   - line: 行内容
 //   - config: 命令配置
 //   - re: 正则表达式（可为 nil）
-//   - stats: 统计信息
 //
 // 返回值:
 //   - error: 处理错误
-func processLine(lineNum int, line string, config AwkConfig, re *regexp.Regexp, stats *AwkStats) error {
-	stats.ProcessedLines++
-
+func processLine(lineNum int, line string, config AwkConfig, re *regexp.Regexp) error {
 	// 模式匹配检查
 	if re != nil && !re.MatchString(line) {
 		return nil
 	}
-	stats.MatchedLines++
 
 	// 分割字段（未指定分隔符时使用任意空白）
 	var fields []string
@@ -151,7 +158,6 @@ func processLine(lineNum int, line string, config AwkConfig, re *regexp.Regexp, 
 	if err := outputLine(lineNum, line, fields, nf, config); err != nil {
 		return err
 	}
-	stats.OutputLines++
 
 	return nil
 }

@@ -86,6 +86,8 @@
 - **灵活分隔符**: 默认任意空白，支持自定义分隔符
 - **管道支持**: 支持从标准输入读取内容
 - **大文件支持**: 使用 bufio.Reader，支持任意行长度
+- **多文件处理**: 支持同时处理多个文件
+- **通配符支持**: 跨平台通配符展开（*.txt, logs/*.log）
 
 ### 🔎 文本搜索 (grep)
 - **正则匹配**: 支持正则表达式搜索
@@ -264,6 +266,13 @@ fck awk -p "error" -f 2 log.txt
 
 # 管道输入
 echo "hello world" | fck awk -f 1
+
+# 多文件处理
+fck awk -f 1 file1.txt file2.txt file3.txt
+
+# 通配符支持（跨平台兼容）
+fck awk -f 1 *.txt
+fck awk -f 1 logs/*.log
 ```
 
 ---
