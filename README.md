@@ -247,34 +247,6 @@ Git 仓库模型管理工具，支持快速切换和管理 Git 工作流。
 ### 🔧 awk - 字段处理
 简化版 awk 命令，使用标志控制替代程序解析，专注于最常用的字段处理功能。
 
-**使用示例**:
-```bash
-# 打印第1列
-fck awk -f 1 file.txt
-
-# 打印第1和第3列
-fck awk -f 1 -f 3 file.txt
-
-# 指定分隔符，打印第1列
-fck awk -F: -f 1 /etc/passwd
-
-# 打印最后一列
-fck awk -f -1 file.txt
-
-# 正则匹配并打印第2列
-fck awk -p "error" -f 2 log.txt
-
-# 管道输入
-echo "hello world" | fck awk -f 1
-
-# 多文件处理
-fck awk -f 1 file1.txt file2.txt file3.txt
-
-# 通配符支持（跨平台兼容）
-fck awk -f 1 *.txt
-fck awk -f 1 logs/*.log
-```
-
 ---
 
 ## 🎨 表格样式
