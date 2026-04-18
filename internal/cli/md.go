@@ -23,7 +23,7 @@ func init() {
 
 	mdLess = MdCmd.Bool("less", "l", "使用分页器查看 (默认直接输出到终端)", false)
 	mdRaw = MdCmd.Bool("raw", "r", "分页器中同时加载原始文件 (按 ] 切换)", false)
-	mdStyle = MdCmd.Enum("style", "s", "渲染样式 (auto/dark/light/dracula/pink/notty)", "auto", []string{"auto", "dark", "light", "dracula", "pink", "notty"})
+	mdStyle = MdCmd.Enum("style", "s", "渲染样式 (auto/ascii/dark/light/dracula/tokyo-night/pink/notty)", "auto", []string{"auto", "ascii", "dark", "light", "dracula", "tokyo-night", "pink", "notty"})
 	mdWidth = MdCmd.Int("width", "w", "换行宽度 (0 表示自动)", 0)
 	mdMaxSize = MdCmd.Size("max-size", "S", "最大文件大小 (如: 50m, 100m, 1g)", 100*1024*1024)
 
@@ -40,7 +40,7 @@ func init() {
 			"管道+分页器":   "cat README.md | fck md -l",
 		},
 		Notes: []string{
-			"支持 glamour 的所有内置样式: auto, dark, light, dracula, pink, notty",
+			"支持 glamour 的所有内置样式: auto, ascii, dark, light, dracula, tokyo-night, pink, notty",
 			"默认使用 auto 样式，根据终端背景自动选择",
 			"默认直接输出到终端，使用 -l 启用分页器查看",
 			"使用 -r 标志在分页器中同时加载原始文件，按 ] 切换视图",

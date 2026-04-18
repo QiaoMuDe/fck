@@ -52,53 +52,49 @@ func replaceWithString(line string, config *SedConfig) (string, int) {
 func replaceStringIgnoreCase(line string, config *SedConfig) (string, int) {
 	pattern := config.Pattern
 	replacement := config.Replacement
-
 	lowerLine := strings.ToLower(line)
 	lowerPattern := strings.ToLower(pattern)
+	patternLen := len(pattern)
 
-	// 统计匹配次数
-	count := 0
+	// 单次遍历：记录所有匹配位置
+	var positions []int
 	start := 0
 	for {
 		idx := strings.Index(lowerLine[start:], lowerPattern)
 		if idx == -1 {
 			break
 		}
-		count++
-		start += idx + len(pattern)
+		positions = append(positions, start+idx)
+		start += idx + patternLen
 	}
 
-	if count == 0 {
+	if len(positions) == 0 {
 		return line, 0
 	}
 
-	// 计算实际可替换次数
-	actual := count
+	// 计算实际替换次数
+	actual := len(positions)
 	if config.MaxCount > 0 {
 		remaining := config.MaxCount - config.replaceCount
-		actual = calcActualReplaceCount(count, remaining)
+		actual = calcActualReplaceCount(len(positions), remaining)
 	}
 
 	if actual <= 0 {
 		return line, 0
 	}
 
-	// 执行替换
+	// 统一替换
 	var result strings.Builder
-	start = 0
-	replaced := 0
-	for replaced < actual {
-		idx := strings.Index(lowerLine[start:], lowerPattern)
-		if idx == -1 {
-			break
-		}
-		actualIdx := start + idx
-		result.WriteString(line[start:actualIdx])
+	result.Grow(len(line) + actual*(len(replacement)-patternLen))
+
+	lastEnd := 0
+	for i := 0; i < actual; i++ {
+		pos := positions[i]
+		result.WriteString(line[lastEnd:pos])
 		result.WriteString(replacement)
-		start = actualIdx + len(pattern)
-		replaced++
+		lastEnd = pos + patternLen
 	}
-	result.WriteString(line[start:])
+	result.WriteString(line[lastEnd:])
 
 	return result.String(), actual
 }

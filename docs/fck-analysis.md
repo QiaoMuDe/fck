@@ -784,6 +784,38 @@ internal/commands/watch/
 
 ## 九、近期更新记录
 
+### 2026-04-18 - Sed 命令性能优化
+
+#### 9.1.1 忽略大小写替换优化
+
+优化 `replaceStringIgnoreCase` 函数，将双重遍历改为单次遍历：
+
+**优化前**:
+```go
+// 第一遍：统计匹配次数
+for { idx := strings.Index(...) }
+// 第二遍：执行替换（又搜索一次）
+for replaced < actual { idx := strings.Index(...) }
+```
+
+**优化后**:
+```go
+// 单次遍历：记录所有匹配位置
+var positions []int
+for { positions = append(positions, ...) }
+// 统一替换（直接使用位置）
+for i := 0; i < actual; i++ { result.WriteString(...) }
+```
+
+**性能提升**:
+- 遍历次数：2 次 → 1 次
+- 添加 `result.Grow()` 预分配，减少扩容
+
+**修改文件**:
+- `internal/commands/sed/replace.go`: 优化 `replaceStringIgnoreCase` 函数
+
+---
+
 ### 2026-04-14 - Sed 命令增强
 
 #### 9.1.1 二进制文件检测支持
