@@ -123,6 +123,7 @@ func runWatch(cmd qflag.Command) error {
 		Timeout:      watchTimeout.Get(),
 		Precise:      watchPrecise.Get(),
 		BeepOnChange: watchBeep.Get() && !quiet,
+		Quiet:        quiet,
 	}
 
 	return watch.WatchCmdMain(config)

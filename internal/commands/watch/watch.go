@@ -17,6 +17,7 @@ import (
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/shellx/shx"
+	"golang.org/x/term"
 )
 
 // DiffMode 差异高亮模式
@@ -67,6 +68,7 @@ type WatchConfig struct {
 	Timeout      time.Duration // 单次执行超时
 	Precise      bool          // 精确计时模式
 	BeepOnChange bool          // 输出变化时响铃
+	Quiet        bool          // 静默模式（不显示输出、不计算差异）
 }
 
 // Validate 验证配置有效性
@@ -74,8 +76,8 @@ func (c *WatchConfig) Validate() error {
 	if c.Command == "" {
 		return errors.New("command is empty")
 	}
-	if c.MaxCount < -1 || c.MaxCount == 0 {
-		return errors.New("maxCount must be -1 (unlimited) or a positive number")
+	if c.MaxCount < -1 {
+		return errors.New("maxCount must be >= -1 (-1 or 0 means unlimited)")
 	}
 	if c.Interval <= 0 {
 		return errors.New("interval must be greater than 0")
@@ -98,6 +100,51 @@ type ExecutionResult struct {
 	Duration time.Duration // 执行耗时
 }
 
+// 最大输出限制（10MB）
+const maxOutputSize = 10 * 1024 * 1024
+
+// limitedWriter 带大小限制的写入器
+type limitedWriter struct {
+	buf       *bytes.Buffer
+	maxSize   int
+	truncated bool
+}
+
+// newLimitedWriter 创建带大小限制的写入器
+func newLimitedWriter(maxSize int) *limitedWriter {
+	return &limitedWriter{
+		buf:     &bytes.Buffer{},
+		maxSize: maxSize,
+	}
+}
+
+// Write 实现 io.Writer 接口
+func (w *limitedWriter) Write(p []byte) (n int, err error) {
+	if w.truncated {
+		return len(p), nil
+	}
+
+	// 检查是否会超过限制
+	if w.buf.Len()+len(p) > w.maxSize {
+		// 只写入剩余空间
+		remaining := w.maxSize - w.buf.Len()
+		if remaining > 0 {
+			w.buf.Write(p[:remaining])
+		}
+		w.truncated = true
+		// 添加截断提示
+		w.buf.WriteString("\n... [output truncated due to size limit] ...\n")
+		return len(p), nil
+	}
+
+	return w.buf.Write(p)
+}
+
+// String 返回缓冲区内容
+func (w *limitedWriter) String() string {
+	return w.buf.String()
+}
+
 // Executor 命令执行器
 type Executor struct {
 	command string        // 要执行的命令
@@ -113,22 +160,36 @@ func NewExecutor(command string, timeout time.Duration) *Executor {
 func (e *Executor) Run(ctx context.Context) (*ExecutionResult, error) {
 	start := time.Now()
 
-	// 捕获输出
-	var stdout, stderr bytes.Buffer
+	// 捕获输出（带大小限制）
+	stdoutWriter := newLimitedWriter(maxOutputSize)
+	stderrWriter := newLimitedWriter(maxOutputSize / 10) // stderr 限制 1MB
 
 	// 使用 shellx/shx 执行命令（纯 Go 实现，跨平台一致）
 	sh := shx.New(e.command).
 		WithTimeout(e.timeout).
 		WithContext(ctx).
-		WithStdout(&stdout).
-		WithStderr(&stderr)
+		WithStdout(stdoutWriter).
+		WithStderr(stderrWriter)
 
 	err := sh.Exec()
 	duration := time.Since(start)
 
+	stdout := stdoutWriter.String()
+	stderr := stderrWriter.String()
+
+	// 合并 stdout 和 stderr（stderr 在前，类似 Linux watch）
+	combinedOutput := stdout
+	if stderr != "" {
+		if stdout != "" {
+			combinedOutput = stderr + "\n" + stdout
+		} else {
+			combinedOutput = stderr
+		}
+	}
+
 	result := &ExecutionResult{
-		Stdout:   stdout.String(),
-		Stderr:   stderr.String(),
+		Stdout:   combinedOutput,
+		Stderr:   stderr,
 		ExitCode: 0,
 		Duration: duration,
 	}
@@ -313,7 +374,9 @@ func (o *OutputManager) PrintHeader(interval time.Duration, command string) {
 	intervalStr := formatInterval(interval)
 	// 格式: Every Xs: command                    时间
 	prefix := fmt.Sprintf("Every %s: %s", intervalStr, command)
-	terminalWidth := 80
+
+	// 获取终端宽度，默认 80
+	terminalWidth := o.getTerminalWidth()
 	padding := terminalWidth - len(prefix) - len(timestamp)
 	if padding < 1 {
 		padding = 1
@@ -324,6 +387,31 @@ func (o *OutputManager) PrintHeader(interval time.Duration, command string) {
 	}
 	fmt.Println(header)
 	fmt.Println()
+}
+
+// 默认终端宽度
+const defaultWidth = 80
+
+// getTerminalWidth 获取终端宽度，失败时返回默认值 80
+func (o *OutputManager) getTerminalWidth() int {
+	// 检查 stdout 是否为终端
+	fd := int(os.Stdout.Fd())
+	if !term.IsTerminal(fd) {
+		return defaultWidth
+	}
+
+	// 获取终端尺寸
+	width, _, err := term.GetSize(fd)
+	if err != nil {
+		return defaultWidth
+	}
+
+	// 限制最小宽度，避免异常值
+	if width < 40 {
+		return defaultWidth
+	}
+
+	return width
 }
 
 // PrintOutput 打印命令输出
@@ -424,12 +512,15 @@ func (r *Runner) Run(ctx context.Context) error {
 		result, err := r.executor.Run(ctx)
 
 		if err != nil {
-			r.output.PrintError(err)
+			// 静默模式下不打印错误，但 ExitOnError 仍然有效
+			if !r.config.Quiet {
+				r.output.PrintError(err)
+			}
 			if r.config.ExitOnError {
 				return err
 			}
-		} else {
-			// 处理差异高亮
+		} else if !r.config.Quiet {
+			// 非静默模式：处理差异高亮和输出
 			output := result.Stdout
 			if r.config.Diff != DiffModeNone {
 				output = r.highlighter.Diff(output)
@@ -441,6 +532,10 @@ func (r *Runner) Run(ctx context.Context) error {
 			lastOutput = result.Stdout
 			// 输出结果
 			r.output.PrintOutput(output)
+		}
+		// 静默模式下跳过差异计算和输出，但 lastOutput 仍需更新以支持 BeepOnChange（如果启用）
+		if r.config.Quiet && err == nil {
+			lastOutput = result.Stdout
 		}
 
 		// 记录执行时间（用于精确计时）
