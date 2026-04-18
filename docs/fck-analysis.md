@@ -115,7 +115,7 @@ FCK 项目包含 **26 个功能模块**，按功能领域分类如下：
 | 模块名称 | 核心功能 | 对应代码文件 | 核心依赖 |
 |----------|----------|--------------|----------|
 | **echo** | 文本输出 | `cli/echo.go` + `commands/echo/cmd_echo.go` | 标准库 fmt |
-| **watch** | 命令周期性执行 | `cli/watch.go` + `commands/watch/cmd_watch.go` | shellx/shx |
+| **watch** | 命令周期性执行（Linux watch 风格） | `cli/watch.go` + `commands/watch/*.go` | shellx/shx, colorlib, term |
 | **xargs** | 参数批量处理 | `cli/xargs.go` + `commands/xargs/cmd_xargs.go` | shellx/shx |
 | **alias** | Shell 别名生成 | `cli/alias.go` + `commands/alias/cmd_alias.go` | embed |
 
@@ -144,7 +144,44 @@ FCK 项目包含 **26 个功能模块**，按功能领域分类如下：
   - 文件系统遍历能力
   - 正则表达式引擎
   - 并发执行能力（操作批量文件）
+
+#### 2.2.2 watch 模块核心输入/输出
+
 ```
+输入:
+  - CLI 参数: 间隔时间、执行次数、超时时间、差异高亮等
+  - 目标命令: 要周期性执行的 shell 命令
+
+输出:
+  - 命令执行结果（stdout + stderr 合并）
+  - 差异高亮显示（变化行黄色高亮）
+  - 标题栏（执行间隔、命令、时间戳）
+
+核心依赖资源:
+  - shellx/shx 命令执行
+  - colorlib 颜色输出
+  - golang.org/x/term 终端宽度检测
+
+支持的标志:
+  -n, --interval    执行间隔（默认 2 秒）
+  -c, --count       执行次数限制（默认 -1 无限）
+  -t, --timeout     超时时间（默认 30 秒）
+  -e, --errexit     出错时退出
+  -d, --differences 高亮显示变化的行
+  -p, --precise     精确计时模式
+  -q, --quiet       静默模式
+      --no-title    不显示标题栏
+      --no-color    禁用颜色输出
+
+核心特性:
+  - 自动清屏（每次执行前）
+  - 输出大小限制（stdout 10MB, stderr 1MB）
+  - 动态终端宽度适配
+  - 精确计时模式（补偿执行耗时）
+  - 信号处理（Ctrl+C 优雅退出）
+```
+
+---```
 
 ---
 
@@ -228,6 +265,7 @@ import (
 | pack, unpack, preview | comprx | 压缩解压 |
 | 所有命令 | colorlib | 彩色输出 |
 | watch, xargs | shellx/shx | Shell 命令执行 |
+| watch | golang.org/x/term | 终端宽度检测 |
 | list | go-pretty | 表格渲染 |
 
 ### 3.3 依赖关系健康度评估
@@ -376,6 +414,37 @@ flowchart TD
     F --> G[hashRunTasks 并发计算]
     G --> H[进度条显示]
     H --> I[输出结果/写入文件]
+```
+
+#### 4.2.3 watch 命令执行流程
+
+```
+执行流程:
+  1. 解析 CLI 参数，构建 WatchConfig
+  2. 验证配置有效性
+  3. 设置信号监听（SIGINT/SIGTERM）
+  4. 进入主循环:
+     a. 检查执行次数限制
+     b. 清屏（ANSI 序列）
+     c. 打印标题栏（动态终端宽度适配）
+     d. 执行命令（shellx/shx，带超时）
+     e. 合并 stdout + stderr
+     f. 差异高亮处理（如启用 -d）
+     g. 输出结果
+     h. 计算下次等待时间（支持精确模式）
+     i. 等待或退出
+
+核心组件:
+  - Executor: 命令执行（带输出大小限制）
+  - Scheduler: 调度计时（支持精确模式）
+  - DiffHighlighter: 差异高亮（行级对比）
+  - OutputManager: 输出管理（清屏、标题栏、颜色）
+  - Runner: 主控逻辑
+
+文件结构:
+  internal/commands/watch/
+  ├── types.go   # 配置、常量、limitedWriter
+  └── watch.go   # 核心实现（Executor/Scheduler/DiffHighlighter/OutputManager/Runner）
 ```
 
 ### 4.3 代码质量评估
@@ -675,6 +744,41 @@ python3 build.py -batch -z
 - 设计文档: 35+ 个
 
 ---
+
+---
+
+## 七、近期重要变更记录
+
+### 2026-04-18 watch 命令重构
+
+**变更内容**:
+- 完全重构 watch 命令，实现 Linux watch 风格的功能
+- 新增差异高亮功能（`-d` 标志，变化行黄色高亮）
+- 新增精确计时模式（`-p` 标志，补偿执行耗时）
+- 新增输出大小限制（stdout 10MB, stderr 1MB，防止内存溢出）
+- 新增动态终端宽度检测（使用 golang.org/x/term）
+- 合并 stdout 和 stderr 输出（stderr 在前）
+- 使用 shellx/shx 替代 os/exec 执行命令（跨平台一致性）
+
+**移除的功能**:
+- `--clear` 标志（改为始终清屏）
+- `--beep` / `-b` 标志（响铃提示）
+- `--cumulative` 标志（累积差异模式）
+- `--no-color` 标志（保留但简化）
+
+**文件结构变更**:
+```
+internal/commands/watch/
+├── types.go   # 新增：配置、常量、limitedWriter
+└── watch.go   # 重写：核心实现
+```
+
+**核心组件设计**:
+- `Executor`: 命令执行（带输出大小限制）
+- `Scheduler`: 调度计时（支持精确模式）
+- `DiffHighlighter`: 差异高亮（行级对比）
+- `OutputManager`: 输出管理（清屏、标题栏、颜色）
+- `Runner`: 主控逻辑
 
 ---
 

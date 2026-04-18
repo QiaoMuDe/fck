@@ -12,18 +12,15 @@ import (
 var WatchCmd *qflag.Cmd
 
 var (
-	watchInterval    *qflag.DurationFlag
-	watchMaxCount    *qflag.IntFlag
-	watchExitErr     *qflag.BoolFlag
-	watchNoHeader    *qflag.BoolFlag
-	watchTimeout     *qflag.DurationFlag
-	watchClearScreen *qflag.BoolFlag
-	watchQuiet       *qflag.BoolFlag
-	watchDiff        *qflag.BoolFlag
-	watchCumulative  *qflag.BoolFlag
-	watchBeep        *qflag.BoolFlag
-	watchPrecise     *qflag.BoolFlag
-	watchNoColor     *qflag.BoolFlag
+	watchInterval *qflag.DurationFlag
+	watchMaxCount *qflag.IntFlag
+	watchExitErr  *qflag.BoolFlag
+	watchNoHeader *qflag.BoolFlag
+	watchTimeout  *qflag.DurationFlag
+	watchQuiet    *qflag.BoolFlag
+	watchDiff     *qflag.BoolFlag
+	watchPrecise  *qflag.BoolFlag
+	watchNoColor  *qflag.BoolFlag
 )
 
 func init() {
@@ -37,19 +34,14 @@ func init() {
 	// 显示控制
 	watchNoHeader = WatchCmd.Bool("no-title", "", "不显示标题栏", false)
 	watchQuiet = WatchCmd.Bool("quiet", "q", "静默模式，不显示标题栏和命令输出", false)
-	watchClearScreen = WatchCmd.Bool("clear", "", "每次执行前清屏(默认true)", true)
 	watchNoColor = WatchCmd.Bool("no-color", "", "禁用颜色输出", false)
 
 	// 差异高亮
 	watchDiff = WatchCmd.Bool("differences", "d", "高亮显示变化的行", false)
-	watchCumulative = WatchCmd.Bool("cumulative", "", "累积显示所有变化过的行", false)
 
 	// 执行控制
 	watchExitErr = WatchCmd.Bool("errexit", "e", "命令执行失败时退出", false)
 	watchPrecise = WatchCmd.Bool("precise", "p", "精确计时模式，补偿命令执行耗时", false)
-
-	// 通知
-	watchBeep = WatchCmd.Bool("beep", "b", "输出变化时响铃提示", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc: "命令监控工具 - 周期性执行命令并显示输出",
@@ -63,12 +55,10 @@ func init() {
 		Examples: map[string]string{
 			"每隔 2 秒执行 ls -la": "fck watch -n 2 -- ls -la",
 			"高亮显示变化的行":        "fck watch -d date",
-			"累积显示所有变化过的行":     "fck watch -d --cumulative ps aux",
 			"精确计时模式（补偿执行耗时）":  "fck watch -p -n 1 ./benchmark.sh",
-			"输出变化时响铃提示":       "fck watch -b cat /proc/loadavg",
 			"执行 10 次后退出":      "fck watch -c 10 -n 5 -- curl -s http://api.example.com/status",
 			"出错时立即退出":         "fck watch -e kubectl get pods",
-			"静默模式（无标题栏）":      "fck watch -t ./monitor.sh",
+			"静默模式（无标题栏）":      "fck watch -q ./monitor.sh",
 		},
 	}
 
@@ -96,11 +86,7 @@ func runWatch(cmd qflag.Command) error {
 	// 确定差异模式
 	diffMode := watch.DiffModeNone
 	if watchDiff.Get() {
-		if watchCumulative.Get() {
-			diffMode = watch.DiffModeCumulative
-		} else {
-			diffMode = watch.DiffModeLine
-		}
+		diffMode = watch.DiffModeLine
 	}
 
 	// 静默模式覆盖其他显示选项
@@ -111,19 +97,17 @@ func runWatch(cmd qflag.Command) error {
 	}
 
 	config := watch.WatchConfig{
-		Command:      command,
-		Interval:     watchInterval.Get(),
-		MaxCount:     watchMaxCount.Get(),
-		ExitOnError:  watchExitErr.Get(),
-		NoHeader:     noHeader,
-		NoColor:      watchNoColor.Get() || quiet,
-		ClearScreen:  watchClearScreen.Get() && !quiet,
-		Diff:         diffMode,
-		Cumulative:   watchCumulative.Get(),
-		Timeout:      watchTimeout.Get(),
-		Precise:      watchPrecise.Get(),
-		BeepOnChange: watchBeep.Get() && !quiet,
-		Quiet:        quiet,
+		Command:     command,
+		Interval:    watchInterval.Get(),
+		MaxCount:    watchMaxCount.Get(),
+		ExitOnError: watchExitErr.Get(),
+		NoHeader:    noHeader,
+		NoColor:     watchNoColor.Get() || quiet,
+		ClearScreen: true,
+		Diff:        diffMode,
+		Timeout:     watchTimeout.Get(),
+		Precise:     watchPrecise.Get(),
+		Quiet:       quiet,
 	}
 
 	return watch.WatchCmdMain(config)
