@@ -119,7 +119,13 @@ FCK 项目包含 **26 个功能模块**，按功能领域分类如下：
 | **xargs** | 参数批量处理 | `cli/xargs.go` + `commands/xargs/cmd_xargs.go` | shellx/shx |
 | **alias** | Shell 别名生成 | `cli/alias.go` + `commands/alias/cmd_alias.go` | embed |
 
-#### 2.1.7 开发辅助类（2个）
+#### 2.1.7 文本处理类（1个）
+
+| 模块名称 | 核心功能 | 对应代码文件 | 核心依赖 |
+|----------|----------|--------------|----------|
+| **awk** | 文本字段处理（简化版 awk） | `cli/awk.go` + `commands/awk/*.go` | 标准库 regexp |
+
+#### 2.1.8 开发辅助类（2个）
 
 | 模块名称 | 核心功能 | 对应代码文件 | 核心依赖 |
 |----------|----------|--------------|----------|
@@ -1307,6 +1313,64 @@ echo "# Hello" | fck md file.md  # 错误：cannot specify file when reading fro
 - 使用 `utils.IsStdinPipe()` 检测管道输入
 - 管道模式自动设置文件名为 "stdin"
 - 管道输入时禁用文件参数
+
+---
+
+### 2026-04-18 - awk 子命令新增
+
+#### 11.1 功能概述
+
+新增简化版 `awk` 子命令，使用标志控制替代传统 awk 程序解析，专注于最常用的字段处理功能。
+
+**支持功能**:
+- 模式匹配（`-p` 正则匹配）
+- 字段处理（`-f` 字段索引，可多次使用）
+- 打印整行或指定字段
+- 内置变量支持（`0`=整行, `-1`=最后一个字段）
+
+**CLI 标志**:
+| 标志 | 短标志 | 说明 |
+|------|--------|------|
+| `--pattern` | `-p` | 正则匹配模式 |
+| `--field` | `-f` | 字段索引（1-based，可多次使用） |
+| `--separator` | `-F` | 输入分隔符（默认任意空白） |
+| `--output-separator` | `-O` | 输出分隔符 |
+| `--line-number` | `-n` | 显示行号 |
+
+**使用示例**:
+```bash
+# 打印第1列
+fck awk -f 1 file.txt
+
+# 打印第1和第3列
+fck awk -f 1 -f 3 file.txt
+
+# 指定分隔符
+fck awk -F: -f 1 -f 3 /etc/passwd
+
+# 打印最后一列
+fck awk -f -1 file.txt
+
+# 正则匹配
+fck awk -p "error" -f 2 log.txt
+
+# 管道输入
+echo "hello world" | fck awk -f 1
+```
+
+**技术特点**:
+- 使用 `bufio.Reader` 支持大文件和任意行长度
+- 管道输入优先于文件参数
+- 默认使用任意空白作为分隔符（与传统 awk 一致）
+- 未指定字段时默认输出整行
+
+**文件结构**:
+```
+internal/commands/awk/
+├── types.go      # 配置结构体
+└── cmd_awk.go    # 主逻辑实现
+internal/cli/awk.go  # CLI 定义
+```
 
 ---
 
