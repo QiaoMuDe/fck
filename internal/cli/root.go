@@ -57,6 +57,7 @@ func InitAndRun() (err error) {
 			AliasCmd,
 			MdCmd,
 			WatchCmd,
+			PortCmd,
 		},
 	}
 
