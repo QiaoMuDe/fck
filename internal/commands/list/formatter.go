@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 
 	"gitee.com/MM-Q/colorlib"
@@ -15,7 +14,6 @@ import (
 	"gitee.com/MM-Q/fck/internal/utils"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-	"golang.org/x/term"
 )
 
 // FileFormatter 文件格式化器
@@ -150,7 +148,7 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 	}
 
 	// 获取终端宽度
-	width := f.getSafeTerminalWidth()
+	width := utils.GetSafeTerminalWidth()
 
 	// 准备文件名列表
 	fileNames := f.prepareFileNames(files, opts)
@@ -187,40 +185,6 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 
 	t.Render()
 	return nil
-}
-
-// getSafeTerminalWidth 安全获取终端宽度
-//
-// 返回:
-//   - int: 终端宽度
-func (f *FileFormatter) getSafeTerminalWidth() int {
-	defaultWidth := 80 // 默认宽度
-	minWidth := 40     // 最小宽度
-	maxWidth := 1200   // 最大宽度
-
-	// 检查环境变量
-	if cols := os.Getenv("COLUMNS"); cols != "" {
-		if width, err := strconv.Atoi(cols); err == nil && width >= minWidth && width <= maxWidth {
-			return width
-		}
-	}
-
-	// 检查是否为终端
-	fd := os.Stdout.Fd()
-	if fd > 1024 || !term.IsTerminal(int(fd)) {
-		return defaultWidth
-	}
-
-	// 安全的类型转换和获取尺寸
-	if fd <= uintptr(^uint(0)>>1) { // 确保不会溢出
-		if width, _, err := term.GetSize(int(fd)); err == nil {
-			if width >= minWidth && width <= maxWidth {
-				return width
-			}
-		}
-	}
-
-	return defaultWidth
 }
 
 // renderTable 渲染表格格式 (长格式)

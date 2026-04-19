@@ -24,7 +24,7 @@ func init() {
 	mdLess = MdCmd.Bool("less", "l", "使用分页器查看 (默认直接输出到终端)", false)
 	mdRaw = MdCmd.Bool("raw", "r", "分页器中同时加载原始文件 (按 ] 切换)", false)
 	mdStyle = MdCmd.Enum("style", "s", "渲染样式 (auto/ascii/dark/light/dracula/tokyo-night/pink/notty)", "auto", []string{"auto", "ascii", "dark", "light", "dracula", "tokyo-night", "pink", "notty"})
-	mdWidth = MdCmd.Int("width", "w", "换行宽度 (0 表示自动)", 0)
+	mdWidth = MdCmd.Int("width", "w", "换行宽度 (0 表示自动)", utils.GetSafeTerminalWidth())
 	mdMaxSize = MdCmd.Size("max-size", "S", "最大文件大小 (如: 50m, 100m, 1g)", 100*1024*1024)
 
 	cmdOpts := &qflag.CmdOpts{

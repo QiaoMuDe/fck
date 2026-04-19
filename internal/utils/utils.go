@@ -11,9 +11,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
+	"golang.org/x/term"
 )
 
 // 定义需要跳过的系统文件和特殊目录
@@ -273,4 +275,38 @@ func IsBinaryFile(file *os.File) (bool, error) {
 	}
 
 	return isBinary, nil
+}
+
+// GetSafeTerminalWidth 安全获取终端宽度
+//
+// 返回:
+//   - int: 终端宽度
+func GetSafeTerminalWidth() int {
+	defaultWidth := 80 // 默认宽度
+	minWidth := 40     // 最小宽度
+	maxWidth := 1200   // 最大宽度
+
+	// 检查环境变量
+	if cols := os.Getenv("COLUMNS"); cols != "" {
+		if width, err := strconv.Atoi(cols); err == nil && width >= minWidth && width <= maxWidth {
+			return width
+		}
+	}
+
+	// 检查是否为终端
+	fd := os.Stdout.Fd()
+	if fd > 1024 || !term.IsTerminal(int(fd)) {
+		return defaultWidth
+	}
+
+	// 安全的类型转换和获取尺寸
+	if fd <= uintptr(^uint(0)>>1) { // 确保不会溢出
+		if width, _, err := term.GetSize(int(fd)); err == nil {
+			if width >= minWidth && width <= maxWidth {
+				return width
+			}
+		}
+	}
+
+	return defaultWidth
 }
