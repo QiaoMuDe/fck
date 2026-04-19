@@ -150,6 +150,7 @@ github.com/hashicorp/golang-lru/v2/internal
 github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/jedib0t/go-pretty/v6 v6.6.8
 ## explicit; go 1.18
+github.com/jedib0t/go-pretty/v6/list
 github.com/jedib0t/go-pretty/v6/table
 github.com/jedib0t/go-pretty/v6/text
 # github.com/jwalton/gchalk v1.3.0
@@ -303,8 +304,8 @@ github.com/yusufpapurcu/wmi
 # go.yaml.in/yaml/v3 v3.0.4
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
-# golang.org/x/net v0.27.0
-## explicit; go 1.18
+# golang.org/x/net v0.50.0
+## explicit; go 1.24.0
 golang.org/x/net/html
 golang.org/x/net/html/atom
 # golang.org/x/sync v0.19.0
