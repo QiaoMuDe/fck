@@ -285,12 +285,23 @@ func collectPorts(config *PortConfig) ([]PortInfo, *PortStats, []string, error) 
 		}
 	}
 
-	// 按端口排序
+	// 排序：先按协议，再按状态（LISTEN 在前），最后按端口号
 	sort.Slice(allPorts, func(i, j int) bool {
-		if allPorts[i].LocalPort != allPorts[j].LocalPort {
-			return allPorts[i].LocalPort < allPorts[j].LocalPort
+		// 先按协议排序（TCP4/UDP4 在前，TCP6/UDP6 在后）
+		if allPorts[i].Protocol != allPorts[j].Protocol {
+			return allPorts[i].Protocol < allPorts[j].Protocol
 		}
-		return allPorts[i].Protocol < allPorts[j].Protocol
+		// 再按状态排序（LISTEN 在前）
+		if allPorts[i].State != allPorts[j].State {
+			if allPorts[i].State == "LISTEN" {
+				return true
+			}
+			if allPorts[j].State == "LISTEN" {
+				return false
+			}
+		}
+		// 最后按端口号排序
+		return allPorts[i].LocalPort < allPorts[j].LocalPort
 	})
 
 	return allPorts, stats, warnings, nil
