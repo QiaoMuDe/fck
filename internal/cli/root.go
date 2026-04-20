@@ -49,6 +49,8 @@ func InitAndRun() (err error) {
 			TestCmd,
 			GmCmd,
 			CatCmd,
+			HeadCmd,
+			TailCmd,
 			GrepCmd,
 			SedCmd,
 			AwkCmd,

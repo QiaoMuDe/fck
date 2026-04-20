@@ -15,8 +15,6 @@ var (
 	catShowEnd      *qflag.BoolFlag // -E 显示行尾$
 	catShowTabs     *qflag.BoolFlag // -T 显示制表符为^I
 	catShowAll      *qflag.BoolFlag // -A 等价于 -ET
-	catHeadLines    *qflag.IntFlag  // -u 显示前N行
-	catTailLines    *qflag.IntFlag  // -d 显示后N行
 	catQuiet        *qflag.BoolFlag // -q 静默模式
 
 	// 二进制文件处理
@@ -41,8 +39,6 @@ func init() {
 	catShowEnd = CatCmd.Bool("show-ends", "E", "在每行末尾显示$", false)
 	catShowTabs = CatCmd.Bool("show-tabs", "T", "将制表符显示为^I", false)
 	catShowAll = CatCmd.Bool("show-all", "A", "等价于 -ET", false)
-	catHeadLines = CatCmd.Int("head", "u", "显示前N行 (0表示全部)", 0)
-	catTailLines = CatCmd.Int("tail", "d", "显示后N行 (0表示全部)", 0)
 	catQuiet = CatCmd.Bool("quiet", "q", "静默模式 (不显示错误)", false)
 
 	// 二进制文件处理标志
@@ -65,8 +61,6 @@ func init() {
 		Examples: map[string]string{
 			"显示文件内容":    fmt.Sprintf("%s cat file.txt", qflag.Root.Name()),
 			"显示行号":      fmt.Sprintf("%s cat -n file.txt", qflag.Root.Name()),
-			"显示前10行":    fmt.Sprintf("%s cat -u 10 file.txt", qflag.Root.Name()),
-			"显示后5行":     fmt.Sprintf("%s cat -d 5 file.txt", qflag.Root.Name()),
 			"静默跳过二进制文件": fmt.Sprintf("%s cat -I file.bin", qflag.Root.Name()),
 			"强制显示二进制内容": fmt.Sprintf("%s cat -a file.bin", qflag.Root.Name()),
 			"使用分页器查看":   fmt.Sprintf("%s cat -l file.txt", qflag.Root.Name()),
@@ -75,13 +69,9 @@ func init() {
 		},
 		Notes: []string{
 			"默认检测到二进制文件会输出提示，使用 -a 强制处理，使用 -I 静默跳过",
+			"查看文件开头/结尾请使用 head/tail 命令",
 		},
 		MutexGroups: []qflag.MutexGroup{
-			{
-				Name:      "head-tail",
-				Flags:     []string{"head", "tail"},
-				AllowNone: true,
-			},
 			{
 				Name:      "line-number",
 				Flags:     []string{"number", "number-nonblank"},
@@ -126,9 +116,7 @@ func runCat(cmd qflag.Command) error {
 		ShowEnd:      catShowEnd.Get(),
 		ShowTabs:     catShowTabs.Get(),
 		ShowAll:      catShowAll.Get(),
-		HeadLines:    catHeadLines.Get(),
 		MaxSize:      catMaxSize.Get(),
-		TailLines:    catTailLines.Get(),
 		Quiet:        catQuiet.Get(),
 		Text:         catText.Get(),
 		IgnoreBinary: catIgnoreBinary.Get(),

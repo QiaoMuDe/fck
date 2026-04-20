@@ -16,8 +16,6 @@ type CatConfig struct {
 	ShowEnd      bool     // -E 显示行尾$
 	ShowTabs     bool     // -T 显示制表符为^I
 	ShowAll      bool     // -A 等价于 -ET
-	HeadLines    int      // --head 显示前N行 (0表示全部)
-	TailLines    int      // --tail 显示后N行 (0表示全部)
 	Quiet        bool     // -q 静默模式 (不显示错误信息)
 	Text         bool     // -a, --text 强制将二进制文件视为文本处理
 	IgnoreBinary bool     // -I, --ignore-binary 完全忽略二进制文件

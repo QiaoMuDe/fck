@@ -60,50 +60,18 @@ func (v *FileViewer) View(path string) error {
 	content = bytes.ReplaceAll(content, []byte("\r\n"), []byte("\n"))
 
 	// 3. 按行分割
-	allLines := bytes.Split(content, []byte("\n"))
+	lines := bytes.Split(content, []byte("\n"))
 
-	// 4. 根据 head/tail 切片
-	lines := v.sliceLines(allLines)
-
-	// 5. 处理特殊显示标志（仅非高亮模式）
+	// 4. 处理特殊显示标志（仅非高亮模式）
 	if !v.config.Highlight {
 		lines = v.applySpecialFlags(lines)
 	}
 
-	// 6. 输出（根据是否高亮决定）
+	// 5. 输出（根据是否高亮决定）
 	if v.config.Highlight {
 		return v.outputHighlighted(lines, path)
 	}
 	return v.outputPlain(lines)
-}
-
-// sliceLines 根据 head/tail 标志切片
-//
-// 参数:
-//   - lines: 所有行
-//
-// 返回:
-//   - [][]byte: 切片后的行
-func (v *FileViewer) sliceLines(lines [][]byte) [][]byte {
-	// head 模式
-	if v.config.HeadLines > 0 {
-		if v.config.HeadLines < len(lines) {
-			return lines[:v.config.HeadLines]
-		}
-		return lines
-	}
-
-	// tail 模式
-	if v.config.TailLines > 0 {
-		if v.config.TailLines < len(lines) {
-			start := len(lines) - v.config.TailLines
-			return lines[start:]
-		}
-		return lines
-	}
-
-	// 全部
-	return lines
 }
 
 // applySpecialFlags 应用特殊显示标志
