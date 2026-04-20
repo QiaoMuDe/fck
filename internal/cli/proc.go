@@ -31,7 +31,7 @@ func init() {
 	procName = ProcCmd.String("name", "n", "按进程名过滤，支持部分匹配", "")
 	procPID = ProcCmd.Int("pid", "p", "指定单个 PID", 0)
 	procPIDs = ProcCmd.IntSlice("pids", "P", "指定多个 PID, 如: 1234,5678", []int{})
-	procSort = ProcCmd.Enum("sort", "s", "指定排序字段", "pid", SortFields)
+	procSort = ProcCmd.Enum("sort", "s", "指定排序字段 (pid/name/cpu/mem/time)", "pid", SortFields)
 	procAscend = ProcCmd.Bool("asc", "", "升序排列（默认降序）", false)
 	procList = ProcCmd.Bool("list", "l", "简洁模式", false)
 	procTree = ProcCmd.Bool("tree", "", "树形显示进程关系", false)
