@@ -251,8 +251,16 @@ func collectPorts(config *PortConfig) ([]PortInfo, *PortStats, []string, error) 
 			}
 
 			// 构建端口信息
+			// 根据地址判断是 IPv4 还是 IPv6
+			protocol := strings.ToUpper(proto)
+			if conn.Laddr.IP == "::" || strings.Contains(conn.Laddr.IP, ":") {
+				protocol += "6" // TCP6 / UDP6
+			} else {
+				protocol += "4" // TCP4 / UDP4
+			}
+
 			portInfo := PortInfo{
-				Protocol:    strings.ToUpper(proto),
+				Protocol:    protocol,
 				LocalAddr:   conn.Laddr.IP,
 				LocalPort:   conn.Laddr.Port,
 				RemoteAddr:  conn.Raddr.IP,
