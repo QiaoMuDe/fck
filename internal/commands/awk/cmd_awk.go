@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"gitee.com/MM-Q/fck/internal/utils"
@@ -145,6 +146,11 @@ func processLine(lineNum int, line string, config AwkConfig, re *regexp.Regexp) 
 		return nil
 	}
 
+	// 字符提取模式不需要分割字段
+	if config.IsCharMode() {
+		return outputLine(lineNum, line, nil, 0, config)
+	}
+
 	// 分割字段（未指定分隔符时使用任意空白）
 	var fields []string
 	if config.FieldSep == "" {
@@ -181,25 +187,95 @@ func outputLine(nr int, line string, fields []string, nf int, config AwkConfig) 
 		parts = append(parts, fmt.Sprintf("%d", nr))
 	}
 
-	// 添加字段
-	for _, idx := range config.Fields {
-		var value string
-		switch idx {
-		case 0: // 整行
-			value = line
-		case -1: // 最后一个字段
-			if nf > 0 {
-				value = fields[nf-1]
-			}
-		default: // 正常字段（1-based）
-			if idx > 0 && idx <= nf {
-				value = fields[idx-1]
-			}
+	// 字符提取模式
+	if config.IsCharMode() {
+		for _, cr := range config.CharRanges {
+			value := cr.Extract(line)
+			parts = append(parts, value)
 		}
-		parts = append(parts, value)
+	} else {
+		// 字段提取模式（原有逻辑）
+		for _, idx := range config.Fields {
+			var value string
+			switch idx {
+			case 0: // 整行
+				value = line
+			case -1: // 最后一个字段
+				if nf > 0 {
+					value = fields[nf-1]
+				}
+			default: // 正常字段（1-based）
+				if idx > 0 && idx <= nf {
+					value = fields[idx-1]
+				}
+			}
+			parts = append(parts, value)
+		}
 	}
 
 	// 输出
 	fmt.Println(strings.Join(parts, config.OutputSep))
 	return nil
+}
+
+// ParseCharRanges 解析字符范围字符串
+// 支持格式: "1-10,15,20-,5"
+func ParseCharRanges(s string) ([]CharRange, error) {
+	var ranges []CharRange
+	parts := strings.Split(s, ",")
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		cr, err := parseSingleRange(part)
+		if err != nil {
+			return nil, fmt.Errorf("invalid range %q: %w", part, err)
+		}
+		ranges = append(ranges, cr)
+	}
+
+	return ranges, nil
+}
+
+// parseSingleRange 解析单个范围
+// 支持: "5" -> {5,5}, "1-10" -> {1,10}, "5-" -> {5,-1}, "-10" -> {1,10}
+func parseSingleRange(s string) (CharRange, error) {
+	// 处理 "-N" 格式（前N个字符）
+	if strings.HasPrefix(s, "-") {
+		n, err := strconv.Atoi(s[1:])
+		if err != nil || n < 1 {
+			return CharRange{}, fmt.Errorf("invalid range")
+		}
+		return CharRange{Start: 1, End: n}, nil
+	}
+
+	// 处理 "N-" 格式（从N到结尾）
+	if strings.HasSuffix(s, "-") {
+		n, err := strconv.Atoi(s[:len(s)-1])
+		if err != nil || n < 1 {
+			return CharRange{}, fmt.Errorf("invalid range")
+		}
+		return CharRange{Start: n, End: -1}, nil
+	}
+
+	// 处理 "N-M" 格式
+	if strings.Contains(s, "-") {
+		parts := strings.SplitN(s, "-", 2)
+		start, err1 := strconv.Atoi(parts[0])
+		end, err2 := strconv.Atoi(parts[1])
+		if err1 != nil || err2 != nil || start < 1 || end < 1 || end < start {
+			return CharRange{}, fmt.Errorf("invalid range")
+		}
+		return CharRange{Start: start, End: end}, nil
+	}
+
+	// 处理单个数字 "N"
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 {
+		return CharRange{}, fmt.Errorf("invalid range")
+	}
+	return CharRange{Start: n, End: n}, nil
 }
