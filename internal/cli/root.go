@@ -59,6 +59,7 @@ func InitAndRun() (err error) {
 			WatchCmd,
 			PortCmd,
 			ProcCmd,
+			DFCmd,
 		},
 	}
 
