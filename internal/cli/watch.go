@@ -24,7 +24,7 @@ var (
 )
 
 func init() {
-	WatchCmd = qflag.NewCmd("watch", "w", qflag.ExitOnError)
+	WatchCmd = qflag.NewCmd("watch", "", qflag.ExitOnError)
 
 	// 基本配置
 	watchInterval = WatchCmd.Duration("interval", "n", "执行间隔时间，默认2秒", 2*time.Second)

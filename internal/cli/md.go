@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	MdCmd = qflag.NewCmd("md", "mdv", qflag.ExitOnError)
+	MdCmd = qflag.NewCmd("md", "", qflag.ExitOnError)
 
 	mdLess = MdCmd.Bool("less", "l", "使用分页器查看 (默认直接输出到终端)", false)
 	mdRaw = MdCmd.Bool("raw", "r", "分页器中同时加载原始文件 (按 ] 切换)", false)

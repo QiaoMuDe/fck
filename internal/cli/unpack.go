@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	UnpackCmd = qflag.NewCmd("unpack", "up", qflag.ExitOnError)
+	UnpackCmd = qflag.NewCmd("unpack", "", qflag.ExitOnError)
 
 	unpackIncludePatterns = UnpackCmd.StringSlice("include", "i", "包含的文件模式(支持glob语法)", []string{})
 	unpackExcludePatterns = UnpackCmd.StringSlice("exclude", "e", "排除的文件模式(支持glob语法)", []string{})

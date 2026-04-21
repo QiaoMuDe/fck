@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	EchoCmd = qflag.NewCmd("echo", "e", qflag.ExitOnError)
+	EchoCmd = qflag.NewCmd("echo", "", qflag.ExitOnError)
 
 	echoNoNewline = EchoCmd.Bool("no-newline", "n", "不在末尾添加换行符", false)
 	echoRaw = EchoCmd.Bool("raw", "r", "原始输出，不解析转义字符", false)

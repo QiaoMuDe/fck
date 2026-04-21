@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	SizeCmd = qflag.NewCmd("size", "s", qflag.ExitOnError)
+	SizeCmd = qflag.NewCmd("size", "", qflag.ExitOnError)
 
 	sizeColor = SizeCmd.Bool("color", "c", "启用颜色输出", false)
 	sizeHidden = SizeCmd.Bool("hidden", "H", "包含隐藏文件或目录进行大小计算，默认过滤", false)

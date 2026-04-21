@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	DateCmd = qflag.NewCmd("date", "d", qflag.ExitOnError)
+	DateCmd = qflag.NewCmd("date", "", qflag.ExitOnError)
 
 	dateFormat = DateCmd.String("format", "f", "指定时间格式字符串", "")
 	dateTimestamp = DateCmd.String("timestamp", "t", "将Unix时间戳转换为可读时间", "")

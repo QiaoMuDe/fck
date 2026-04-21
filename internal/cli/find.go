@@ -37,7 +37,7 @@ var (
 )
 
 func init() {
-	FindCmd = qflag.NewCmd("find", "f", qflag.ExitOnError)
+	FindCmd = qflag.NewCmd("find", "", qflag.ExitOnError)
 
 	findName = FindCmd.String("name", "n", "指定要查找的文件或目录名", "")
 	findPath = FindCmd.String("path", "p", "指定要查找的路径", "")

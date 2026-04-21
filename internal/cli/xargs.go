@@ -38,7 +38,7 @@ func init() {
 	xargsNoRunIfEmpty = XargsCmd.Bool("no-run-if-empty", "r", "空输入不执行", false)
 	xargsVerbose = XargsCmd.Bool("verbose", "t", "打印执行的命令", false)
 	xargsExitOnError = XargsCmd.Bool("exit-on-error", "e", "出错立即停止", false)
-	xargsShell = XargsCmd.Bool("shell", "", "通过 shell 执行命令（支持管道、重定向等）", false)
+	xargsShell = XargsCmd.Bool("shell", "S", "通过 shell 执行命令（支持管道、重定向等）", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:       "从标准输入或文件读取参数，批量执行指定命令",
@@ -62,8 +62,7 @@ func init() {
 			"使用 -0 可以处理包含空格或特殊字符的文件名",
 			"使用 -P 可以并行执行，提高处理速度",
 			"默认使用直接执行模式，避免 shell 注入风险",
-			"如需使用管道、重定向等 shell 特性，请添加 --shell 标志",
-			"--shell 模式下请注意输入安全性",
+			"如需使用管道、重定向等 shell 特性，请添加 --shell/-S 标志",
 		},
 		MutexGroups: []qflag.MutexGroup{
 			{

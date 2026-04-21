@@ -38,7 +38,7 @@ fck/
 | **哈希校验** | hash, check | 哈希计算/完整性校验 | go-kit/hash |
 | **系统信息** | size, date, pwd, home, df | 大小统计/时间/路径/磁盘空间 | 标准库 |
 | **工具** | echo, watch, xargs, alias | 输出/定时执行/批量处理/别名 | shellx, colorlib |
-| **文本处理** | awk, wc, head, tail | 字段处理/字数统计/文件头尾查看 | regexp, go-pretty |
+| **文本处理** | awk, wc, head, tail, tr | 字段处理/字数统计/文件头尾查看/字符转换 | regexp, go-pretty |
 | **开发辅助** | gm, test, md | Git管理/测试/Markdown预览 | glamour, oviewer |
 
 ---
@@ -94,6 +94,13 @@ Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
 - 多文件支持，自动显示文件名标题
 - 管道输入支持
 
+### tr 命令
+- 字符转换、删除、压缩功能
+- 支持字符范围（如 `a-z`, `0-9`）
+- 支持转义字符（`\n`, `\t`, `\\`）
+- 删除模式 (`-d`)、压缩模式 (`-s`)、补集模式 (`-c`)
+- 管道输入支持
+
 ### wc 命令
 - 统计文件的行数、单词数、字节数、字符数
 - 支持最大行长度统计 (`-L`)
@@ -137,6 +144,7 @@ Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
 
 | 日期 | 变更 |
 |------|------|
+| 2026-04-21 | 新增 `tr` 命令（字符转换、删除、压缩） |
 | 2026-04-20 | 新增 `head` 命令（显示文件开头内容） |
 | 2026-04-20 | 新增 `tail` 命令（显示文件结尾内容，支持实时追踪） |
 | 2026-04-20 | 新增 `df` 命令（磁盘空间查看） |

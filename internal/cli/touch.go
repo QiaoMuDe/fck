@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	TouchCmd = qflag.NewCmd("touch", "t", qflag.ExitOnError)
+	TouchCmd = qflag.NewCmd("touch", "", qflag.ExitOnError)
 
 	touchNoCreate = TouchCmd.Bool("no-create", "c", "不创建文件 (仅更新时间戳)", false)
 	touchTime = TouchCmd.String("time", "t", "设置时间 (格式: YYYYMMDDHHMM.SS)", "")

@@ -17,7 +17,7 @@ func InitAndRun() (err error) {
 	}()
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:              "一站式文件与系统管理工具集，集成文件操作、内容查看、压缩解压、哈希校验、系统信息等多种实用功能",
+		Desc:              "一站式文件操作、文本处理与系统管理工具集, 集成30+实用命令, 覆盖文件管理、文本处理、系统监控、开发辅助等多个场景",
 		UseChinese:        true,
 		Completion:        true,
 		DynamicCompletion: true,
@@ -55,6 +55,7 @@ func InitAndRun() (err error) {
 			SedCmd,
 			AwkCmd,
 			WcCmd,
+			TrCmd,
 			XargsCmd,
 			AliasCmd,
 			MdCmd,

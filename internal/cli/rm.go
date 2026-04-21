@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	RMCmd = qflag.NewCmd("rm", "r", qflag.ExitOnError)
+	RMCmd = qflag.NewCmd("rm", "", qflag.ExitOnError)
 
 	rmRecursive = RMCmd.Bool("recursive", "r", "递归删除目录及其内容", false)
 	rmForce = RMCmd.Bool("force", "f", "强制删除（删除只读文件，跳过确认）", false)

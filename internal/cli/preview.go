@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	PreviewCmd = qflag.NewCmd("preview", "pv", qflag.ExitOnError)
+	PreviewCmd = qflag.NewCmd("preview", "", qflag.ExitOnError)
 
 	previewInfo = PreviewCmd.Bool("info", "i", "打印压缩包基本信息", false)
 	previewLs = PreviewCmd.Bool("list", "ls", "以简洁的方式打印文件列表", false)

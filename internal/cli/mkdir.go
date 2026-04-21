@@ -16,7 +16,7 @@ var (
 )
 
 func init() {
-	MkdirCmd = qflag.NewCmd("mkdir", "m", qflag.ExitOnError)
+	MkdirCmd = qflag.NewCmd("mkdir", "", qflag.ExitOnError)
 
 	mkdirParents = MkdirCmd.Bool("parents", "p", "递归创建父目录", false)
 	mkdirMode = MkdirCmd.String("mode", "m", "设置目录权限 (八进制，如 755)", "0755")

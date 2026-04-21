@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	HashCmd = qflag.NewCmd("hash", "h", qflag.ExitOnError)
+	HashCmd = qflag.NewCmd("hash", "", qflag.ExitOnError)
 	hashType = HashCmd.Enum("type", "t", "指定哈希算法，支持 md5、sha1、sha256、sha512", "md5", []string{"md5", "sha1", "sha256", "sha512"})
 	hashRecursion = HashCmd.Bool("recursion", "r", "递归处理目录", false)
 	hashWrite = HashCmd.Bool("write", "w", "将哈希值写入文件, 文件名为checksum.hash", false)
