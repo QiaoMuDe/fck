@@ -75,7 +75,7 @@ func init() {
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "文本搜索工具",
 		UseChinese:  true,
-		UsageSyntax: fmt.Sprintf("%s grep [options] <pattern> [file]", qflag.Root.Name()),
+		UsageSyntax: fmt.Sprintf("%s grep [options] <pattern> [file...]", qflag.Root.Name()),
 		Examples: map[string]string{
 			"基础搜索":       fmt.Sprintf("%s grep \"error\" log.txt", qflag.Root.Name()),
 			"忽略大小写":      fmt.Sprintf("%s grep -i \"error\" log.txt", qflag.Root.Name()),

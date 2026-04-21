@@ -38,7 +38,12 @@ func init() {
 		Desc:        "文件哈希计算工具",
 		Notes:       []string{"哈希值计算基于文件内容，不包括元数据"},
 		UseChinese:  true,
-		UsageSyntax: fmt.Sprintf("%s hash [options] [target-path...]", qflag.Root.Name()),
+		UsageSyntax: fmt.Sprintf("%s hash [options] [path...]", qflag.Root.Name()),
+		Examples: map[string]string{
+			"计算文件MD5":  fmt.Sprintf("%s hash file.txt", qflag.Root.Name()),
+			"计算目录MD5":  fmt.Sprintf("%s hash -r dir", qflag.Root.Name()),
+			"计算目录SHA1": fmt.Sprintf("%s hash -r -t sha1 dir", qflag.Root.Name()),
+		},
 	}
 
 	if err := HashCmd.ApplyOpts(cmdOpts); err != nil {

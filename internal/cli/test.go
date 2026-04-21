@@ -32,7 +32,13 @@ func init() {
 			"使用 -l 选项检测符号链接是否存在",
 			"适合在脚本中使用，返回正确的退出码",
 		},
-		UseChinese: true,
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s test [options] <path>", qflag.Root.Name()),
+		Examples: map[string]string{
+			"检测文件是否存在":   fmt.Sprintf("%s test -f /path/to/file", qflag.Root.Name()),
+			"检测目录是否存在":   fmt.Sprintf("%s test -d /path/to/dir", qflag.Root.Name()),
+			"检测符号链接是否存在": fmt.Sprintf("%s test -l /path/to/link", qflag.Root.Name()),
+		},
 	}
 
 	if err := TestCmd.ApplyOpts(cmdOpts); err != nil {
@@ -45,7 +51,7 @@ func init() {
 func runTest(cmd qflag.Command) error {
 	args := cmd.Args()
 	if len(args) == 0 {
-		return fmt.Errorf("参数不足，需要指定路径")
+		return fmt.Errorf("missing required path argument")
 	}
 
 	config := testcmd.TestConfig{

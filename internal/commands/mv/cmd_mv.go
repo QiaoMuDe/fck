@@ -37,6 +37,9 @@ func MvCmdMain(config MvConfig) error {
 	stats := &MvStats{}
 
 	for _, source := range config.Sources {
+		if config.Verbose {
+			fmt.Printf("%q -> %q\n", source, config.Target)
+		}
 		err := moveItem(source, config.Target, config.Force, config.Interactive, config.Verbose, stats)
 		if err != nil {
 			stats.Errors++
@@ -44,12 +47,8 @@ func MvCmdMain(config MvConfig) error {
 		}
 	}
 
-	if config.Verbose {
-		fmt.Printf("moved: %d moves\n", stats.Moved)
-		if stats.Errors > 0 {
-			fmt.Printf(", %d errors", stats.Errors)
-		}
-		fmt.Println()
+	if config.Verbose && stats.Errors > 0 {
+		fmt.Printf("operation completed with %d errors\n", stats.Errors)
 	}
 
 	return nil
@@ -82,10 +81,6 @@ func moveItem(src, dst string, force, interactive, verbose bool, stats *MvStats)
 
 	if err := fs.MoveEx(src, dst, force); err != nil {
 		return fmt.Errorf("move '%s' to '%s' failed: %v", src, dst, err)
-	}
-
-	if verbose {
-		fmt.Printf("moved: %s -> %s\n", src, dst)
 	}
 
 	stats.Moved++

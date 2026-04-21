@@ -31,13 +31,17 @@ func init() {
 	echoColor = EchoCmd.String("color", "c", "颜色输出（red, green, yellow, blue等）", "")
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "文本输出工具",
+		Desc:        "文本输出工具",
+		UsageSyntax: fmt.Sprintf("%s echo [options] [text...]", qflag.Root.Name()),
 		Notes: []string{
 			"支持转义字符: \\n(换行), \\t(制表符), \\r(回车), \\\\(反斜杠), \\\"(双引号)",
 			"支持颜色: black, red, green, yellow, blue, magenta, cyan, white",
 			"支持亮色: bright-black, bright-red, bright-green, bright-yellow, bright-blue, bright-magenta, bright-cyan, bright-white",
 		},
 		UseChinese: true,
+		Examples: map[string]string{
+			"输出文本": fmt.Sprintf("%s echo \"Hello, World!\"", qflag.Root.Name()),
+		},
 	}
 
 	if err := EchoCmd.ApplyOpts(cmdOpts); err != nil {

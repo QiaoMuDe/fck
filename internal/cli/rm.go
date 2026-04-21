@@ -31,7 +31,12 @@ func init() {
 			"递归删除时，会删除目录及其所有内容",
 			"确认提示选项: y(是), n(否), a(全部是), q(退出)",
 		},
-		UseChinese: true,
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s rm [options] <target>...", qflag.Root.Name()),
+		Examples: map[string]string{
+			"删除文件": fmt.Sprintf("%s rm file.txt", qflag.Root.Name()),
+			"删除目录": fmt.Sprintf("%s rm -r dir/", qflag.Root.Name()),
+		},
 	}
 
 	if err := RMCmd.ApplyOpts(cmdOpts); err != nil {
@@ -48,7 +53,7 @@ func runRM(cmd qflag.Command) error {
 	for _, arg := range args {
 		matches, err := filepath.Glob(arg)
 		if err != nil {
-			return fmt.Errorf("通配符展开失败: %w", err)
+			return fmt.Errorf("glob pattern expansion failed: %w", err)
 		}
 		if len(matches) == 0 {
 			targets = append(targets, arg)

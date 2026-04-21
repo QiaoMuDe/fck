@@ -39,9 +39,14 @@ func init() {
 	unpackNoValidate = UnpackCmd.Bool("no-validate", "nv", "禁用路径验证", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "智能解压缩工具",
-		Notes:      []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
-		UseChinese: true,
+		Desc:        "智能解压缩工具",
+		Notes:       []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s unpack [options] <archive> [dst]", qflag.Root.Name()),
+		Examples: map[string]string{
+			"解压压缩包":      fmt.Sprintf("%s unpack archive.zip", qflag.Root.Name()),
+			"解压压缩包到指定目录": fmt.Sprintf("%s unpack archive.zip /path/to/dst", qflag.Root.Name()),
+		},
 	}
 
 	if err := UnpackCmd.ApplyOpts(cmdOpts); err != nil {
@@ -54,11 +59,11 @@ func init() {
 func runUnpack(cmd qflag.Command) error {
 	args := cmd.Args()
 	if len(args) < 1 {
-		return fmt.Errorf("缺少压缩包路径参数")
+		return fmt.Errorf("archive path is required")
 	}
 
-	packPath := args[0]
-	dstPath := ""
+	packPath := args[0] // 压缩包路径
+	dstPath := ""       // 解压目标路径
 	if len(args) > 1 {
 		dstPath = args[1]
 	}

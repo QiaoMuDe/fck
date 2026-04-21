@@ -49,9 +49,17 @@ func init() {
 	packNoValidate = PackCmd.Bool("no-validate", "nv", "禁用路径验证", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "智能打包压缩工具",
-		Notes:      []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
-		UseChinese: true,
+		Desc: "智能打包压缩工具",
+		Notes: []string{
+			"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib",
+			"通过自定义压缩包后缀, 可以指定压缩包的格式",
+		},
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s pack [options] <archive> [src]", qflag.Root.Name()),
+		Examples: map[string]string{
+			"压缩文件": fmt.Sprintf("%s pack archive.zip source.txt", qflag.Root.Name()),
+			"压缩目录": fmt.Sprintf("%s pack archive.tar source/", qflag.Root.Name()),
+		},
 	}
 
 	if err := PackCmd.ApplyOpts(cmdOpts); err != nil {
@@ -67,15 +75,15 @@ func runPack(cmd qflag.Command) error {
 		return fmt.Errorf("缺少压缩包路径参数")
 	}
 
-	packPath := args[0]
-	srcPath := ""
+	packPath := args[0] // 压缩包路径
+	srcPath := ""       // 源文件或目录路径
 	if len(args) > 1 {
 		srcPath = args[1]
 	}
 
 	config := pack.PackConfig{
-		PackPath:         packPath,
-		SrcPath:          srcPath,
+		PackPath:         packPath, // 压缩包路径
+		SrcPath:          srcPath,  // 源文件或目录路径
 		IncludePatterns:  packIncludePatterns.Get(),
 		ExcludePatterns:  packExcludePatterns.Get(),
 		MinSize:          packMinSize.Get(),

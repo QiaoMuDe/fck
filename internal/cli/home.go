@@ -20,7 +20,11 @@ func init() {
 			"Linux 平台: /home/username",
 			"macOS 平台: /Users/username",
 		},
-		UseChinese: true,
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s home [options]", qflag.Root.Name()),
+		Examples: map[string]string{
+			"显示用户主目录": fmt.Sprintf("%s home", qflag.Root.Name()),
+		},
 	}
 
 	if err := HomeCmd.ApplyOpts(cmdOpts); err != nil {

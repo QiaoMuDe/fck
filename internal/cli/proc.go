@@ -59,23 +59,24 @@ func init() {
 		"\t\t\t\t\t[none]   - 禁用边框样式", "none", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "查看系统进程信息",
-		UseChinese: true,
+		Desc:        "查看系统进程信息",
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s proc [options]", qflag.Root.Name()),
 		Notes: []string{
 			"默认显示所有进程",
 			"进程信息获取可能需要管理员权限",
 			"复杂过滤可通过管道使用 grep 命令",
 		},
 		Examples: map[string]string{
-			"查看所有进程":     "fck proc",
-			"按名称查找":      "fck proc -n chrome",
-			"查看指定 PID":   "fck proc -p 1234",
-			"查看多个 PID":   "fck proc -P 1234,5678",
-			"按 CPU 排序":   "fck proc -s cpu",
-			"简洁模式":       "fck proc -l",
-			"树形显示":       "fck proc --tree",
-			"JSON 输出":    "fck proc --json",
-			"配合 grep 过滤": "fck proc -l | grep admin",
+			"查看所有进程":     fmt.Sprintf("%s proc", qflag.Root.Name()),
+			"按名称查找":      fmt.Sprintf("%s proc -n chrome", qflag.Root.Name()),
+			"查看指定 PID":   fmt.Sprintf("%s proc -p 1234", qflag.Root.Name()),
+			"查看多个 PID":   fmt.Sprintf("%s proc -P 1234,5678", qflag.Root.Name()),
+			"按 CPU 排序":   fmt.Sprintf("%s proc -s cpu", qflag.Root.Name()),
+			"简洁模式":       fmt.Sprintf("%s proc -l", qflag.Root.Name()),
+			"树形显示":       fmt.Sprintf("%s proc --tree", qflag.Root.Name()),
+			"JSON 输出":    fmt.Sprintf("%s proc --json", qflag.Root.Name()),
+			"配合 grep 过滤": fmt.Sprintf("%s proc -l | grep admin", qflag.Root.Name()),
 		},
 		MutexGroups: []qflag.MutexGroup{
 			{Name: "display", Flags: []string{"list", "tree", "json"}, AllowNone: true},

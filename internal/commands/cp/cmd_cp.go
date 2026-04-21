@@ -14,6 +14,7 @@ type CpConfig struct {
 	Force       bool
 	Interactive bool
 	Verbose     bool
+	Recursive   bool
 	Sources     []string
 	Target      string
 }
@@ -37,29 +38,45 @@ func CpCmdMain(config CpConfig) error {
 	stats := &CpStats{}
 
 	for _, source := range config.Sources {
-		err := copyItem(source, config.Target, config.Force, config.Interactive, config.Verbose, stats)
+		if config.Verbose {
+			fmt.Printf("%q -> %q\n", source, config.Target)
+		}
+		err := copyItem(source, config.Target, config.Force, config.Interactive, config.Verbose, config.Recursive, stats)
 		if err != nil {
 			stats.Errors++
 			return err
 		}
 	}
 
-	if config.Verbose {
-		fmt.Printf("operation completed: %d copies\n", stats.Copied)
-		if stats.Errors > 0 {
-			fmt.Printf(", %d errors", stats.Errors)
-		}
-		fmt.Println()
+	if config.Verbose && stats.Errors > 0 {
+		fmt.Printf("operation completed with %d errors\n", stats.Errors)
 	}
 
 	return nil
 }
 
 // copyItem 复制文件或目录
-func copyItem(src, dst string, force, interactive, verbose bool, stats *CpStats) error {
+//
+// 参数:
+//   - src: 源文件或目录路径
+//   - dst: 目标文件或目录路径
+//   - force: 是否强制覆盖已存在的文件
+//   - interactive: 是否交互式覆盖（覆盖前提示）
+//   - verbose: 是否显示复制的文件/目录
+//   - recursive: 是否递归复制目录
+//   - stats: 操作统计结构体指针
+//
+// 返回值:
+//   - error: 复制失败时返回错误，否则返回 nil
+func copyItem(src, dst string, force, interactive, verbose bool, recursive bool, stats *CpStats) error {
 	srcInfo, err := os.Stat(src)
 	if err != nil {
 		return fmt.Errorf("failed to get source file info: %w", err)
+	}
+
+	// 检查是否需要递归复制目录
+	if srcInfo.IsDir() && !recursive {
+		return fmt.Errorf("%s is a directory, use -r to copy recursively", src)
 	}
 
 	dstInfo, err := os.Stat(dst)
@@ -82,10 +99,6 @@ func copyItem(src, dst string, force, interactive, verbose bool, stats *CpStats)
 
 	if err := fs.CopyEx(src, dst, force); err != nil {
 		return fmt.Errorf("copy failed: '%s' to '%s': %v", src, dst, err)
-	}
-
-	if verbose {
-		fmt.Printf("copy: %s -> %s\n", src, dst)
 	}
 
 	stats.Copied++

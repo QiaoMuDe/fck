@@ -49,16 +49,17 @@ func init() {
 		"\t\t\t\t\t[none]   - 禁用表格样式", "def", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "文件目录大小计算工具",
-		Notes:      []string{"默认显示字节数，使用 -u/--human 转换为可读格式", "默认不跟随符号链接，使用 -L/--follow-symlinks 跟随符号链接"},
-		UseChinese: true,
+		Desc:        "文件目录大小计算工具",
+		Notes:       []string{"默认显示字节数，使用 -u/--human 转换为可读格式", "默认不跟随符号链接，使用 -L/--follow-symlinks 跟随符号链接"},
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s size [options] <target>...", qflag.Root.Name()),
 		Examples: map[string]string{
-			"查看当前目录": "fck size",
-			"查看指定目录": "fck size /path/to/dir",
-			"人类可读格式": "fck size -u /path/to/dir",
-			"包含隐藏文件": "fck size -H /path/to/dir",
-			"跟随符号链接": "fck size -L /path/to/dir",
-			"使用通配符":  "fck size *.txt",
+			"查看当前目录": fmt.Sprintf("%s size", qflag.Root.Name()),
+			"查看指定目录": fmt.Sprintf("%s size /path/to/dir", qflag.Root.Name()),
+			"人类可读格式": fmt.Sprintf("%s size -u /path/to/dir", qflag.Root.Name()),
+			"包含隐藏文件": fmt.Sprintf("%s size -H /path/to/dir", qflag.Root.Name()),
+			"跟随符号链接": fmt.Sprintf("%s size -L /path/to/dir", qflag.Root.Name()),
+			"使用通配符":  fmt.Sprintf("%s size *.txt", qflag.Root.Name()),
 		},
 	}
 

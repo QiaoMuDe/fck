@@ -19,7 +19,7 @@ var (
 func init() {
 	TruncateCmd = qflag.NewCmd("truncate", "", qflag.ExitOnError)
 
-	truncateSize = TruncateCmd.Size("size", "s", "设置文件大小（支持单位：B、K、M、G、T）", 0)
+	truncateSize = TruncateCmd.Size("size", "s", "设置文件大小 (支持单位: B、K、M、G、T)", 0)
 	truncateCreate = TruncateCmd.Bool("create", "c", "如果文件不存在则创建", false)
 	truncateRef = TruncateCmd.String("reference", "r", "参考文件大小", "")
 	truncateVerbose = TruncateCmd.Bool("verbose", "v", "显示操作的文件", false)
@@ -28,12 +28,13 @@ func init() {
 		Desc: "文件截断工具",
 		Notes: []string{
 			"文件大小通过 -s 选项设置, 支持单位: B、K、M、G、T",
-			"目标通过位置参数传递，支持多个文件",
-			"使用 -c 选项在文件不存在时创建文件",
-			"使用 -r 选项参考其他文件的大小",
-			"使用 -v 选项显示操作的文件",
+			"目标通过位置参数传递, 支持多个文件",
 		},
 		UseChinese: true,
+		Examples: map[string]string{
+			"截断文件大小":   fmt.Sprintf("%s truncate -s 100K file.txt", qflag.Root.Name()),
+			"参考其他文件大小": fmt.Sprintf("%s truncate -r file.txt", qflag.Root.Name()),
+		},
 	}
 
 	if err := TruncateCmd.ApplyOpts(cmdOpts); err != nil {

@@ -27,12 +27,14 @@ func init() {
 		Notes: []string{
 			"源文件通过位置参数传递，支持多个文件",
 			"目标通过最后一个位置参数传递",
-			"使用 -f 选项强制覆盖已存在的文件",
-			"使用 -i 选项在覆盖前提示确认",
-			"使用 -v 选项显示移动的文件/目录",
-			"支持跨设备移动（自动处理）",
+			"支持跨设备移动 (自动处理)",
 		},
-		UseChinese: true,
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s mv [options] <source...> <target>", qflag.Root.Name()),
+		Examples: map[string]string{
+			"移动文件": fmt.Sprintf("%s mv source.txt target.txt", qflag.Root.Name()),
+			"移动目录": fmt.Sprintf("%s mv source/ target/", qflag.Root.Name()),
+		},
 	}
 
 	if err := MvCmd.ApplyOpts(cmdOpts); err != nil {

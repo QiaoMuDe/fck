@@ -44,17 +44,17 @@ func init() {
 		Desc:       "从标准输入或文件读取参数，批量执行指定命令",
 		UseChinese: true,
 		Examples: map[string]string{
-			"基础用法":   `echo a b c | fck xargs echo`,
-			"参数替换":   `find . -name "*.log" | fck xargs -i {} mv {} {}.bak`,
-			"自定义占位符": `echo a | fck xargs -i -I %% echo %%`,
-			"批量处理":   `echo a b c d | fck xargs -n 2 echo`,
-			"并行执行":   `cat urls.txt | fck xargs -P 4 curl -O`,
-			"从文件读取":  `fck xargs -a files.txt rm`,
-			"空分隔符":   `find . -print0 | fck xargs -0 rm`,
-			"限制命令长度": `fck xargs -s 1024 echo`,
-			"组合使用":   `find . -name "*.tmp" | fck xargs -0 -i -P 4 mv {} /backup/`,
-			"使用管道":   `echo "file.txt" | fck xargs -i --shell "cat {} | grep pattern"`,
-			"使用重定向":  `echo "file.txt" | fck xargs -i --shell "cat {} > output.txt"`,
+			"基础用法":   fmt.Sprintf("echo a b c | %s xargs echo", qflag.Root.Name()),
+			"参数替换":   fmt.Sprintf("find . -name \"*.log\" | %s xargs -i mv {} {}.bak", qflag.Root.Name()),
+			"自定义占位符": fmt.Sprintf("echo a | %s xargs -i -I %% echo %%", qflag.Root.Name()),
+			"批量处理":   fmt.Sprintf("echo a b c d | %s xargs -n 2 echo", qflag.Root.Name()),
+			"并行执行":   fmt.Sprintf("cat urls.txt | %s xargs -P 4 curl -O", qflag.Root.Name()),
+			"从文件读取":  fmt.Sprintf("%s xargs -a files.txt rm", qflag.Root.Name()),
+			"空分隔符":   fmt.Sprintf("find . -print0 | %s xargs -0 rm", qflag.Root.Name()),
+			"限制命令长度": fmt.Sprintf("%s xargs -s 1024 echo", qflag.Root.Name()),
+			"组合使用":   fmt.Sprintf("find . -name \"*.tmp\" | %s xargs -0 -i -P 4 mv {} /backup/", qflag.Root.Name()),
+			"使用管道":   fmt.Sprintf("echo \"file.txt\" | %s xargs -i --shell \"cat {} | grep pattern\"", qflag.Root.Name()),
+			"使用重定向":  fmt.Sprintf("echo \"file.txt\" | %s xargs -i --shell \"cat {} > output.txt\"", qflag.Root.Name()),
 		},
 		Notes: []string{
 			"默认模式：所有参数追加到命令后，执行一次",
@@ -95,7 +95,7 @@ func init() {
 func runXargs(cmd qflag.Command) error {
 	args := cmd.Args()
 	if len(args) == 0 {
-		return fmt.Errorf("请指定要执行的命令")
+		return fmt.Errorf("missing command argument")
 	}
 
 	// 解析占位符
@@ -121,8 +121,8 @@ func runXargs(cmd qflag.Command) error {
 		Verbose:      xargsVerbose.Get(),
 		ExitOnError:  xargsExitOnError.Get(),
 		Shell:        xargsShell.Get(),
-		Command:      args[0],
-		CommandArgs:  args[1:],
+		Command:      args[0],  // 第一个参数作为命令
+		CommandArgs:  args[1:], // 其他参数作为命令参数
 	}
 
 	return xargs.XargsCmdMain(config)

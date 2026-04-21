@@ -27,7 +27,8 @@ func init() {
 	dateUnix = DateCmd.Bool("unix", "U", "输出Unix时间戳", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "时间获取和格式化工具",
+		Desc:        "时间获取和格式化工具",
+		UsageSyntax: fmt.Sprintf("%s date [options]", qflag.Root.Name()),
 		Notes: []string{
 			"预定义格式别名:\n" +
 				"\tiso - 2006-01-02T15:04:05Z07:00\n" +
@@ -53,6 +54,11 @@ func init() {
 			"时间戳支持秒级和毫秒级自动识别",
 		},
 		UseChinese: true,
+		Examples: map[string]string{
+			"获取当前时间":      fmt.Sprintf("%s date", qflag.Root.Name()),
+			"将时间戳转换为可读时间": fmt.Sprintf("%s date -t 1694502400", qflag.Root.Name()),
+			"获取指定时间格式":    fmt.Sprintf("%s date -f compact", qflag.Root.Name()),
+		},
 	}
 
 	if err := DateCmd.ApplyOpts(cmdOpts); err != nil {

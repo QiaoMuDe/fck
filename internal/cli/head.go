@@ -28,12 +28,12 @@ func init() {
 		Desc:       "显示文件开头内容",
 		UseChinese: true,
 		Examples: map[string]string{
-			"显示前10行":   "fck head file.txt",
-			"显示前20行":   "fck head -n 20 file.txt",
-			"显示前100字节": "fck head -c 100 file.txt",
-			"多个文件":     "fck head file1.txt file2.txt",
-			"从管道读取":    "cat big.log | fck head -n 100",
-			"简洁模式":     "fck head -q file.txt",
+			"显示前10行":   fmt.Sprintf("%s head file.txt", qflag.Root.Name()),
+			"显示前20行":   fmt.Sprintf("%s head -n 20 file.txt", qflag.Root.Name()),
+			"显示前100字节": fmt.Sprintf("%s head -c 100 file.txt", qflag.Root.Name()),
+			"多个文件":     fmt.Sprintf("%s head file1.txt file2.txt", qflag.Root.Name()),
+			"从管道读取":    fmt.Sprintf("%s cat big.log | %s head -n 100", qflag.Root.Name(), qflag.Root.Name()),
+			"简洁模式":     fmt.Sprintf("%s head -q file.txt", qflag.Root.Name()),
 		},
 		Notes: []string{
 			"默认显示前10行",

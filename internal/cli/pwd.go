@@ -27,7 +27,11 @@ func init() {
 			"使用 -P 选项显示物理路径（解析符号链接）",
 			"使用 -L 选项显式显示逻辑路径（不解析符号链接）",
 		},
-		UseChinese: true,
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s pwd [options]", qflag.Root.Name()),
+		Examples: map[string]string{
+			"显示当前工作目录": fmt.Sprintf("%s pwd", qflag.Root.Name()),
+		},
 	}
 
 	if err := PwdCmd.ApplyOpts(cmdOpts); err != nil {

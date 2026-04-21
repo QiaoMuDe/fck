@@ -74,9 +74,15 @@ func init() {
 	listDisableIndex = ListCmd.Bool("disable-index", "di", "禁用索引序号", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "文件目录列表工具",
-		Notes:      []string{"如果不指定路径，默认为当前目录", "排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个"},
-		UseChinese: true,
+		Desc:        "文件目录列表工具",
+		Notes:       []string{"如果不指定路径，默认为当前目录", "排序选项(-t, -s, -n)不能同时使用, 后指定的选项会覆盖前一个"},
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s list [options] <path...>", qflag.Root.Name()),
+		Examples: map[string]string{
+			"显示当前目录": fmt.Sprintf("%s list", qflag.Root.Name()),
+			"显示指定目录": fmt.Sprintf("%s list /path/to/directory", qflag.Root.Name()),
+			"查看长格式":  fmt.Sprintf("%s list -l", qflag.Root.Name()),
+		},
 	}
 
 	if err := ListCmd.ApplyOpts(cmdOpts); err != nil {

@@ -26,9 +26,14 @@ func init() {
 	checkNoColor = CheckCmd.Bool("no-color", "n", "是否禁用颜色输出", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "校验指定文件的哈希值是否与校验文件中的记录一致",
-		Notes:      []string{"校验文件必须包含有效的头信息", "校验时会自动跳过空行和注释行(以#开头的行)"},
-		UseChinese: true,
+		Desc:        "校验指定文件的哈希值是否与校验文件中的记录一致",
+		UsageSyntax: fmt.Sprintf("%s check [options]", qflag.Root.Name()),
+		Notes:       []string{"校验文件必须包含有效的头信息", "校验时会自动跳过空行和注释行(以#开头的行)"},
+		UseChinese:  true,
+		Examples: map[string]string{
+			"校验当前目录": fmt.Sprintf("%s check", qflag.Root.Name()),
+			"指定校验文件": fmt.Sprintf("%s check -f checksum.hash", qflag.Root.Name()),
+		},
 	}
 
 	if err := CheckCmd.ApplyOpts(cmdOpts); err != nil {

@@ -56,22 +56,23 @@ func init() {
 	portListening = PortCmd.Bool("listening", "L", "只显示监听状态的端口", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "查看系统端口占用情况",
-		UseChinese: true,
+		Desc:        "查看系统端口占用情况",
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s port [options]", qflag.Root.Name()),
 		Notes: []string{
 			"默认显示所有 TCP 和 UDP 端口",
 			"查看所有进程端口通常需要管理员/root权限",
 			"Windows 上某些系统进程信息可能无法获取",
 		},
 		Examples: map[string]string{
-			"查看所有端口":       "fck port",
-			"查看指定端口":       "fck port -P 8080",
-			"查看多个端口":       "fck port -P 80,443,8080",
-			"只查看 TCP 监听端口": "fck port -t -L",
-			"只查看 UDP 端口":   "fck port -u",
-			"查看指定进程的端口":    "fck port -n nginx",
-			"查看指定 PID 的端口": "fck port --pid 1234",
-			"简洁模式显示":       "fck port -l",
+			"查看所有端口":       fmt.Sprintf("%s port", qflag.Root.Name()),
+			"查看指定端口":       fmt.Sprintf("%s port -P 8080", qflag.Root.Name()),
+			"查看多个端口":       fmt.Sprintf("%s port -P 80,443,8080", qflag.Root.Name()),
+			"只查看 TCP 监听端口": fmt.Sprintf("%s port -t -L", qflag.Root.Name()),
+			"只查看 UDP 端口":   fmt.Sprintf("%s port -u", qflag.Root.Name()),
+			"查看指定进程的端口":    fmt.Sprintf("%s port -n nginx", qflag.Root.Name()),
+			"查看指定 PID 的端口": fmt.Sprintf("%s port --pid 1234", qflag.Root.Name()),
+			"简洁模式显示":       fmt.Sprintf("%s port -l", qflag.Root.Name()),
 		},
 		MutexGroups: []qflag.MutexGroup{
 			{Name: "protocol", Flags: []string{"tcp", "udp"}, AllowNone: true},

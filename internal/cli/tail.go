@@ -27,16 +27,17 @@ func init() {
 	tailVerbose = TailCmd.Bool("verbose", "v", "总是显示文件名标题", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "显示文件结尾内容",
-		UseChinese: true,
+		Desc:        "显示文件结尾内容",
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s tail [options] <target>...", qflag.Root.Name()),
 		Examples: map[string]string{
-			"显示后10行":    "fck tail file.txt",
-			"显示后20行":    "fck tail -n 20 file.txt",
-			"显示后100字节":  "fck tail -c 100 file.txt",
-			"实时追踪日志":    "fck tail -f /var/log/app.log",
-			"追踪并显示100行": "fck tail -n 100 -f /var/log/app.log",
-			"多个文件":      "fck tail file1.txt file2.txt",
-			"从管道读取":     "cat big.log | fck tail -n 50",
+			"显示后10行":    fmt.Sprintf("%s tail file.txt", qflag.Root.Name()),
+			"显示后20行":    fmt.Sprintf("%s tail -n 20 file.txt", qflag.Root.Name()),
+			"显示后100字节":  fmt.Sprintf("%s tail -c 100 file.txt", qflag.Root.Name()),
+			"实时追踪日志":    fmt.Sprintf("%s tail -f /var/log/app.log", qflag.Root.Name()),
+			"追踪并显示100行": fmt.Sprintf("%s tail -n 100 -f /var/log/app.log", qflag.Root.Name()),
+			"多个文件":      fmt.Sprintf("%s tail file1.txt file2.txt", qflag.Root.Name()),
+			"从管道读取":     fmt.Sprintf("cat big.log | %s tail -n 50", qflag.Root.Name()),
 		},
 		Notes: []string{
 			"默认显示后10行",

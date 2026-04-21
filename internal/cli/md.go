@@ -28,16 +28,17 @@ func init() {
 	mdMaxSize = MdCmd.Size("max-size", "S", "最大文件大小 (如: 50m, 100m, 1g)", 100*1024*1024)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "预览 Markdown 文件",
-		UseChinese: true,
+		Desc:        "预览 Markdown 文件",
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s md [options] <path>", qflag.Root.Name()),
 		Examples: map[string]string{
-			"预览文件":     "fck md README.md",
-			"使用分页器":    "fck md -l README.md",
-			"指定样式":     "fck md -s dark README.md",
-			"指定宽度":     "fck md -w 100 README.md",
-			"分页器+暗色主题": "fck md -l -s dark README.md",
-			"管道输入":     "echo '# Hello' | fck md",
-			"管道+分页器":   "cat README.md | fck md -l",
+			"预览文件":     fmt.Sprintf("%s md README.md", qflag.Root.Name()),
+			"使用分页器":    fmt.Sprintf("%s md -l README.md", qflag.Root.Name()),
+			"指定样式":     fmt.Sprintf("%s md -s dark README.md", qflag.Root.Name()),
+			"指定宽度":     fmt.Sprintf("%s md -w 100 README.md", qflag.Root.Name()),
+			"分页器+暗色主题": fmt.Sprintf("%s md -l -s dark README.md", qflag.Root.Name()),
+			"管道输入":     fmt.Sprintf("echo '# Hello' | %s md", qflag.Root.Name()),
+			"管道+分页器":   fmt.Sprintf("cat README.md | %s md -l", qflag.Root.Name()),
 		},
 		Notes: []string{
 			"支持 glamour 的所有内置样式: auto, ascii, dark, light, dracula, tokyo-night, pink, notty",

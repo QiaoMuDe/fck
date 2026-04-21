@@ -25,9 +25,14 @@ func init() {
 	previewLimit = PreviewCmd.Int("limit", "l", "限制显示的文件数量(0表示不限制)", 0)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "压缩包预览工具",
-		Notes:      []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
-		UseChinese: true,
+		Desc:        "压缩包预览工具",
+		Notes:       []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s preview [options] <archive>", qflag.Root.Name()),
+		Examples: map[string]string{
+			"预览压缩包":     fmt.Sprintf("%s preview archive.zip", qflag.Root.Name()),
+			"预览压缩包基本信息": fmt.Sprintf("%s preview -i archive.zip", qflag.Root.Name()),
+		},
 	}
 
 	if err := PreviewCmd.ApplyOpts(cmdOpts); err != nil {

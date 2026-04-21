@@ -33,9 +33,17 @@ func init() {
 	gmJSON = GmCmd.Bool("json", "j", "以JSON格式输出结果", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "获取Git仓库的各种元数据信息",
-		Notes:      []string{"不指定任何功能标志时, 默认获取所有元数据信息"},
-		UseChinese: true,
+		Desc:        "获取Git仓库的各种元数据信息",
+		Notes:       []string{"不指定任何功能标志时, 默认获取所有元数据信息"},
+		UseChinese:  true,
+		UsageSyntax: fmt.Sprintf("%s gm [options]", qflag.Root.Name()),
+		Examples: map[string]string{
+			"检查当前目录是否为Git仓库": fmt.Sprintf("%s gm -c", qflag.Root.Name()),
+			"获取Git仓库的版本号":    fmt.Sprintf("%s gm -v", qflag.Root.Name()),
+			"获取当前提交的哈希值":     fmt.Sprintf("%s gm -H", qflag.Root.Name()),
+			"获取最新提交的时间":      fmt.Sprintf("%s gm -t", qflag.Root.Name()),
+			"获取Git仓库的状态":     fmt.Sprintf("%s gm -s", qflag.Root.Name()),
+		},
 	}
 
 	if err := GmCmd.ApplyOpts(cmdOpts); err != nil {

@@ -53,13 +53,14 @@ func init() {
 		},
 		UseChinese: true,
 		Examples: map[string]string{
-			"每隔 2 秒执行 ls -la": "fck watch -n 2 -- ls -la",
-			"高亮显示变化的行":        "fck watch -d date",
-			"精确计时模式（补偿执行耗时）":  "fck watch -p -n 1 ./benchmark.sh",
-			"执行 10 次后退出":      "fck watch -c 10 -n 5 -- curl -s http://api.example.com/status",
-			"出错时立即退出":         "fck watch -e kubectl get pods",
-			"静默模式（无标题栏）":      "fck watch -q ./monitor.sh",
+			"每隔 2 秒执行 ls -la": fmt.Sprintf("%s watch -n 2 -- ls -la", qflag.Root.Name()),
+			"高亮显示变化的行":        fmt.Sprintf("%s watch -d date", qflag.Root.Name()),
+			"精确计时模式 (补偿执行耗时)": fmt.Sprintf("%s watch -p -n 1 ./benchmark.sh", qflag.Root.Name()),
+			"执行 10 次后退出":      fmt.Sprintf("%s watch -c 10 -n 5 -- curl -s http://api.example.com/status", qflag.Root.Name()),
+			"出错时立即退出":         fmt.Sprintf("%s watch -e kubectl get pods", qflag.Root.Name()),
+			"静默模式 (无标题栏)":     fmt.Sprintf("%s watch -q ./monitor.sh", qflag.Root.Name()),
 		},
+		UsageSyntax: fmt.Sprintf("%s watch [options] <command>", qflag.Root.Name()),
 	}
 
 	if err := WatchCmd.ApplyOpts(cmdOpts); err != nil {
@@ -72,7 +73,7 @@ func init() {
 func runWatch(cmd qflag.Command) error {
 	args := cmd.Args()
 	if len(args) < 1 {
-		return fmt.Errorf("缺少要监控的命令参数")
+		return fmt.Errorf("missing command argument")
 	}
 
 	// 组合命令参数

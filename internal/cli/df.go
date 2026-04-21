@@ -50,14 +50,15 @@ func init() {
 		"\t\t\t\t\t[none]   - 禁用边框样式", "none", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:       "查看磁盘空间使用情况",
-		UseChinese: true,
+		Desc:        "查看磁盘空间使用情况",
+		UsageSyntax: fmt.Sprintf("%s df [options]", qflag.Root.Name()),
+		UseChinese:  true,
 		Examples: map[string]string{
-			"查看所有分区":  "fck df",
-			"只显示本地分区": "fck df -l",
-			"按类型过滤":   "fck df -t ext4",
-			"显示总计":    "fck df --total",
-			"简洁模式":    "fck df -s",
+			"查看所有分区":  fmt.Sprintf("%s df", qflag.Root.Name()),
+			"只显示本地分区": fmt.Sprintf("%s df -l", qflag.Root.Name()),
+			"按类型过滤":   fmt.Sprintf("%s df -t ext4", qflag.Root.Name()),
+			"显示总计":    fmt.Sprintf("%s df --total", qflag.Root.Name()),
+			"简洁模式":    fmt.Sprintf("%s df -s", qflag.Root.Name()),
 		},
 		Notes: []string{
 			"默认显示所有分区 (包括网络文件系统)",
