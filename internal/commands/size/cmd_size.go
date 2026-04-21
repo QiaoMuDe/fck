@@ -25,11 +25,12 @@ type item struct {
 type items []item
 
 type SizeConfig struct {
-	Args       []string
-	Color      bool
-	TableStyle string
-	Hidden     bool
-	Human      bool
+	Args          []string
+	Color         bool
+	TableStyle    string
+	Hidden        bool
+	Human         bool
+	FollowSymlink bool
 }
 
 func SizeCmdMain(cl *colorlib.ColorLib, config SizeConfig) error {
@@ -111,7 +112,14 @@ func getPathSize(path string, config SizeConfig) (int64, error) {
 		return 0, nil
 	}
 
-	info, err := os.Lstat(path)
+	// 根据配置选择是否跟随符号链接
+	var info os.FileInfo
+	var err error
+	if config.FollowSymlink {
+		info, err = os.Stat(path)
+	} else {
+		info, err = os.Lstat(path)
+	}
 	if err != nil {
 		switch {
 		case os.IsPermission(err):
@@ -153,6 +161,25 @@ func getPathSize(path string, config SizeConfig) (int64, error) {
 		}
 
 		if !includeHidden && utils.IsHidden(filePath) {
+			return nil
+		}
+
+		// 处理符号链接
+		if dirEntry.Type()&os.ModeSymlink != 0 {
+			if config.FollowSymlink {
+				// 跟随符号链接，获取目标信息
+				targetInfo, statErr := os.Stat(filePath)
+				if statErr != nil {
+					skippedFiles++
+					return nil
+				}
+				if !targetInfo.IsDir() {
+					totalSize += targetInfo.Size()
+					_ = bar.Add64(targetInfo.Size())
+				}
+				// 如果是软链接的是目录则跳过（不计入大小）
+			}
+			// 不跟随符号链接时，跳过（不计入大小）
 			return nil
 		}
 

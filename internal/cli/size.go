@@ -12,10 +12,11 @@ import (
 var SizeCmd *qflag.Cmd
 
 var (
-	sizeColor      *qflag.BoolFlag // 启用颜色输出
-	sizeTableStyle *qflag.EnumFlag // 指定表格样式
-	sizeHidden     *qflag.BoolFlag // 包含隐藏文件或目录进行大小计算，默认过滤
-	sizeHuman      *qflag.BoolFlag // 人类可读格式显示大小
+	sizeColor         *qflag.BoolFlag // 启用颜色输出
+	sizeTableStyle    *qflag.EnumFlag // 指定表格样式
+	sizeHidden        *qflag.BoolFlag // 包含隐藏文件或目录进行大小计算，默认过滤
+	sizeHuman         *qflag.BoolFlag // 人类可读格式显示大小
+	sizeFollowSymlink *qflag.BoolFlag // 跟随符号链接
 )
 
 func init() {
@@ -24,6 +25,7 @@ func init() {
 	sizeColor = SizeCmd.Bool("color", "c", "启用颜色输出", false)
 	sizeHidden = SizeCmd.Bool("hidden", "H", "包含隐藏文件或目录进行大小计算，默认过滤", false)
 	sizeHuman = SizeCmd.Bool("human", "u", "以人类可读格式显示大小(如KB/MB/GB)", false)
+	sizeFollowSymlink = SizeCmd.Bool("follow-symlinks", "L", "跟随符号链接计算目标大小", false)
 	sizeTableStyle = SizeCmd.Enum("table-style", "ts", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\t\t[def ]   - 默认样式\n"+
 		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
@@ -48,8 +50,16 @@ func init() {
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:       "文件目录大小计算工具",
-		Notes:      []string{"默认显示字节数，使用 -u/--human 转换为可读格式"},
+		Notes:      []string{"默认显示字节数，使用 -u/--human 转换为可读格式", "默认不跟随符号链接，使用 -L/--follow-symlinks 跟随符号链接"},
 		UseChinese: true,
+		Examples: map[string]string{
+			"查看当前目录": "fck size",
+			"查看指定目录": "fck size /path/to/dir",
+			"人类可读格式": "fck size -u /path/to/dir",
+			"包含隐藏文件": "fck size -H /path/to/dir",
+			"跟随符号链接": "fck size -L /path/to/dir",
+			"使用通配符":  "fck size *.txt",
+		},
 	}
 
 	if err := SizeCmd.ApplyOpts(cmdOpts); err != nil {
@@ -63,11 +73,12 @@ func runSize(cmd qflag.Command) error {
 	cl := colorlib.NewColorLib()
 
 	config := size.SizeConfig{
-		Args:       cmd.Args(),
-		Color:      sizeColor.Get(),
-		TableStyle: sizeTableStyle.Get(),
-		Hidden:     sizeHidden.Get(),
-		Human:      sizeHuman.Get(),
+		Args:          cmd.Args(),
+		Color:         sizeColor.Get(),
+		TableStyle:    sizeTableStyle.Get(),
+		Hidden:        sizeHidden.Get(),
+		Human:         sizeHuman.Get(),
+		FollowSymlink: sizeFollowSymlink.Get(),
 	}
 
 	return size.SizeCmdMain(cl, config)
