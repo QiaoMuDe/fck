@@ -44,7 +44,7 @@ func init() {
 	watchPrecise = WatchCmd.Bool("precise", "p", "精确计时模式，补偿命令执行耗时", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc: "命令监控工具 - 周期性执行命令并显示输出",
+		Desc: "命令监控工具 (周期性执行命令并显示输出)",
 		Notes: []string{
 			"类似于 Linux 系统的 watch 命令",
 			"使用 Ctrl+C 可以随时停止监控",
