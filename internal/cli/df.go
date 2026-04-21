@@ -16,6 +16,7 @@ var (
 	dfTotal      *qflag.BoolFlag   // --total          显示总计
 	dfList       *qflag.BoolFlag   // -s, --simple     简洁模式
 	dfTableStyle *qflag.EnumFlag   // --table-style    表格样式
+	dfBytes      *qflag.BoolFlag   // -b, --bytes      以字节为单位显示大小
 )
 
 func init() {
@@ -25,6 +26,7 @@ func init() {
 	dfType = DFCmd.String("type", "t", "按文件系统类型过滤", "")
 	dfTotal = DFCmd.Bool("total", "T", "显示总计行", false)
 	dfList = DFCmd.Bool("simple", "s", "简洁模式", false)
+	dfBytes = DFCmd.Bool("bytes", "b", "以字节为单位显示大小", false)
 	dfTableStyle = DFCmd.Enum("table-style", "ts", "指定表格样式，支持以下选项：\n"+
 		"\t\t\t\t\t[def ]   - 默认样式\n"+
 		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
@@ -62,6 +64,13 @@ func init() {
 			"大小自动转换为人类可读格式 (GB/MB/KB)",
 			"Windows 上显示为 C:, D: 等盘符",
 		},
+		MutexGroups: []qflag.MutexGroup{
+			{
+				Name:      "local-type",
+				Flags:     []string{"local", "type"},
+				AllowNone: true,
+			},
+		},
 	}
 
 	if err := DFCmd.ApplyOpts(cmdOpts); err != nil {
@@ -78,6 +87,7 @@ func runDF(cmd qflag.Command) error {
 		ShowTotal:  dfTotal.Get(),
 		ListMode:   dfList.Get(),
 		TableStyle: dfTableStyle.Get(),
+		ShowBytes:  dfBytes.Get(),
 	}
 
 	return df.DFCmdMain(config)

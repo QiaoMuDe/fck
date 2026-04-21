@@ -45,7 +45,7 @@ ldflags = '-s -w'
 # ==================== 目标平台配置 ====================
 [build.target]
 # --batch, -b: 批量编译模式
-batch = false
+batch = true
 # --current-platform-only, -cpo: 仅编译当前平台
 current_platform_only = false
 # 支持的目标平台列表，多个平台用逗号分隔

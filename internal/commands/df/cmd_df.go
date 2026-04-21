@@ -19,6 +19,7 @@ type DFConfig struct {
 	ShowTotal  bool   // 显示总计行
 	ListMode   bool   // 简洁模式
 	TableStyle string // 表格样式
+	ShowBytes  bool   // 以字节为单位显示大小
 }
 
 // DFInfo 磁盘分区信息
@@ -40,10 +41,26 @@ type DFStats struct {
 	Count      int
 }
 
-// 常见的网络文件系统类型
-var networkFSTypes = []string{
-	"nfs", "nfs4", "smbfs", "cifs", "afs",
-	"fuse.sshfs", "fuse", "glusterfs", "ceph",
+// 跳过的文件系统类型（网络、虚拟、容器等）
+var skipFSTypes = map[string]bool{
+	// 网络文件系统
+	"nfs": true, "nfs4": true, "smbfs": true, "cifs": true, "afs": true,
+	"fuse.sshfs": true, "fuse": true, "glusterfs": true, "ceph": true,
+	"sshfs": true, "ftpfs": true, "davfs": true, "httpfs": true,
+	// 虚拟/伪文件系统
+	"sysfs": true, "proc": true, "procfs": true,
+	"devtmpfs": true, "devpts": true,
+	"tmpfs": true, "ramfs": true,
+	"cgroup": true, "cgroup2": true,
+	"securityfs": true, "pstore": true, "configfs": true,
+	"debugfs": true, "hugetlbfs": true, "mqueue": true,
+	"rpc_pipefs": true, "binfmt_misc": true, "autofs": true,
+	"fusectl": true, "efivarfs": true, "bpf": true,
+	"tracefs": true, "fuse.gvfsd-fuse": true,
+	// Docker/容器文件系统
+	"overlay": true, "overlay2": true,
+	"aufs": true, "btrfs": true, "zfs": true,
+	"devicemapper": true,
 }
 
 // DFCmdMain df 命令主入口
@@ -81,6 +98,11 @@ func DFCmdMain(config DFConfig) error {
 			continue // 跳过无法访问的分区
 		}
 
+		// 跳过大小为 0 的文件系统（虚拟文件系统）
+		if usage.Total == 0 {
+			continue
+		}
+
 		info := DFInfo{
 			Filesystem: p.Device,
 			Size:       usage.Total,
@@ -105,7 +127,7 @@ func DFCmdMain(config DFConfig) error {
 
 	// 渲染输出
 	if config.ListMode {
-		return renderListMode(dfInfos)
+		return renderListMode(dfInfos, config)
 	}
 	return renderTableMode(dfInfos, stats, config)
 }
@@ -118,12 +140,7 @@ func DFCmdMain(config DFConfig) error {
 // 返回值:
 //   - bool: 是否为本地文件系统
 func isLocalFS(fsType string) bool {
-	for _, nfs := range networkFSTypes {
-		if strings.EqualFold(fsType, nfs) {
-			return false
-		}
-	}
-	return true
+	return !skipFSTypes[strings.ToLower(fsType)]
 }
 
 // normalizeMountpoint 规范化挂载点显示
@@ -142,14 +159,18 @@ func normalizeMountpoint(mount string) string {
 	return mount
 }
 
-// formatSize 格式化大小为人类可读格式
+// formatSize 格式化大小
 //
 // 参数:
 //   - bytes: 字节数
+//   - showBytes: 是否以字节为单位显示
 //
 // 返回值:
 //   - string: 格式化后的字符串
-func formatSize(bytes uint64) string {
+func formatSize(bytes uint64, showBytes bool) string {
+	if showBytes {
+		return fmt.Sprintf("%d", bytes)
+	}
 	return utils.FormatBytes(int64(bytes))
 }
 
@@ -167,16 +188,17 @@ func renderTableMode(infos []DFInfo, stats *DFStats, config DFConfig) error {
 	t.SetOutputMirror(os.Stdout)
 
 	// 表头
-	t.AppendHeader(table.Row{"Filesystem", "Size", "Used", "Avail", "Use%", "Mounted on"})
+	t.AppendHeader(table.Row{"Filesystem", "Type", "Size", "Used", "Avail", "Use%", "Mounted on"})
 
 	// 数据行
 	for _, info := range infos {
 		t.AppendRow(table.Row{
 			info.Filesystem,
-			formatSize(info.Size),
-			formatSize(info.Used),
-			formatSize(info.Avail),
-			fmt.Sprintf("%.0f%%", info.UsePercent),
+			info.FSType,
+			formatSize(info.Size, config.ShowBytes),
+			formatSize(info.Used, config.ShowBytes),
+			formatSize(info.Avail, config.ShowBytes),
+			fmt.Sprintf("%.1f%%", info.UsePercent),
 			info.MountedOn,
 		})
 	}
@@ -190,10 +212,11 @@ func renderTableMode(infos []DFInfo, stats *DFStats, config DFConfig) error {
 		}
 		t.AppendRow(table.Row{
 			"total",
-			formatSize(stats.TotalSize),
-			formatSize(stats.TotalUsed),
-			formatSize(stats.TotalAvail),
-			fmt.Sprintf("%.0f%%", usePercent),
+			"",
+			formatSize(stats.TotalSize, config.ShowBytes),
+			formatSize(stats.TotalUsed, config.ShowBytes),
+			formatSize(stats.TotalAvail, config.ShowBytes),
+			fmt.Sprintf("%.1f%%", usePercent),
 			"",
 		})
 	}
@@ -213,12 +236,13 @@ func renderTableMode(infos []DFInfo, stats *DFStats, config DFConfig) error {
 //
 // 参数:
 //   - infos: 分区信息列表
+//   - config: 命令配置
 //
 // 返回值:
 //   - error: 错误
-func renderListMode(infos []DFInfo) error {
+func renderListMode(infos []DFInfo, config DFConfig) error {
 	for _, info := range infos {
-		fmt.Printf("%-20s %8s %4.0f%%\n", info.MountedOn, formatSize(info.Size), info.UsePercent)
+		fmt.Printf("%-20s %8s %4.0f%%\n", info.MountedOn, formatSize(info.Size, config.ShowBytes), info.UsePercent)
 	}
 	return nil
 }
