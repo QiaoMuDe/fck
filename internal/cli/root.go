@@ -63,6 +63,7 @@ func InitAndRun() (err error) {
 			PortCmd,
 			ProcCmd,
 			DFCmd,
+			WhichCmd,
 		},
 	}
 

@@ -28,12 +28,12 @@ fck/
 
 ---
 
-## 二、26个功能模块
+## 二、27个功能模块
 
 | 分类 | 模块 | 核心功能 | 关键依赖 |
 |------|------|----------|----------|
 | **文件操作** | cp, mv, rm, mkdir, touch, truncate, cat, list | 复制/移动/删除/创建/查看/列表 | go-kit/fs, go-pretty |
-| **查找处理** | find, grep, sed | 文件查找/文本搜索/替换 | regexp |
+| **查找处理** | find, grep, sed, which | 文件查找/文本搜索/替换/命令查找 | regexp, 标准库 |
 | **压缩解压** | pack, unpack, preview | 打包/解压/预览 | comprx |
 | **哈希校验** | hash, check | 哈希计算/完整性校验 | go-kit/hash |
 | **系统信息** | size, date, pwd, home, df | 大小统计/时间/路径/磁盘空间 | 标准库 |
@@ -138,12 +138,20 @@ Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
 - 分页器支持 (`-l`)
 - 原始/渲染视图切换 (`-r`)
 
+### which 命令
+- 在 PATH 环境变量中查找命令的可执行文件路径
+- 支持多命令同时查找
+- 显示所有匹配路径 (`-a`)
+- 静默模式 (`-s`)，便于脚本中使用
+- 跨平台支持（Windows/Unix）
+
 ---
 
 ## 六、更新日志
 
 | 日期 | 变更 |
 |------|------|
+| 2026-04-23 | 新增 `which` 命令（命令查找，支持跨平台） |
 | 2026-04-21 | 新增 `tr` 命令（字符转换、删除、压缩） |
 | 2026-04-20 | 新增 `head` 命令（显示文件开头内容） |
 | 2026-04-20 | 新增 `tail` 命令（显示文件结尾内容，支持实时追踪） |
@@ -157,4 +165,4 @@ Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
 
 ---
 
-**分析日期**: 2026-04-20 | **分析师**: Claude Code
+**分析日期**: 2026-04-23 | **分析师**: Claude Code
