@@ -169,16 +169,16 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 // 返回:
 //   - ScanOptions: 扫描选项
 func getScanOptions(config ListConfig) ScanOptions {
-	var fileTypes []string
-
+	// 获取限制文件类型，默认显示所有文件和目录
+	fileType := ""
 	if config.Type != types.FindTypeAll {
-		fileTypes = []string{config.Type}
+		fileType = config.Type
 	}
 
 	return ScanOptions{
 		Recursive:  config.Recursion,
 		ShowHidden: config.All,
-		FileTypes:  fileTypes,
+		FileType:   fileType,
 		DirItself:  config.DirItself,
 	}
 }

@@ -29,8 +29,9 @@ func createCompleteCmd(root *Cmd) error {
 	// 创建子命令
 	cmd := NewCmd(types.CompleteCmdName, "", types.ExitOnError)
 	opts := &CmdOpts{
-		Desc:   "内部动态补全指令，为 Shell 补全脚本提供实时命令树查询服务",
-		Hidden: true,
+		Desc:               "内部动态补全指令，为 Shell 补全脚本提供实时命令树查询服务",
+		Hidden:             true, // 隐藏在命令列表中
+		DisableFlagParsing: true, // 禁用标志解析，只处理指令参数
 		Examples: map[string]string{
 			"执行模糊匹配补全": fmt.Sprintf("%s %s %s <模式> <候选1> [候选2] ...", root.Name(), types.CompleteCmdName, types.InstructionFuzzy),
 			"计算上下文路径":  fmt.Sprintf("%s %s %s <arg0> [arg1] ...", root.Name(), types.CompleteCmdName, types.InstructionContext),

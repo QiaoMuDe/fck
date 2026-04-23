@@ -123,9 +123,8 @@ func handleAll(root types.Command, args []string) error {
 	var matchStrings []string
 	var enumValues []string
 
-	// 判断是否是标志值补全上下文
-	// 条件：prev 是待补全值的标志（以 - 开头，不是 --，不包含 =）
-	isFlagValueCompletion := strings.HasPrefix(prev, "-") && prev != "--" && !strings.Contains(prev, "=")
+	// 3. 判断补全类型并执行相应逻辑
+	isFlagValueCompletion := isFlagValueContext(cur, prev)
 
 	if isFlagValueCompletion {
 		// ========== 标志值补全 ==========
@@ -263,4 +262,48 @@ func fuzzyMatch(candidates []string, cur string) []string {
 		result[i] = match.Str
 	}
 	return result
+}
+
+// isFlagValueContext 判断当前是否处于标志值补全上下文
+//
+// 标志值补全 vs 普通候选项补全的区别：
+//
+//  1. 标志值补全场景（返回 true）：
+//     用户已输入标志名，正在输入该标志的值
+//     例如：--format <cur> 或 -f <cur>
+//     此时 cur 是标志的值，不是标志名
+//
+//  2. 普通候选项补全场景（返回 false）：
+//     用户正在输入标志名、子命令名或其他候选项
+//     例如：<cur> 或 --<cur> 或 -<cur>
+//     此时 cur 可能是标志名、子命令名等
+//
+// 参数:
+//   - cur: 当前输入的词（用户正在输入的内容）
+//   - prev: 前一个词（可能是标志名）
+//
+// 返回值:
+//   - bool: true 表示处于标志值补全上下文，false 表示普通候选项补全
+//
+// 判断逻辑:
+//  1. cur 不以 "-" 开头 → 用户在输入值，不是标志名
+//  2. prev 以 "-" 开头 → 前一个词是标志
+//  3. prev 不是 "--" → 排除单独的 "--" 分隔符
+//  4. prev 不包含 "=" → 排除 --flag=value 形式（值已经在 prev 中）
+//
+// 示例:
+//
+//	isFlagValueContext("json", "--format") → true  （--format 的值）
+//	isFlagValueContext("--ty", "list")     → false （正在输入标志名 --type）
+//	isFlagValueContext("-t", "list")       → false （正在输入标志名 -t）
+//	isFlagValueContext("", "--format")     → true  （--format 的值，空输入）
+func isFlagValueContext(cur, prev string) bool {
+	// 快速路径：如果 cur 以 - 开头，说明用户在补全标志名，不是标志值
+	if strings.HasPrefix(cur, "-") {
+		return false
+	}
+
+	// 检查 prev 是否是需要值的标志
+	// 条件：以 - 开头、不是 --、不包含 =（避免 --flag=value 形式）
+	return strings.HasPrefix(prev, "-") && prev != "--" && !strings.Contains(prev, "=")
 }

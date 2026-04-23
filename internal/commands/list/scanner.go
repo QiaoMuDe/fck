@@ -171,6 +171,16 @@ func (s *FileScanner) scanSinglePathWithOriginal(path string, originalPath strin
 	}
 
 	if pathInfo.IsDir() {
+		// 如果指定了只显示隐藏文件，且主路径本身或其父目录是隐藏的，则清除类型过滤以显示所有内容
+		hasHiddenFilter := opts.FileType == types.FindTypeHiddenShort || opts.FileType == types.FindTypeHidden
+
+		// 如果路径在隐藏目录下，清除类型过滤以显示该目录下的所有内容
+		// 例如：当用户执行 `fck list --type hidden -a .git/hooks/` 时，
+		// 虽然 hooks 目录本身不是隐藏的，但它在 .git 隐藏目录下，
+		// 此时应该显示 hooks 目录下的所有内容，而不是只显示隐藏文件
+		if hasHiddenFilter && s.isPathUnderHiddenDir(absPath) {
+			opts.FileType = ""
+		}
 		return s.scanDirectoryWithOriginal(absPath, absPath, originalPath, opts)
 	} else {
 		fileInfo := s.buildFileInfoWithOriginal(pathInfo, absPath, originalPath, opts.Recursive)
@@ -289,42 +299,66 @@ func (s *FileScanner) getFileInfo(path string) (os.FileInfo, error) {
 // 返回:
 //   - bool: 是否应该跳过
 func (s *FileScanner) shouldSkipFile(path string, isDir bool, fileInfo os.FileInfo, isMain bool, opts ScanOptions) bool {
-	// 隐藏文件检查
-	if !opts.ShowHidden && utils.IsHidden(path) {
+	// 检查是否指定了只显示隐藏文件
+	hasHiddenFilter := opts.FileType == types.FindTypeHiddenShort || opts.FileType == types.FindTypeHidden
+
+	// 隐藏文件检查（如果指定了只显示隐藏文件，则不跳过隐藏文件；主路径也不跳过）
+	if !opts.ShowHidden && !hasHiddenFilter && utils.IsHidden(path) {
 		return true
 	}
 
-	// 如果显示隐藏文件但指定了隐藏文件类型过滤
-	if opts.ShowHidden && len(opts.FileTypes) > 0 {
-		for _, fileType := range opts.FileTypes {
-			if (fileType == types.FindTypeHiddenShort || fileType == types.FindTypeHidden) && !utils.IsHidden(path) {
+	// 如果指定了只显示隐藏文件，但当前路径不是隐藏的，则跳过（主路径除外）
+	if hasHiddenFilter && !isMain && !utils.IsHidden(path) {
+		return true
+	}
+
+	// 只有不是处理目录本身时，才进行类型过滤
+	if !isMain && opts.FileType != "" {
+		switch opts.FileType {
+		case types.FindTypeFileShort, types.FindTypeFile:
+			if isDir {
+				return true
+			}
+		case types.FindTypeDirShort, types.FindTypeDir:
+			if !isDir {
+				return true
+			}
+		case types.FindTypeSymlinkShort, types.FindTypeSymlink:
+			if fileInfo.Mode()&os.ModeSymlink == 0 {
+				return true
+			}
+		case types.FindTypeReadonly, types.FindTypeReadonlyShort:
+			if !utils.IsReadOnly(path) {
 				return true
 			}
 		}
 	}
 
-	// 只有不是处理目录本身时，才进行类型过滤
-	if !isMain && len(opts.FileTypes) > 0 {
-		for _, fileType := range opts.FileTypes {
-			switch fileType {
-			case types.FindTypeFileShort, types.FindTypeFile:
-				if isDir {
-					return true
-				}
-			case types.FindTypeDirShort, types.FindTypeDir:
-				if !isDir {
-					return true
-				}
-			case types.FindTypeSymlinkShort, types.FindTypeSymlink:
-				if fileInfo.Mode()&os.ModeSymlink == 0 {
-					return true
-				}
-			case types.FindTypeReadonly, types.FindTypeReadonlyShort:
-				if !utils.IsReadOnly(path) {
-					return true
-				}
-			}
+	return false
+}
+
+// isPathUnderHiddenDir 检查路径是否在隐藏目录下
+//
+// 参数:
+//   - path: 要检查的路径
+//
+// 返回:
+//   - bool: 路径本身或其任何父目录是否是隐藏的
+func (s *FileScanner) isPathUnderHiddenDir(path string) bool {
+	// 检查路径本身是否隐藏
+	if utils.IsHidden(path) {
+		return true
+	}
+
+	// 检查路径的每个部分是否隐藏
+	dir := filepath.Dir(path)
+	prevDir := ""
+	for dir != "." && dir != string(filepath.Separator) && dir != "" && dir != prevDir {
+		if utils.IsHidden(dir) {
+			return true
 		}
+		prevDir = dir
+		dir = filepath.Dir(dir)
 	}
 
 	return false

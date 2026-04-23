@@ -27,6 +27,12 @@ const (
 	// 总是会被注册, 支持bash和pwsh两种Shell类型。
 	CompletionFlag
 
+	// InstallCompletionFlag 安装补全标志
+	//
+	// 安装补全标志用于自动生成补全脚本并配置到Shell。
+	// 只在根命令中注册，需要启用补全功能。
+	InstallCompletionFlag
+
 	// 可以继续添加其他内置标志
 	// 例如: ConfigFlag, VerboseFlag 等
 )
@@ -47,6 +53,9 @@ const (
 
 	// CompletionFlagName 补全标志名称
 	CompletionFlagName = "completion"
+
+	// InstallCompletionFlagName 安装补全标志名称
+	InstallCompletionFlagName = "install-completion"
 
 	// // CompletionFlagShortName 补全标志短名称
 	// CompletionFlagShortName = "c"
@@ -183,3 +192,107 @@ const (
 
 // CompleteCmdName 补全命令名称
 const CompleteCmdName = "__complete"
+
+// 补全安装相关常量
+const (
+	// CompletionsDirName 补全脚本存放目录名
+	CompletionsDirName = ".qflag_completions"
+
+	// CompletionScriptComment 补全脚本注释模板
+	CompletionScriptComment = "# qflag completion for %s\n"
+
+	// PwshCompletionScriptExt PowerShell 补全脚本扩展名
+	PwshCompletionScriptExt = ".ps1"
+
+	// BashCompletionScriptExt Bash 补全脚本扩展名
+	BashCompletionScriptExt = ".sh"
+
+	// PwshProfileDirWindows Windows PowerShell 配置文件目录
+	PwshProfileDirWindows = "Documents/PowerShell"
+
+	// PwshProfileFileName PowerShell 配置文件名
+	PwshProfileFileName = "Microsoft.PowerShell_profile.ps1"
+
+	// PwshProfileDirUnix Unix PowerShell 配置文件目录
+	PwshProfileDirUnix = ".config/powershell"
+
+	// BashProfileFileNameDarwin macOS Bash 配置文件名
+	BashProfileFileNameDarwin = ".bash_profile"
+
+	// BashProfileFileNameLinux Linux Bash 配置文件名
+	BashProfileFileNameLinux = ".bashrc"
+)
+
+// 补全加载命令模板
+const (
+	// PwshLoadCommandTemplate PowerShell 加载命令模板
+	// 参数: 程序名（3次）、脚本路径（1次）
+	PwshLoadCommandTemplate = "$__qflag_comp_%s = '%s'; if (Test-Path $__qflag_comp_%s) { . $__qflag_comp_%s }"
+
+	// BashLoadCommandTemplate Bash 加载命令模板
+	// 参数: 脚本路径（2次）
+	BashLoadCommandTemplate = "[ -f '%s' ] && source '%s'"
+)
+
+// 补全安装成功信息 - 中文
+const (
+	// InstallSuccessScriptPathCN 脚本安装路径提示（中文）
+	InstallSuccessScriptPathCN = "✓ 补全脚本已安装: %s"
+
+	// InstallSuccessProfilePathCN 配置文件路径提示（中文）
+	InstallSuccessProfilePathCN = "✓ 加载命令已添加到: %s"
+
+	// InstallSuccessHintCN 重启提示（中文）
+	InstallSuccessHintCN = "\n请重启终端或运行以下命令启用补全:"
+)
+
+// 补全安装成功信息 - 英文
+const (
+	// InstallSuccessScriptPathEN 脚本安装路径提示（英文）
+	InstallSuccessScriptPathEN = "✓ Completion script installed: %s"
+
+	// InstallSuccessProfilePathEN 配置文件路径提示（英文）
+	InstallSuccessProfilePathEN = "✓ Load command added to: %s"
+
+	// InstallSuccessHintEN 重启提示（英文）
+	InstallSuccessHintEN = "\nPlease restart your terminal or run the following command to enable completions:"
+)
+
+// 补全执行命令（Shell 命令本身不需要翻译）
+const (
+	// InstallSuccessBashCmd Bash 执行命令
+	InstallSuccessBashCmd = "  source %s"
+
+	// InstallSuccessPwshCmd PowerShell 执行命令
+	InstallSuccessPwshCmd = "  . %s"
+)
+
+// 内置标志描述 - 中文
+const (
+	// HelpFlagDescCN 帮助标志描述（中文）
+	HelpFlagDescCN = "显示帮助信息"
+
+	// VersionFlagDescCN 版本标志描述（中文）
+	VersionFlagDescCN = "显示版本信息"
+
+	// CompletionFlagDescCN 补全标志描述（中文）
+	CompletionFlagDescCN = "生成Shell自动补全脚本, 支持的Shell: %v"
+
+	// InstallCompletionFlagDescCN 安装补全标志描述（中文）
+	InstallCompletionFlagDescCN = "安装Shell自动补全脚本到系统, 支持的Shell: %v"
+)
+
+// 内置标志描述 - 英文
+const (
+	// HelpFlagDescEN 帮助标志描述（英文）
+	HelpFlagDescEN = "Show help information"
+
+	// VersionFlagDescEN 版本标志描述（英文）
+	VersionFlagDescEN = "Show version information"
+
+	// CompletionFlagDescEN 补全标志描述（英文）
+	CompletionFlagDescEN = "Generate shell completion script. Supported shells: %v"
+
+	// InstallCompletionFlagDescEN 安装补全标志描述（英文）
+	InstallCompletionFlagDescEN = "Install shell completion script to system. Supported shells: %v"
+)

@@ -73,7 +73,7 @@ func TestFileScanner_Scan(t *testing.T) {
 			opts: ScanOptions{
 				Recursive:  false,
 				ShowHidden: false,
-				FileTypes:  nil,
+				FileType:   "",
 				DirItself:  false,
 			},
 			expectError: false,
@@ -85,7 +85,7 @@ func TestFileScanner_Scan(t *testing.T) {
 			opts: ScanOptions{
 				Recursive:  true,
 				ShowHidden: false,
-				FileTypes:  nil,
+				FileType:   "",
 				DirItself:  false,
 			},
 			expectError: false,
@@ -97,7 +97,7 @@ func TestFileScanner_Scan(t *testing.T) {
 			opts: ScanOptions{
 				Recursive:  false,
 				ShowHidden: true,
-				FileTypes:  nil,
+				FileType:   "",
 				DirItself:  false,
 			},
 			expectError: false,
@@ -109,7 +109,7 @@ func TestFileScanner_Scan(t *testing.T) {
 			opts: ScanOptions{
 				Recursive:  false,
 				ShowHidden: false,
-				FileTypes:  []string{types.FindTypeFile},
+				FileType:   types.FindTypeFile,
 				DirItself:  false,
 			},
 			expectError: false,
@@ -121,7 +121,7 @@ func TestFileScanner_Scan(t *testing.T) {
 			opts: ScanOptions{
 				Recursive:  false,
 				ShowHidden: false,
-				FileTypes:  []string{types.FindTypeDir},
+				FileType:   types.FindTypeDir,
 				DirItself:  false,
 			},
 			expectError: false,
@@ -133,7 +133,7 @@ func TestFileScanner_Scan(t *testing.T) {
 			opts: ScanOptions{
 				Recursive:  false,
 				ShowHidden: false,
-				FileTypes:  nil,
+				FileType:   "",
 				DirItself:  true,
 			},
 			expectError: false,
@@ -278,7 +278,7 @@ func TestFileScanner_ShouldSkipFile(t *testing.T) {
 			isDir:    false,
 			fileInfo: normalInfo,
 			isMain:   false,
-			opts:     ScanOptions{FileTypes: []string{types.FindTypeDir}},
+			opts:     ScanOptions{FileType: types.FindTypeDir},
 			expected: true,
 		},
 		{
@@ -287,7 +287,7 @@ func TestFileScanner_ShouldSkipFile(t *testing.T) {
 			isDir:    true,
 			fileInfo: normalInfo, // 这里用任意文件信息
 			isMain:   false,
-			opts:     ScanOptions{FileTypes: []string{types.FindTypeFile}},
+			opts:     ScanOptions{FileType: types.FindTypeFile},
 			expected: true,
 		},
 	}
@@ -397,7 +397,7 @@ func BenchmarkFileScanner_Scan(b *testing.B) {
 	opts := ScanOptions{
 		Recursive:  false,
 		ShowHidden: false,
-		FileTypes:  nil,
+		FileType:   "",
 		DirItself:  false,
 	}
 

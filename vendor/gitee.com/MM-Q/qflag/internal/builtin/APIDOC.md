@@ -339,3 +339,88 @@ ShouldSkipRegistration 判断是否应该跳过注册
   - 否则返回false继续注册
 
 ---
+
+### type InstallCompletionHandler struct
+
+```go
+type InstallCompletionHandler struct{}
+```
+
+InstallCompletionHandler 安装补全标志处理器
+
+InstallCompletionHandler 负责处理 `--install-completion` 标志，自动完成补全脚本的安装和配置。
+
+**功能说明:**
+  - 创建 `~/.qflag_completions/` 目录
+  - 生成补全脚本到该目录
+  - 将加载命令添加到 Shell 配置文件
+
+#### func (h *InstallCompletionHandler) Handle(cmd types.Command) error
+
+```go
+func (h *InstallCompletionHandler) Handle(cmd types.Command) error
+```
+
+Handle 处理安装补全标志
+
+**参数:**
+  - cmd: 要处理的命令
+
+**返回值:**
+  - error: 处理失败时返回错误
+
+**功能说明:**
+  - 获取用户家目录
+  - 创建补全脚本存放目录
+  - 生成补全脚本到文件
+  - 添加加载命令到 Shell 配置文件
+  - 输出成功信息并退出程序
+
+#### func (h *InstallCompletionHandler) Type() types.BuiltinFlagType
+
+```go
+func (h *InstallCompletionHandler) Type() types.BuiltinFlagType
+```
+
+Type 返回标志类型
+
+**返回值:**
+  - types.BuiltinFlagType: InstallCompletionFlag
+
+#### func (h *InstallCompletionHandler) ShouldRegister(cmd types.Command) bool
+
+```go
+func (h *InstallCompletionHandler) ShouldRegister(cmd types.Command) bool
+```
+
+ShouldRegister 判断是否应该注册此标志
+
+**参数:**
+  - cmd: 要检查的命令
+
+**返回值:**
+  - bool: 是否应该注册
+
+**功能说明:**
+  - 只在根命令中注册
+  - 只有当命令配置中 Completion 为 true 时才注册
+
+#### func (h *InstallCompletionHandler) ShouldSkipRegistration(cmd types.Command) bool
+
+```go
+func (h *InstallCompletionHandler) ShouldSkipRegistration(cmd types.Command) bool
+```
+
+ShouldSkipRegistration 判断是否应该跳过注册
+
+**参数:**
+  - cmd: 要检查的命令
+
+**返回值:**
+  - bool: 如果标志已存在则返回 true
+
+**功能说明:**
+  - 检查安装补全标志是否已经被注册
+  - 避免重复注册，支持重复解析场景
+
+---

@@ -167,6 +167,95 @@ const CompleteCmdName = "__complete"
     // 补全子命令名称，用于 Shell 自动补全脚本
 ```
 
+### 补全安装相关常量
+
+```go
+const (
+    // CompletionsDirName 补全脚本存放目录名
+    CompletionsDirName = ".qflag_completions"
+
+    // CompletionScriptComment 补全脚本注释模板
+    CompletionScriptComment = "# qflag completion for %s\n"
+
+    // PwshCompletionScriptExt PowerShell 补全脚本扩展名
+    PwshCompletionScriptExt = ".ps1"
+
+    // BashCompletionScriptExt Bash 补全脚本扩展名
+    BashCompletionScriptExt = ".sh"
+
+    // PwshProfileDirWindows Windows PowerShell 配置文件目录
+    PwshProfileDirWindows = "Documents/PowerShell"
+
+    // PwshProfileFileName PowerShell 配置文件名
+    PwshProfileFileName = "Microsoft.PowerShell_profile.ps1"
+
+    // PwshProfileDirUnix Unix PowerShell 配置文件目录
+    PwshProfileDirUnix = ".config/powershell"
+
+    // BashProfileFileNameDarwin macOS Bash 配置文件名
+    BashProfileFileNameDarwin = ".bash_profile"
+
+    // BashProfileFileNameLinux Linux Bash 配置文件名
+    BashProfileFileNameLinux = ".bashrc"
+)
+```
+
+### 补全加载命令模板
+
+```go
+const (
+    // PwshLoadCommandTemplate PowerShell 加载命令模板
+    // 参数: 程序名（3次）、脚本路径（1次）
+    PwshLoadCommandTemplate = "$__qflag_comp_%s = '%s'; if (Test-Path $__qflag_comp_%s) { . $__qflag_comp_%s }"
+
+    // BashLoadCommandTemplate Bash 加载命令模板
+    // 参数: 脚本路径（2次）
+    BashLoadCommandTemplate = "[ -f '%s' ] && source '%s'"
+)
+```
+
+### 补全安装成功信息 - 中文
+
+```go
+const (
+    // InstallSuccessScriptPathCN 脚本安装路径提示（中文）
+    InstallSuccessScriptPathCN = "✓ 补全脚本已安装: %s"
+
+    // InstallSuccessProfilePathCN 配置文件路径提示（中文）
+    InstallSuccessProfilePathCN = "✓ 加载命令已添加到: %s"
+
+    // InstallSuccessHintCN 重启提示（中文）
+    InstallSuccessHintCN = "\n请重启终端或运行以下命令启用补全:"
+)
+```
+
+### 补全安装成功信息 - 英文
+
+```go
+const (
+    // InstallSuccessScriptPathEN 脚本安装路径提示（英文）
+    InstallSuccessScriptPathEN = "✓ Completion script installed: %s"
+
+    // InstallSuccessProfilePathEN 配置文件路径提示（英文）
+    InstallSuccessProfilePathEN = "✓ Load command added to: %s"
+
+    // InstallSuccessHintEN 重启提示（英文）
+    InstallSuccessHintEN = "\nPlease restart your terminal or run the following command to enable completions:"
+)
+```
+
+### 补全执行命令（Shell 命令本身不需要翻译）
+
+```go
+const (
+    // InstallSuccessBashCmd Bash 执行命令
+    InstallSuccessBashCmd = "  source %s"
+
+    // InstallSuccessPwshCmd PowerShell 执行命令
+    InstallSuccessPwshCmd = "  . %s"
+)
+```
+
 ---
 
 ## VARIABLES
@@ -256,48 +345,11 @@ var CommonTimeFormats = []string{
 }
 ```
 
-### 内置补全示例信息 - Linux 中文
-
-```go
-var HelpCompletionExampleLinuxCN = map[string]string{
-    "Linux 临时启用": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
-    "Linux 永久启用": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bashrc", filepath.Base(os.Args[0])),
-}
-```
-
-### 内置补全示例信息 - Linux 英文
-
-```go
-var HelpCompletionExampleLinuxEN = map[string]string{
-    "Linux (Temporary)": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
-    "Linux (Permanent)": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bashrc", filepath.Base(os.Args[0])),
-}
-```
-
-### 内置补全示例信息 - macOS 中文
-
-```go
-var HelpCompletionExampleMacCN = map[string]string{
-    "macOS 临时启用": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
-    "macOS 永久启用": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bash_profile", filepath.Base(os.Args[0])),
-}
-```
-
-### 内置补全示例信息 - macOS 英文
-
-```go
-var HelpCompletionExampleMacEN = map[string]string{
-    "macOS (Temporary)": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
-    "macOS (Permanent)": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bash_profile", filepath.Base(os.Args[0])),
-}
-```
-
 ### 内置补全示例信息 - Windows 中文
 
 ```go
 var HelpCompletionExampleWinCN = map[string]string{
-    "Windows 临时启用": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", filepath.Base(os.Args[0])),
-    "Windows 永久启用": fmt.Sprintf("echo '%s --completion pwsh | Out-String | Invoke-Expression' >> $PROFILE", filepath.Base(os.Args[0])),
+    "临时启用": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", programName),
 }
 ```
 
@@ -305,8 +357,23 @@ var HelpCompletionExampleWinCN = map[string]string{
 
 ```go
 var HelpCompletionExampleWinEN = map[string]string{
-    "Windows (Temporary)": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", filepath.Base(os.Args[0])),
-    "Windows (Permanent)": fmt.Sprintf("echo '%s --completion pwsh | Out-String | Invoke-Expression' >> $PROFILE", filepath.Base(os.Args[0])),
+    "Temporary": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", programName),
+}
+```
+
+### 内置补全示例信息 - Unix-like 系统中文（Linux 和 macOS 共用）
+
+```go
+var HelpCompletionExampleUnixCN = map[string]string{
+    "临时启用": fmt.Sprintf("source <(%s --completion bash)", programName),
+}
+```
+
+### 内置补全示例信息 - Unix-like 系统英文（Linux 和 macOS 共用）
+
+```go
+var HelpCompletionExampleUnixEN = map[string]string{
+    "Temporary": fmt.Sprintf("source <(%s --completion bash)", programName),
 }
 ```
 
@@ -370,6 +437,42 @@ GetCompletionExampleEN 获取当前平台的补全示例信息（英文）
   - 根据当前运行的操作系统返回对应的英文补全示例
   - 支持 Windows、Linux 和 macOS 平台
   - 提供临时启用和永久启用两种方式的示例
+
+---
+
+### func GetInstallCompletionExample() map[string]string
+
+```go
+func GetInstallCompletionExample() map[string]string
+```
+
+GetInstallCompletionExample 获取当前平台的安装补全示例信息（中文）
+
+**返回值:**
+  - map[string]string: 包含安装补全示例信息的映射
+
+**功能说明:**
+  - 根据当前运行的操作系统返回对应的中文安装补全示例
+  - Windows 使用 pwsh，其他平台使用 bash
+  - 作为永久启用的推荐方式
+
+---
+
+### func GetInstallCompletionExampleEN() map[string]string
+
+```go
+func GetInstallCompletionExampleEN() map[string]string
+```
+
+GetInstallCompletionExampleEN 获取当前平台的安装补全示例信息（英文）
+
+**返回值:**
+  - map[string]string: 包含安装补全示例信息的映射
+
+**功能说明:**
+  - 根据当前运行的操作系统返回对应的英文安装补全示例
+  - Windows 使用 pwsh，其他平台使用 bash
+  - 作为永久启用的推荐方式
 
 ---
 

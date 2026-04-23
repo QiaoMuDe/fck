@@ -7,17 +7,21 @@ import (
 	"runtime"
 )
 
+// programName 缓存程序名，避免重复计算
+// 在包初始化时立即获取
+var programName = filepath.Base(os.Args[0])
+
 // 用于存储选项的信息
 type OptionInfo struct {
-	NamePart string
-	Desc     string
-	DefValue string
+	NamePart string // 选项名称部分
+	Desc     string // 选项描述
+	DefValue string // 选项默认值
 }
 
 // 用于存储子命令的信息
 type SubCmdInfo struct {
-	Name string
-	Desc string
+	Name string // 子命令名称
+	Desc string // 子命令描述
 }
 
 // 帮助信息标题 - 中文
@@ -50,38 +54,22 @@ const HelpOptionSubCmdSpace = "      "
 
 // 补全示例信息 - Windows 中文
 var HelpCompletionExampleWinCN = map[string]string{
-	"Windows 临时启用": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", filepath.Base(os.Args[0])),
-	"Windows 永久启用": fmt.Sprintf("echo '%s --completion pwsh | Out-String | Invoke-Expression' >> $PROFILE", filepath.Base(os.Args[0])),
+	"临时启用": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", programName),
 }
 
 // 补全示例信息 - Windows 英文
 var HelpCompletionExampleWinEN = map[string]string{
-	"Windows (Temporary)": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", filepath.Base(os.Args[0])),
-	"Windows (Permanent)": fmt.Sprintf("echo '%s --completion pwsh | Out-String | Invoke-Expression' >> $PROFILE", filepath.Base(os.Args[0])),
+	"Temporary": fmt.Sprintf("%s --completion pwsh | Out-String | Invoke-Expression", programName),
 }
 
-// 补全示例信息 - Linux 中文
-var HelpCompletionExampleLinuxCN = map[string]string{
-	"Linux 临时启用": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
-	"Linux 永久启用": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bashrc", filepath.Base(os.Args[0])),
+// 补全示例信息 - Unix-like 系统中文（Linux 和 macOS 共用）
+var HelpCompletionExampleUnixCN = map[string]string{
+	"临时启用": fmt.Sprintf("source <(%s --completion bash)", programName),
 }
 
-// 补全示例信息 - Linux 英文
-var HelpCompletionExampleLinuxEN = map[string]string{
-	"Linux (Temporary)": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
-	"Linux (Permanent)": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bashrc", filepath.Base(os.Args[0])),
-}
-
-// 补全示例信息 - macOS 中文
-var HelpCompletionExampleMacCN = map[string]string{
-	"macOS 临时启用": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
-	"macOS 永久启用": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bash_profile", filepath.Base(os.Args[0])),
-}
-
-// 补全示例信息 - macOS 英文
-var HelpCompletionExampleMacEN = map[string]string{
-	"macOS (Temporary)": fmt.Sprintf("source <(%s --completion bash)", filepath.Base(os.Args[0])),
-	"macOS (Permanent)": fmt.Sprintf("echo 'source <(%s --completion bash)' >> ~/.bash_profile", filepath.Base(os.Args[0])),
+// 补全示例信息 - Unix-like 系统英文（Linux 和 macOS 共用）
+var HelpCompletionExampleUnixEN = map[string]string{
+	"Temporary": fmt.Sprintf("source <(%s --completion bash)", programName),
 }
 
 // GetCompletionExample 获取当前平台的补全示例信息（中文）
@@ -97,13 +85,9 @@ func GetCompletionExample() map[string]string {
 	switch runtime.GOOS {
 	case "windows":
 		return HelpCompletionExampleWinCN
-	case "linux":
-		return HelpCompletionExampleLinuxCN
-	case "darwin":
-		return HelpCompletionExampleMacCN
 	default:
-		// 默认返回 Linux 示例, 适用于大多数 Unix-like 系统
-		return HelpCompletionExampleLinuxCN
+		// Linux 和 macOS 使用相同的示例
+		return HelpCompletionExampleUnixCN
 	}
 }
 
@@ -120,12 +104,40 @@ func GetCompletionExampleEN() map[string]string {
 	switch runtime.GOOS {
 	case "windows":
 		return HelpCompletionExampleWinEN
-	case "linux":
-		return HelpCompletionExampleLinuxEN
-	case "darwin":
-		return HelpCompletionExampleMacEN
 	default:
-		// 默认返回 Linux 示例, 适用于大多数 Unix-like 系统
-		return HelpCompletionExampleLinuxEN
+		// Linux 和 macOS 使用相同的示例
+		return HelpCompletionExampleUnixEN
+	}
+}
+
+// GetInstallCompletionExample 获取当前平台的安装补全示例信息（中文）
+//
+// 返回值:
+//   - map[string]string: 包含安装补全示例信息的映射
+//
+// 功能说明:
+//   - 根据当前运行的操作系统返回对应的中文安装补全示例
+//   - Windows 使用 pwsh，其他平台使用 bash
+//   - 作为永久启用的推荐方式
+func GetInstallCompletionExample() map[string]string {
+	shell := CurrentShell()
+	return map[string]string{
+		"永久启用": fmt.Sprintf("%s --install-completion %s", programName, shell),
+	}
+}
+
+// GetInstallCompletionExampleEN 获取当前平台的安装补全示例信息（英文）
+//
+// 返回值:
+//   - map[string]string: 包含安装补全示例信息的映射
+//
+// 功能说明:
+//   - 根据当前运行的操作系统返回对应的英文安装补全示例
+//   - Windows 使用 pwsh，其他平台使用 bash
+//   - 作为永久启用的推荐方式
+func GetInstallCompletionExampleEN() map[string]string {
+	shell := CurrentShell()
+	return map[string]string{
+		"Permanent": fmt.Sprintf("%s --install-completion %s", programName, shell),
 	}
 }

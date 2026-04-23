@@ -29,9 +29,10 @@ func NewBuiltinFlagManager() *BuiltinFlagManager {
 	}
 
 	// 注册默认处理器
-	m.RegisterHandler(&HelpHandler{})
-	m.RegisterHandler(&VersionHandler{})
-	m.RegisterHandler(&CompletionHandler{})
+	m.RegisterHandler(&HelpHandler{})              // 注册帮助标志处理器
+	m.RegisterHandler(&VersionHandler{})           // 注册版本标志处理器
+	m.RegisterHandler(&CompletionHandler{})        // 注册补全标志处理器
+	m.RegisterHandler(&InstallCompletionHandler{}) // 注册安装补全标志处理器
 
 	return m
 }
@@ -84,9 +85,9 @@ func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
 			// 根据命令的语言设置使用相应的描述信息
 			var desc string
 			if useChinese {
-				desc = "显示帮助信息"
+				desc = types.HelpFlagDescCN
 			} else {
-				desc = "Show help information"
+				desc = types.HelpFlagDescEN
 			}
 			helpFlag := flag.NewBoolFlag(types.HelpFlagName, types.HelpFlagShortName, desc, false)
 			if err := cmd.AddFlag(helpFlag); err != nil {
@@ -97,9 +98,9 @@ func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
 			// 根据命令的语言设置使用相应的描述信息
 			var desc string
 			if useChinese {
-				desc = "显示版本信息"
+				desc = types.VersionFlagDescCN
 			} else {
-				desc = "Show version information"
+				desc = types.VersionFlagDescEN
 			}
 			versionFlag := flag.NewBoolFlag(types.VersionFlagName, types.VersionFlagShortName, desc, false)
 			if err := cmd.AddFlag(versionFlag); err != nil {
@@ -110,9 +111,9 @@ func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
 			// 根据命令的语言设置使用相应的描述信息
 			var desc string
 			if useChinese {
-				desc = fmt.Sprintf("生成Shell自动补全脚本, 支持的Shell: %v", types.SupportedShells)
+				desc = fmt.Sprintf(types.CompletionFlagDescCN, types.SupportedShells)
 			} else {
-				desc = fmt.Sprintf("Generate shell completion script. Supported shells: %v", types.SupportedShells)
+				desc = fmt.Sprintf(types.CompletionFlagDescEN, types.SupportedShells)
 			}
 			completionFlag := flag.NewEnumFlag(types.CompletionFlagName, "", desc, types.CurrentShell(), types.SupportedShells)
 			if err := cmd.AddFlag(completionFlag); err != nil {
@@ -125,6 +126,27 @@ func (m *BuiltinFlagManager) RegisterBuiltinFlags(cmd types.Command) error {
 				cmd.AddExamples(types.GetCompletionExample())
 			} else {
 				cmd.AddExamples(types.GetCompletionExampleEN())
+			}
+
+		case types.InstallCompletionFlag: // 注册安装补全标志
+			// 根据命令的语言设置使用相应的描述信息
+			var desc string
+			if useChinese {
+				desc = fmt.Sprintf(types.InstallCompletionFlagDescCN, types.SupportedShells)
+			} else {
+				desc = fmt.Sprintf(types.InstallCompletionFlagDescEN, types.SupportedShells)
+			}
+			installCompletionFlag := flag.NewEnumFlag(types.InstallCompletionFlagName, "", desc, types.CurrentShell(), types.SupportedShells)
+			if err := cmd.AddFlag(installCompletionFlag); err != nil {
+				return err
+			}
+
+			// 注册安装补全标志后注册内置的示例信息
+			// 根据语言设置选择对应的中英文示例
+			if useChinese {
+				cmd.AddExamples(types.GetInstallCompletionExample())
+			} else {
+				cmd.AddExamples(types.GetInstallCompletionExampleEN())
 			}
 		}
 	}
@@ -203,6 +225,12 @@ func (m *BuiltinFlagManager) isBuiltinFlag(f types.Flag, cmd types.Command) (typ
 			// 检查是否为自动补全标志
 			if f.LongName() == types.CompletionFlagName {
 				return types.CompletionFlag, true
+			}
+
+		case types.InstallCompletionFlag:
+			// 检查是否为安装补全标志
+			if f.LongName() == types.InstallCompletionFlagName {
+				return types.InstallCompletionFlag, true
 			}
 		}
 	}

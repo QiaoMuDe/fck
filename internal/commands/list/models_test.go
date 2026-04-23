@@ -11,7 +11,7 @@ func TestScanOptions(t *testing.T) {
 	opts := ScanOptions{
 		Recursive:  true,
 		ShowHidden: false,
-		FileTypes:  []string{types.FindTypeFile},
+		FileType:   types.FindTypeFile,
 		DirItself:  false,
 	}
 
@@ -23,12 +23,8 @@ func TestScanOptions(t *testing.T) {
 		t.Error("ScanOptions.ShowHidden 应该为 false")
 	}
 
-	if len(opts.FileTypes) != 1 {
-		t.Errorf("ScanOptions.FileTypes 长度 = %v, 期望 1", len(opts.FileTypes))
-	}
-
-	if opts.FileTypes[0] != types.FindTypeFile {
-		t.Errorf("ScanOptions.FileTypes[0] = %v, 期望 %v", opts.FileTypes[0], types.FindTypeFile)
+	if opts.FileType != types.FindTypeFile {
+		t.Errorf("ScanOptions.FileType = %v, 期望 %v", opts.FileType, types.FindTypeFile)
 	}
 }
 
@@ -201,8 +197,8 @@ func TestStructZeroValues(t *testing.T) {
 	if scanOpts.ShowHidden != false {
 		t.Error("ScanOptions 零值 ShowHidden 应该为 false")
 	}
-	if scanOpts.FileTypes != nil {
-		t.Error("ScanOptions 零值 FileTypes 应该为 nil")
+	if scanOpts.FileType != "" {
+		t.Error("ScanOptions 零值 FileType 应该为空字符串")
 	}
 
 	var processOpts ProcessOptions

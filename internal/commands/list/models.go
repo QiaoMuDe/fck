@@ -14,10 +14,10 @@ const symlinkArrow = " -> "
 
 // ScanOptions 扫描选项
 type ScanOptions struct {
-	Recursive  bool     // 是否递归扫描
-	ShowHidden bool     // 是否显示隐藏文件
-	FileTypes  []string // 文件类型过滤
-	DirItself  bool     // 是否只显示目录本身
+	Recursive  bool   // 是否递归扫描
+	ShowHidden bool   // 是否显示隐藏文件
+	FileType   string // 文件类型过滤
+	DirItself  bool   // 是否只显示目录本身
 }
 
 // ProcessOptions 处理选项

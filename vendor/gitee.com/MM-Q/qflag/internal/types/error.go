@@ -28,13 +28,13 @@ type UnknownSubcommandError struct {
 //	        config
 func (e *UnknownSubcommandError) Error() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s: '%s' is not a valid command. See '%s --help'.\n",
-		e.Command, e.Input, e.Command))
+	_, _ = fmt.Fprintf(&sb, "%s: '%s' is not a valid command. See '%s --help'.\n",
+		e.Command, e.Input, e.Command)
 
 	if len(e.Suggestions) > 0 {
 		sb.WriteString("\nThe most similar commands are\n")
 		for _, sug := range e.Suggestions {
-			sb.WriteString(fmt.Sprintf("\t%s\n", sug))
+			_, _ = fmt.Fprintf(&sb, "\t%s\n", sug)
 		}
 	}
 
@@ -61,13 +61,13 @@ type UnknownFlagError struct {
 //	        -v
 func (e *UnknownFlagError) Error() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s: unknown flag: '%s'\n",
-		e.Command, e.Input))
+	_, _ = fmt.Fprintf(&sb, "%s: unknown flag: '%s'\n",
+		e.Command, e.Input)
 
 	if len(e.Suggestions) > 0 {
 		sb.WriteString("\nThe most similar flags are\n")
 		for _, sug := range e.Suggestions {
-			sb.WriteString(fmt.Sprintf("\t%s\n", sug))
+			_, _ = fmt.Fprintf(&sb, "\t%s\n", sug)
 		}
 	}
 
