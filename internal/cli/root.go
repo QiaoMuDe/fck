@@ -64,6 +64,9 @@ func InitAndRun() (err error) {
 			ProcCmd,
 			DFCmd,
 			WhichCmd,
+			SeqCmd,
+			Base64Cmd,
+			TeeCmd,
 		},
 	}
 
