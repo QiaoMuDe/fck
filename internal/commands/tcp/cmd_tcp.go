@@ -2,6 +2,7 @@
 package tcp
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -37,6 +38,7 @@ type TcpConfig struct {
 	Wait     time.Duration // 等待响应时间
 	Quiet    bool          // 静默模式
 	Json     bool          // JSON 输出
+	Listen   bool          // 监听模式
 }
 
 // PortResult 端口扫描结果
@@ -83,6 +85,11 @@ type ConnectResult struct {
 // 返回值:
 //   - error: 执行错误
 func TcpCmdMain(config TcpConfig) error {
+	// 监听模式不需要解析主机
+	if config.Listen {
+		return runListenMode(config)
+	}
+
 	// 解析目标地址
 	ipAddr, err := resolveHost(config.Host)
 	if err != nil {
@@ -410,6 +417,189 @@ func runDataMode(config TcpConfig, ipAddr net.IP) error {
 	}
 
 	return nil
+}
+
+// runListenMode 运行监听模式
+// 在指定端口监听TCP连接,接收并显示数据
+//
+// 参数:
+//   - config: TCP配置,包含监听端口、超时时间等
+//
+// 返回值:
+//   - error: 执行过程中的错误,如端口被占用等
+//
+// 功能特性:
+//   - 支持多客户端并发连接
+//   - 实时显示接收到的数据
+//   - 显示连接和断开事件
+//   - 支持Ctrl+C优雅退出
+//   - 支持JSON格式输出
+func runListenMode(config TcpConfig) error {
+	if config.Port < 1 || config.Port > 65535 {
+		return fmt.Errorf("invalid port: %d, must be 1-65535", config.Port)
+	}
+
+	addr := fmt.Sprintf(":%d", config.Port)
+
+	// 创建监听器
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("failed to listen on port %d: %w", config.Port, err)
+	}
+	defer func() { _ = listener.Close() }()
+
+	if !config.Quiet && !config.Json {
+		fmt.Printf("Listening on %s...\n", listener.Addr().String())
+		fmt.Println("Press Ctrl+C to stop")
+	}
+
+	// 设置中断信号处理
+	interruptChan := make(chan os.Signal, 1)
+	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(interruptChan)
+
+	// 用于优雅关闭的context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// 等待中断信号
+	go func() {
+		<-interruptChan
+		if !config.Quiet && !config.Json {
+			fmt.Println("\nShutting down...")
+		}
+		cancel()
+		_ = listener.Close()
+	}()
+
+	// 连接计数器
+	var connID int64
+
+	for {
+		// 使用带超时的accept来定期检查context
+		listener.(*net.TCPListener).SetDeadline(time.Now().Add(100 * time.Millisecond))
+		conn, err := listener.Accept()
+
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		if err != nil {
+			if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+				continue
+			}
+			if !config.Quiet && !config.Json {
+				fmt.Printf("Accept error: %v\n", err)
+			}
+			continue
+		}
+
+		connID++
+		currentID := connID
+
+		// 处理连接
+		go handleListenConnection(ctx, conn, currentID, config)
+	}
+}
+
+// handleListenConnection 处理监听模式的单个连接
+//
+// 参数:
+//   - ctx: 上下文,用于检测关闭信号
+//   - conn: TCP连接
+//   - connID: 连接ID
+//   - config: TCP配置
+func handleListenConnection(ctx context.Context, conn net.Conn, connID int64, config TcpConfig) {
+	defer func() { _ = conn.Close() }()
+
+	remoteAddr := conn.RemoteAddr().String()
+	startTime := time.Now()
+
+	if !config.Quiet && !config.Json {
+		fmt.Printf("\n[%s] [#%d] Connection from %s\n", startTime.Format("2006-01-02 15:04:05"), connID, remoteAddr)
+	}
+
+	// 用于JSON输出的数据收集
+	var receivedData []string
+	totalBytes := 0
+
+	// 读取数据循环
+	buffer := make([]byte, 4096)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		// 设置读取超时
+		if config.Wait > 0 {
+			_ = conn.SetReadDeadline(time.Now().Add(config.Wait))
+		}
+
+		n, err := conn.Read(buffer)
+		if n > 0 {
+			data := string(buffer[:n])
+			totalBytes += n
+
+			if config.Json {
+				receivedData = append(receivedData, data)
+			} else if !config.Quiet {
+				fmt.Printf("[%s] [#%d] Received %d bytes:\n%s\n",
+					time.Now().Format("2006-01-02 15:04:05"),
+					connID,
+					n,
+					data)
+			}
+		}
+
+		if err != nil {
+			if config.Json {
+				outputListenJSON(connID, remoteAddr, startTime, time.Since(startTime), totalBytes, receivedData, err != nil)
+			} else if !config.Quiet {
+				if err.Error() != "EOF" {
+					fmt.Printf("[%s] [#%d] Read error: %v\n", time.Now().Format("2006-01-02 15:04:05"), connID, err)
+				}
+				fmt.Printf("[%s] [#%d] Connection closed (total: %d bytes, duration: %s)\n",
+					time.Now().Format("2006-01-02 15:04:05"),
+					connID,
+					totalBytes,
+					time.Since(startTime).Round(time.Millisecond))
+			}
+			return
+		}
+	}
+}
+
+// outputListenJSON 以JSON格式输出监听接收的数据
+//
+// 参数:
+//   - connID: 连接ID
+//   - remoteAddr: 远程地址
+//   - startTime: 连接开始时间
+//   - duration: 连接持续时间
+//   - totalBytes: 接收的总字节数
+//   - data: 接收的数据列表
+//   - hasError: 是否有错误
+//
+// 返回值:
+//   - error: JSON编码错误
+func outputListenJSON(connID int64, remoteAddr string, startTime time.Time, duration time.Duration, totalBytes int, data []string, hasError bool) error {
+	result := map[string]interface{}{
+		"conn_id":     connID,
+		"remote_addr": remoteAddr,
+		"start_time":  startTime.Format(time.RFC3339),
+		"duration_ms": float64(duration.Microseconds()) / 1000.0,
+		"total_bytes": totalBytes,
+		"data":        data,
+		"has_error":   hasError,
+	}
+
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(result)
 }
 
 // scanPorts 并发扫描多个端口

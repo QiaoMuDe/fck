@@ -24,6 +24,7 @@ var (
 	tcpWait     *qflag.DurationFlag // -w, --wait     等待响应时间
 	tcpQuiet    *qflag.BoolFlag     // -q, --quiet    静默模式
 	tcpJson     *qflag.BoolFlag     // -j, --json     JSON 输出
+	tcpListen   *qflag.BoolFlag     // -l, --listen   监听模式
 )
 
 func init() {
@@ -41,6 +42,7 @@ func init() {
 	tcpWait = TcpCmd.Duration("wait", "w", "等待响应时间", 0)
 	tcpQuiet = TcpCmd.Bool("quiet", "q", "静默模式", false)
 	tcpJson = TcpCmd.Bool("json", "j", "JSON 格式输出", false)
+	tcpListen = TcpCmd.Bool("listen", "l", "监听模式,在指定端口接收数据", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "TCP 连接测试和端口扫描工具",
@@ -63,11 +65,12 @@ func init() {
 			"获取服务 banner": fmt.Sprintf("%s tcp -b -w 2s baidu.com 80", qflag.Root.Name()),
 			"发送数据":        fmt.Sprintf("%s tcp -d \"hello\" -w 5s target.com 8080", qflag.Root.Name()),
 			"JSON 格式扫描":   fmt.Sprintf("%s tcp -s -r 22,80,443 -j target.com", qflag.Root.Name()),
+			"监听端口接收数据":    fmt.Sprintf("%s tcp -l -p 8080", qflag.Root.Name()),
 		},
 		MutexGroups: []qflag.MutexGroup{
 			{
 				Name:      "mode",
-				Flags:     []string{"scan", "banner", "data", "file"},
+				Flags:     []string{"scan", "banner", "data", "file", "listen"},
 				AllowNone: true,
 			},
 		},
@@ -89,21 +92,38 @@ func runTcp(cmd qflag.Command) error {
 	host := args[0]
 
 	// 解析端口
-	port := 0
-	if len(args) >= 2 {
-		p, err := strconv.Atoi(args[1])
-		if err != nil {
-			return fmt.Errorf("invalid port: %s", args[1])
-		}
-		port = p
-	}
-
 	// 检查参数
 	scanMode := tcpScan.Get() || tcpRange.Get() != ""
-	if !scanMode && port == 0 {
-		return fmt.Errorf("please specify a port (or use -s for scan mode)")
+	listenMode := tcpListen.Get()
+
+	port := 0
+	if listenMode {
+		// 监听模式: port 是第一个参数
+		if len(args) >= 1 {
+			p, err := strconv.Atoi(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid port: %s", args[0])
+			}
+			port = p
+		}
+		if port == 0 {
+			return fmt.Errorf("listen mode requires a port")
+		}
+	} else {
+		// 其他模式: port 是第二个参数
+		if len(args) >= 2 {
+			p, err := strconv.Atoi(args[1])
+			if err != nil {
+				return fmt.Errorf("invalid port: %s", args[1])
+			}
+			port = p
+		}
+		if !scanMode && port == 0 {
+			return fmt.Errorf("please specify a port (or use -s for scan mode)")
+		}
 	}
 
+	// 检查扫描模式是否指定了端口范围
 	if scanMode && tcpRange.Get() == "" {
 		return fmt.Errorf("scan mode requires -r/--range to specify port range")
 	}
@@ -123,6 +143,7 @@ func runTcp(cmd qflag.Command) error {
 		Wait:     tcpWait.Get(),
 		Quiet:    tcpQuiet.Get(),
 		Json:     tcpJson.Get(),
+		Listen:   tcpListen.Get(),
 	}
 
 	return tcp.TcpCmdMain(config)
