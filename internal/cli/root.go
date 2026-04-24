@@ -68,6 +68,7 @@ func InitAndRun() (err error) {
 			Base64Cmd,
 			JsonCmd,
 			TeeCmd,
+			PingCmd,
 		},
 	}
 

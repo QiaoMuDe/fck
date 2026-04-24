@@ -14,6 +14,7 @@ require (
 	github.com/charmbracelet/glamour v0.8.0
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/noborus/ov v0.51.1
+	github.com/prometheus-community/pro-bing v0.8.0
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/tidwall/gjson v1.18.0
@@ -37,6 +38,7 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jwalton/gchalk v1.3.0 // indirect

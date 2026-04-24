@@ -140,6 +140,9 @@ github.com/go-viper/mapstructure/v2/internal/errors
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 ## explicit; go 1.13
 github.com/google/shlex
+# github.com/google/uuid v1.6.0
+## explicit
+github.com/google/uuid
 # github.com/gorilla/css v1.0.1
 ## explicit; go 1.20
 github.com/gorilla/css/scanner
@@ -226,6 +229,9 @@ github.com/pierrec/lz4/v4/internal/xxh32
 # github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c
 ## explicit; go 1.14
 github.com/power-devops/perfstat
+# github.com/prometheus-community/pro-bing v0.8.0
+## explicit; go 1.24.0
+github.com/prometheus-community/pro-bing
 # github.com/rivo/uniseg v0.4.7
 ## explicit; go 1.18
 github.com/rivo/uniseg
@@ -316,8 +322,14 @@ github.com/yusufpapurcu/wmi
 go.yaml.in/yaml/v3
 # golang.org/x/net v0.50.0
 ## explicit; go 1.24.0
+golang.org/x/net/bpf
 golang.org/x/net/html
 golang.org/x/net/html/atom
+golang.org/x/net/icmp
+golang.org/x/net/internal/iana
+golang.org/x/net/internal/socket
+golang.org/x/net/ipv4
+golang.org/x/net/ipv6
 # golang.org/x/sync v0.19.0
 ## explicit; go 1.24.0
 golang.org/x/sync/errgroup

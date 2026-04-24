@@ -184,7 +184,7 @@ func run<Command>(cmd qflag.Command) error {
 }
 ```
 
-### 2. 选项定义规范
+### 2. 标志定义规范
 
 | 类型 | 方法 | 示例 |
 |------|------|------|
@@ -202,26 +202,32 @@ func run<Command>(cmd qflag.Command) error {
 | Duration | `Duration("long", "short", "说明", 默认值)` | `cmd.Duration("timeout", "t", "超时", 0)` |
 | Time | `Time("long", "short", "说明", 默认值)` | `cmd.Time("start", "s", "开始时间", time.Time{})` |
 | Size | `Size("long", "short", "说明", 默认值)` | `cmd.Size("limit", "l", "限制", 0)` |
-| StringSlice | `StringSlice("long", "short", "说明", 默认值)` | `cmd.StringSlice("tags", "t", "标签", nil)` |
-| IntSlice | `IntSlice("long", "short", "说明", 默认值)` | `cmd.IntSlice("ids", "i", "ID列表", nil)` |
-| Int64Slice | `Int64Slice("long", "short", "说明", 默认值)` | `cmd.Int64Slice("values", "v", "值列表", nil)` |
+| StringSlice | `StringSlice("long", "short", "说明", 默认值)` | `cmd.StringSlice("tags", "t", "标签", []string{})` |
+| IntSlice | `IntSlice("long", "short", "说明", 默认值)` | `cmd.IntSlice("ids", "i", "ID列表", []int{})` |
+| Int64Slice | `Int64Slice("long", "short", "说明", 默认值)` | `cmd.Int64Slice("values", "v", "值列表", []int64{})` |
 | Map | `Map("long", "short", "说明", 默认值)` | `cmd.Map("env", "e", "环境变量", map[string]string{})` |
 
-### 3. 帮助文档规范
+### 3. 选项配置规范
 
 `CmdOpts` 支持以下配置项：
 
 | 配置项 | 类型 | 说明 | 示例 |
 |--------|------|------|------|
 | `Desc` | string | 命令描述 | `"创建目录"` |
+| `RunFunc` | `func(Command) error` | 命令执行函数 | `run` |
 | `Version` | string | 版本号（仅在根命令生效） | `"1.0.0"` |
 | `UseChinese` | bool | 使用中文帮助 | `true` |
 | `EnvPrefix` | string | 环境变量前缀 | `"FCK"` |
 | `UsageSyntax` | string | 命令使用语法（使用 `fmt.Sprintf` 替换 `%s`） | `fmt.Sprintf("%s 当前子命令名 [选项] [位置参数...]", qflag.Root.Name())` |
 | `LogoText` | string | Logo文本 | `"FCK Tools"` |
 | `Completion` | bool | 启用自动补全（仅在根命令生效） | `true` |
-| `Notes` | []string | 注意事项列表 | `[]string{"说明1", "说明2"}` |
+| `DynamicCompletion` | bool | 启用动态补全（需先启用 `Completion`），将补全逻辑统一到内部子命令 | `true` |
+| `DisableFlagParsing` | bool | 禁用标志解析，所有参数作为位置参数处理 | `true` |
+| `Hidden` | bool | 隐藏命令，不在帮助信息中显示 | `true` |
+| `AutoBindEnv` | bool | 自动绑定所有标志的环境变量 | `true` |
 | `Examples` | map[string]string | 使用示例 | `map[string]string{"创建单个目录": "mkdir test"}` |
+| `Notes` | []string | 注意事项列表 | `[]string{"说明1", "说明2"}` |
+| `SubCmds` | []Command | 子命令列表 | `[]qflag.Command{RunCmd}` |
 | `MutexGroups` | []MutexGroup | 互斥组 | 定义互斥的标志 |
 | `RequiredGroups` | []RequiredGroup | 必需组 | 定义必需的标志 |
 
@@ -242,19 +248,25 @@ cmdOpts := &qflag.CmdOpts{
 ```go
 cmdOpts := &qflag.CmdOpts{
     Desc:        "创建目录",
-    Version:     "1.0.0", // 版本号（仅在根命令生效）
-    UseChinese:  true, 
-    EnvPrefix:   "FCK",
+    RunFunc:     run,                    // 命令执行函数
+    Version:     "1.0.0",                // 版本号（仅在根命令生效）
+    UseChinese:  true,
+    EnvPrefix:   "FCK",                  // 环境变量前缀
     UsageSyntax: fmt.Sprintf("%s 当前子命令名 [选项] [位置参数...]", qflag.Root.Name()),
     LogoText:    "FCK Tools",
-    Completion:  true, // 启用自动补全（仅在根命令生效）
+    Completion:  true,                   // 启用自动补全（仅在根命令生效）
+    AutoBindEnv: true,                   // 自动绑定所有标志的环境变量
+    Examples: map[string]string{
+        "创建单个目录":   "mkdir test",
+        "递归创建目录":   "mkdir -p a/b/c",
+    },
     Notes: []string{
         "支持递归创建",
         "支持设置权限",
     },
-    Examples: map[string]string{
-        "创建单个目录":   "mkdir test",
-        "递归创建目录":   "mkdir -p a/b/c",
+    SubCmds: []qflag.Command{
+        BuildCmd,
+        ConfigCmd,
     },
     MutexGroups: []types.MutexGroup{
         {
@@ -272,6 +284,111 @@ cmdOpts := &qflag.CmdOpts{
     },
 }
 ```
+
+## 环境变量绑定规范
+
+QFlag 提供了三种环境变量绑定方式，可根据实际需求选择。
+
+### 1. 手动指定环境变量名
+
+通过 `BindEnv()` 方法手动指定环境变量名称：
+
+```go
+func init() {
+    Cmd = qflag.NewCmd("run", "r", qflag.ExitOnError)
+    Cmd.SetEnvPrefix("MYAPP")  // 设置环境变量前缀
+    
+    // 手动绑定：绑定到 MYAPP_DATABASE_URL
+    dbFlag := Cmd.String("database", "d", "数据库地址", "localhost")
+    dbFlag.BindEnv("DATABASE_URL")
+    
+    // ...
+}
+```
+
+### 2. 标志自动绑定
+
+通过 `AutoBindEnv()` 方法自动使用标志长名称的大写形式作为环境变量名：
+
+```go
+func init() {
+    Cmd = qflag.NewCmd("run", "r", qflag.ExitOnError)
+    Cmd.SetEnvPrefix("MYAPP")
+    
+    // 自动绑定：host -> MYAPP_HOST, port -> MYAPP_PORT
+    hostFlag := Cmd.String("host", "H", "主机地址", "localhost")
+    portFlag := Cmd.Int("port", "p", "端口号", 8080)
+    
+    hostFlag.AutoBindEnv()
+    portFlag.AutoBindEnv()
+    
+    // ...
+}
+```
+
+### 3. 命令批量自动绑定
+
+通过 `AutoBindAllEnv()` 方法一次性为命令的所有标志自动绑定环境变量：
+
+```go
+func init() {
+    Cmd = qflag.NewCmd("run", "r", qflag.ExitOnError)
+    Cmd.SetEnvPrefix("MYAPP")
+    
+    // 创建多个标志
+    Cmd.String("host", "H", "主机地址", "localhost")
+    Cmd.Int("port", "p", "端口号", 8080)
+    Cmd.String("user", "u", "用户名", "admin")
+    
+    // 批量自动绑定所有标志
+    Cmd.AutoBindAllEnv()
+    
+    // ...
+}
+```
+
+### 4. 通过 CmdOpts 配置自动绑定
+
+在 `CmdOpts` 中设置 `AutoBindEnv` 字段：
+
+```go
+func init() {
+    Cmd = qflag.NewCmd("run", "r", qflag.ExitOnError)
+    
+    // 创建标志
+    Cmd.String("host", "H", "主机地址", "localhost")
+    Cmd.Int("port", "p", "端口号", 8080)
+    
+    cmdOpts := &qflag.CmdOpts{
+        Desc:        "运行服务",
+        EnvPrefix:   "MYAPP",
+        AutoBindEnv: true,  // 自动绑定所有标志的环境变量
+        UseChinese:  true,
+    }
+    
+    if err := Cmd.ApplyOpts(cmdOpts); err != nil {
+        panic(fmt.Errorf("apply opts err: %w", err))
+    }
+    
+    Cmd.SetRun(run)
+}
+```
+
+### 5. 三种方式对比
+
+| 方式 | 方法 | 适用场景 | 特点 |
+|------|------|----------|------|
+| 手动指定 | `BindEnv("NAME")` | 需要自定义环境变量名 | 灵活，可指定任意名称 |
+| 标志自动绑定 | `AutoBindEnv()` | 单个标志自动绑定 | 使用长名称大写，简洁 |
+| 命令批量绑定 | `AutoBindAllEnv()` | 批量绑定所有标志 | 一次性绑定，高效 |
+| CmdOpts 配置 | `AutoBindEnv: true` | 配置化管理 | 与其他配置一起设置 |
+
+### 6. 环境变量绑定注意事项
+
+1. **前缀设置**：使用 `SetEnvPrefix()` 或 `CmdOpts.EnvPrefix` 设置环境变量前缀
+2. **命名规则**：环境变量名 = 前缀 + _ + 标志名（大写）
+3. **优先级**：命令行参数 > 环境变量 > 默认值
+4. **长名称要求**：`AutoBindEnv()` 和 `AutoBindAllEnv()` 要求标志必须有长名称，否则会 panic
 
 ## 命令注册规范
 
@@ -442,7 +559,7 @@ if exitCode != 0 {
 
 - **仓库**: `gitee.com/MM-Q/qflag`
 - **文档**: 参考 qflag 官方文档
-- **版本要求**: v0.5.9+
+- **版本要求**: v0.5.10+
 
 ### 相关文档
 
