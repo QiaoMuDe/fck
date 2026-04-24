@@ -24,7 +24,7 @@ func init() {
 
 	pingCount = PingCmd.Int("count", "c", "发送包数量, 0 表示无限", 4)
 	pingInterval = PingCmd.Duration("interval", "i", "发送间隔, 如: 1s, 500ms", time.Second)
-	pingTimeout = PingCmd.Duration("timeout", "W", "总超时时间", time.Second*5)
+	pingTimeout = PingCmd.Duration("timeout", "W", "总超时时间 (0 表示无限制)", 0)
 	pingSize = PingCmd.Int("size", "s", "数据包大小(字节)", 56)
 	pingTTL = PingCmd.Int("ttl", "t", "TTL 生存时间", 64)
 	pingQuiet = PingCmd.Bool("quiet", "q", "静默模式, 只显示统计结果", false)

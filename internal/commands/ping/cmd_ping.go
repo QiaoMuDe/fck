@@ -45,11 +45,14 @@ func PingCmdMain(config PingConfig) error {
 	}
 
 	// 3. 配置 pinger
-	pinger.Count = config.Count
-	pinger.Interval = config.Interval
-	pinger.Timeout = config.Timeout
-	pinger.Size = config.Size
-	pinger.TTL = config.TTL
+	pinger.Count = config.Count       // 设置发送包数量
+	pinger.Interval = config.Interval // 设置发送间隔
+	// 只有当 Timeout > 0 时才设置, 0 表示无限制（使用库的内部行为）
+	if config.Timeout > 0 {
+		pinger.Timeout = config.Timeout // 设置总超时时间
+	}
+	pinger.Size = config.Size  // 设置数据包大小
+	pinger.TTL = config.TTL    // 设置 TTL 值
 	pinger.SetPrivileged(true) // 使用特权模式
 
 	// 4. 设置用户中断标志
