@@ -67,12 +67,7 @@ func init() {
 		MutexGroups: []qflag.MutexGroup{
 			{
 				Name:      "mode",
-				Flags:     []string{"scan", "banner", "data"},
-				AllowNone: true,
-			},
-			{
-				Name:      "data-source",
-				Flags:     []string{"data", "file"},
+				Flags:     []string{"scan", "banner", "data", "file"},
 				AllowNone: true,
 			},
 		},
