@@ -12,19 +12,21 @@ import (
 var TcpCmd *qflag.Cmd
 
 var (
-	tcpTimeout  *qflag.DurationFlag // -t, --timeout  连接超时时间
-	tcpCount    *qflag.IntFlag      // -c, --count    连接次数
-	tcpInterval *qflag.DurationFlag // -i, --interval 连接间隔
-	tcpScan     *qflag.BoolFlag     // -s, --scan     扫描模式
-	tcpRange    *qflag.StringFlag   // -r, --range    端口范围
-	tcpOpenOnly *qflag.BoolFlag     // -o, --open     仅显示开放端口
-	tcpBanner   *qflag.BoolFlag     // -b, --banner   获取 banner
-	tcpData     *qflag.StringFlag   // -d, --data     发送数据
-	tcpFile     *qflag.StringFlag   // -f, --file     数据文件路径
-	tcpWait     *qflag.DurationFlag // -w, --wait     等待响应时间
-	tcpQuiet    *qflag.BoolFlag     // -q, --quiet    静默模式
-	tcpJson     *qflag.BoolFlag     // -j, --json     JSON 输出
-	tcpListen   *qflag.BoolFlag     // -l, --listen   监听模式
+	tcpTimeout     *qflag.DurationFlag // -t, --timeout  连接超时时间
+	tcpCount       *qflag.IntFlag      // -c, --count    连接次数
+	tcpInterval    *qflag.DurationFlag // -i, --interval 连接间隔
+	tcpScan        *qflag.BoolFlag     // -s, --scan     扫描模式
+	tcpRange       *qflag.StringFlag   // -r, --range    端口范围
+	tcpOpenOnly    *qflag.BoolFlag     // -o, --open     仅显示开放端口
+	tcpBanner      *qflag.BoolFlag     // -b, --banner   获取 banner
+	tcpData        *qflag.StringFlag   // -d, --data     发送数据
+	tcpFile        *qflag.StringFlag   // -f, --file     数据文件路径
+	tcpWait        *qflag.DurationFlag // -w, --wait     等待响应时间
+	tcpQuiet       *qflag.BoolFlag     // -q, --quiet       静默模式
+	tcpJson        *qflag.BoolFlag     // -j, --json        JSON 输出
+	tcpListen      *qflag.BoolFlag     // -l, --listen      监听模式
+	tcpInteractive *qflag.BoolFlag     // -I, --interactive 交互式模式
+	tcpHex         *qflag.BoolFlag     // --hex             十六进制显示
 )
 
 func init() {
@@ -43,6 +45,8 @@ func init() {
 	tcpQuiet = TcpCmd.Bool("quiet", "q", "静默模式", false)
 	tcpJson = TcpCmd.Bool("json", "j", "JSON 格式输出", false)
 	tcpListen = TcpCmd.Bool("listen", "l", "监听模式,在指定端口接收数据", false)
+	tcpInteractive = TcpCmd.Bool("interactive", "I", "交互式模式,支持实时发送和接收数据", false)
+	tcpHex = TcpCmd.Bool("hex", "", "以十六进制格式显示接收的数据", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "TCP 连接测试和端口扫描工具",
@@ -65,12 +69,14 @@ func init() {
 			"获取服务 banner": fmt.Sprintf("%s tcp -b -w 2s baidu.com 80", qflag.Root.Name()),
 			"发送数据":        fmt.Sprintf("%s tcp -d \"hello\" -w 5s target.com 8080", qflag.Root.Name()),
 			"JSON 格式扫描":   fmt.Sprintf("%s tcp -s -r 22,80,443 -j target.com", qflag.Root.Name()),
-			"监听端口接收数据":    fmt.Sprintf("%s tcp -l -p 8080", qflag.Root.Name()),
+			"监听端口接收数据":    fmt.Sprintf("%s tcp -l 8080", qflag.Root.Name()),
+			"交互式模式":       fmt.Sprintf("%s tcp -I target.com 8080", qflag.Root.Name()),
+			"交互式十六进制显示":   fmt.Sprintf("%s tcp -I --hex target.com 8080", qflag.Root.Name()),
 		},
 		MutexGroups: []qflag.MutexGroup{
 			{
 				Name:      "mode",
-				Flags:     []string{"scan", "banner", "data", "file", "listen"},
+				Flags:     []string{"scan", "banner", "data", "file", "listen", "interactive"},
 				AllowNone: true,
 			},
 		},
@@ -129,21 +135,23 @@ func runTcp(cmd qflag.Command) error {
 	}
 
 	config := tcp.TcpConfig{
-		Host:     host,
-		Port:     port,
-		Timeout:  tcpTimeout.Get(),
-		Count:    tcpCount.Get(),
-		Interval: tcpInterval.Get(),
-		Scan:     tcpScan.Get(),
-		Range:    tcpRange.Get(),
-		OpenOnly: tcpOpenOnly.Get(),
-		Banner:   tcpBanner.Get(),
-		Data:     tcpData.Get(),
-		File:     tcpFile.Get(),
-		Wait:     tcpWait.Get(),
-		Quiet:    tcpQuiet.Get(),
-		Json:     tcpJson.Get(),
-		Listen:   tcpListen.Get(),
+		Host:        host,
+		Port:        port,
+		Timeout:     tcpTimeout.Get(),
+		Count:       tcpCount.Get(),
+		Interval:    tcpInterval.Get(),
+		Scan:        tcpScan.Get(),
+		Range:       tcpRange.Get(),
+		OpenOnly:    tcpOpenOnly.Get(),
+		Banner:      tcpBanner.Get(),
+		Data:        tcpData.Get(),
+		File:        tcpFile.Get(),
+		Wait:        tcpWait.Get(),
+		Quiet:       tcpQuiet.Get(),
+		Json:        tcpJson.Get(),
+		Listen:      tcpListen.Get(),
+		Interactive: tcpInteractive.Get(),
+		Hex:         tcpHex.Get(),
 	}
 
 	return tcp.TcpCmdMain(config)

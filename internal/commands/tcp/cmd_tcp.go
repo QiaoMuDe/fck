@@ -22,21 +22,23 @@ const maxDuration = time.Duration(math.MaxInt64)
 
 // TcpConfig 配置结构体
 type TcpConfig struct {
-	Host     string        // 目标主机
-	Port     int           // 目标端口
-	Timeout  time.Duration // 连接超时时间
-	Count    int           // 连接次数
-	Interval time.Duration // 连接间隔
-	Scan     bool          // 扫描模式
-	Range    string        // 端口范围
-	OpenOnly bool          // 仅显示开放端口
-	Banner   bool          // 获取 banner
-	Data     string        // 发送数据
-	File     string        // 数据文件路径
-	Wait     time.Duration // 等待响应时间
-	Quiet    bool          // 静默模式
-	Json     bool          // JSON 输出
-	Listen   bool          // 监听模式
+	Host        string        // 目标主机
+	Port        int           // 目标端口
+	Timeout     time.Duration // 连接超时时间
+	Count       int           // 连接次数
+	Interval    time.Duration // 连接间隔
+	Scan        bool          // 扫描模式
+	Range       string        // 端口范围
+	OpenOnly    bool          // 仅显示开放端口
+	Banner      bool          // 获取 banner
+	Data        string        // 发送数据
+	File        string        // 数据文件路径
+	Wait        time.Duration // 等待响应时间
+	Quiet       bool          // 静默模式
+	Json        bool          // JSON 输出
+	Listen      bool          // 监听模式
+	Interactive bool          // 交互式模式
+	Hex         bool          // 十六进制显示
 }
 
 // PortResult 端口扫描结果
@@ -95,6 +97,10 @@ func TcpCmdMain(config TcpConfig) error {
 	}
 
 	// 根据模式执行不同逻辑
+	if config.Interactive {
+		return runInteractiveMode(config, ipAddr)
+	}
+
 	if config.Scan || config.Range != "" {
 		return runScanMode(config, ipAddr)
 	}
