@@ -4,3 +4,4 @@ tee
 which
 json
 ping
+tcp
