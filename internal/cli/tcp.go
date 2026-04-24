@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitee.com/MM-Q/fck/internal/commands/tcp"
+	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -20,7 +21,8 @@ var (
 	tcpOpenOnly    *qflag.BoolFlag     // -o, --open     仅显示开放端口
 	tcpBanner      *qflag.BoolFlag     // -b, --banner   获取 banner
 	tcpData        *qflag.StringFlag   // -d, --data     发送数据
-	tcpFile        *qflag.StringFlag   // -f, --file     数据文件路径
+	tcpPath        *qflag.StringFlag   // -p, --path     文件/目录/通配符路径
+	tcpMaxFileSize *qflag.SizeFlag     // --max-file-size 最大文件大小限制
 	tcpWait        *qflag.DurationFlag // -w, --wait     等待响应时间
 	tcpQuiet       *qflag.BoolFlag     // -q, --quiet       静默模式
 	tcpJson        *qflag.BoolFlag     // -j, --json        JSON 输出
@@ -40,7 +42,8 @@ func init() {
 	tcpOpenOnly = TcpCmd.Bool("open", "o", "仅显示开放的端口", false)
 	tcpBanner = TcpCmd.Bool("banner", "b", "尝试获取服务 banner", false)
 	tcpData = TcpCmd.String("data", "d", "发送的数据内容", "")
-	tcpFile = TcpCmd.String("file", "f", "从文件读取发送数据", "")
+	tcpPath = TcpCmd.String("path", "p", "文件/目录/通配符路径,支持发送单个文件、目录下所有文件或通配符匹配的文件", "")
+	tcpMaxFileSize = TcpCmd.Size("max-file-size", "mfs", "最大文件大小限制,支持单位如: 10MB, 1GB", types.DefaultMaxBufferSize)
 	tcpWait = TcpCmd.Duration("wait", "w", "等待响应时间", 0)
 	tcpQuiet = TcpCmd.Bool("quiet", "q", "静默模式", false)
 	tcpJson = TcpCmd.Bool("json", "j", "JSON 格式输出", false)
@@ -68,6 +71,9 @@ func init() {
 			"仅显示开放端口":     fmt.Sprintf("%s tcp -s -r 1-100 -o baidu.com", qflag.Root.Name()),
 			"获取服务 banner": fmt.Sprintf("%s tcp -b -w 2s baidu.com 80", qflag.Root.Name()),
 			"发送数据":        fmt.Sprintf("%s tcp -d \"hello\" -w 5s target.com 8080", qflag.Root.Name()),
+			"发送文件":        fmt.Sprintf("%s tcp -p ./data.txt target.com 8080", qflag.Root.Name()),
+			"发送目录":        fmt.Sprintf("%s tcp -p ./configs/ target.com 8080", qflag.Root.Name()),
+			"发送通配符匹配":     fmt.Sprintf("%s tcp -p \"./logs/*.log\" target.com 8080", qflag.Root.Name()),
 			"JSON 格式扫描":   fmt.Sprintf("%s tcp -s -r 22,80,443 -j target.com", qflag.Root.Name()),
 			"监听端口接收数据":    fmt.Sprintf("%s tcp -l 8080", qflag.Root.Name()),
 			"交互式模式":       fmt.Sprintf("%s tcp -I target.com 8080", qflag.Root.Name()),
@@ -76,7 +82,7 @@ func init() {
 		MutexGroups: []qflag.MutexGroup{
 			{
 				Name:      "mode",
-				Flags:     []string{"scan", "banner", "data", "file", "listen", "interactive"},
+				Flags:     []string{"scan", "banner", "data", "path", "listen", "interactive"},
 				AllowNone: true,
 			},
 		},
@@ -134,6 +140,12 @@ func runTcp(cmd qflag.Command) error {
 		return fmt.Errorf("scan mode requires -r/--range to specify port range")
 	}
 
+	// 获取最大文件大小，如果小于等于0则使用默认值10MB
+	maxFileSize := tcpMaxFileSize.Get()
+	if maxFileSize <= 0 {
+		maxFileSize = types.DefaultMaxBufferSize
+	}
+
 	config := tcp.TcpConfig{
 		Host:        host,
 		Port:        port,
@@ -145,7 +157,8 @@ func runTcp(cmd qflag.Command) error {
 		OpenOnly:    tcpOpenOnly.Get(),
 		Banner:      tcpBanner.Get(),
 		Data:        tcpData.Get(),
-		File:        tcpFile.Get(),
+		Path:        tcpPath.Get(),
+		MaxFileSize: maxFileSize,
 		Wait:        tcpWait.Get(),
 		Quiet:       tcpQuiet.Get(),
 		Json:        tcpJson.Get(),

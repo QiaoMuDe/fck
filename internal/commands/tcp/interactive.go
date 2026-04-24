@@ -19,8 +19,11 @@ const (
 	CmdClose  = "close"  // 关闭当前连接
 	CmdHex    = "hex"    // 切换十六进制显示模式
 	CmdStatus = "status" // 显示连接状态
-	CmdFile   = "file"   // 发送文件内容
+	CmdPath   = "path"   // 发送文件/目录/通配符
 )
+
+// ErrConnectionClosed 连接已关闭错误（用于优雅退出）
+var ErrConnectionClosed = fmt.Errorf("connection closed")
 
 // InteractiveSession 交互式会话状态
 type InteractiveSession struct {
@@ -41,13 +44,13 @@ var tcpCompleter = readline.NewPrefixCompleter(
 	readline.PcItem(CmdClose),
 	readline.PcItem(CmdHex),
 	readline.PcItem(CmdStatus),
-	readline.PcItem(CmdFile, readline.PcItemDynamic(listFiles)),
+	readline.PcItem(CmdPath, readline.PcItemDynamic(listFiles)),
 )
 
 // listFiles 返回当前目录下的文件列表用于补全
-// line 参数是用户当前输入的整行内容，如 "file " 或 "file READ"
+// line 参数是用户当前输入的整行内容，如 "path " 或 "path READ"
 func listFiles(line string) []string {
-	// 提取 file 命令后的路径前缀
+	// 提取 path 命令后的路径前缀
 	prefix := ""
 	parts := strings.SplitN(line, " ", 2)
 	if len(parts) > 1 {
@@ -172,7 +175,7 @@ func runInteractiveMode(config TcpConfig, ipAddr net.IP) error {
 
 		// 处理输入
 		if err := handleInteractiveInput(session, line); err != nil {
-			if err.Error() == "quit" {
+			if err.Error() == "quit" || err == ErrConnectionClosed {
 				break
 			}
 			if !config.Quiet {
@@ -230,7 +233,7 @@ func handleInteractiveInput(session *InteractiveSession, input string) error {
 
 	case CmdClose:
 		_ = session.Conn.Close()
-		return fmt.Errorf("connection closed")
+		return ErrConnectionClosed
 
 	case CmdHex:
 		session.HexMode = !session.HexMode
@@ -247,9 +250,9 @@ func handleInteractiveInput(session *InteractiveSession, input string) error {
 		printInteractiveStatus(session)
 		return nil
 
-	case CmdFile:
+	case CmdPath:
 		if len(parts) < 2 {
-			return fmt.Errorf("usage: %s <path>", CmdFile)
+			return fmt.Errorf("usage: %s <path>", CmdPath)
 		}
 		return sendFileInteractive(session, parts[1])
 
@@ -389,7 +392,12 @@ func printInteractiveHelp() {
 	fmt.Printf("  %-17s Close current connection\n", CmdClose)
 	fmt.Printf("  %-17s Toggle hex display mode\n", CmdHex)
 	fmt.Printf("  %-17s Show connection status\n", CmdStatus)
-	fmt.Printf("  %-17s Send file contents\n", CmdFile+" <path>")
+	fmt.Printf("  %-17s Send file/directory/wildcard\n", CmdPath+" <path>")
+	fmt.Println("")
+	fmt.Println("Examples:")
+	fmt.Printf("  %s ./data.txt       Send single file\n", CmdPath)
+	fmt.Printf("  %s ./configs/       Send all files in directory\n", CmdPath)
+	fmt.Printf("  %s \"*.log\"         Send files matching wildcard\n", CmdPath)
 	fmt.Println("")
 	fmt.Println("Any other text will be sent to the server.")
 	fmt.Println("Use Tab for command completion, ↑↓ for history.")
@@ -410,29 +418,41 @@ func printInteractiveStatus(session *InteractiveSession) {
 	fmt.Printf("  Hex mode:  %v\n", session.HexMode)
 }
 
-// sendFileInteractive 发送文件内容
+// sendFileInteractive 发送文件内容，支持文件、目录、通配符
 //
 // 参数:
 //   - session: 交互式会话
-//   - path: 文件路径
+//   - path: 文件路径、目录路径或通配符模式
 //
 // 返回值:
 //   - error: 发送错误
 func sendFileInteractive(session *InteractiveSession, path string) error {
-	data, err := os.ReadFile(path)
+	// 解析路径
+	pathInfo, err := resolvePath(path, session.Config.MaxFileSize)
 	if err != nil {
-		return fmt.Errorf("failed to read file: %w", err)
+		return err
 	}
 
-	n, err := session.Conn.Write(data)
-	if err != nil {
-		return fmt.Errorf("failed to send: %w", err)
-	}
+	// 发送所有匹配的文件
+	for _, file := range pathInfo.Paths {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			if !session.Config.Quiet {
+				fmt.Printf("[→] Warning: failed to read file '%s': %v\n", file, err)
+			}
+			continue
+		}
 
-	session.BytesSent += int64(n)
+		n, err := session.Conn.Write(data)
+		if err != nil {
+			return fmt.Errorf("failed to send file '%s': %w", file, err)
+		}
 
-	if !session.Config.Quiet && !session.Config.Json {
-		fmt.Printf("[→] Sent file '%s' (%d bytes)\n", path, n)
+		session.BytesSent += int64(n)
+
+		if !session.Config.Quiet && !session.Config.Json {
+			fmt.Printf("[→] Sent file '%s' (%d bytes)\n", file, n)
+		}
 	}
 
 	return nil

@@ -32,7 +32,8 @@ type TcpConfig struct {
 	OpenOnly    bool          // 仅显示开放端口
 	Banner      bool          // 获取 banner
 	Data        string        // 发送数据
-	File        string        // 数据文件路径
+	Path        string        // 文件/目录/通配符路径
+	MaxFileSize int64         // 最大文件大小限制（字节）
 	Wait        time.Duration // 等待响应时间
 	Quiet       bool          // 静默模式
 	Json        bool          // JSON 输出
@@ -109,7 +110,7 @@ func TcpCmdMain(config TcpConfig) error {
 		return runBannerMode(config, ipAddr)
 	}
 
-	if config.Data != "" || config.File != "" {
+	if config.Data != "" || config.Path != "" {
 		return runDataMode(config, ipAddr)
 	}
 
@@ -354,17 +355,19 @@ func runDataMode(config TcpConfig, ipAddr net.IP) error {
 		return fmt.Errorf("invalid port: %d, must be 1-65535", config.Port)
 	}
 
-	var data []byte
+	// 解析路径，支持文件、目录、通配符
+	var files []string
 	var dataSource string
-	if config.File != "" {
-		content, err := os.ReadFile(config.File)
+	if config.Path != "" {
+		pathInfo, err := resolvePath(config.Path, config.MaxFileSize)
 		if err != nil {
-			return fmt.Errorf("failed to read file: %w", err)
+			return err
 		}
-		data = content
-		dataSource = config.File
+		files = pathInfo.Paths
+		dataSource = config.Path
 	} else {
-		data = []byte(config.Data)
+		// 直接发送数据内容
+		files = nil
 		dataSource = "inline"
 	}
 
@@ -379,25 +382,36 @@ func runDataMode(config TcpConfig, ipAddr net.IP) error {
 	dialDuration := time.Since(start)
 	if err != nil {
 		if config.Json {
-			return outputDataJSON(config, ipAddr, data, dataSource, "", formatErrorState(err), dialDuration, 0)
+			return outputDataJSON(config, ipAddr, []byte(config.Data), dataSource, "", formatErrorState(err), dialDuration, 0)
 		}
 		return fmt.Errorf("connection failed: %w", err)
 	}
 	defer func() { _ = conn.Close() }()
 
-	if !config.Quiet && !config.Json {
-		fmt.Printf("Connected, sending %d bytes...\n", len(data))
+	// 发送数据并统计耗时
+	sendStart := time.Now()
+
+	if config.Data != "" {
+		// 发送内联数据
+		if err := sendData(conn, config, []byte(config.Data), "inline"); err != nil {
+			return err
+		}
 	}
 
-	// 发送数据
-	sendStart := time.Now()
-	_, err = conn.Write(data)
-	if err != nil {
-		if config.Json {
-			return outputDataJSON(config, ipAddr, data, dataSource, "", "send_failed", dialDuration, time.Since(sendStart))
+	// 发送文件
+	for _, file := range files {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			if !config.Quiet {
+				fmt.Printf("Warning: failed to read file %s: %v\n", file, err)
+			}
+			continue
 		}
-		return fmt.Errorf("failed to send data: %w", err)
+		if err := sendFileData(conn, config, data, file); err != nil {
+			return err
+		}
 	}
+
 	sendDuration := time.Since(sendStart)
 
 	// 等待响应
@@ -417,7 +431,35 @@ func runDataMode(config TcpConfig, ipAddr net.IP) error {
 	}
 
 	if config.Json {
-		return outputDataJSON(config, ipAddr, data, dataSource, response, "success", dialDuration, sendDuration)
+		return outputDataJSON(config, ipAddr, []byte(config.Data), dataSource, response, "success", dialDuration, sendDuration)
+	}
+
+	return nil
+}
+
+// sendData 发送数据
+func sendData(conn net.Conn, config TcpConfig, data []byte, source string) error {
+	if !config.Quiet && !config.Json {
+		fmt.Printf("Sending %d bytes from %s...\n", len(data), source)
+	}
+
+	_, err := conn.Write(data)
+	if err != nil {
+		return fmt.Errorf("failed to send data: %w", err)
+	}
+
+	return nil
+}
+
+// sendFileData 发送文件数据
+func sendFileData(conn net.Conn, config TcpConfig, data []byte, filename string) error {
+	if !config.Quiet && !config.Json {
+		fmt.Printf("Sending file: %s (%d bytes)...\n", filename, len(data))
+	}
+
+	_, err := conn.Write(data)
+	if err != nil {
+		return fmt.Errorf("failed to send file %s: %w", filename, err)
 	}
 
 	return nil
