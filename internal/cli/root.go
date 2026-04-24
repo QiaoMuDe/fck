@@ -66,6 +66,7 @@ func InitAndRun() (err error) {
 			WhichCmd,
 			SeqCmd,
 			Base64Cmd,
+			JsonCmd,
 			TeeCmd,
 		},
 	}
