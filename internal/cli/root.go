@@ -70,6 +70,7 @@ func InitAndRun() (err error) {
 			TeeCmd,
 			PingCmd,
 			TcpCmd,
+			DnsCmd,
 		},
 	}
 

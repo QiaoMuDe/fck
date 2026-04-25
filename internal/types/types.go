@@ -423,3 +423,52 @@ var WindowsSymlinkExts = map[string]bool{
 	".lnk": true, // 快捷方式
 	".url": true, // 链接文件
 }
+
+// DNS 查询类型常量定义
+const (
+	// DNS A 记录类型
+	DNSTypeA = "a"
+	// DNS AAAA 记录类型
+	DNSTypeAAAA = "aaaa"
+	// DNS MX 记录类型
+	DNSTypeMX = "mx"
+	// DNS NS 记录类型
+	DNSTypeNS = "ns"
+	// DNS TXT 记录类型
+	DNSTypeTXT = "txt"
+	// DNS CNAME 记录类型
+	DNSTypeCNAME = "cname"
+	// DNS PTR 记录类型
+	DNSTypePTR = "ptr"
+	// DNS SOA 记录类型
+	DNSTypeSOA = "soa"
+	// DNS SRV 记录类型
+	DNSTypeSRV = "srv"
+	// DNS ANY 记录类型
+	DNSTypeANY = "any"
+)
+
+// DNSQueryTypes DNS 查询类型切片
+var DNSQueryTypes = []string{
+	DNSTypeA,
+	DNSTypeAAAA,
+	DNSTypeMX,
+	DNSTypeNS,
+	DNSTypeTXT,
+	DNSTypeCNAME,
+	DNSTypePTR,
+	DNSTypeSOA,
+	DNSTypeSRV,
+	DNSTypeANY,
+}
+
+// GetDNSAnyTypes 获取 ANY 查询包含的所有记录类型（排除 ANY 本身）
+func GetDNSAnyTypes() []string {
+	types := make([]string, 0, len(DNSQueryTypes)-1)
+	for _, t := range DNSQueryTypes {
+		if t != DNSTypeANY {
+			types = append(types, t)
+		}
+	}
+	return types
+}
