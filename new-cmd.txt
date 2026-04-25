@@ -5,3 +5,4 @@ which
 json
 ping
 tcp
+dns
