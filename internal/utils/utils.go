@@ -3,19 +3,17 @@
 package utils
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strconv"
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
-	"golang.org/x/term"
+	"gitee.com/MM-Q/go-kit/fs"
+	"gitee.com/MM-Q/go-kit/term"
 )
 
 // 定义需要跳过的系统文件和特殊目录
@@ -225,12 +223,7 @@ func SprintStringColor(p string, s string, cl *colorlib.ColorLib) string {
 // 返回:
 //   - bool: true 表示 stdin 是管道或文件重定向, false 表示是终端输入
 func IsStdinPipe() bool {
-	info, err := os.Stdin.Stat()
-	if err != nil {
-		return false
-	}
-	// 检查是否为命名管道或常规文件（重定向）
-	return info.Mode()&os.ModeNamedPipe != 0 || info.Mode().IsRegular()
+	return term.IsStdinPipe()
 }
 
 // IsBinaryFile 检测文件是否为二进制文件
@@ -248,33 +241,7 @@ func IsStdinPipe() bool {
 //   - bool: true 表示二进制文件, false 表示文本文件或无法检测
 //   - error: 读取或重置指针错误
 func IsBinaryFile(file *os.File) (bool, error) {
-	// 获取文件信息，检查是否为普通文件
-	info, err := file.Stat()
-	if err != nil {
-		return false, err
-	}
-
-	// 非普通文件 (stdin、pipe、设备文件等) 默认视为文本
-	if !info.Mode().IsRegular() {
-		return false, nil
-	}
-
-	// 读取文件前 8000 字节
-	buf := make([]byte, 8000)
-	n, err := file.Read(buf)
-	if err != nil && err != io.EOF {
-		return false, err
-	}
-
-	// 检查是否包含空字符（二进制文件特征）
-	isBinary := bytes.Contains(buf[:n], []byte{0})
-
-	// 重置文件指针到开头，供后续读取使用
-	if _, seekErr := file.Seek(0, io.SeekStart); seekErr != nil {
-		return false, seekErr
-	}
-
-	return isBinary, nil
+	return fs.IsBinaryFile(file)
 }
 
 // GetSafeTerminalWidth 安全获取终端宽度
@@ -282,31 +249,5 @@ func IsBinaryFile(file *os.File) (bool, error) {
 // 返回:
 //   - int: 终端宽度
 func GetSafeTerminalWidth() int {
-	defaultWidth := 80 // 默认宽度
-	minWidth := 40     // 最小宽度
-	maxWidth := 1200   // 最大宽度
-
-	// 检查环境变量
-	if cols := os.Getenv("COLUMNS"); cols != "" {
-		if width, err := strconv.Atoi(cols); err == nil && width >= minWidth && width <= maxWidth {
-			return width
-		}
-	}
-
-	// 检查是否为终端
-	fd := os.Stdout.Fd()
-	if fd > 1024 || !term.IsTerminal(int(fd)) {
-		return defaultWidth
-	}
-
-	// 安全的类型转换和获取尺寸
-	if fd <= uintptr(^uint(0)>>1) { // 确保不会溢出
-		if width, _, err := term.GetSize(int(fd)); err == nil {
-			if width >= minWidth && width <= maxWidth {
-				return width
-			}
-		}
-	}
-
-	return defaultWidth
+	return term.GetSafeTerminalWidth()
 }

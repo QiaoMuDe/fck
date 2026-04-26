@@ -269,6 +269,42 @@ IsFile 检查指定路径是否为文件 用于验证指定路径是否为普通
 **返回:**
 - `bool`: 是文件返回true，否则返回false
 
+### func IsDriveRoot
+
+```go
+func IsDriveRoot(path string) bool
+```
+
+IsDriveRoot 检查路径是否是盘符根目录
+
+**Windows 支持格式:**
+- `D:`、`D:\`、`D:/`
+- `d:`、`d:\`、`d:/`（小写）
+- 支持前后空格
+
+**Unix/Linux/macOS:**
+- 始终返回 false（Unix 系统没有盘符概念）
+
+**参数:**
+- `path`: 路径
+
+**返回:**
+- `bool`: 是否是盘符根目录
+
+**示例:**
+
+```go
+// Windows
+fs.IsDriveRoot("D:")      // true
+fs.IsDriveRoot("D:\\")     // true
+fs.IsDriveRoot("D:/")      // true
+fs.IsDriveRoot("C:\\Windows") // false
+
+// Unix/Linux/macOS
+fs.IsDriveRoot("/")        // false
+fs.IsDriveRoot("/home")    // false
+```
+
 ### func IsHidden
 
 ```go
@@ -276,6 +312,14 @@ func IsHidden(path string) bool
 ```
 
 IsHidden 判断文件或目录是否为隐藏 用于跨平台检查文件或目录的隐藏属性
+
+**Windows:**
+- 检查 Windows 隐藏属性 (FILE_ATTRIBUTE_HIDDEN)
+- 支持 Unix 风格的点文件 (.hidden)
+- 盘符根目录 (如 D:\) 始终返回 false
+
+**Unix/Linux/macOS:**
+- 检查文件名是否以点开头（排除 . 和 ..）
 
 **参数:**
 - `path`: 文件或目录路径
@@ -305,11 +349,49 @@ func IsReadOnly(path string) bool
 
 IsReadOnly 判断文件或目录是否为只读 用于跨平台检查文件或目录的只读属性
 
+**Windows:**
+- 检查 Windows 只读属性 (FILE_ATTRIBUTE_READONLY)
+
+**Unix/Linux/macOS:**
+- 检查文件权限位，判断是否没有写权限
+
 **参数:**
 - `path`: 文件或目录路径
 
 **返回:**
 - `bool`: 文件为只读返回true，否则返回false
+
+### func GetFileOwner
+
+```go
+func GetFileOwner(filePath string) (string, string)
+```
+
+GetFileOwner 获取文件的所属用户和组 用于跨平台获取文件的所有者信息
+
+**Windows:**
+- 尝试通过文件句柄获取安全描述符
+- 如果获取失败，返回 ("?", "?")
+
+**Unix/Linux/macOS:**
+- 使用系统调用获取 UID 和 GID
+- 通过用户数据库查询用户名和组名
+- 如果查询失败，返回 ("?", "?")
+
+**参数:**
+- `filePath`: 文件路径
+
+**返回:**
+- `string`: 文件所有者的用户名（失败时返回 "?"）
+- `string`: 文件所有者的组名（失败时返回 "?"）
+
+**示例:**
+
+```go
+owner, group := fs.GetFileOwner("/etc/passwd")
+fmt.Printf("所有者: %s, 组: %s\n", owner, group)
+// 输出示例: 所有者: root, 组: root
+```
 
 ### func OctStrToMode
 
@@ -334,5 +416,130 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(mode) // 输出: -rwxr-xr-x
+```
+
+### func IsBinaryFile
+
+```go
+func IsBinaryFile(file *os.File) (bool, error)
+```
+
+IsBinaryFile 检测文件是否为二进制文件 读取文件前 8000 字节，检查是否包含空字符(\0)
+
+**注意：**
+- 只支持普通文件，stdin/pipe 默认返回 false (视为文本)
+- 空文件视为文本文件 (返回 false)
+- 检测后会重置文件指针到开头
+
+**参数:**
+- `file`: 已打开的文件句柄
+
+**返回:**
+- `bool`: true 表示二进制文件，false 表示文本文件、空文件或无法检测
+- `error`: 读取或重置指针错误
+
+**示例:**
+
+```go
+file, _ := os.Open("test.txt")
+defer file.Close()
+isBinary, err := fs.IsBinaryFile(file)
+if err != nil {
+    log.Fatal(err)
+}
+if isBinary {
+    fmt.Println("二进制文件")
+} else {
+    fmt.Println("文本文件")
+}
+```
+
+### func IsBinaryFilePath
+
+```go
+func IsBinaryFilePath(path string) (bool, error)
+```
+
+IsBinaryFilePath 检测指定路径的文件是否为二进制文件 该函数会自动打开文件、检测、然后关闭文件，适用于不需要复用文件句柄的场景
+
+**参数:**
+- `path`: 文件路径
+
+**返回:**
+- `bool`: true 表示二进制文件，false 表示文本文件、空文件或无法检测
+- `error`: 打开文件、读取或检测过程中的错误
+
+**示例:**
+
+```go
+isBinary, err := fs.IsBinaryFilePath("/path/to/file.txt")
+if err != nil {
+    log.Fatal(err)
+}
+if isBinary {
+    fmt.Println("二进制文件")
+} else {
+    fmt.Println("文本文件")
+}
+```
+
+### func IsBinary
+
+```go
+func IsBinary(file *os.File) bool
+```
+
+IsBinary 检测文件是否为二进制文件（简洁版本） 与 IsBinaryFile 功能相同，但忽略所有错误，只返回检测结果，适用于不需要错误处理的简单场景
+
+**注意：**
+- 如果发生任何错误 (文件不存在、无权限等)，返回 false
+- 非普通文件 (pipe、设备等) 返回 false
+- 空文件返回 false
+
+**参数:**
+- `file`: 已打开的文件句柄
+
+**返回:**
+- `bool`: true 表示二进制文件，false 表示文本文件或出错
+
+**示例:**
+
+```go
+file, _ := os.Open("test.txt")
+defer file.Close()
+if fs.IsBinary(file) {
+    fmt.Println("二进制文件")
+} else {
+    fmt.Println("文本文件或出错")
+}
+```
+
+### func IsBinaryPath
+
+```go
+func IsBinaryPath(path string) bool
+```
+
+IsBinaryPath 检测指定路径的文件是否为二进制文件（简洁版本） 最简化的检测函数，自动处理文件打开和关闭，忽略所有错误
+
+**注意：**
+- 如果发生任何错误 (文件不存在、无权限等)，返回 false
+- 非普通文件 (pipe、设备等) 返回 false
+- 空文件返回 false
+
+**参数:**
+- `path`: 文件路径
+
+**返回:**
+- `bool`: true 表示二进制文件，false 表示文本文件或出错
+
+**示例:**
+
+```go
+if fs.IsBinaryPath("/path/to/file.txt") {
+    fmt.Println("二进制文件")
+} else {
+    fmt.Println("文本文件或出错")
+}
 ```
 
