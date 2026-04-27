@@ -283,6 +283,12 @@ func handleInteractiveInput(session *InteractiveSession, input string) error {
 func receiveLoopInteractive(session *InteractiveSession, recvChan chan<- []byte, errChan chan<- error, done <-chan bool) {
 	buf := make([]byte, 4096)
 
+	// 交互式模式下，如果 Wait 为 0，使用默认短超时 100ms
+	readTimeout := session.Config.Wait
+	if readTimeout <= 0 {
+		readTimeout = 100 * time.Millisecond
+	}
+
 	for {
 		select {
 		case <-done:
@@ -291,9 +297,7 @@ func receiveLoopInteractive(session *InteractiveSession, recvChan chan<- []byte,
 		}
 
 		// 设置读取超时
-		if session.Config.Wait > 0 {
-			_ = session.Conn.SetReadDeadline(time.Now().Add(session.Config.Wait))
-		}
+		_ = session.Conn.SetReadDeadline(time.Now().Add(readTimeout))
 
 		n, err := session.Conn.Read(buf)
 		if err != nil {

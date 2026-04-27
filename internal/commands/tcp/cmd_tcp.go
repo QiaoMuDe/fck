@@ -587,17 +587,24 @@ func handleListenConnection(ctx context.Context, conn net.Conn, connID int64, co
 
 		n, err := conn.Read(buffer)
 		if n > 0 {
-			data := string(buffer[:n])
+			data := buffer[:n]
 			totalBytes += n
 
 			if config.Json {
-				receivedData = append(receivedData, data)
+				receivedData = append(receivedData, string(data))
 			} else if !config.Quiet {
 				fmt.Printf("[%s] [#%d] Received %d bytes:\n%s\n",
 					time.Now().Format("2006-01-02 15:04:05"),
 					connID,
 					n,
-					data)
+					string(data))
+			}
+
+			// 发送确认回应
+			ackMsg := fmt.Sprintf("[+ACK] Received %d bytes at %s\n", n, time.Now().Format("2006-01-02 15:04:05"))
+			_, writeErr := conn.Write([]byte(ackMsg))
+			if writeErr != nil && !config.Quiet {
+				fmt.Printf("[%s] [#%d] Write error: %v\n", time.Now().Format("2006-01-02 15:04:05"), connID, writeErr)
 			}
 		}
 
