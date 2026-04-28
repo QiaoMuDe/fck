@@ -12,7 +12,6 @@ require (
 	gitee.com/MM-Q/verman v0.0.19
 	github.com/alecthomas/chroma/v2 v2.23.1
 	github.com/charmbracelet/glamour v0.8.0
-	github.com/chzyer/readline v1.5.1
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/noborus/ov v0.51.1
 	github.com/prometheus-community/pro-bing v0.8.0
@@ -75,7 +74,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/net v0.50.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	mvdan.cc/sh/v3 v3.12.0 // indirect

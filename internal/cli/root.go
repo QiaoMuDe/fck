@@ -69,7 +69,6 @@ func InitAndRun() (err error) {
 			JsonCmd,
 			TeeCmd,
 			PingCmd,
-			TcpCmd,
 			DnsCmd,
 		},
 	}

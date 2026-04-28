@@ -696,19 +696,19 @@ func saveText(batchResult BatchResult, filename string) error {
 	var sb strings.Builder
 
 	for _, result := range batchResult.Results {
-		sb.WriteString(fmt.Sprintf("[%s] %s\n", result.Type, result.Domain))
+		fmt.Fprintf(&sb, "[%s] %s\n", result.Type, result.Domain)
 		if result.Error != "" {
-			sb.WriteString(fmt.Sprintf("  Error: %s\n", result.Error))
+			fmt.Fprintf(&sb, "  Error: %s\n", result.Error)
 		} else {
 			for _, record := range result.Records {
-				sb.WriteString(fmt.Sprintf("  %s\t%s\n", record.Type, record.Value))
+				fmt.Fprintf(&sb, "  %s\t%s\n", record.Type, record.Value)
 			}
 		}
 		sb.WriteString("\n")
 	}
 
-	sb.WriteString(fmt.Sprintf("Total: %d, Success: %d, Failed: %d, Time: %v\n",
-		batchResult.Total, batchResult.Success, batchResult.Failed, batchResult.Time))
+	fmt.Fprintf(&sb, "Total: %d, Success: %d, Failed: %d, Time: %v\n",
+		batchResult.Total, batchResult.Success, batchResult.Failed, batchResult.Time)
 
 	if err := os.WriteFile(filename, []byte(sb.String()), 0644); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
