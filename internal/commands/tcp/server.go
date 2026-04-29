@@ -1,0 +1,287 @@
+package tcp
+
+import (
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync/atomic"
+	"time"
+)
+
+// connectionStats 连接统计
+type connectionStats struct {
+	active int32 // 当前活跃连接数
+	total  int32 // 总连接数
+}
+
+var stats connectionStats
+
+// logType 日志类型
+type logType string
+
+const (
+	logConn  logType = "CONN" // 连接建立
+	logRecv  logType = "RECV" // 接收数据
+	logSend  logType = "SEND" // 发送数据
+	logDisc  logType = "DISC" // 断开连接
+	logError logType = "ERR"  // 错误
+)
+
+// timeFormat 时间格式常量
+const timeFormat = "2006-01-02 15:04:05"
+
+// serverLogger 服务端日志记录器
+type serverLogger struct {
+	clientAddr string
+}
+
+// newServerLogger 创建新的日志记录器
+//
+// 参数:
+//   - clientAddr: 客户端地址
+//
+// 返回值:
+//   - *serverLogger: 日志记录器
+func newServerLogger(clientAddr string) *serverLogger {
+	return &serverLogger{clientAddr: clientAddr}
+}
+
+// log 打印日志
+//
+// 参数:
+//   - logType: 日志类型
+//   - detail: 详情
+func (l *serverLogger) log(logType logType, detail string) {
+	timestamp := time.Now().Format(timeFormat)
+	fmt.Printf("[%s] [%s] [%s] %s\n", timestamp, logType, l.clientAddr, detail)
+}
+
+// logConn 记录连接建立
+func (l *serverLogger) logConn() {
+	active := atomic.AddInt32(&stats.active, 1)
+	total := atomic.AddInt32(&stats.total, 1)
+	l.log(logConn, fmt.Sprintf("Connected (active: %d, total: %d)", active, total))
+}
+
+// logDisc 记录断开连接
+//
+// 参数:
+//   - duration: 连接持续时间
+func (l *serverLogger) logDisc(duration time.Duration) {
+	active := atomic.AddInt32(&stats.active, -1)
+	l.log(logDisc, fmt.Sprintf("Disconnected (duration: %.3fs, active: %d)", duration.Seconds(), active))
+}
+
+// logRecv 记录接收数据
+//
+// 参数:
+//   - data: 接收的数据
+//   - size: 数据大小
+func (l *serverLogger) logRecv(data []byte, size int) {
+	l.log(logRecv, fmt.Sprintf("Received data, size: %d bytes", size))
+	content := formatDataContent(data)
+	fmt.Printf("%s\n", content)
+}
+
+// logSend 记录发送数据
+//
+// 参数:
+//   - respType: 响应类型
+//   - size: 数据大小
+func (l *serverLogger) logSend(respType string, size int) {
+	l.log(logSend, fmt.Sprintf("Sent %s response (%d bytes)", respType, size))
+}
+
+// logError 记录错误
+//
+// 参数:
+//   - err: 错误信息
+func (l *serverLogger) logError(err string) {
+	l.log(logError, err)
+}
+
+// formatDataContent 格式化数据内容用于显示
+//
+// 参数:
+//   - data: 原始数据
+//
+// 返回值:
+//   - string: 格式化后的字符串
+func formatDataContent(data []byte) string {
+	if len(data) == 0 {
+		return ""
+	}
+
+	const maxLen = 100
+
+	// 尝试作为UTF-8解码
+	str := string(data)
+	if len(str) > maxLen {
+		return str[:maxLen] + fmt.Sprintf("... (total: %d bytes)", len(data))
+	}
+	return str
+}
+
+// ServerCmdMain TCP 服务端主入口
+//
+// 参数:
+//   - config: 服务端配置
+//
+// 返回值:
+//   - error: 执行错误
+func ServerCmdMain(config ServerConfig) error {
+	// 创建监听器
+	address := fmt.Sprintf("%s:%d", config.Address, config.Port)
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		return fmt.Errorf("failed to start server on %s: %w", address, err)
+	}
+	defer func() {
+		if err := listener.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close listener: %v\n", err)
+		}
+	}()
+
+	fmt.Printf("TCP Server listening on %s\n", address)
+	fmt.Printf("Press Ctrl+C to stop\n\n")
+
+	// 创建连接限制信号量
+	sem := make(chan struct{}, config.MaxConn)
+
+	// 接受连接循环
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to accept connection: %v\n", err)
+			continue
+		}
+
+		// 获取信号量（限制并发）
+		sem <- struct{}{}
+
+		// 处理连接
+		go func(c net.Conn) {
+			defer func() { <-sem }()
+			handleConnection(c, config)
+		}(conn)
+	}
+}
+
+// handleConnection 处理单个客户端连接
+//
+// 参数:
+//   - conn: 客户端连接
+//   - config: 服务端配置
+func handleConnection(conn net.Conn, config ServerConfig) {
+	clientAddr := conn.RemoteAddr().String()
+	startTime := time.Now()
+	logger := newServerLogger(clientAddr)
+
+	// 确保连接最终被关闭
+	defer func() {
+		if err := conn.Close(); err != nil {
+			logger.logError(fmt.Sprintf("Failed to close connection: %v", err))
+		}
+		// 记录断开连接
+		logger.logDisc(time.Since(startTime))
+	}()
+
+	// 记录连接建立
+	logger.logConn()
+
+	// 读取所有数据直到连接关闭
+	buffer := make([]byte, config.BufferSize)
+	var receivedData []byte
+
+	for {
+		n, err := conn.Read(buffer)
+		if n > 0 {
+			receivedData = append(receivedData, buffer[:n]...)
+		}
+
+		if err != nil {
+			if err != io.EOF {
+				logger.logError(err.Error())
+			}
+			break
+		}
+	}
+
+	// 处理接收到的数据
+	if len(receivedData) > 0 {
+		// 记录接收的数据
+		logger.logRecv(receivedData, len(receivedData))
+
+		// 保存到文件（如果配置了输出目录）
+		if config.OutputDir != "" {
+			saveReceivedData(config.OutputDir, clientAddr, receivedData)
+		}
+
+		// 构建并发送响应
+		var response string
+		if config.Echo {
+			response = formatResponse("ECHO", len(receivedData), string(receivedData))
+		} else {
+			response = formatResponse("ACK", len(receivedData), config.Response)
+		}
+
+		_, err := conn.Write([]byte(response))
+		if err != nil {
+			logger.logError(fmt.Sprintf("Failed to send response: %v", err))
+		} else {
+			// 记录发送的数据
+			respType := "ACK"
+			if config.Echo {
+				respType = "ECHO"
+			}
+			logger.logSend(respType, len(response))
+		}
+	}
+}
+
+// saveReceivedData 保存接收到的数据
+//
+// 参数:
+//   - outputDir: 输出目录
+//   - clientAddr: 客户端地址
+//   - data: 接收到的数据
+func saveReceivedData(outputDir string, clientAddr string, data []byte) {
+	// 确保输出目录存在
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create output directory: %v\n", err)
+		return
+	}
+
+	// 生成文件名
+	timestamp := time.Now().Format("20060102_150405")
+	filename := fmt.Sprintf("%s_%s.txt", strings.ReplaceAll(clientAddr, ":", "_"), timestamp)
+	filePath := filepath.Join(outputDir, filename)
+
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to save received data: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Saved received data to: %s\n", filePath)
+}
+
+// formatResponse 格式化标准响应
+//
+// 参数:
+//   - respType: 响应类型 (ACK, ECHO)
+//   - bytes: 接收字节数
+//   - content: 响应内容
+//
+// 返回值:
+//   - string: 格式化后的响应
+//
+// 格式: [YYYY-MM-DD HH:MM:SS] [OK] [TYPE] Received X bytes\ncontent
+func formatResponse(respType string, bytes int, content string) string {
+	timestamp := time.Now().Format(timeFormat)
+	return fmt.Sprintf("[%s] [OK] [%s] Received %d bytes\n%s", timestamp, respType, bytes, content)
+}
+
+// formatErrorResponse 格式化错误响应

@@ -32,7 +32,7 @@ var dnsFormatOptions = []string{
 }
 
 func init() {
-	DnsCmd = qflag.NewCmd("dns", "dn", qflag.ExitOnError)
+	DnsCmd = qflag.NewCmd("dns", "", qflag.ExitOnError)
 
 	dnsType = DnsCmd.Enum("type", "t", fmt.Sprintf("查询类型, 支持 %v", types.DNSQueryTypes), "a", types.DNSQueryTypes)
 	dnsServer = DnsCmd.String("server", "s", "指定 DNS 服务器", "")

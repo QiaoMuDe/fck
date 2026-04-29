@@ -472,3 +472,23 @@ func GetDNSAnyTypes() []string {
 	}
 	return types
 }
+
+// TCP 扫描输出格式常量
+const (
+	// TCPScanFormatDefault 默认简洁格式
+	TCPScanFormatDefault = "def"
+	// TCPScanFormatTable 表格格式
+	TCPScanFormatTable = "table"
+	// TCPScanFormatJSON JSON格式
+	TCPScanFormatJSON = "json"
+	// TCPScanFormatCSV CSV格式
+	TCPScanFormatCSV = "csv"
+)
+
+// TCPScanFormatOptions TCP扫描输出格式选项列表
+var TCPScanFormatOptions = []string{
+	TCPScanFormatDefault,
+	TCPScanFormatTable,
+	TCPScanFormatJSON,
+	TCPScanFormatCSV,
+}
