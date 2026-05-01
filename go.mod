@@ -12,6 +12,7 @@ require (
 	gitee.com/MM-Q/verman v0.0.19
 	github.com/alecthomas/chroma/v2 v2.23.1
 	github.com/charmbracelet/glamour v0.8.0
+	github.com/chzyer/readline v1.5.1
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/noborus/ov v0.51.1
 	github.com/prometheus-community/pro-bing v0.8.0

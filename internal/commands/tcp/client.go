@@ -1,12 +1,10 @@
 package tcp
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"net"
 	"os"
-	"strings"
 	"time"
 
 	"gitee.com/MM-Q/fck/internal/utils"
@@ -143,7 +141,7 @@ func sendStdin(conn net.Conn, config ClientConfig) (*TransferStats, error) {
 	return stats, nil
 }
 
-// sendInteractive 交互式发送模式
+// sendInteractive 发送交互式消息（使用 readline）
 //
 // 参数:
 //   - conn: TCP 连接
@@ -153,71 +151,7 @@ func sendStdin(conn net.Conn, config ClientConfig) (*TransferStats, error) {
 //   - *TransferStats: 传输统计
 //   - error: 错误
 func sendInteractive(conn net.Conn, config ClientConfig) (*TransferStats, error) {
-	startTime := time.Now()
-	stats := &TransferStats{}
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Println("Interactive mode started. Type your message and press Enter to send.")
-	fmt.Printf("Use delimiter '%s' on a separate line to exit.\n", config.Delimiter)
-	fmt.Println("----------------------------------------")
-
-	for {
-		fmt.Print("tcp> ")
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, fmt.Errorf("failed to read input: %w", err)
-		}
-
-		// 去除换行符
-		line = strings.TrimRight(line, "\r\n")
-
-		// 检查分隔符
-		if line == config.Delimiter {
-			fmt.Println("Exiting interactive mode...")
-			break
-		}
-
-		// 发送消息
-		data := []byte(line + "\n")
-		n, err := conn.Write(data)
-		if err != nil {
-			return nil, fmt.Errorf("failed to send message: %w", err)
-		}
-		stats.BytesSent += int64(n)
-
-		// 接收响应（交互模式下只读取一次，不等待连接关闭）
-		if !config.NoResponse {
-			// 设置读取超时
-			if config.Timeout > 0 {
-				if err := conn.SetReadDeadline(time.Now().Add(config.Timeout)); err != nil {
-					fmt.Fprintf(os.Stderr, "Warning: failed to set read deadline: %v\n", err)
-				}
-			}
-
-			// 单次读取响应（不循环等待 EOF）
-			buffer := make([]byte, config.BufferSize)
-			n, err := conn.Read(buffer)
-			if err != nil {
-				if err != io.EOF {
-					fmt.Fprintf(os.Stderr, "Warning: failed to read response: %v\n", err)
-				}
-			} else if n > 0 {
-				stats.BytesReceived += int64(n)
-				fmt.Printf("└ %s\n\n", string(buffer[:n]))
-			}
-
-			// 清除读取超时，准备下一次交互
-			if err := conn.SetReadDeadline(time.Time{}); err != nil {
-				fmt.Fprintf(os.Stderr, "Warning: failed to clear read deadline: %v\n", err)
-			}
-		}
-	}
-
-	stats.Duration = time.Since(startTime)
-	return stats, nil
+	return runInteractiveMode(conn, config)
 }
 
 // readResponse 读取服务器响应

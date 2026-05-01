@@ -89,4 +89,5 @@ type TransferStats struct {
 	BytesReceived int64
 	Duration      time.Duration
 	FilesSent     int
+	StartTime     time.Time // 连接开始时间
 }
