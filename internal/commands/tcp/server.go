@@ -1,13 +1,17 @@
 package tcp
 
 import (
+	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"net"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -133,6 +137,14 @@ func formatDataContent(data []byte) string {
 // 返回值:
 //   - error: 执行错误
 func ServerCmdMain(config ServerConfig) error {
+	// 创建可取消的上下文
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// 监听系统信号（Ctrl+C）
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	// 创建监听器
 	address := fmt.Sprintf("%s:%d", config.Address, config.Port)
 	listener, err := net.Listen("tcp", address)
@@ -151,16 +163,54 @@ func ServerCmdMain(config ServerConfig) error {
 	// 创建连接限制信号量
 	sem := make(chan struct{}, config.MaxConn)
 
+	// 在后台监听信号
+	go func() {
+		<-sigChan
+		fmt.Println("\nReceived shutdown signal, stopping server...")
+		cancel()
+		listener.Close()
+	}()
+
 	// 接受连接循环
 	for {
+		select {
+		case <-ctx.Done():
+			// 等待所有连接处理完成
+			for i := 0; i < config.MaxConn; i++ {
+				sem <- struct{}{}
+			}
+			fmt.Println("Server stopped gracefully")
+			return nil
+		default:
+		}
+
+		// 设置接受超时，以便定期检查 ctx.Done()
+		if tcpListener, ok := listener.(*net.TCPListener); ok {
+			tcpListener.SetDeadline(time.Now().Add(1 * time.Second))
+		}
+
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to accept connection: %v\n", err)
-			continue
+			if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+				// 超时，继续循环检查 ctx.Done()
+				continue
+			}
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
+				fmt.Fprintf(os.Stderr, "Failed to accept connection: %v\n", err)
+				continue
+			}
 		}
 
 		// 获取信号量（限制并发）
-		sem <- struct{}{}
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			conn.Close()
+			return nil
+		}
 
 		// 处理连接
 		go func(c net.Conn) {
@@ -192,53 +242,75 @@ func handleConnection(conn net.Conn, config ServerConfig) {
 	// 记录连接建立
 	logger.logConn()
 
-	// 读取所有数据直到连接关闭
-	buffer := make([]byte, config.BufferSize)
-	var receivedData []byte
+	// 使用 bufio.Reader 按行读取，支持即时响应
+	reader := bufio.NewReader(conn)
 
 	for {
-		n, err := conn.Read(buffer)
-		if n > 0 {
-			receivedData = append(receivedData, buffer[:n]...)
-		}
-
+		// 读取一行数据（以 \n 为分隔符）
+		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err != io.EOF {
 				logger.logError(err.Error())
 			}
+			// 处理最后可能剩余的数据（没有换行符结尾）
+			if len(line) > 0 {
+				handleMessage(conn, line, config, logger)
+			}
 			break
 		}
+
+		// 立即处理收到的消息并响应
+		handleMessage(conn, line, config, logger)
+	}
+}
+
+// handleMessage 处理单条消息并发送响应
+//
+// 参数:
+//   - conn: 客户端连接
+//   - data: 接收到的数据
+//   - config: 服务端配置
+//   - logger: 日志记录器
+func handleMessage(conn net.Conn, data string, config ServerConfig, logger *serverLogger) {
+	// 去除换行符
+	data = strings.TrimRight(data, "\r\n")
+
+	// 空消息不处理
+	if len(data) == 0 {
+		return
 	}
 
-	// 处理接收到的数据
-	if len(receivedData) > 0 {
-		// 记录接收的数据
-		logger.logRecv(receivedData, len(receivedData))
+	// 记录接收的数据
+	logger.logRecv([]byte(data), len(data))
 
-		// 保存到文件（如果配置了输出目录）
-		if config.OutputDir != "" {
-			saveReceivedData(config.OutputDir, clientAddr, receivedData)
-		}
+	// 保存到文件（如果配置了输出目录）
+	if config.OutputDir != "" {
+		saveReceivedData(config.OutputDir, conn.RemoteAddr().String(), []byte(data))
+	}
 
-		// 构建并发送响应
-		var response string
+	// 构建并发送响应
+	var response string
+	if config.Echo {
+		// Echo 模式：返回接收到的数据
+		response = formatResponse("ECHO", len(data))
+	} else if config.Response != "" {
+		// 自定义响应内容
+		response = config.Response
+	} else {
+		// 默认响应格式
+		response = formatResponse("ACK", len(data))
+	}
+
+	_, err := conn.Write([]byte(response))
+	if err != nil {
+		logger.logError(fmt.Sprintf("Failed to send response: %v", err))
+	} else {
+		// 记录发送的数据
+		respType := "ACK"
 		if config.Echo {
-			response = formatResponse("ECHO", len(receivedData), string(receivedData))
-		} else {
-			response = formatResponse("ACK", len(receivedData), config.Response)
+			respType = "ECHO"
 		}
-
-		_, err := conn.Write([]byte(response))
-		if err != nil {
-			logger.logError(fmt.Sprintf("Failed to send response: %v", err))
-		} else {
-			// 记录发送的数据
-			respType := "ACK"
-			if config.Echo {
-				respType = "ECHO"
-			}
-			logger.logSend(respType, len(response))
-		}
+		logger.logSend(respType, len(response))
 	}
 }
 
@@ -273,15 +345,14 @@ func saveReceivedData(outputDir string, clientAddr string, data []byte) {
 // 参数:
 //   - respType: 响应类型 (ACK, ECHO)
 //   - bytes: 接收字节数
-//   - content: 响应内容
 //
 // 返回值:
 //   - string: 格式化后的响应
 //
 // 格式: [YYYY-MM-DD HH:MM:SS] [OK] [TYPE] Received X bytes\ncontent
-func formatResponse(respType string, bytes int, content string) string {
+func formatResponse(respType string, bytes int) string {
 	timestamp := time.Now().Format(timeFormat)
-	return fmt.Sprintf("[%s] [OK] [%s] Received %d bytes\n%s", timestamp, respType, bytes, content)
+	return fmt.Sprintf("[%s] [OK] [%s] Received %d bytes", timestamp, respType, bytes)
 }
 
 // formatErrorResponse 格式化错误响应

@@ -30,7 +30,7 @@ func init() {
 	serverTimeout = ServerCmd.Duration("timeout", "t", "连接超时时间", 30*time.Second)
 	serverMaxConn = ServerCmd.Int("max-conn", "m", "最大并发连接数", tcp.GetDefaultConcurrent())
 	serverBufferSize = ServerCmd.Size("buffer-size", "b", "接收缓冲区大小", 4*1024)
-	serverResponse = ServerCmd.String("response", "r", "响应消息内容", "ACK")
+	serverResponse = ServerCmd.String("response", "r", "响应消息内容", "")
 	serverOutput = ServerCmd.String("output", "o", "接收数据保存目录", "")
 	serverEcho = ServerCmd.Bool("echo", "e", "回声模式（将接收的数据原样返回）", false)
 

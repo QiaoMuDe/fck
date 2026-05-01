@@ -6,9 +6,10 @@ import (
 	"io"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
+
+	"gitee.com/MM-Q/fck/internal/utils"
 )
 
 // ClientCmdMain TCP 客户端主入口
@@ -31,14 +32,16 @@ func ClientCmdMain(config ClientConfig) error {
 		}
 	}()
 
-	// 根据模式执行发送
+	// 根据模式执行发送（优先级：管道 > 字符串 > 交互式）
 	var stats *TransferStats
 	switch {
+	case utils.IsStdinPipe():
+		stats, err = sendStdin(conn, config)
+
 	case config.Message != "":
 		stats, err = sendString(conn, config)
-	case config.Path != "":
-		stats, err = sendPath(conn, config)
-	case config.Interactive:
+
+	default:
 		stats, err = sendInteractive(conn, config)
 	}
 
@@ -93,7 +96,7 @@ func sendString(conn net.Conn, config ClientConfig) (*TransferStats, error) {
 	return stats, nil
 }
 
-// sendPath 发送路径（文件、目录或通配符）
+// sendStdin 从标准输入（管道）读取并发送数据
 //
 // 参数:
 //   - conn: TCP 连接
@@ -102,117 +105,42 @@ func sendString(conn net.Conn, config ClientConfig) (*TransferStats, error) {
 // 返回值:
 //   - *TransferStats: 传输统计
 //   - error: 错误
-func sendPath(conn net.Conn, config ClientConfig) (*TransferStats, error) {
-	// 解析路径
-	files, err := resolvePath(config.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(files) == 0 {
-		return nil, fmt.Errorf("no files found for path: %s", config.Path)
-	}
-
+func sendStdin(conn net.Conn, config ClientConfig) (*TransferStats, error) {
 	startTime := time.Now()
 	stats := &TransferStats{}
 
-	// 发送每个文件，文件间用换行分隔
-	for i, file := range files {
-		// 发送文件内容
-		sent, err := sendRawFileData(conn, file)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to send %s: %v\n", file, err)
-			continue
-		}
-		stats.BytesSent += sent
-		stats.FilesSent++
+	// 读取全部 stdin 内容
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from stdin: %w", err)
+	}
 
-		// 除了最后一个文件，都追加换行符
-		if i < len(files)-1 {
-			if _, err := conn.Write([]byte("\n")); err != nil {
-				fmt.Fprintf(os.Stderr, "Warning: failed to send newline: %v\n", err)
-			} else {
-				stats.BytesSent += 1
-			}
+	// 发送数据
+	n, err := conn.Write(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send data: %w", err)
+	}
+	stats.BytesSent = int64(n)
+
+	// 关闭写入端，通知服务端数据发送完毕
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
+		if err := tcpConn.CloseWrite(); err != nil {
+			return nil, fmt.Errorf("failed to close write: %w", err)
 		}
+	}
+
+	// 接收响应（如果不禁用）
+	if !config.NoResponse {
+		response, err := readResponse(conn, config.Timeout, config.BufferSize)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response: %w", err)
+		}
+		stats.BytesReceived = int64(len(response))
+		fmt.Printf("Response: %s\n", string(response))
 	}
 
 	stats.Duration = time.Since(startTime)
 	return stats, nil
-}
-
-// resolvePath 解析路径（支持文件、目录、通配符）
-//
-// 参数:
-//   - path: 路径字符串
-//
-// 返回值:
-//   - []string: 文件列表
-//   - error: 错误
-func resolvePath(path string) ([]string, error) {
-	// 检查是否是通配符
-	if strings.Contains(path, "*") || strings.Contains(path, "?") {
-		matches, err := filepath.Glob(path)
-		if err != nil {
-			return nil, fmt.Errorf("invalid glob pattern: %w", err)
-		}
-		return matches, nil
-	}
-
-	// 检查路径是否存在
-	info, err := os.Stat(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to access path: %w", err)
-	}
-
-	// 如果是目录，读取目录下所有文件（不递归）
-	if info.IsDir() {
-		entries, err := os.ReadDir(path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read directory: %w", err)
-		}
-
-		var files []string
-		for _, entry := range entries {
-			if !entry.IsDir() {
-				files = append(files, filepath.Join(path, entry.Name()))
-			}
-		}
-		return files, nil
-	}
-
-	// 普通文件
-	return []string{path}, nil
-}
-
-// sendRawFileData 发送文件原始字节（无协议头）
-//
-// 参数:
-//   - conn: TCP 连接
-//   - filePath: 文件路径
-//
-// 返回值:
-//   - int64: 发送字节数
-//   - error: 错误
-func sendRawFileData(conn net.Conn, filePath string) (int64, error) {
-	// 打开文件
-	file, err := os.Open(filePath)
-	if err != nil {
-		return 0, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to close file: %v\n", err)
-		}
-	}()
-
-	// 直接发送文件内容（无协议头）
-	sent, err := io.Copy(conn, file)
-	if err != nil {
-		return sent, fmt.Errorf("failed to send file content: %w", err)
-	}
-
-	return sent, nil
 }
 
 // sendInteractive 交互式发送模式
@@ -260,14 +188,30 @@ func sendInteractive(conn net.Conn, config ClientConfig) (*TransferStats, error)
 		}
 		stats.BytesSent += int64(n)
 
-		// 接收响应
+		// 接收响应（交互模式下只读取一次，不等待连接关闭）
 		if !config.NoResponse {
-			response, err := readResponse(conn, config.Timeout, config.BufferSize)
+			// 设置读取超时
+			if config.Timeout > 0 {
+				if err := conn.SetReadDeadline(time.Now().Add(config.Timeout)); err != nil {
+					fmt.Fprintf(os.Stderr, "Warning: failed to set read deadline: %v\n", err)
+				}
+			}
+
+			// 单次读取响应（不循环等待 EOF）
+			buffer := make([]byte, config.BufferSize)
+			n, err := conn.Read(buffer)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Warning: failed to read response: %v\n", err)
-			} else {
-				stats.BytesReceived += int64(len(response))
-				fmt.Printf("< %s\n", string(response))
+				if err != io.EOF {
+					fmt.Fprintf(os.Stderr, "Warning: failed to read response: %v\n", err)
+				}
+			} else if n > 0 {
+				stats.BytesReceived += int64(n)
+				fmt.Printf("< %s\n\n", string(buffer[:n]))
+			}
+
+			// 清除读取超时，准备下一次交互
+			if err := conn.SetReadDeadline(time.Time{}); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: failed to clear read deadline: %v\n", err)
 			}
 		}
 	}

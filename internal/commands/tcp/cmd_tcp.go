@@ -63,14 +63,12 @@ type ScanStats struct {
 
 // ClientConfig TCP 客户端配置
 type ClientConfig struct {
-	Address     string
-	Message     string
-	Path        string
-	Interactive bool
-	Timeout     time.Duration
-	BufferSize  int
-	NoResponse  bool
-	Delimiter   string
+	Address    string
+	Message    string
+	Timeout    time.Duration
+	BufferSize int
+	NoResponse bool
+	Delimiter  string
 }
 
 // ServerConfig TCP 服务端配置
