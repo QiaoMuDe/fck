@@ -29,7 +29,7 @@ func init() {
 	jsonRaw = JsonCmd.Bool("raw", "r", "原始字符串输出 (不带引号)", false)
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:        "JSON 数据处理工具 - 格式化、验证、查询",
+		Desc:        "JSON 数据处理工具",
 		UseChinese:  true,
 		UsageSyntax: fmt.Sprintf("%s json [options] [file]", qflag.Root.Name()),
 		Notes: []string{

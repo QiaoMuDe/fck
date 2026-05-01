@@ -71,6 +71,7 @@ func InitAndRun() (err error) {
 			PingCmd,
 			DnsCmd,
 			TcpCmd,
+			CurlCmd,
 		},
 	}
 
