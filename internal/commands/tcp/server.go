@@ -168,7 +168,9 @@ func ServerCmdMain(config ServerConfig) error {
 		<-sigChan
 		fmt.Println("\nReceived shutdown signal, stopping server...")
 		cancel()
-		listener.Close()
+		if err := listener.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close listener: %v\n", err)
+		}
 	}()
 
 	// 接受连接循环
@@ -186,7 +188,10 @@ func ServerCmdMain(config ServerConfig) error {
 
 		// 设置接受超时，以便定期检查 ctx.Done()
 		if tcpListener, ok := listener.(*net.TCPListener); ok {
-			tcpListener.SetDeadline(time.Now().Add(1 * time.Second))
+			if err := tcpListener.SetDeadline(time.Now().Add(1 * time.Second)); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to set deadline: %v\n", err)
+				continue
+			}
 		}
 
 		conn, err := listener.Accept()
@@ -208,7 +213,9 @@ func ServerCmdMain(config ServerConfig) error {
 		select {
 		case sem <- struct{}{}:
 		case <-ctx.Done():
-			conn.Close()
+			if err := conn.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to close connection: %v\n", err)
+			}
 			return nil
 		}
 
@@ -254,13 +261,13 @@ func handleConnection(conn net.Conn, config ServerConfig) {
 			}
 			// 处理最后可能剩余的数据（没有换行符结尾）
 			if len(line) > 0 {
-				handleMessage(conn, line, config, logger)
+				handleMessage(conn, line, config, logger, startTime)
 			}
 			break
 		}
 
 		// 立即处理收到的消息并响应
-		handleMessage(conn, line, config, logger)
+		handleMessage(conn, line, config, logger, startTime)
 	}
 }
 
@@ -271,7 +278,8 @@ func handleConnection(conn net.Conn, config ServerConfig) {
 //   - data: 接收到的数据
 //   - config: 服务端配置
 //   - logger: 日志记录器
-func handleMessage(conn net.Conn, data string, config ServerConfig, logger *serverLogger) {
+//   - connStartTime: 连接开始时间
+func handleMessage(conn net.Conn, data string, config ServerConfig, logger *serverLogger, connStartTime time.Time) {
 	// 去除换行符
 	data = strings.TrimRight(data, "\r\n")
 
@@ -285,7 +293,7 @@ func handleMessage(conn net.Conn, data string, config ServerConfig, logger *serv
 
 	// 保存到文件（如果配置了输出目录）
 	if config.OutputDir != "" {
-		saveReceivedData(config.OutputDir, conn.RemoteAddr().String(), []byte(data))
+		saveReceivedData(config.OutputDir, conn.RemoteAddr().String(), data, connStartTime)
 	}
 
 	// 构建并发送响应
@@ -314,30 +322,43 @@ func handleMessage(conn net.Conn, data string, config ServerConfig, logger *serv
 	}
 }
 
-// saveReceivedData 保存接收到的数据
+// saveReceivedData 保存接收到的数据（所有连接每小时一个文件）
 //
 // 参数:
 //   - outputDir: 输出目录
 //   - clientAddr: 客户端地址
 //   - data: 接收到的数据
-func saveReceivedData(outputDir string, clientAddr string, data []byte) {
+//   - connStartTime: 连接开始时间（用于确定文件）
+func saveReceivedData(outputDir string, clientAddr string, data string, connStartTime time.Time) {
 	// 确保输出目录存在
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create output directory: %v\n", err)
 		return
 	}
 
-	// 生成文件名
-	timestamp := time.Now().Format("20060102_150405")
-	filename := fmt.Sprintf("%s_%s.txt", strings.ReplaceAll(clientAddr, ":", "_"), timestamp)
+	// 生成文件名：tcp_年月日小时.txt（所有连接共享）
+	hourTimestamp := connStartTime.Format("2006010215")
+	filename := fmt.Sprintf("tcp_%s.txt", hourTimestamp)
 	filePath := filepath.Join(outputDir, filename)
 
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to save received data: %v\n", err)
+	// 追加写入原始数据（带客户端地址前缀）
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to open file: %v\n", err)
 		return
 	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close file: %v\n", err)
+		}
+	}()
 
-	fmt.Printf("Saved received data to: %s\n", filePath)
+	// 写入数据：[客户端地址] 数据 + 换行符 + 空行
+	record := fmt.Sprintf("[%s] %s\n\n", clientAddr, data)
+	if _, err := file.WriteString(record); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to write to file: %v\n", err)
+		return
+	}
 }
 
 // formatResponse 格式化标准响应
@@ -354,5 +375,3 @@ func formatResponse(respType string, bytes int) string {
 	timestamp := time.Now().Format(timeFormat)
 	return fmt.Sprintf("[%s] [OK] [%s] Received %d bytes", timestamp, respType, bytes)
 }
-
-// formatErrorResponse 格式化错误响应

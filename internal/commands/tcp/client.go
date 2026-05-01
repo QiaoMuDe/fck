@@ -162,7 +162,7 @@ func sendInteractive(conn net.Conn, config ClientConfig) (*TransferStats, error)
 	fmt.Println("----------------------------------------")
 
 	for {
-		fmt.Print("> ")
+		fmt.Print("tcp> ")
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
@@ -206,7 +206,7 @@ func sendInteractive(conn net.Conn, config ClientConfig) (*TransferStats, error)
 				}
 			} else if n > 0 {
 				stats.BytesReceived += int64(n)
-				fmt.Printf("< %s\n\n", string(buffer[:n]))
+				fmt.Printf("└ %s\n\n", string(buffer[:n]))
 			}
 
 			// 清除读取超时，准备下一次交互
