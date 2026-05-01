@@ -69,6 +69,7 @@ type ClientConfig struct {
 	BufferSize int
 	NoResponse bool
 	Delimiter  string
+	Hex        bool // 发送十六进制数据
 }
 
 // ServerConfig TCP 服务端配置

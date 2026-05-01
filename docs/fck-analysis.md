@@ -28,7 +28,7 @@ fck/
 
 ---
 
-## 二、27个功能模块
+## 二、28个功能模块
 
 | 分类 | 模块 | 核心功能 | 关键依赖 |
 |------|------|----------|----------|
@@ -39,6 +39,7 @@ fck/
 | **系统信息** | size, date, pwd, home, df | 大小统计/时间/路径/磁盘空间 | 标准库 |
 | **工具** | echo, watch, xargs, alias | 输出/定时执行/批量处理/别名 | shellx, colorlib |
 | **文本处理** | awk, wc, head, tail, tr | 字段处理/字数统计/文件头尾查看/字符转换 | regexp, go-pretty |
+| **网络工具** | tcp | TCP客户端/服务端、端口扫描 | readline |
 | **开发辅助** | gm, test, md | Git管理/测试/Markdown预览 | glamour, oviewer |
 
 ---
@@ -71,6 +72,7 @@ Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
 | 分页器 | oviewer | v0.51.1 | 终端分页查看 |
 | 语法高亮 | chroma | v2.23.1 | 代码高亮 |
 | Markdown | glamour | - | Markdown渲染 |
+| 交互式终端 | readline | v1.5.1 | TCP客户端交互模式 |
 
 ---
 
@@ -145,12 +147,37 @@ Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
 - 静默模式 (`-s`)，便于脚本中使用
 - 跨平台支持（Windows/Unix）
 
+### tcp client 命令（交互模式增强）
+- 使用 readline 库实现交互式发送模式
+- 支持历史记录（上下箭头浏览，内存存储）
+- 内置命令系统（以 `/` 开头）
+- Tab 键自动补全
+- 内置命令：
+  - `/quit` `/q` - 退出交互模式
+  - `/history` `/h` - 显示历史记录
+  - `/clear` `/c` - 清屏
+  - `/info` `/i` - 显示连接信息和统计
+  - `/ping` - 发送测试消息并计算延迟
+  - `/help` `/?` - 显示帮助信息
+  - `/send <file>` - 发送文件内容
+  - `/hex <data>` - 发送十六进制数据
+  - `/interval <ms>` - 设置发送间隔
+  - `/repeat <n>` - 重复发送上一次内容（批量发送显示汇总）
+
+### tcp server 命令
+- 支持 Ctrl+C 优雅退出
+- 每小时一个文件保存接收数据（所有连接共享）
+- 文件格式：`tcp_YYYYMMDDHH.txt`
+- 内容格式：`[客户端地址] 数据`
+
 ---
 
 ## 六、更新日志
 
 | 日期 | 变更 |
 |------|------|
+| 2026-05-01 | TCP 客户端交互模式重构：使用 readline 库，添加内置命令系统 |
+| 2026-05-01 | TCP 服务端改进：优雅退出、每小时文件保存 |
 | 2026-04-23 | 新增 `which` 命令（命令查找，支持跨平台） |
 | 2026-04-21 | 新增 `tr` 命令（字符转换、删除、压缩） |
 | 2026-04-20 | 新增 `head` 命令（显示文件开头内容） |
@@ -165,4 +192,4 @@ Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
 
 ---
 
-**分析日期**: 2026-04-23 | **分析师**: Claude Code
+**分析日期**: 2026-05-01 | **分析师**: Claude Code

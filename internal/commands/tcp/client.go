@@ -1,10 +1,12 @@
 package tcp
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"gitee.com/MM-Q/fck/internal/utils"
@@ -65,8 +67,25 @@ func sendString(conn net.Conn, config ClientConfig) (*TransferStats, error) {
 	startTime := time.Now()
 	stats := &TransferStats{}
 
+	// 准备发送数据
+	var data []byte
+	var err error
+
+	if config.Hex {
+		// 十六进制模式：解码消息
+		hexStr := config.Message
+		hexStr = strings.ReplaceAll(hexStr, " ", "")
+		hexStr = strings.TrimPrefix(hexStr, "0x")
+		data, err = hex.DecodeString(hexStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid hex string: %w", err)
+		}
+	} else {
+		// 字符串模式：直接转换
+		data = []byte(config.Message)
+	}
+
 	// 发送数据
-	data := []byte(config.Message)
 	n, err := conn.Write(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message: %w", err)
