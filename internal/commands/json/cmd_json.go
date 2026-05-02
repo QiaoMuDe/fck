@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/fck/internal/utils"
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters"
@@ -311,12 +312,12 @@ func highlightAndPrint(content string) error {
 	}
 	lexer = chroma.Coalesce(lexer)
 
-	style := styles.Get("monokai")
+	style := styles.Get(types.HighlightStyleDefault)
 	if style == nil {
 		style = styles.Fallback
 	}
 
-	formatter := formatters.Get("terminal")
+	formatter := formatters.Get(types.HighlightFormatter256)
 	if formatter == nil {
 		formatter = formatters.Fallback
 	}

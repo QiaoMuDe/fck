@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"gitee.com/MM-Q/fck/internal/types"
 	"github.com/alecthomas/chroma/v2/formatters"
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
@@ -31,8 +32,8 @@ type HighlightConfig struct {
 func DefaultHighlightConfig() HighlightConfig {
 	return HighlightConfig{
 		Enabled:   true,
-		Style:     "monokai",
-		Formatter: "terminal256", // 使用 256 色，兼容性最好
+		Style:     types.HighlightStyleDefault,
+		Formatter: types.HighlightFormatter256,
 	}
 }
 

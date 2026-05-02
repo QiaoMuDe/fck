@@ -37,6 +37,16 @@ const (
 
 	// Sed 命令临时文件前缀模式
 	SedTempFilePattern = ".sed-*.tmp"
+
+	// 语法高亮相关常量
+	// HighlightFormatter256 256色格式化器 (兼容性最好)
+	HighlightFormatter256 = "terminal256"
+	// HighlightFormatter16m 真彩色格式化器 (最佳效果)
+	HighlightFormatter16m = "terminal16m"
+	// HighlightFormatter16 16色格式化器 (最低兼容)
+	HighlightFormatter16 = "terminal"
+	// HighlightStyleDefault 默认高亮主题
+	HighlightStyleDefault = "monokai"
 )
 
 // 虚拟哈希表条目
