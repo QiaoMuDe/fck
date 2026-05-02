@@ -26,6 +26,7 @@ var (
 	curlRetry    *qflag.IntFlag
 	curlPretty   *qflag.BoolFlag
 	curlColor    *qflag.BoolFlag
+	curlInsecure *qflag.BoolFlag
 )
 
 // requestMethods 支持的 HTTP 方法
@@ -49,6 +50,7 @@ func init() {
 	curlRetry = CurlCmd.Int("retry", "R", "失败重试次数", 0)
 	curlPretty = CurlCmd.Bool("pretty", "p", "格式化 JSON 输出", false)
 	curlColor = CurlCmd.Bool("color", "c", "启用彩色输出", false)
+	curlInsecure = CurlCmd.Bool("insecure", "k", "跳过 HTTPS 证书验证", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "HTTP 客户端工具",
@@ -110,6 +112,7 @@ func runCurl(cmd qflag.Command) error {
 		Retry:    curlRetry.Get(),
 		Pretty:   curlPretty.Get(),
 		Color:    curlColor.Get(),
+		Insecure: curlInsecure.Get(),
 	}
 
 	return curl.Execute(config)

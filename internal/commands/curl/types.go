@@ -22,6 +22,7 @@ type Config struct {
 	Retry    int           // 重试次数
 	Pretty   bool          // 格式化 JSON
 	Color    bool          // 彩色输出
+	Insecure bool          // 跳过 HTTPS 证书验证
 }
 
 // Response HTTP 响应信息

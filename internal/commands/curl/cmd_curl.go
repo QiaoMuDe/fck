@@ -3,6 +3,7 @@ package curl
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -30,7 +31,14 @@ func Execute(config Config) error {
 	}
 
 	// 创建 HTTP 客户端
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: config.Insecure,
+		},
+	}
+
 	client := &http.Client{
+		Transport: transport,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if !config.Location {
 				return http.ErrUseLastResponse
