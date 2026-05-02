@@ -56,7 +56,7 @@ func highlightHeaders(status string, headers http.Header, color bool) string {
 		buf.WriteString("\n")
 		for key, values := range headers {
 			for _, value := range values {
-				buf.WriteString(fmt.Sprintf("%s: %s\n", key, value))
+				fmt.Fprintf(&buf, "%s: %s\n", key, value)
 			}
 		}
 		return buf.String()
