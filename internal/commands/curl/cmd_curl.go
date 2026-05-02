@@ -245,7 +245,7 @@ func buildFormBody(forms []string) (io.Reader, string) {
 //   - error: 错误
 func outputResponse(resp *Response, config Config) error {
 	// 格式化输出
-	formatter := NewFormatter(config.Color, config.Pretty)
+	formatter := NewFormatter(config.Color)
 
 	// Head 模式：仅显示响应头
 	if config.Head {

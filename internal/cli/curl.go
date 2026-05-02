@@ -24,7 +24,6 @@ var (
 	curlLocation *qflag.BoolFlag
 	curlMaxTime  *qflag.DurationFlag
 	curlRetry    *qflag.IntFlag
-	curlPretty   *qflag.BoolFlag
 	curlColor    *qflag.BoolFlag
 	curlInsecure *qflag.BoolFlag
 )
@@ -48,7 +47,6 @@ func init() {
 	curlLocation = CurlCmd.Bool("location", "L", "跟随重定向", false)
 	curlMaxTime = CurlCmd.Duration("max-time", "m", "最大执行时间", 0)
 	curlRetry = CurlCmd.Int("retry", "R", "失败重试次数", 0)
-	curlPretty = CurlCmd.Bool("pretty", "p", "格式化 JSON 输出", false)
 	curlColor = CurlCmd.Bool("color", "c", "启用彩色输出", false)
 	curlInsecure = CurlCmd.Bool("insecure", "k", "跳过 HTTPS 证书验证", false)
 
@@ -71,7 +69,6 @@ func init() {
 			"完整详情":      fmt.Sprintf("%s curl -v https://api.example.com/users", qflag.Root.Name()),
 			"Basic 认证":  fmt.Sprintf("%s curl -u admin:password https://api.example.com/admin", qflag.Root.Name()),
 			"跟随重定向":     fmt.Sprintf("%s curl -L https://bit.ly/xxx", qflag.Root.Name()),
-			"格式化 JSON":  fmt.Sprintf("%s curl -p https://api.example.com/users", qflag.Root.Name()),
 		},
 	}
 
@@ -110,7 +107,6 @@ func runCurl(cmd qflag.Command) error {
 		Location: curlLocation.Get(),
 		MaxTime:  curlMaxTime.Get(),
 		Retry:    curlRetry.Get(),
-		Pretty:   curlPretty.Get(),
 		Color:    curlColor.Get(),
 		Insecure: curlInsecure.Get(),
 	}

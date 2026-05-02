@@ -7,22 +7,19 @@ import (
 
 // Formatter 响应格式化器
 type Formatter struct {
-	color  bool
-	pretty bool
+	color bool
 }
 
 // NewFormatter 创建格式化器
 //
 // 参数:
 //   - color: 是否启用彩色输出
-//   - pretty: 是否格式化 JSON
 //
 // 返回值:
 //   - *Formatter: 格式化器实例
-func NewFormatter(color, pretty bool) *Formatter {
+func NewFormatter(color bool) *Formatter {
 	return &Formatter{
-		color:  color,
-		pretty: pretty,
+		color: color,
 	}
 }
 
