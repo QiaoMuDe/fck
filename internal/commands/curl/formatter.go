@@ -1,11 +1,8 @@
 package curl
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
+	"net/http"
 )
 
 // Formatter 响应格式化器
@@ -34,30 +31,15 @@ func NewFormatter(color, pretty bool) *Formatter {
 // 参数:
 //   - resp: 响应对象
 func (f *Formatter) PrintVerbose(resp *Response) {
-	// 状态行
-	if f.color {
-		fmt.Printf("\033[36m< %s\033[0m\n", resp.Status)
-	} else {
-		fmt.Printf("< %s\n", resp.Status)
-	}
-
-	// 响应头
-	for key, values := range resp.Headers {
-		for _, value := range values {
-			if f.color {
-				fmt.Printf("\033[33m< %s:\033[0m %s\n", key, value)
-			} else {
-				fmt.Printf("< %s: %s\n", key, value)
-			}
-		}
-	}
+	// 状态行和响应头
+	fmt.Print(highlightHeaders(resp.Status, resp.Headers, f.color))
 	fmt.Println()
 
 	// 响应体
-	f.printBodyContent(resp.Body)
+	f.PrintBody(resp)
 
 	// 统计信息
-	fmt.Printf("\nTime: %v\n", resp.Time)
+	fmt.Printf("Time: %v\n", resp.Time)
 	fmt.Printf("Size: %d bytes\n", len(resp.Body))
 }
 
@@ -66,21 +48,7 @@ func (f *Formatter) PrintVerbose(resp *Response) {
 // 参数:
 //   - resp: 响应对象
 func (f *Formatter) PrintHeaders(resp *Response) {
-	if f.color {
-		fmt.Printf("\033[36m%s\033[0m\n", resp.Status)
-	} else {
-		fmt.Println(resp.Status)
-	}
-
-	for key, values := range resp.Headers {
-		for _, value := range values {
-			if f.color {
-				fmt.Printf("\033[33m%s:\033[0m %s\n", key, value)
-			} else {
-				fmt.Printf("%s: %s\n", key, value)
-			}
-		}
-	}
+	fmt.Print(highlightHeaders(resp.Status, resp.Headers, f.color))
 	fmt.Println()
 }
 
@@ -89,116 +57,16 @@ func (f *Formatter) PrintHeaders(resp *Response) {
 // 参数:
 //   - resp: 响应对象
 func (f *Formatter) PrintBody(resp *Response) {
-	f.printBodyContent(resp.Body)
-}
-
-// printBodyContent 打印响应体内容
-//
-// 参数:
-//   - body: 响应体字节
-func (f *Formatter) printBodyContent(body []byte) {
-	if len(body) == 0 {
+	if len(resp.Body) == 0 {
 		return
 	}
 
-	// 尝试格式化 JSON
-	if f.pretty && f.isJSON(body) {
-		var buf bytes.Buffer
-		if err := json.Indent(&buf, body, "", "  "); err == nil {
-			if f.color {
-				f.printColoredJSON(buf.Bytes())
-			} else {
-				fmt.Println(buf.String())
-			}
-			return
-		}
-	}
+	// 获取 Content-Type
+	contentType := resp.Headers.Get("Content-Type")
 
-	// 普通文本输出
-	fmt.Println(string(body))
-}
-
-// isJSON 检查是否为 JSON
-//
-// 参数:
-//   - data: 数据
-//
-// 返回值:
-//   - bool: 是否为 JSON
-func (f *Formatter) isJSON(data []byte) bool {
-	data = bytes.TrimSpace(data)
-	return len(data) > 0 && (data[0] == '{' || data[0] == '[')
-}
-
-// printColoredJSON 打印彩色 JSON
-//
-// 参数:
-//   - data: JSON 数据
-func (f *Formatter) printColoredJSON(data []byte) {
-	// 简单的 JSON 语法高亮
-	str := string(data)
-	var result strings.Builder
-
-	inString := false
-	escape := false
-
-	for i := 0; i < len(str); i++ {
-		ch := str[i]
-
-		if escape {
-			result.WriteByte(ch)
-			escape = false
-			continue
-		}
-
-		if ch == '\\' && inString {
-			escape = true
-			result.WriteByte(ch)
-			continue
-		}
-
-		if ch == '"' {
-			inString = !inString
-			if inString {
-				result.WriteString("\033[32m\"")
-			} else {
-				result.WriteString("\"\033[0m")
-			}
-			continue
-		}
-
-		if inString {
-			result.WriteByte(ch)
-			continue
-		}
-
-		// 关键字和符号着色
-		switch ch {
-		case '{', '}', '[', ']':
-			result.WriteString(fmt.Sprintf("\033[33m%c\033[0m", ch))
-		case ':':
-			result.WriteString("\033[37m:\033[0m")
-		case ',':
-			result.WriteString("\033[37m,\033[0m")
-		case 't', 'f', 'n': // true, false, null
-			if i+4 <= len(str) && str[i:i+4] == "true" {
-				result.WriteString("\033[36mtrue\033[0m")
-				i += 3
-			} else if i+5 <= len(str) && str[i:i+5] == "false" {
-				result.WriteString("\033[36mfalse\033[0m")
-				i += 4
-			} else if i+4 <= len(str) && str[i:i+4] == "null" {
-				result.WriteString("\033[36mnull\033[0m")
-				i += 3
-			} else {
-				result.WriteByte(ch)
-			}
-		default:
-			result.WriteByte(ch)
-		}
-	}
-
-	fmt.Println(result.String())
+	// 使用 chroma 高亮
+	highlighted := highlightBody(resp.Body, contentType, f.color)
+	fmt.Println(highlighted)
 }
 
 // PrintError 打印错误
@@ -207,8 +75,55 @@ func (f *Formatter) printColoredJSON(data []byte) {
 //   - err: 错误
 func (f *Formatter) PrintError(err error) {
 	if f.color {
-		fmt.Fprintf(os.Stderr, "\033[31mError: %v\033[0m\n", err)
+		fmt.Printf("%sError: %v%s\n", colorRed, err, colorReset)
 	} else {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Printf("Error: %v\n", err)
 	}
+}
+
+// PrintResponse 打印完整响应（带高亮）
+//
+// 参数:
+//   - resp: 响应对象
+//   - includeHeaders: 是否包含响应头
+//   - headOnly: 是否仅显示响应头
+func (f *Formatter) PrintResponse(resp *Response, includeHeaders, headOnly bool) {
+	// 打印响应头
+	if includeHeaders || headOnly {
+		fmt.Print(highlightHeaders(resp.Status, resp.Headers, f.color))
+		if headOnly {
+			return
+		}
+		fmt.Println()
+	}
+
+	// 打印响应体
+	if len(resp.Body) > 0 {
+		contentType := resp.Headers.Get("Content-Type")
+		highlighted := highlightBody(resp.Body, contentType, f.color)
+		fmt.Println(highlighted)
+	}
+}
+
+// PrintHighlightedHeaders 打印高亮响应头（兼容旧代码）
+//
+// 参数:
+//   - status: 状态行
+//   - headers: 响应头
+func (f *Formatter) PrintHighlightedHeaders(status string, headers http.Header) {
+	fmt.Print(highlightHeaders(status, headers, f.color))
+	fmt.Println()
+}
+
+// PrintHighlightedBody 打印高亮响应体（兼容旧代码）
+//
+// 参数:
+//   - body: 响应体
+//   - contentType: Content-Type
+func (f *Formatter) PrintHighlightedBody(body []byte, contentType string) {
+	if len(body) == 0 {
+		return
+	}
+	highlighted := highlightBody(body, contentType, f.color)
+	fmt.Println(highlighted)
 }

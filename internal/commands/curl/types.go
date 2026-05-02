@@ -1,6 +1,7 @@
 package curl
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -27,10 +28,10 @@ type Config struct {
 
 // Response HTTP 响应信息
 type Response struct {
-	StatusCode    int
-	Status        string
-	Headers       map[string][]string
-	Body          []byte
-	ContentLength int64
-	Time          time.Duration
+	StatusCode    int           // 状态码
+	Status        string        // 状态行
+	Headers       http.Header   // 响应头
+	Body          []byte        // 响应体
+	ContentLength int64         // 内容长度
+	Time          time.Duration // 响应时间
 }
