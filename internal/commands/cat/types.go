@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/fs"
 	goKitUtils "gitee.com/MM-Q/go-kit/utils"
 )
 
@@ -89,7 +89,7 @@ func (f *FileSource) IsBinary() (bool, error) {
 	defer func() {
 		_ = file.Close()
 	}()
-	return utils.IsBinaryFile(file)
+	return fs.IsBinaryFile(file)
 }
 
 // StdinSource 管道内容源

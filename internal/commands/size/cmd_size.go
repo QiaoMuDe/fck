@@ -12,6 +12,7 @@ import (
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/fck/internal/utils"
+	gfs "gitee.com/MM-Q/go-kit/fs"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/schollz/progressbar/v3"
@@ -83,7 +84,7 @@ func expandPath(path string) ([]string, error) {
 }
 
 func addPathToList(path string, itemList *items, cl *colorlib.ColorLib, config SizeConfig) {
-	if !config.Hidden && utils.IsHidden(path) {
+	if !config.Hidden && gfs.IsHidden(path) {
 		return
 	}
 
@@ -108,7 +109,7 @@ func addPathToList(path string, itemList *items, cl *colorlib.ColorLib, config S
 
 func getPathSize(path string, config SizeConfig) (int64, error) {
 	includeHidden := config.Hidden
-	if !includeHidden && utils.IsHidden(path) {
+	if !includeHidden && gfs.IsHidden(path) {
 		return 0, nil
 	}
 
@@ -160,7 +161,7 @@ func getPathSize(path string, config SizeConfig) (int64, error) {
 			return nil
 		}
 
-		if !includeHidden && utils.IsHidden(filePath) {
+		if !includeHidden && gfs.IsHidden(filePath) {
 			return nil
 		}
 

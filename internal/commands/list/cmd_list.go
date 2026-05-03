@@ -12,7 +12,7 @@ import (
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/fs"
 )
 
 // 定义匹配通配符的模式
@@ -127,7 +127,7 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 			}
 
 			for _, match := range matches {
-				if config.All || !utils.IsHidden(match) {
+				if config.All || !fs.IsHidden(match) {
 					expandedPaths = append(expandedPaths, match)
 				}
 			}
@@ -144,7 +144,7 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 			continue
 		}
 
-		if config.All || !utils.IsHidden(path) {
+		if config.All || !fs.IsHidden(path) {
 			expandedPaths = append(expandedPaths, path)
 		}
 	}

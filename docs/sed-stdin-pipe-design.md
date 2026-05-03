@@ -34,11 +34,11 @@ echo "hello world" | sed 's/hello/hi/'
 
 ### 1. 检测管道输入
 
-使用 `utils.IsStdinPipe()` 检测 stdin 是否为管道/重定向：
+使用 `term.IsStdinPipe()` 检测 stdin 是否为管道/重定向：
 
 ```go
 // 在 CLI 层检测
-isPipe := utils.IsStdinPipe()
+isPipe := term.IsStdinPipe()
 ```
 
 ### 2. 修改 CLI 层 (`internal/cli/sed.go`)
@@ -50,7 +50,7 @@ func runSed(cmd qflag.Command) error {
     args := cmd.Args()
     
     // 检测是否为管道输入
-    isPipe := utils.IsStdinPipe()
+    isPipe := term.IsStdinPipe()
     
     // 检查参数：非管道模式下需要文件参数
     if len(args) < 1 && !isPipe {

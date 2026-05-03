@@ -65,7 +65,7 @@ func processFile(config *SedConfig) error {
     defer func() { _ = file.Close() }()
     
     // 检测二进制文件
-    isBinary, err := utils.IsBinaryFile(file)
+    isBinary, err := fs.IsBinaryFile(file)
     if err != nil {
         return fmt.Errorf("failed to detect file type: %w", err)
     }
@@ -101,7 +101,7 @@ func processFileInPlace(config *SedConfig) (err error) {
     }
     
     // 检测二进制文件
-    isBinary, err := utils.IsBinaryFile(sourceFile)
+    isBinary, err := fs.IsBinaryFile(sourceFile)
     if err != nil {
         _ = sourceFile.Close()
         return fmt.Errorf("failed to detect file type: %w", err)
@@ -174,7 +174,7 @@ for _, target := range targets {
 3. **添加二进制文件检测** (`internal/commands/sed/cmd_sed.go`)
    - 在 `processFile` 中添加检测逻辑
    - 在 `processFileInPlace` 中添加检测逻辑
-   - 使用 `utils.IsBinaryFile()` 进行检测
+   - 使用 `fs.IsBinaryFile()` 进行检测
 
 4. **测试验证**
    - 测试二进制文件默认跳过

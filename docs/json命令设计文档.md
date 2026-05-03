@@ -142,7 +142,7 @@ func JsonCmdMain(config JsonConfig) error {
 // readInput 读取输入数据
 //
 // 输入方式:
-//   1. 管道/重定向输入 (使用 utils.IsStdinPipe() 检测) - 传递JSON字符串
+//   1. 管道/重定向输入 (使用 term.IsStdinPipe() 检测) - 传递JSON字符串
 //   2. 位置参数 - 指定文件路径，读取文件内容
 //
 // 参数:

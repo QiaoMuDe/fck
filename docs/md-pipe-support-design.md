@@ -83,7 +83,7 @@ func runMd(cmd qflag.Command) error {
     args := cmd.Args()
     
     // 检测管道输入
-    isPipe := utils.IsStdinPipe()
+    isPipe := term.IsStdinPipe()
     
     if isPipe {
         if len(args) > 0 {
@@ -261,7 +261,7 @@ fck md
 
 - **向后兼容**：现有文件模式完全不受影响
 - **Unix 惯例**：符合 `cat`, `less`, `grep` 等工具的管道处理习惯
-- **Windows 支持**：`utils.IsStdinPipe()` 已考虑跨平台兼容性
+- **Windows 支持**：`term.IsStdinPipe()` 已考虑跨平台兼容性
 
 ## 八、预估代码量
 

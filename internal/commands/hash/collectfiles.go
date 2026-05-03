@@ -10,8 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	gfs "gitee.com/MM-Q/go-kit/fs"
+
 	"gitee.com/MM-Q/colorlib"
-	"gitee.com/MM-Q/fck/internal/utils"
 )
 
 // collectFiles 函数用于收集指定路径下的所有文件
@@ -134,12 +135,23 @@ func handleDirectory(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 //   - bool: 如果应该跳过隐藏项，则返回true；否则返回false
 var hiddenFlag bool
 
+// setHiddenFlag 设置隐藏标志
+//
+// 参数:
+//   - hidden: 是否隐藏文件/目录
 func setHiddenFlag(hidden bool) {
 	hiddenFlag = hidden
 }
 
+// shouldSkipHidden 检查是否应该跳过隐藏文件/目录
+//
+// 参数:
+//   - path: 要检查的路径
+//
+// 返回:
+//   - bool: 如果应该跳过隐藏项，则返回true；否则返回false
 func shouldSkipHidden(path string) bool {
-	return !hiddenFlag && utils.IsHidden(path)
+	return !hiddenFlag && gfs.IsHidden(path)
 }
 
 // wrapStatError 统一处理 os.Stat 错误

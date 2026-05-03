@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/fck/internal/types"
-	"gitee.com/MM-Q/fck/internal/utils"
 	"gitee.com/MM-Q/go-kit/fs"
 )
 
@@ -284,7 +283,7 @@ func processFilePreview(config *SedConfig) error {
 	defer func() { _ = file.Close() }()
 
 	// 检测二进制文件
-	isBinary, err := utils.IsBinaryFile(file)
+	isBinary, err := fs.IsBinaryFile(file)
 	if err != nil {
 		return fmt.Errorf("failed to detect file type: %w", err)
 	}
@@ -323,7 +322,7 @@ func processFileInPlace(config *SedConfig) (err error) {
 	}
 
 	// 检测二进制文件（在创建备份之前）
-	isBinary, err := utils.IsBinaryFile(sourceFile)
+	isBinary, err := fs.IsBinaryFile(sourceFile)
 	if err != nil {
 		_ = sourceFile.Close()
 		return fmt.Errorf("failed to detect file type: %w", err)

@@ -12,6 +12,7 @@ import (
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 )
@@ -148,7 +149,7 @@ func (f *FileFormatter) renderGrid(files FileInfoList, opts FormatOptions) error
 	}
 
 	// 获取终端宽度
-	width := utils.GetSafeTerminalWidth()
+	width := term.GetSafeTerminalWidth()
 
 	// 准备文件名列表
 	fileNames := f.prepareFileNames(files, opts)

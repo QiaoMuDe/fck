@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 )
 
 // AwkCmdMain 执行 awk 命令
@@ -32,7 +32,7 @@ func AwkCmdMain(config AwkConfig) error {
 	}
 
 	// 优先判断管道输入（管道输入覆盖文件参数）
-	if utils.IsStdinPipe() {
+	if term.IsStdinPipe() {
 		return processInput(os.Stdin, config, re)
 	}
 

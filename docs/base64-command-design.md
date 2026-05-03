@@ -86,7 +86,7 @@ echo "aGVsbG8=" | fck base64 -d
 
 ### 3. 输入优先级
 
-1. 标准输入（管道/重定向）- 使用 `utils.IsStdinPipe()` 检测
+1. 标准输入（管道/重定向）- 使用 `term.IsStdinPipe()` 检测
 2. 文件输入（`-f`）
 3. 位置参数字符串
 
@@ -107,7 +107,7 @@ echo "aGVsbG8=" | fck base64 -d
 ```go
 func readInput(config Base64Config) ([]byte, error) {
 	// 1. 优先检测管道/重定向输入
-	if utils.IsStdinPipe() {
+	if term.IsStdinPipe() {
 		return io.ReadAll(os.Stdin)
 	}
 	

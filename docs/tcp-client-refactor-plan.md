@@ -41,7 +41,7 @@ internal/cli/tcp/
 ### 核心变更点
 
 1. **移除 `-p, --path` 标志** 及所有相关逻辑
-2. **新增管道自动检测**：利用 `utils.IsStdinPipe()` 优先处理管道输入
+2. **新增管道自动检测**：利用 `term.IsStdinPipe()` 优先处理管道输入
 3. **简化模式判断逻辑**：管道 > 字符串 > 交互式
 4. **更新文档和示例**：反映新的使用方式
 
@@ -89,7 +89,7 @@ func ClientCmdMain(config ClientConfig) error {
     // 2. 优先级判断发送模式
     var stats *TransferStats
     switch {
-    case utils.IsStdinPipe():           // 优先级1: 管道输入
+    case term.IsStdinPipe():           // 优先级1: 管道输入
         stats, err = sendStdin(conn, config)
     case config.Message != "":          // 优先级2: 指定消息
         stats, err = sendString(conn, config)

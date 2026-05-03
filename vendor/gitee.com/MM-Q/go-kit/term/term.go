@@ -54,12 +54,30 @@ func IsStdinPipe() bool {
 //	    // 处理交互式输入
 //	}
 func IsStdinPipeWithError() (bool, error) {
+	// 首先使用 term.IsTerminal 进行精确判断
+	// IsTerminal 返回 true 表示是终端, false 表示不是终端
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		return false, nil // 是终端，不是管道
+	}
+
+	// 如果不是终端，再获取文件信息确认, 确认是否为管道或文件重定向
 	info, err := os.Stdin.Stat()
 	if err != nil {
-		return false, err
+		return false, err // 获取文件信息时出错, 认为是终端输入
 	}
-	// 检查是否为命名管道或常规文件（重定向）
-	isPipe := info.Mode()&os.ModeNamedPipe != 0 || info.Mode().IsRegular()
+
+	// 获取文件模式
+	mode := info.Mode()
+
+	// 判断 stdin 是否为"非终端"输入 (即管道、文件重定向或 socket)
+	//
+	// 检测逻辑:
+	//   - ModeNamedPipe: 命名管道，如 `echo "data" | myprogram`
+	//   - IsRegular():   常规文件，如 `myprogram < input.txt`
+	//   - ModeSocket:    Unix socket, 如 systemd socket 激活、Docker 等场景
+	//
+	// 如果以上都不是，则认为是终端输入（交互式）
+	isPipe := mode&os.ModeNamedPipe != 0 || mode.IsRegular() || mode&os.ModeSocket != 0
 	return isPipe, nil
 }
 

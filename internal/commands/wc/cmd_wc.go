@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 
 	"gitee.com/MM-Q/fck/internal/types"
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 	"github.com/jedib0t/go-pretty/v6/table"
 )
 
@@ -40,7 +40,7 @@ func WcCmdMain(config WcConfig) error {
 	}
 
 	// 优先判断管道输入
-	if utils.IsStdinPipe() {
+	if term.IsStdinPipe() {
 		stats, err := countStats(os.Stdin, "-")
 		if err != nil {
 			return fmt.Errorf("failed to count stdin: %w", err)

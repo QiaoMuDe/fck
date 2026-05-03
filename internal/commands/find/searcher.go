@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/fck/internal/types"
-	"gitee.com/MM-Q/fck/internal/utils"
+	gfs "gitee.com/MM-Q/go-kit/fs"
 )
 
 // FileSearcher 负责核心搜索逻辑
@@ -124,7 +124,7 @@ func (s *FileSearcher) processEntry(entry os.DirEntry, path string) error {
 //   - error: 筛选错误（如果有）
 func (s *FileSearcher) applyFilters(entry os.DirEntry, path string) error {
 	// 默认隐藏文件或隐藏目录不参与匹配
-	if !s.config.Hidden && utils.IsHidden(path) {
+	if !s.config.Hidden && gfs.IsHidden(path) {
 		if entry.IsDir() {
 			return filepath.SkipDir
 		}
@@ -250,10 +250,10 @@ func (s *FileSearcher) matchType(entry os.DirEntry, path, entryExt string, cache
 		return entry.Type()&os.ModeSymlink != 0
 
 	case types.FindTypeHidden, types.FindTypeHiddenShort:
-		return utils.IsHidden(path)
+		return gfs.IsHidden(path)
 
 	case types.FindTypeReadonly, types.FindTypeReadonlyShort:
-		return utils.IsReadOnly(path)
+		return gfs.IsReadOnly(path)
 
 	case types.FindTypeEmpty, types.FindTypeEmptyShort:
 		if entry.IsDir() {

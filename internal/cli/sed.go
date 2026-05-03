@@ -7,7 +7,7 @@ import (
 
 	"gitee.com/MM-Q/fck/internal/commands/sed"
 	"gitee.com/MM-Q/fck/internal/types"
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -96,7 +96,7 @@ func runSed(cmd qflag.Command) error {
 	}
 
 	// 检测是否为管道输入
-	isPipe := utils.IsStdinPipe()
+	isPipe := term.IsStdinPipe()
 
 	// === 管道输入模式 ===
 	if isPipe {

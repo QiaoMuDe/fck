@@ -221,5 +221,5 @@ find . -name "*.go" | fck wc -l
 - 遵循 `qflag` 命令开发规范
 - 错误信息使用英文
 - 注释使用中文
-- 支持 `utils.IsStdinPipe()` 检测管道输入
+- 支持 `term.IsStdinPipe()` 检测管道输入
 - 使用 `filepath.Glob()` 展开通配符

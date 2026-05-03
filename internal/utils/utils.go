@@ -12,8 +12,6 @@ import (
 
 	"gitee.com/MM-Q/colorlib"
 	"gitee.com/MM-Q/fck/internal/types"
-	"gitee.com/MM-Q/go-kit/fs"
-	"gitee.com/MM-Q/go-kit/term"
 )
 
 // 定义需要跳过的系统文件和特殊目录
@@ -216,38 +214,4 @@ func SprintStringColor(p string, s string, cl *colorlib.ColorLib) string {
 		// 其他类型文件 - 使用白色输出
 		return cl.Swhite(s)
 	}
-}
-
-// IsStdinPipe 检查标准输入是否为管道/重定向（而非终端）
-//
-// 返回:
-//   - bool: true 表示 stdin 是管道或文件重定向, false 表示是终端输入
-func IsStdinPipe() bool {
-	return term.IsStdinPipe()
-}
-
-// IsBinaryFile 检测文件是否为二进制文件
-//
-// 原理：读取文件前 8000 字节，检查是否包含空字符(\0)
-//
-// 注意：
-//   - 只支持普通文件, stdin/pipe 默认返回 false (视为文本)
-//   - 检测后会重置文件指针到开头
-//
-// 参数:
-//   - file: 已打开的文件句柄
-//
-// 返回:
-//   - bool: true 表示二进制文件, false 表示文本文件或无法检测
-//   - error: 读取或重置指针错误
-func IsBinaryFile(file *os.File) (bool, error) {
-	return fs.IsBinaryFile(file)
-}
-
-// GetSafeTerminalWidth 安全获取终端宽度
-//
-// 返回:
-//   - int: 终端宽度
-func GetSafeTerminalWidth() int {
-	return term.GetSafeTerminalWidth()
 }

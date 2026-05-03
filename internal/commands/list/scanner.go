@@ -12,6 +12,7 @@ import (
 
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/fs"
 )
 
 // FileScanner 文件扫描器
@@ -303,12 +304,12 @@ func (s *FileScanner) shouldSkipFile(path string, isDir bool, fileInfo os.FileIn
 	hasHiddenFilter := opts.FileType == types.FindTypeHiddenShort || opts.FileType == types.FindTypeHidden
 
 	// 隐藏文件检查（如果指定了只显示隐藏文件，则不跳过隐藏文件；主路径也不跳过）
-	if !opts.ShowHidden && !hasHiddenFilter && utils.IsHidden(path) {
+	if !opts.ShowHidden && !hasHiddenFilter && fs.IsHidden(path) {
 		return true
 	}
 
 	// 如果指定了只显示隐藏文件，但当前路径不是隐藏的，则跳过（主路径除外）
-	if hasHiddenFilter && !isMain && !utils.IsHidden(path) {
+	if hasHiddenFilter && !isMain && !fs.IsHidden(path) {
 		return true
 	}
 
@@ -328,7 +329,7 @@ func (s *FileScanner) shouldSkipFile(path string, isDir bool, fileInfo os.FileIn
 				return true
 			}
 		case types.FindTypeReadonly, types.FindTypeReadonlyShort:
-			if !utils.IsReadOnly(path) {
+			if !fs.IsReadOnly(path) {
 				return true
 			}
 		}
@@ -346,7 +347,7 @@ func (s *FileScanner) shouldSkipFile(path string, isDir bool, fileInfo os.FileIn
 //   - bool: 路径本身或其任何父目录是否是隐藏的
 func (s *FileScanner) isPathUnderHiddenDir(path string) bool {
 	// 检查路径本身是否隐藏
-	if utils.IsHidden(path) {
+	if fs.IsHidden(path) {
 		return true
 	}
 
@@ -354,7 +355,7 @@ func (s *FileScanner) isPathUnderHiddenDir(path string) bool {
 	dir := filepath.Dir(path)
 	prevDir := ""
 	for dir != "." && dir != string(filepath.Separator) && dir != "" && dir != prevDir {
-		if utils.IsHidden(dir) {
+		if fs.IsHidden(dir) {
 			return true
 		}
 		prevDir = dir
@@ -402,7 +403,7 @@ func (s *FileScanner) buildFileInfoWithOriginal(fileInfo os.FileInfo, absPath st
 	}
 
 	// 获取文件所有者信息
-	owner, group := utils.GetFileOwner(absPath)
+	owner, group := fs.GetFileOwner(absPath)
 
 	return FileInfo{
 		EntryType:      entryType,                       // 文件类型

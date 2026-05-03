@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 )
 
 // Base64Config 配置结构体
@@ -124,7 +124,7 @@ func decode(config Base64Config) error {
 //   - error: 读取错误
 func readInput(config Base64Config) ([]byte, error) {
 	// 1. 优先检测管道/重定向输入
-	if utils.IsStdinPipe() {
+	if term.IsStdinPipe() {
 		return io.ReadAll(os.Stdin)
 	}
 

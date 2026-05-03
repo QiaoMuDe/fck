@@ -224,7 +224,7 @@ func processFile(path string, config *CatConfig) error {
 
     // 二进制文件检测（除非强制文本模式）
     if !config.Text {
-        isBinary, err := utils.IsBinaryFile(file)
+        isBinary, err := fs.IsBinaryFile(file)
         if err != nil {
             // 检测失败，非静默模式下输出警告
             if !config.Quiet {
@@ -288,7 +288,7 @@ func processFile(path string, config *CatConfig) error {
 
 ```go
 // 检测失败时的处理
-isBinary, err := utils.IsBinaryFile(file)
+isBinary, err := fs.IsBinaryFile(file)
 if err != nil {
     if !config.Quiet {
         // 输出警告但继续处理

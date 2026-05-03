@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 )
 
 // ClientCmdMain TCP 客户端主入口
@@ -35,7 +35,7 @@ func ClientCmdMain(config ClientConfig) error {
 	// 根据模式执行发送（优先级：管道 > 字符串 > 交互式）
 	var stats *TransferStats
 	switch {
-	case utils.IsStdinPipe():
+	case term.IsStdinPipe():
 		stats, err = sendStdin(conn, config)
 
 	case config.Message != "":

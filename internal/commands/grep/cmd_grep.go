@@ -10,7 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/fs"
+	"gitee.com/MM-Q/go-kit/term"
 )
 
 // 颜色常量
@@ -100,7 +101,7 @@ func GrepCmdMain(config GrepConfig) error {
 	// 情况1: 未指定目标文件（从 stdin 读取）
 	if config.Target == "" {
 		// 递归标志与管道输入冲突时，优先处理管道
-		if (config.Recursive || config.FollowSymlink) && utils.IsStdinPipe() {
+		if (config.Recursive || config.FollowSymlink) && term.IsStdinPipe() {
 			if !config.NoMessages {
 				fmt.Fprintln(os.Stderr, "-r/-R flags ignored when reading from stdin")
 			}
@@ -243,7 +244,7 @@ func compilePattern(config *GrepConfig) error {
 //   - skip: true 表示应跳过此文件, false 表示继续处理
 //   - err: 检测错误 (非静默模式下)
 func handleBinaryFile(file *os.File, path string, config *GrepConfig) (skip bool, err error) {
-	isBinary, err := utils.IsBinaryFile(file)
+	isBinary, err := fs.IsBinaryFile(file)
 	if err != nil {
 		if config.NoMessages {
 			return true, nil // 静默模式下跳过错误文件

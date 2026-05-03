@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 )
 
 // TailConfig tail 命令配置
@@ -49,7 +49,7 @@ func TailCmdMain(config TailConfig) error {
 	}
 
 	// 优先处理管道输入
-	if utils.IsStdinPipe() {
+	if term.IsStdinPipe() {
 		return tailStdin(config, os.Stdin)
 	}
 

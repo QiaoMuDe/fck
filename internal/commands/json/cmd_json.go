@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/fck/internal/types"
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters"
 	"github.com/alecthomas/chroma/v2/lexers"
@@ -84,7 +84,7 @@ func JsonCmdMain(config JsonConfig) error {
 // readInput 读取输入数据
 //
 // 输入方式:
-//  1. 管道/重定向输入 (使用 utils.IsStdinPipe() 检测) - 传递JSON字符串
+//  1. 管道/重定向输入 (使用 term.IsStdinPipe() 检测) - 传递JSON字符串
 //  2. 位置参数 - 指定文件路径，读取文件内容
 //
 // 参数:
@@ -95,7 +95,7 @@ func JsonCmdMain(config JsonConfig) error {
 //   - error: 读取错误
 func readInput(config JsonConfig) ([]byte, error) {
 	// 1. 优先检测管道/重定向输入
-	if utils.IsStdinPipe() {
+	if term.IsStdinPipe() {
 		return readAllStdin()
 	}
 

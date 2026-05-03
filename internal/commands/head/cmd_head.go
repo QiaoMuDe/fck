@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"gitee.com/MM-Q/fck/internal/utils"
+	"gitee.com/MM-Q/go-kit/term"
 )
 
 // HeadConfig head 命令配置
@@ -33,7 +33,7 @@ func HeadCmdMain(config HeadConfig) error {
 	}
 
 	// 优先处理管道输入
-	if utils.IsStdinPipe() {
+	if term.IsStdinPipe() {
 		return headStdin(config, os.Stdin)
 	}
 
