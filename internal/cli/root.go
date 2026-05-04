@@ -57,7 +57,6 @@ func InitAndRun() (err error) {
 			WcCmd,
 			TrCmd,
 			XargsCmd,
-			AliasCmd,
 			MdCmd,
 			WatchCmd,
 			PortCmd,

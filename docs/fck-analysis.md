@@ -10,7 +10,7 @@
 fck/
 ├── cmd/main.go              # 程序入口
 ├── internal/
-│   ├── cli/                 # 46个命令的 flag 定义
+│   ├── cli/                 # 45个命令的 flag 定义
 │   ├── commands/            # 业务逻辑（按功能分包）
 │   ├── types/               # 全局类型和常量（已拆分）
 │   └── utils/               # 通用工具
@@ -28,7 +28,7 @@ fck/
 
 ---
 
-## 二、46个功能模块
+## 二、45个功能模块
 
 | 分类 | 模块 | 核心功能 | 关键依赖 |
 |------|------|----------|----------|
@@ -37,7 +37,7 @@ fck/
 | **压缩解压** | pack, unpack, preview | 打包/解压/预览 | comprx |
 | **哈希校验** | hash, check | 哈希计算/完整性校验 | go-kit/hash |
 | **系统信息** | size, date, pwd, home, df, proc | 大小统计/时间/路径/磁盘空间/进程 | 标准库, gopsutil |
-| **工具** | echo, watch, xargs, alias, tee, seq | 输出/定时执行/批量处理/别名/分流/序列 | shellx, color |
+| **工具** | echo, watch, xargs, tee, seq | 输出/定时执行/批量处理/分流/序列 | shellx, color |
 | **文本处理** | awk, wc, head, tail, tr | 字段处理/字数统计/文件头尾查看/字符转换 | regexp, go-pretty |
 | **网络工具** | tcp, ping, port, dns, curl | TCP客户端/服务端、ping、端口扫描、DNS、HTTP请求 | readline, pro-bing |
 | **数据转换** | base64, json | Base64编解码、JSON处理 | gjson |
@@ -55,7 +55,7 @@ fck/
 Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 ```
 
-**设计模式**: 命令模式（46个CLI命令）、策略模式（find匹配）、工厂模式（表格样式）、建造者模式（Config初始化）
+**设计模式**: 命令模式（45个CLI命令）、策略模式（find匹配）、工厂模式（表格样式）、建造者模式（Config初始化）
 
 ---
 
@@ -218,6 +218,7 @@ Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 
 | 日期 | 变更 |
 |------|------|
+| 2026-05-02 | 移除 `alias` 子命令 |
 | 2026-05-02 | types 包重构：将 types.go 拆分为 format.go、command.go、types.go |
 | 2026-05-02 | cat 命令修复：管道输出时不再多一个空行 |
 | 2026-05-02 | check 命令修复：使用 SRed/SGreen 返回字符串方法 |
