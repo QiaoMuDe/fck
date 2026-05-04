@@ -17,7 +17,7 @@ func InitAndRun() (err error) {
 	}()
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:              "一站式文件操作、文本处理与系统管理工具集, 集成30+实用命令, 覆盖文件管理、文本处理、系统监控、开发辅助等多个场景",
+		Desc:              "一站式文件操作、文本处理与系统管理工具集, 集成40+实用命令, 覆盖文件管理、文本处理、系统监控、开发辅助等多个场景",
 		UseChinese:        true,
 		Completion:        true,
 		DynamicCompletion: true,

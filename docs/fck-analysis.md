@@ -1,6 +1,6 @@
 # FCK 项目架构记忆
 
-> **定位**: 一站式文件与系统管理工具集 | **技术栈**: Go 1.25.0 | **版本**: v1.8
+> **定位**: 一站式文件与系统管理工具集 | **技术栈**: Go 1.25.0 | **版本**: v1.9
 
 ---
 
@@ -10,25 +10,25 @@
 fck/
 ├── cmd/main.go              # 程序入口
 ├── internal/
-│   ├── cli/                 # 26个命令的 flag 定义
+│   ├── cli/                 # 46个命令的 flag 定义
 │   ├── commands/            # 业务逻辑（按功能分包）
-│   ├── types/               # 全局类型和常量
+│   ├── types/               # 全局类型和常量（已拆分）
 │   └── utils/               # 通用工具
 ├── docs/                    # 设计文档
 ├── vendor/                  # 自研依赖库
 │   └── gitee.com/MM-Q/
-│       ├── color/             # 颜色输出
-│       ├── comprx/          # 压缩解压
-│       ├── go-kit/          # FS、Hash、Pool
-│       ├── qflag/           # CLI 框架
-│       ├── shellx/          # Shell 执行
-│       └── verman/          # 版本管理
+│       ├── color/           # 颜色输出 (v1.0.3)
+│       ├── comprx/          # 压缩解压 (v0.1.6)
+│       ├── go-kit/          # FS、Hash、Pool (v0.0.19)
+│       ├── qflag/           # CLI 框架 (v0.5.17)
+│       ├── shellx/          # Shell 执行 (v1.0.19)
+│       └── verman/          # 版本管理 (v0.0.19)
 └── build.py                 # 跨平台编译脚本
 ```
 
 ---
 
-## 二、28个功能模块
+## 二、46个功能模块
 
 | 分类 | 模块 | 核心功能 | 关键依赖 |
 |------|------|----------|----------|
@@ -36,10 +36,11 @@ fck/
 | **查找处理** | find, grep, sed, which | 文件查找/文本搜索/替换/命令查找 | regexp, 标准库 |
 | **压缩解压** | pack, unpack, preview | 打包/解压/预览 | comprx |
 | **哈希校验** | hash, check | 哈希计算/完整性校验 | go-kit/hash |
-| **系统信息** | size, date, pwd, home, df | 大小统计/时间/路径/磁盘空间 | 标准库 |
-| **工具** | echo, watch, xargs, alias | 输出/定时执行/批量处理/别名 | shellx, color |
+| **系统信息** | size, date, pwd, home, df, proc | 大小统计/时间/路径/磁盘空间/进程 | 标准库, gopsutil |
+| **工具** | echo, watch, xargs, alias, tee, seq | 输出/定时执行/批量处理/别名/分流/序列 | shellx, color |
 | **文本处理** | awk, wc, head, tail, tr | 字段处理/字数统计/文件头尾查看/字符转换 | regexp, go-pretty |
-| **网络工具** | tcp | TCP客户端/服务端、端口扫描 | readline |
+| **网络工具** | tcp, ping, port, dns, curl | TCP客户端/服务端、ping、端口扫描、DNS、HTTP请求 | readline, pro-bing |
+| **数据转换** | base64, json | Base64编解码、JSON处理 | gjson |
 | **开发辅助** | gm, test, md | Git管理/测试/Markdown预览 | glamour, oviewer |
 
 ---
@@ -54,7 +55,7 @@ fck/
 Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 ```
 
-**设计模式**: 命令模式（26个CLI命令）、策略模式（find匹配）、工厂模式（表格样式）、建造者模式（Config初始化）
+**设计模式**: 命令模式（46个CLI命令）、策略模式（find匹配）、工厂模式（表格样式）、建造者模式（Config初始化）
 
 ---
 
@@ -63,16 +64,20 @@ Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 | 类别 | 技术 | 版本 | 用途 |
 |------|------|------|------|
 | 语言 | Go | 1.25.0 | 主开发语言 |
-| CLI框架 | qflag | v0.5.15 | 自研命令行解析 |
-| 颜色输出 | color | v1.0.2 | 自研终端彩色输出 |
+| CLI框架 | qflag | v0.5.17 | 自研命令行解析 |
+| 颜色输出 | color | v1.0.3 | 自研终端彩色输出 |
 | 压缩解压 | comprx | v0.1.6 | 自研多格式压缩 |
-| 工具集 | go-kit | v0.0.17 | 自研FS/Hash/Pool |
-| Shell执行 | shellx | v1.0.18 | 自研命令执行 |
+| 工具集 | go-kit | v0.0.19 | 自研FS/Hash/Pool |
+| Shell执行 | shellx | v1.0.19 | 自研命令执行 |
 | 表格渲染 | go-pretty | v6.6.8 | 表格输出 |
 | 分页器 | oviewer | v0.51.1 | 终端分页查看 |
 | 语法高亮 | chroma | v2.23.1 | 代码高亮 |
-| Markdown | glamour | - | Markdown渲染 |
+| Markdown | glamour | v0.8.0 | Markdown渲染 |
 | 交互式终端 | readline | v1.5.1 | TCP客户端交互模式 |
+| Ping | pro-bing | v0.8.0 | 网络ping功能 |
+| JSON处理 | gjson | v1.18.0 | JSON查询处理 |
+| 进度条 | progressbar | v3.19.0 | 终端进度显示 |
+| 系统信息 | gopsutil | v3.24.5 | 进程/系统信息 |
 
 ---
 
@@ -82,6 +87,7 @@ Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 - 支持语法高亮 (`-H`)、分页查看 (`-l`)
 - 行号显示 (`-n`/`-b`)
 - 特殊字符显示 (`-A`/`-E`/`-T`)
+- 修复：管道输出时不再多一个空行
 
 ### head 命令
 - 显示文件开头内容
@@ -147,6 +153,14 @@ Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 - 静默模式 (`-s`)，便于脚本中使用
 - 跨平台支持（Windows/Unix）
 
+### curl 命令
+- HTTP 请求发送
+- 支持 GET/POST/PUT/DELETE 等方法
+- 自定义 Headers (`-H`)
+- JSON 数据处理 (`-j`)
+- 语法高亮输出
+- 移除 `-p/--pretty` 标志（已合并到默认行为）
+
 ### tcp client 命令（交互模式增强）
 - 使用 readline 库实现交互式发送模式
 - 支持历史记录（上下箭头浏览，内存存储）
@@ -170,12 +184,45 @@ Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 - 文件格式：`tcp_YYYYMMDDHH.txt`
 - 内容格式：`[客户端地址] 数据`
 
+### check 命令
+- 文件哈希校验
+- 支持多种哈希算法
+- 修复：使用 `SRed`/`SGreen` 等返回字符串方法避免自动换行问题
+
+### list 命令
+- 文件列表显示
+- 彩色权限显示
+- 图标支持
+- 修复：byte 转 string 避免格式化警告
+
 ---
 
-## 六、更新日志
+## 六、类型系统重构
+
+### types 包拆分（2026-05-02）
+
+原 `types.go` (505行) 拆分为：
+
+| 文件 | 内容 | 行数 |
+|------|------|------|
+| `format.go` | 语法高亮常量、表格样式 | ~100行 |
+| `command.go` | find、DNS、TCP扫描相关类型 | ~150行 |
+| `types.go` | 基础常量、数据结构、Windows扩展 | ~200行 |
+| `logo.go` | Logo 定义 | 原有 |
+| `compress_type.go` | 压缩类型定义 | 原有 |
+| `checksum_header.go` | 校验和头部定义 | 原有 |
+
+---
+
+## 七、更新日志
 
 | 日期 | 变更 |
 |------|------|
+| 2026-05-02 | types 包重构：将 types.go 拆分为 format.go、command.go、types.go |
+| 2026-05-02 | cat 命令修复：管道输出时不再多一个空行 |
+| 2026-05-02 | check 命令修复：使用 SRed/SGreen 返回字符串方法 |
+| 2026-05-02 | list 命令修复：byte 转 string 避免格式化警告 |
+| 2026-05-02 | curl 命令优化：移除 `-p/--pretty` 非功能标志 |
 | 2026-05-01 | TCP 客户端交互模式重构：使用 readline 库，添加内置命令系统 |
 | 2026-05-01 | TCP 服务端改进：优雅退出、每小时文件保存 |
 | 2026-04-23 | 新增 `which` 命令（命令查找，支持跨平台） |
@@ -192,4 +239,13 @@ Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 
 ---
 
-**分析日期**: 2026-05-01 | **分析师**: Claude Code
+## 八、待开发功能
+
+| 功能 | 状态 | 设计文档 |
+|------|------|----------|
+| api 子命令 | 设计中 | `docs/api-struct-design.md` |
+| http server 子命令 | 设计中 | `docs/http-server-final-design.md` |
+
+---
+
+**分析日期**: 2026-05-02 | **分析师**: Claude Code
