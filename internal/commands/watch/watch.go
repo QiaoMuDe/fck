@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/shellx/shx"
 	"golang.org/x/term"
 )
@@ -122,11 +122,11 @@ type DiffHighlighter struct {
 	mode       DiffMode           // 差异模式
 	lastOutput string             // 上次输出
 	cumulative map[int]bool       // 累积变化行记录
-	cl         *colorlib.ColorLib // 颜色库
+	cl         *color.GlobalColor // 颜色库
 }
 
 // NewDiffHighlighter 创建新的差异高亮器
-func NewDiffHighlighter(mode DiffMode, cl *colorlib.ColorLib) *DiffHighlighter {
+func NewDiffHighlighter(mode DiffMode, cl *color.GlobalColor) *DiffHighlighter {
 	return &DiffHighlighter{
 		mode:       mode,
 		cumulative: make(map[int]bool),
@@ -195,9 +195,9 @@ func (d *DiffHighlighter) renderDiff(lines []LineDiff) string {
 	for _, line := range lines {
 		switch line.Status {
 		case LineDiffChanged:
-			result = append(result, d.cl.SbrightYellow(line.Content))
+			result = append(result, d.cl.SHiYellow(line.Content))
 		case LineDiffAdded:
-			result = append(result, d.cl.SbrightGreen(line.Content))
+			result = append(result, d.cl.SHiGreen(line.Content))
 		default:
 			result = append(result, line.Content)
 		}
@@ -210,11 +210,11 @@ type OutputManager struct {
 	noHeader    bool               // 不显示标题栏
 	useColor    bool               // 使用颜色
 	clearScreen bool               // 清屏
-	cl          *colorlib.ColorLib // 颜色库
+	cl          *color.GlobalColor // 颜色库
 }
 
 // NewOutputManager 创建新的输出管理器
-func NewOutputManager(noHeader, noColor, clearScreen bool, cl *colorlib.ColorLib) *OutputManager {
+func NewOutputManager(noHeader, noColor, clearScreen bool, cl *color.GlobalColor) *OutputManager {
 	return &OutputManager{
 		noHeader:    noHeader,
 		useColor:    !noColor && cl != nil,
@@ -253,7 +253,7 @@ func (o *OutputManager) PrintHeader(interval time.Duration, command string) {
 	}
 	header := prefix + strings.Repeat(" ", padding) + timestamp
 	if o.useColor && o.cl != nil {
-		header = o.cl.Scyan(header)
+		header = o.cl.SCyan(header)
 	}
 	fmt.Println(header)
 	fmt.Println()
@@ -293,9 +293,9 @@ func (o *OutputManager) PrintOutput(output string) {
 // PrintError 打印错误信息
 func (o *OutputManager) PrintError(err error) {
 	if o.useColor && o.cl != nil {
-		fmt.Println(o.cl.SbrightRed(fmt.Sprintf("error: %v", err)))
+		o.cl.Redf("error: %s\n", err.Error())
 	} else {
-		fmt.Printf("error: %v\n", err)
+		fmt.Printf("error: %s\n", err.Error())
 	}
 }
 
@@ -320,7 +320,7 @@ type Runner struct {
 }
 
 // NewRunner 创建新的 watch 运行器
-func NewRunner(config *WatchConfig, cl *colorlib.ColorLib) *Runner {
+func NewRunner(config *WatchConfig, cl *color.GlobalColor) *Runner {
 	return &Runner{
 		config:      config,
 		executor:    NewExecutor(config.Command, config.Timeout),
@@ -410,7 +410,7 @@ func (r *Runner) Run(ctx context.Context) error {
 
 // WatchCmdMain 执行 watch 命令（向后兼容的入口函数）
 func WatchCmdMain(config WatchConfig) error {
-	cl := colorlib.NewColorLib()
+	cl := color.G()
 	runner := NewRunner(&config, cl)
 	return runner.Run(context.Background())
 }

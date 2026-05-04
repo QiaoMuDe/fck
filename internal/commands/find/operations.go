@@ -8,20 +8,20 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/shellx/shx"
 )
 
 // FileOperator 负责所有文件操作：删除、移动、执行命令
 type FileOperator struct {
-	cl           *colorlib.ColorLib
+	cl           *color.GlobalColor
 	printActions bool
 	movePath     string
 }
 
 // NewFileOperator 创建新的文件操作器
-func NewFileOperator(cl *colorlib.ColorLib, printActions bool, movePath string) *FileOperator {
+func NewFileOperator(cl *color.GlobalColor, printActions bool, movePath string) *FileOperator {
 	return &FileOperator{
 		cl:           cl,
 		printActions: printActions,

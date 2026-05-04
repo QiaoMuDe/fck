@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/go-kit/fs"
 )
@@ -46,12 +46,13 @@ type ListConfig struct {
 //
 // 返回:
 //   - error: 错误信息
-func ListCmdMain(cl *colorlib.ColorLib, config ListConfig) error {
+func ListCmdMain(cl *color.GlobalColor, config ListConfig) error {
 	if err := validateArgs(config); err != nil {
 		return err
 	}
 
-	cl.SetColor(config.Color)
+	// 设置颜色输出 - 如果 Color 为 false，则则禁用颜色输出
+	cl.SetNoColor(!config.Color)
 
 	paths := getPaths(config.Args)
 	expandedPaths, err := expandPaths(paths, cl, config)
@@ -106,7 +107,7 @@ func getPaths(args []string) []string {
 // 返回:
 //   - []string: 展开后的路径列表
 //   - error: 错误信息
-func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]string, error) {
+func expandPaths(paths []string, cl *color.GlobalColor, config ListConfig) ([]string, error) {
 	var expandedPaths []string
 
 	for _, path := range paths {
@@ -117,12 +118,12 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 		if isWildcardPath {
 			matches, err := filepath.Glob(path)
 			if err != nil {
-				cl.PrintErrorf("wildcard path error %q: %v\n", path, err)
+				cl.Redf("wildcard path error %q: %v\n", path, err)
 				continue
 			}
 
 			if len(matches) == 0 {
-				cl.PrintWarnf("wildcard path not match any files: %s\n", path)
+				cl.Yellowf("wildcard path not match any files: %s\n", path)
 				continue
 			}
 
@@ -137,9 +138,9 @@ func expandPaths(paths []string, cl *colorlib.ColorLib, config ListConfig) ([]st
 
 		if _, err := os.Stat(path); err != nil {
 			if os.IsNotExist(err) {
-				cl.PrintWarnf("path not exist: %s\n", path)
+				cl.Yellowf("path not exist: %s\n", path)
 			} else {
-				cl.PrintErrorf("cannot access path %q: %v\n", path, err)
+				cl.Redf("cannot access path %q: %v\n", path, err)
 			}
 			continue
 		}

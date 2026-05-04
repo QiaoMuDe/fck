@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/types"
 )
 
@@ -25,7 +25,7 @@ type CheckConfig struct {
 //
 // 返回值:
 //   - error: 校验过程中可能发生的错误
-func CheckCmdMain(cl *colorlib.ColorLib, config CheckConfig) error {
+func CheckCmdMain(cl *color.GlobalColor, config CheckConfig) error {
 	checkFile := config.CheckFile
 	if checkFile == "" {
 		checkFile = types.OutputFileName

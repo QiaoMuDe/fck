@@ -12,7 +12,6 @@ func TestScanOptions(t *testing.T) {
 		Recursive:  true,
 		ShowHidden: false,
 		FileType:   types.FindTypeFile,
-		DirItself:  false,
 	}
 
 	if !opts.Recursive {

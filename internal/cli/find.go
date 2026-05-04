@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/find"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/qflag"
@@ -104,7 +104,7 @@ func init() {
 }
 
 func runFind(cmd qflag.Command) error {
-	cl := colorlib.NewColorLib()
+	cl := color.G()
 
 	config := find.FindConfig{
 		FindPath:       cmd.Arg(0),

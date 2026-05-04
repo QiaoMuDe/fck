@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/fck/internal/utils"
 	"gitee.com/MM-Q/go-kit/term"
@@ -19,13 +19,13 @@ import (
 
 // FileFormatter 文件格式化器
 type FileFormatter struct {
-	colorLib *colorlib.ColorLib
+	cl *color.GlobalColor
 }
 
 // NewFileFormatter 创建新的文件格式化器
-func NewFileFormatter(cl *colorlib.ColorLib) *FileFormatter {
+func NewFileFormatter(cl *color.GlobalColor) *FileFormatter {
 	return &FileFormatter{
-		colorLib: cl,
+		cl: cl,
 	}
 }
 
@@ -117,7 +117,7 @@ func (f *FileFormatter) renderGrouped(files FileInfoList, opts FormatOptions) er
 		}
 
 		// 打印目录标题
-		f.colorLib.Bluef("%s:\n", dir)
+		f.cl.Bluef("%s:\n", dir)
 
 		// 渲染目录内容
 		dirFileList := dirFiles[dir]
@@ -261,7 +261,7 @@ func (f *FileFormatter) prepareFileNames(files FileInfoList, opts FormatOptions)
 		}
 
 		if opts.UseColor {
-			name = GetColorString(file, name, f.colorLib)
+			name = GetColorString(file, name, f.cl)
 		}
 
 		fileNames[i] = name
@@ -407,20 +407,20 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 	infoPerm := f.formatPermissionString(info, opts)
 
 	// 获取文件类型并应用颜色
-	infoType := GetColorString(info, info.EntryType.String(), f.colorLib)
+	infoType := GetColorString(info, info.EntryType.String(), f.cl)
 
 	// 将文件大小转换为可读格式（如KB、MB等）
 	infoSize, infoSizeUnit := f.humanSize(info.Size)
 	// 设置非粗体样式
-	f.colorLib.SetBold(false)
+	f.cl.SetBold(false)
 	// 为文件大小和单位应用黄色
-	infoSize = f.colorLib.Syellow(infoSize)
-	infoSizeUnit = f.colorLib.Syellow(infoSizeUnit)
+	infoSize = f.cl.SYellow(infoSize)
+	infoSizeUnit = f.cl.SYellow(infoSizeUnit)
 
 	// 格式化修改时间并应用蓝色
-	infoModTime := f.colorLib.Sblue(info.ModTime.Format(timeFormat))
+	infoModTime := f.cl.SBlue(info.ModTime.Format(timeFormat))
 	// 恢复粗体样式
-	f.colorLib.SetBold(true)
+	f.cl.SetBold(true)
 
 	// 文件名处理：根据选项是否引号包裹
 	formatStr := "%s"
@@ -440,7 +440,7 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 
 	// 处理符号链接
 	if info.EntryType == SymlinkType {
-		arrowColor := f.colorLib.Swhite(symlinkArrow)
+		arrowColor := f.cl.SWhite(symlinkArrow)
 
 		_, statErr := os.Stat(info.LinkTargetPath)
 		targetExists := statErr == nil || !os.IsNotExist(statErr)
@@ -451,23 +451,23 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 		// 源路径颜色（含图标、含引号）
 		var linkPath string
 		if targetExists {
-			linkPath = f.colorLib.Scyan(iconPrefix + fileNameQuoted)
+			linkPath = f.cl.SCyan(iconPrefix + fileNameQuoted)
 		} else {
-			linkPath = f.colorLib.Sred(iconPrefix + fileNameQuoted)
+			linkPath = f.cl.SRed(iconPrefix + fileNameQuoted)
 		}
 
 		// 目标路径颜色（含引号）
 		var sourcePath string
 		if targetExists {
-			sourcePath = utils.SprintStringColor(info.LinkTargetPath, targetQuoted, f.colorLib)
+			sourcePath = utils.SprintStringColor(info.LinkTargetPath, targetQuoted, f.cl)
 		} else {
-			sourcePath = f.colorLib.Sgray(targetQuoted)
+			sourcePath = f.cl.SGray(targetQuoted)
 		}
 
 		nameCol = fmt.Sprint(linkPath, arrowColor, sourcePath)
 	} else {
 		// 普通类型: 图标和名称合并着色
-		nameCol = GetColorString(info, iconPrefix+fileNameQuoted, f.colorLib)
+		nameCol = GetColorString(info, iconPrefix+fileNameQuoted, f.cl)
 	}
 
 	// 构建基础列（是否显示用户组）
@@ -480,7 +480,7 @@ func (f *FileFormatter) addTableRow(t table.Writer, info FileInfo, opts FormatOp
 
 	// 仅当表格样式非 none 且未禁用索引时，前置索引列
 	if opts.TableStyle != "none" && !opts.DisableIndex {
-		row = append(table.Row{f.colorLib.Sgray(index)}, row...)
+		row = append(table.Row{f.cl.SGrayf("%d", index)}, row...)
 	}
 
 	// 添加行到表格
@@ -508,13 +508,13 @@ func (f *FileFormatter) formatPermissionString(info FileInfo, opts FormatOptions
 		colorType := permissionColorMap[i]
 		switch colorType {
 		case colorTypeGreen:
-			formattedPerm += f.colorLib.Sgreen(string(info.Perm[i]))
+			formattedPerm += f.cl.SGreen(string(info.Perm[i]))
 
 		case colorTypeYellow:
-			formattedPerm += f.colorLib.Syellow(string(info.Perm[i]))
+			formattedPerm += f.cl.SYellow(string(info.Perm[i]))
 
 		case colorTypeRed:
-			formattedPerm += f.colorLib.Sred(string(info.Perm[i]))
+			formattedPerm += f.cl.SRed(string(info.Perm[i]))
 
 		default:
 			formattedPerm += string(info.Perm[i])

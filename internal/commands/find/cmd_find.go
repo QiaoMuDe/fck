@@ -5,7 +5,7 @@ package find
 import (
 	"fmt"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 )
 
 // FindCmdMain 执行查找命令
@@ -16,12 +16,12 @@ import (
 //
 // 返回值:
 //   - error: 查找过程中可能发生的错误
-func FindCmdMain(cl *colorlib.ColorLib, config *FindConfig) error {
+func FindCmdMain(cl *color.GlobalColor, config *FindConfig) error {
 	// 创建验证器
 	validator := NewConfigValidator(config)
 
 	// 设置颜色
-	cl.SetColor(config.Color)
+	cl.SetNoColor(!config.Color)
 
 	// 初始化配置（包含路径处理、正则编译、扩展名映射等）
 	if err := config.Init(cl); err != nil {

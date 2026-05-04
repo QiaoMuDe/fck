@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/check"
 	"gitee.com/MM-Q/qflag"
 )
@@ -44,10 +44,8 @@ func init() {
 }
 
 func runCheck(cmd qflag.Command) error {
-	cl := colorlib.NewColorLib()
-	if checkNoColor.Get() {
-		cl.SetColor(!checkNoColor.Get())
-	}
+	cl := color.G()
+	cl.SetNoColor(checkNoColor.Get())
 
 	config := check.CheckConfig{
 		CheckFile: checkFile.Get(),

@@ -10,9 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gitee.com/MM-Q/color"
 	gfs "gitee.com/MM-Q/go-kit/fs"
-
-	"gitee.com/MM-Q/colorlib"
 )
 
 // collectFiles 函数用于收集指定路径下的所有文件
@@ -20,12 +19,12 @@ import (
 // 参数:
 //   - targetPath: 要收集文件的路径
 //   - recursive: 是否递归处理目录
-//   - cl: ColorLib 实例，用于彩色输出
+//   - cl: color 实例，用于彩色输出
 //
 // 返回值：
 //   - []string: 收集到的文件路径列表
 //   - error: 如果发生错误，则返回错误信息
-func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+func collectFiles(targetPath string, recursive bool, cl *color.GlobalColor) ([]string, error) {
 	// 根据是否包含通配符选择不同的收集策略
 	if strings.ContainsAny(targetPath, "*?[]{}") {
 		return collectGlobFiles(targetPath, recursive, cl)
@@ -39,12 +38,12 @@ func collectFiles(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]s
 //	参数:
 //	 - pattern: 包含通配符的路径模式
 //	 - recursive: 是否递归处理目录
-//	 - cl: ColorLib 实例，用于彩色输出
+//	 - cl: color 实例，用于彩色输出
 //
 //	返回值：
 //	 - []string: 收集到的文件路径列表
 //	 - error: 如果发生错误，则返回错误信息
-func collectGlobFiles(pattern string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+func collectGlobFiles(pattern string, recursive bool, cl *color.GlobalColor) ([]string, error) {
 	matchedPaths, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("invalid path: %w", err)
@@ -84,12 +83,12 @@ func collectGlobFiles(pattern string, recursive bool, cl *colorlib.ColorLib) ([]
 // 参数:
 //   - targetPath: 要收集文件的路径
 //   - recursive: 是否递归处理目录
-//   - cl: ColorLib 实例，用于彩色输出
+//   - cl: color 实例，用于彩色输出
 //
 // 返回:
 //   - []item: 包含文件信息的切片
 //   - error: 错误信息，如果发生错误则返回非nil值
-func collectSinglePath(targetPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+func collectSinglePath(targetPath string, recursive bool, cl *color.GlobalColor) ([]string, error) {
 	info, err := os.Stat(targetPath)
 	if err != nil {
 		return nil, wrapStatError(err, targetPath)
@@ -112,12 +111,12 @@ func collectSinglePath(targetPath string, recursive bool, cl *colorlib.ColorLib)
 // 参数:
 //   - dirPath: 要处理的目录路径
 //   - recursive: 是否递归处理目录
-//   - cl: ColorLib 实例，用于彩色输出
+//   - cl: color 实例，用于彩色输出
 //
 // 返回:
 //   - []string: 包含文件路径的切片
 //   - error: 错误信息，如果发生错误则返回非nil值
-func handleDirectory(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+func handleDirectory(dirPath string, recursive bool, cl *color.GlobalColor) ([]string, error) {
 	// 非递归模式下拒绝处理目录，提示用户使用 --recursion/-r 选项
 	if !recursive {
 		return nil, fmt.Errorf("skipped directory %s (use -r for recursive)", dirPath)
@@ -177,12 +176,12 @@ func wrapStatError(err error, path string) error {
 // 参数:
 //   - dirPath: 要遍历的目录路径
 //   - recursive: 是否递归遍历子目录
-//   - cl: ColorLib 实例，用于彩色输出
+//   - cl: color 实例，用于彩色输出
 //
 // 返回:
 //   - []string: 包含文件路径的切片
 //   - error: 错误信息，如果发生错误则返回非nil值
-func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, error) {
+func walkDir(dirPath string, recursive bool, cl *color.GlobalColor) ([]string, error) {
 	var files []string
 
 	if !recursive {
@@ -220,12 +219,12 @@ func walkDir(dirPath string, recursive bool, cl *colorlib.ColorLib) ([]string, e
 //
 // 参数:
 //   - dirPath: 要遍历的目录路径
-//   - cl: ColorLib 实例，用于彩色输出
+//   - cl: color 实例，用于彩色输出
 //
 // 返回:
 //   - []string: 包含文件路径的切片
 //   - error: 错误信息，如果发生错误则返回非nil值
-func walkDirNonRecursive(dirPath string, cl *colorlib.ColorLib) ([]string, error) {
+func walkDirNonRecursive(dirPath string, cl *color.GlobalColor) ([]string, error) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory %s: %w", dirPath, err)

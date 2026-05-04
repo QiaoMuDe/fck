@@ -2,9 +2,8 @@ module gitee.com/MM-Q/fck
 
 go 1.25.0
 
-require gitee.com/MM-Q/colorlib v1.3.2
-
 require (
+	gitee.com/MM-Q/color v1.0.3
 	gitee.com/MM-Q/comprx v0.1.6
 	gitee.com/MM-Q/go-kit v0.0.19
 	gitee.com/MM-Q/qflag v0.5.17
@@ -46,7 +45,8 @@ require (
 	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/mattn/go-runewidth v0.0.20 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
@@ -76,7 +76,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	mvdan.cc/sh/v3 v3.12.0 // indirect
 )

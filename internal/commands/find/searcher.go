@@ -46,7 +46,7 @@ func (s *FileSearcher) Search(findPath string) error {
 
 			if os.IsPermission(err) {
 				if !s.config.Quiet {
-					s.config.Cl.PrintErrorf("permission denied, cannot access some directories: %s\n", path)
+					s.config.Cl.Redf("permission denied, cannot access some directories: %s\n", path)
 				}
 				return nil
 			}

@@ -17,7 +17,7 @@ fck/
 ├── docs/                    # 设计文档
 ├── vendor/                  # 自研依赖库
 │   └── gitee.com/MM-Q/
-│       ├── colorlib/        # 颜色输出
+│       ├── color/             # 颜色输出
 │       ├── comprx/          # 压缩解压
 │       ├── go-kit/          # FS、Hash、Pool
 │       ├── qflag/           # CLI 框架
@@ -37,7 +37,7 @@ fck/
 | **压缩解压** | pack, unpack, preview | 打包/解压/预览 | comprx |
 | **哈希校验** | hash, check | 哈希计算/完整性校验 | go-kit/hash |
 | **系统信息** | size, date, pwd, home, df | 大小统计/时间/路径/磁盘空间 | 标准库 |
-| **工具** | echo, watch, xargs, alias | 输出/定时执行/批量处理/别名 | shellx, colorlib |
+| **工具** | echo, watch, xargs, alias | 输出/定时执行/批量处理/别名 | shellx, color |
 | **文本处理** | awk, wc, head, tail, tr | 字段处理/字数统计/文件头尾查看/字符转换 | regexp, go-pretty |
 | **网络工具** | tcp | TCP客户端/服务端、端口扫描 | readline |
 | **开发辅助** | gm, test, md | Git管理/测试/Markdown预览 | glamour, oviewer |
@@ -51,7 +51,7 @@ fck/
               ↓
          internal/types
               ↓
-Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
+Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 ```
 
 **设计模式**: 命令模式（26个CLI命令）、策略模式（find匹配）、工厂模式（表格样式）、建造者模式（Config初始化）
@@ -64,7 +64,7 @@ Vendor层: qflag, colorlib, go-kit, comprx, shellx, verman, go-pretty
 |------|------|------|------|
 | 语言 | Go | 1.25.0 | 主开发语言 |
 | CLI框架 | qflag | v0.5.15 | 自研命令行解析 |
-| 颜色输出 | colorlib | v1.3.2 | 自研终端彩色输出 |
+| 颜色输出 | color | v1.0.2 | 自研终端彩色输出 |
 | 压缩解压 | comprx | v0.1.6 | 自研多格式压缩 |
 | 工具集 | go-kit | v0.0.17 | 自研FS/Hash/Pool |
 | Shell执行 | shellx | v1.0.18 | 自研命令执行 |

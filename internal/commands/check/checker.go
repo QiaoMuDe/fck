@@ -9,21 +9,21 @@ import (
 	"strings"
 	"sync"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/go-kit/hash"
 )
 
 // fileChecker 文件校验器
 type fileChecker struct {
-	cl         *colorlib.ColorLib // 颜色库
+	cl         *color.GlobalColor // 颜色库
 	hashType   string             // 哈希算法
 	maxWorkers int                // 最大并发数(默认: 逻辑处理器数量)
 	verbose    bool               // 详细模式（显示校验通过的文件）
 }
 
 // newFileChecker 创建新的文件校验器
-func newFileChecker(cl *colorlib.ColorLib, hashType string, verbose bool) *fileChecker {
+func newFileChecker(cl *color.GlobalColor, hashType string, verbose bool) *fileChecker {
 	return &fileChecker{
 		cl:         cl,
 		hashType:   hashType,
@@ -156,23 +156,24 @@ func (c *fileChecker) collectResults(results <-chan checkResult, totalFiles int)
 
 // printSummary 打印校验结果摘要
 func (c *fileChecker) printSummary(passed, mismatched, notFound, errors, total int) {
-	c.cl.Bluef("verification completed: ")
-	c.cl.Greenf("%d passed", passed)
+	result := c.cl.SBlue("verification completed: ")
+	result += c.cl.SGreenf("%d passed", passed)
 
 	if mismatched > 0 {
-		fmt.Print(", ")
-		c.cl.Redf("%d failed", mismatched)
+		result += ", "
+		result += c.cl.SRedf("%d failed", mismatched)
 	}
 
 	if notFound > 0 {
-		fmt.Print(", ")
-		c.cl.Yellowf("%d not found", notFound)
+		result += ", "
+		result += c.cl.SYellowf("%d not found", notFound)
 	}
 
 	if errors > 0 {
-		fmt.Print(", ")
-		c.cl.Redf("%d errors", errors)
+		result += ", "
+		result += c.cl.SRedf("%d errors", errors)
 	}
 
-	c.cl.Whitef(" (total: %d files)\n", total)
+	result += c.cl.SWhitef(" (total: %d files)", total)
+	fmt.Println(result)
 }

@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/go-kit/hash"
 )
@@ -17,11 +17,11 @@ import (
 // hashFileParser 校验文件解析器
 type hashFileParser struct {
 	validator *hashLineValidator
-	cl        *colorlib.ColorLib
+	cl        *color.GlobalColor
 }
 
 // newHashFileParser 创建校验文件解析器
-func newHashFileParser(cl *colorlib.ColorLib) *hashFileParser {
+func newHashFileParser(cl *color.GlobalColor) *hashFileParser {
 	return &hashFileParser{
 		validator: newHashLineValidator(),
 		cl:        cl,
@@ -149,7 +149,7 @@ func (p *hashFileParser) parseContent(scanner *bufio.Scanner, headerInfo *types.
 		// 验证并解析行内容
 		hash, filePath, err := p.validator.validateLine(line, lineNum)
 		if err != nil {
-			p.cl.PrintErrorf("parse error on line %d: %v\n", lineNum, err)
+			p.cl.Redf("parse error on line %d: %v\n", lineNum, err)
 			continue
 		}
 
@@ -161,7 +161,7 @@ func (p *hashFileParser) parseContent(scanner *bufio.Scanner, headerInfo *types.
 		// 解析文件路径
 		resolvedPath, err := p.resolveFilePath(filePath, headerInfo, userBaseDir)
 		if err != nil {
-			p.cl.PrintErrorf("resolve file path error on line %d: %v\n", lineNum, err)
+			p.cl.Redf("resolve file path error on line %d: %v\n", lineNum, err)
 			continue
 		}
 

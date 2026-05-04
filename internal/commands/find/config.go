@@ -10,7 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/utils"
 )
 
@@ -45,7 +45,7 @@ type FindConfig struct {
 	// ==================== 运行时生成的配置 ====================
 	// 以下字段由 Init() 方法初始化，不应直接从 CLI 传入
 
-	Cl              *colorlib.ColorLib // 颜色库实例
+	Cl              *color.GlobalColor // 颜色库实例
 	NameRegex       *regexp.Regexp     // 编译后的文件名正则
 	ExNameRegex     *regexp.Regexp     // 编译后的排除文件名正则
 	PathRegex       *regexp.Regexp     // 编译后的路径正则
@@ -61,7 +61,7 @@ type FindConfig struct {
 //
 // 返回:
 //   - error: 初始化过程中的错误
-func (c *FindConfig) Init(cl *colorlib.ColorLib) error {
+func (c *FindConfig) Init(cl *color.GlobalColor) error {
 	c.Cl = cl
 
 	// 处理查找路径：默认为当前目录，并清理路径格式

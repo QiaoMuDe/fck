@@ -19,7 +19,7 @@ Package list 实现了文件系统扫描功能。该文件提供了文件和目�
 ### GetColorString
 
 ```go
-func GetColorString(info FileInfo, path string, cl *colorlib.ColorLib) string
+func GetColorString(info FileInfo, path string, cl *color.GlobalColor) string
 ```
 
 GetColorString 根据文件信息返回带有相应颜色的路径字符串。
@@ -27,7 +27,7 @@ GetColorString 根据文件信息返回带有相应颜色的路径字符串。
 - 参数：
   - `info`：文件信息，包含文件类型和扩展名等信息。
   - `path`：要处理的路径字符串。
-  - `cl`：用于彩色输出的 `colorlib.ColorLib` 实例。
+  - `cl`：用于彩色输出的 `color.GlobalColor` 实例。
 - 返回：
   - `string`：经过颜色处理后的路径字符串。
 - 颜色方案：
@@ -49,7 +49,7 @@ func InitListCmd() *cmd.Cmd
 ### ListCmdMain
 
 ```go
-func ListCmdMain(cl *colorlib.ColorLib) error
+func ListCmdMain(cl *color.GlobalColor) error
 ```
 
 ListCmdMain list 命令主函数。
@@ -103,7 +103,7 @@ type FileFormatter struct {
 FileFormatter 文件格式化器。
 
 ```go
-func NewFileFormatter(cl *colorlib.ColorLib) *FileFormatter
+func NewFileFormatter(cl *color.GlobalColor) *FileFormatter
 ```
 
 NewFileFormatter 创建新的文件格式化器。

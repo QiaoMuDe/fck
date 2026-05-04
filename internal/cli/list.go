@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/list"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/qflag"
@@ -93,7 +93,7 @@ func init() {
 }
 
 func runList(cmd qflag.Command) error {
-	cl := colorlib.NewColorLib()
+	cl := color.G()
 
 	config := list.ListConfig{
 		Args:          cmd.Args(),

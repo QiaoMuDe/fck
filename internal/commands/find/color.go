@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/fck/internal/utils"
 )
@@ -56,13 +56,13 @@ func isSpecialDevice(mode os.FileMode) bool {
 //
 // 参数:
 //   - path: 要检查的路径，用于获取文件类型信息
-//   - cl: colorlib.ColorLib实例, 用于彩色输出
+//   - cl: color.GlobalColor实例, 用于彩色输出
 //   - d: 匹配到的DirEntry对象
 //   - color: 是否启用颜色输出
 //
 // 注意:
 //   - 该函数直接输出到标准输出，不返回值
-func printPathColor(path string, cl *colorlib.ColorLib, d os.DirEntry, color bool) {
+func printPathColor(path string, cl *color.GlobalColor, d os.DirEntry, color bool) {
 	if path == "" || d == nil || cl == nil {
 		return
 	}
@@ -108,10 +108,10 @@ func printPathColor(path string, cl *colorlib.ColorLib, d os.DirEntry, color boo
 //
 // 参数:
 //   - p: 文件路径
-//   - cl: colorlib.ColorLib实例, 用于彩色输出
+//   - cl: color.GlobalColor实例, 用于彩色输出
 //   - dirColor: 目录部分的颜色类型
 //   - fileColor: 文件名部分的颜色类型
-func printColor(p string, cl *colorlib.ColorLib, dirColor ColorType, fileColor ColorType) {
+func printColor(p string, cl *color.GlobalColor, dirColor ColorType, fileColor ColorType) {
 	// 获取路径的目录和文件名
 	dir, file := filepath.Split(p)
 
@@ -126,7 +126,7 @@ func printColor(p string, cl *colorlib.ColorLib, dirColor ColorType, fileColor C
 }
 
 // printColorByExtension 分段渲染：目录部分使用既有 dirColor（蓝色），文件名部分使用按扩展名配色
-func printColorByExtension(p string, ext string, cl *colorlib.ColorLib) {
+func printColorByExtension(p string, ext string, cl *color.GlobalColor) {
 	if p == "" || cl == nil {
 		return
 	}
@@ -143,28 +143,28 @@ func printColorByExtension(p string, ext string, cl *colorlib.ColorLib) {
 // getColoredString 根据颜色字符串调用对应的颜色方法
 //
 // 参数:
-//   - cl: colorlib.ColorLib实例, 用于彩色输出
+//   - cl: color.GlobalColor实例, 用于彩色输出
 //   - color: 颜色类型, 用于指定输出颜色
 //   - text: 要输出的文本
 //
 // 返回:
 //   - string: 彩色文本
-func getColoredString(cl *colorlib.ColorLib, color ColorType, text string) string {
+func getColoredString(cl *color.GlobalColor, color ColorType, text string) string {
 	switch color {
 	case ColorRed:
-		return cl.Sred(text)
+		return cl.SRed(text)
 	case ColorGreen:
-		return cl.Sgreen(text)
+		return cl.SGreen(text)
 	case ColorYellow:
-		return cl.Syellow(text)
+		return cl.SYellow(text)
 	case ColorBlue:
-		return cl.Sblue(text)
+		return cl.SBlue(text)
 	case ColorCyan:
-		return cl.Scyan(text)
+		return cl.SCyan(text)
 	case ColorWhite:
-		return cl.Swhite(text)
+		return cl.SWhite(text)
 	case ColorGray:
-		return cl.Sgray(text)
+		return cl.SGray(text)
 	default:
 		return text
 	}

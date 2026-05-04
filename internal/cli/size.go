@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/size"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/qflag"
@@ -12,7 +12,7 @@ import (
 var SizeCmd *qflag.Cmd
 
 var (
-	sizeColor         *qflag.BoolFlag // 启用颜色输出
+	sizeNoColor       *qflag.BoolFlag // 禁用颜色输出
 	sizeTableStyle    *qflag.EnumFlag // 指定表格样式
 	sizeHidden        *qflag.BoolFlag // 包含隐藏文件或目录进行大小计算，默认过滤
 	sizeHuman         *qflag.BoolFlag // 人类可读格式显示大小
@@ -22,7 +22,7 @@ var (
 func init() {
 	SizeCmd = qflag.NewCmd("size", "", qflag.ExitOnError)
 
-	sizeColor = SizeCmd.Bool("color", "c", "启用颜色输出", false)
+	sizeNoColor = SizeCmd.Bool("no-color", "n", "禁用颜色输出", false)
 	sizeHidden = SizeCmd.Bool("hidden", "H", "包含隐藏文件或目录进行大小计算，默认过滤", false)
 	sizeHuman = SizeCmd.Bool("human", "u", "以人类可读格式显示大小(如KB/MB/GB)", false)
 	sizeFollowSymlink = SizeCmd.Bool("follow-symlinks", "L", "跟随符号链接计算目标大小", false)
@@ -71,11 +71,11 @@ func init() {
 }
 
 func runSize(cmd qflag.Command) error {
-	cl := colorlib.NewColorLib()
+	cl := color.G()
 
 	config := size.SizeConfig{
 		Args:          cmd.Args(),
-		Color:         sizeColor.Get(),
+		NoColor:       sizeNoColor.Get(),
 		TableStyle:    sizeTableStyle.Get(),
 		Hidden:        sizeHidden.Get(),
 		Human:         sizeHuman.Get(),

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/fck/internal/utils"
 	gfs "gitee.com/MM-Q/go-kit/fs"
@@ -27,21 +27,21 @@ type items []item
 
 type SizeConfig struct {
 	Args          []string
-	Color         bool
+	NoColor       bool
 	TableStyle    string
 	Hidden        bool
 	Human         bool
 	FollowSymlink bool
 }
 
-func SizeCmdMain(cl *colorlib.ColorLib, config SizeConfig) error {
+func SizeCmdMain(cl *color.GlobalColor, config SizeConfig) error {
 	targetPaths := config.Args
 
 	if len(targetPaths) == 0 {
 		targetPaths = []string{"*"}
 	}
 
-	cl.SetColor(config.Color)
+	cl.SetNoColor(config.NoColor)
 
 	var itemList items
 
@@ -50,7 +50,7 @@ func SizeCmdMain(cl *colorlib.ColorLib, config SizeConfig) error {
 
 		pathsToProcess, err := expandPath(targetPath)
 		if err != nil {
-			cl.PrintErrorf("failed to expand path: %v\n", err)
+			cl.Redf("failed to expand path: %v\n", err)
 			continue
 		}
 
@@ -83,14 +83,14 @@ func expandPath(path string) ([]string, error) {
 	return filePaths, nil
 }
 
-func addPathToList(path string, itemList *items, cl *colorlib.ColorLib, config SizeConfig) {
+func addPathToList(path string, itemList *items, cl *color.GlobalColor, config SizeConfig) {
 	if !config.Hidden && gfs.IsHidden(path) {
 		return
 	}
 
 	size, err := getPathSize(path, config)
 	if err != nil {
-		cl.PrintErrorf("failed to calculate size of: %s - %v\n", path, err)
+		cl.Redf("failed to calculate size of: %s - %v\n", path, err)
 		return
 	}
 
@@ -256,7 +256,7 @@ func humanReadableSize(size int64, fn int) string {
 	return fmt.Sprintf("%s %s", formatted, units[unitIndex])
 }
 
-func printSizeTable(its items, cl *colorlib.ColorLib, config SizeConfig) {
+func printSizeTable(its items, cl *color.GlobalColor, config SizeConfig) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 
@@ -265,7 +265,7 @@ func printSizeTable(its items, cl *colorlib.ColorLib, config SizeConfig) {
 	}
 
 	for i := range its {
-		colorSize := cl.Swhite(its[i].Size)
+		colorSize := cl.SWhite(its[i].Size)
 		colorName := utils.SprintStringColor(its[i].Name, its[i].Name, cl)
 		t.AppendRow(table.Row{colorSize, colorName})
 	}

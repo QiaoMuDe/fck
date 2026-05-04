@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/hash"
 	"gitee.com/MM-Q/qflag"
 )
@@ -54,12 +54,10 @@ func init() {
 }
 
 func runHash(cmd qflag.Command) error {
-	cl := colorlib.NewColorLib()
+	cl := color.G()
 
 	// 禁用颜色
-	if noColor.Get() {
-		cl.SetColor(!noColor.Get())
-	}
+	cl.SetNoColor(noColor.Get())
 
 	config := hash.HashConfig{
 		TargetPaths: cmd.Args(),

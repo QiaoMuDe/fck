@@ -124,7 +124,7 @@ internal/
 ### 依赖
 
 - 标准库 `net/http` - HTTP 客户端
-- `gitee.com/MM-Q/colorlib` - 彩色输出
+- `gitee.com/MM-Q/color` - 彩色输出
 
 ## 七、实现优先级
 

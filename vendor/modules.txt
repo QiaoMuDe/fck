@@ -1,12 +1,9 @@
 # codeberg.org/tslocum/cbind v0.1.7
 ## explicit; go 1.24.0
 codeberg.org/tslocum/cbind
-# gitee.com/MM-Q/colorlib v1.3.2
+# gitee.com/MM-Q/color v1.0.3
 ## explicit; go 1.25.0
-gitee.com/MM-Q/colorlib
-gitee.com/MM-Q/colorlib/internal/cache
-gitee.com/MM-Q/colorlib/internal/color
-gitee.com/MM-Q/colorlib/internal/style
+gitee.com/MM-Q/color
 # gitee.com/MM-Q/comprx v0.1.6
 ## explicit; go 1.25.0
 gitee.com/MM-Q/comprx
@@ -184,8 +181,11 @@ github.com/lucasb-eyer/go-colorful
 # github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0
 ## explicit; go 1.16
 github.com/lufia/plan9stats
-# github.com/mattn/go-isatty v0.0.20
-## explicit; go 1.15
+# github.com/mattn/go-colorable v0.1.14
+## explicit; go 1.18
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.22
+## explicit; go 1.21
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.20
 ## explicit; go 1.20
@@ -337,7 +337,7 @@ golang.org/x/net/ipv6
 # golang.org/x/sync v0.20.0
 ## explicit; go 1.25.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.42.0
+# golang.org/x/sys v0.43.0
 ## explicit; go 1.25.0
 golang.org/x/sys/plan9
 golang.org/x/sys/unix

@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/types"
 )
 
@@ -32,7 +32,7 @@ type HashConfig struct {
 //
 // 返回值:
 //   - error: 哈希计算过程中可能发生的错误
-func HashCmdMain(cl *colorlib.ColorLib, config HashConfig) error {
+func HashCmdMain(cl *color.GlobalColor, config HashConfig) error {
 	// 未指定路径时默认匹配当前目录所有文件
 	targetPaths := config.TargetPaths
 	if len(targetPaths) == 0 {
@@ -62,7 +62,7 @@ func HashCmdMain(cl *colorlib.ColorLib, config HashConfig) error {
 //
 // 返回:
 //   - error: 错误信息
-func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConfig) error {
+func processSinglePath(cl *color.GlobalColor, targetPath string, config HashConfig) error {
 	// 设置隐藏文件处理标志，供 collectFiles 使用
 	setHiddenFlag(config.Hidden)
 	files, err := collectFiles(targetPath, config.Recursion, cl)
@@ -88,8 +88,7 @@ func processSinglePath(cl *colorlib.ColorLib, targetPath string, config HashConf
 	if len(errors) > 0 {
 		printUniqueErrors(cl, errors)
 	} else if config.Write {
-		cl.Bluef("checksum file saved: ")
-		cl.Greenf(types.OutputFileName)
+		cl.Bluef("checksum file saved: %s", cl.SGreen(types.OutputFileName))
 		cl.Whitef(" (total: %d files)\n", processed)
 	}
 
@@ -141,7 +140,7 @@ func convertToRelativePaths(files []string, basePath string) ([]string, error) {
 // 参数:
 //   - cl: 颜色库对象
 //   - errors: 错误列表
-func printUniqueErrors(cl *colorlib.ColorLib, errors []error) {
+func printUniqueErrors(cl *color.GlobalColor, errors []error) {
 	if len(errors) == 0 {
 		return
 	}

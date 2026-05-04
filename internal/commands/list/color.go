@@ -3,7 +3,7 @@
 package list
 
 import (
-	"gitee.com/MM-Q/colorlib"
+	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/utils"
 )
 
@@ -12,7 +12,7 @@ import (
 // 参数:
 //   - info: 文件信息，包含文件类型和扩展名等信息
 //   - path: 要处理的路径字符串
-//   - cl: 用于彩色输出的colorlib.ColorLib实例
+//   - cl: 用于彩色输出的color.GlobalColor实例
 //
 // 返回:
 //   - string: 经过颜色处理后的路径字符串
@@ -26,29 +26,29 @@ import (
 //   - 紫色: 库文件和编译产物
 //   - 灰色: 空文件
 //   - 白色: 其他文件
-func GetColorString(info FileInfo, path string, cl *colorlib.ColorLib) string {
+func GetColorString(info FileInfo, path string, cl *color.GlobalColor) string {
 	// 1. 基础文件类型优先处理（跨平台统一）
 	switch info.EntryType {
 	case DirType:
 		// 目录使用蓝色
-		return cl.Sblue(path)
+		return cl.SBlue(path)
 	case SymlinkType:
 		// 符号链接使用青色
-		return cl.Scyan(path)
+		return cl.SCyan(path)
 	case ExecutableType:
 		// 可执行文件使用绿色
-		return cl.Sgreen(path)
+		return cl.SGreen(path)
 	case SocketType, PipeType, BlockDeviceType, CharDeviceType:
 		// 设备文件使用黄色
-		return cl.Syellow(path)
+		return cl.SYellow(path)
 	case EmptyType:
 		// 空文件使用灰色
-		return cl.Sgray(path)
+		return cl.SGray(path)
 	case FileType:
 		// 2. 普通文件按扩展名分类
 		return utils.GetFileColorByExtension(info.FileExt, path, cl)
 	default:
 		// 未知类型使用白色
-		return cl.Swhite(path)
+		return cl.SWhite(path)
 	}
 }
