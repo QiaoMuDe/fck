@@ -151,7 +151,12 @@ func OutputDirectly(content []byte, name string, config CatConfig) error {
 func outputPlain(lines [][]byte, config CatConfig) error {
 	lineNum := 0
 
-	for _, line := range lines {
+	for i, line := range lines {
+		// 跳过最后一行空行（因为文件以换行符结尾时会产生空行）
+		if i == len(lines)-1 && len(line) == 0 {
+			continue
+		}
+
 		content := string(line)
 		isBlank := len(content) == 0
 
