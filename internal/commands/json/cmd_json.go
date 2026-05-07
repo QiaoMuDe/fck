@@ -103,6 +103,13 @@ func readInput(config JsonConfig) ([]byte, error) {
 		if config.Write {
 			return nil, fmt.Errorf("cannot use -w flag with pipe input")
 		}
+
+		// 管道输入时禁用高亮模式
+		if config.Highlight {
+			config.Highlight = false
+		}
+
+		// 读取标准输入
 		return readAllStdin()
 	}
 

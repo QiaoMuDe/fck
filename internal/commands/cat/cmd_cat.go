@@ -50,6 +50,11 @@ func CatCmdMain(config CatConfig) error {
 		return fmt.Errorf("no file specified")
 	}
 
+	// 如果为管道输入或重定向则禁用高亮模式
+	if isPipe {
+		config.Highlight = false
+	}
+
 	// 5. 获取内容源
 	var source ContentSource
 	if isPipe {
