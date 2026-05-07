@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/go-kit/term"
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters"
@@ -26,6 +27,8 @@ type JsonConfig struct {
 	Query     string   // 查询路径
 	Highlight bool     // 语法高亮
 	Raw       bool     // 原始字符串输出
+	Write     bool     // 原地写入
+	Backup    bool     // 写入前备份
 	Files     []string // 位置参数（文件路径）
 }
 
@@ -96,6 +99,10 @@ func JsonCmdMain(config JsonConfig) error {
 func readInput(config JsonConfig) ([]byte, error) {
 	// 1. 优先检测管道/重定向输入
 	if term.IsStdinPipe() {
+		// 管道输入时禁用 -w
+		if config.Write {
+			return nil, fmt.Errorf("cannot use -w flag with pipe input")
+		}
 		return readAllStdin()
 	}
 
@@ -235,6 +242,33 @@ func writeOutput(data []byte, config JsonConfig) error {
 	// 确保内容以换行符结尾
 	if !strings.HasSuffix(content, "\n") {
 		content += "\n"
+	}
+
+	// 原地写入模式
+	if config.Write {
+		if len(config.Files) == 0 {
+			return fmt.Errorf("-w flag requires a file path argument")
+		}
+		targetFile := config.Files[0]
+
+		// 创建备份（如果启用）
+		if config.Backup {
+			backupFile := targetFile + ".bak"
+			if err := fs.CopyEx(targetFile, backupFile, true); err != nil {
+				return fmt.Errorf("failed to create backup: %w", err)
+			}
+		}
+
+		// 原子写入：临时文件+移动
+		tmpFile := targetFile + ".tmp"
+		if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+			return fmt.Errorf("failed to write temp file: %w", err)
+		}
+		if err := fs.MoveEx(tmpFile, targetFile, true); err != nil {
+			return fmt.Errorf("failed to move temp file: %w", err)
+		}
+
+		return nil
 	}
 
 	// 如果需要语法高亮
