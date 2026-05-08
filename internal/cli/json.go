@@ -76,6 +76,14 @@ func init() {
 				AllowNone: true,
 			},
 		},
+		FlagDependencies: []qflag.FlagDependency{
+			{
+				Name:    "backup-write",
+				Trigger: "backup",
+				Targets: []string{"write"},
+				Type:    qflag.DepRequired,
+			},
+		},
 	}
 
 	if err := JsonCmd.ApplyOpts(cmdOpts); err != nil {
