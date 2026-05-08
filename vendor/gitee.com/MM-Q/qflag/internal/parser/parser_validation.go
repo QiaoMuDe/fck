@@ -240,3 +240,94 @@ func (p *DefaultParser) validateRequiredGroups(config *types.CmdConfig) error {
 
 	return nil
 }
+
+// validateFlagDependencies 验证标志依赖关系
+//
+// 参数:
+//   - config: 命令配置
+//
+// 返回值:
+//   - error: 如果依赖关系验证失败返回错误
+//
+// 功能说明:
+//   - 遍历所有标志依赖关系
+//   - 只有当触发标志被设置时才进行验证
+//   - 根据依赖类型执行相应的验证逻辑
+//   - 提供清晰的错误信息
+func (p *DefaultParser) validateFlagDependencies(config *types.CmdConfig) error {
+	if len(config.FlagDependencies) == 0 {
+		return nil
+	}
+
+	// 使用缓存的已设置标志映射
+	setFlags := p.setFlagsMap
+
+	for _, dep := range config.FlagDependencies {
+		// 只有当触发标志被设置时才检查
+		if !setFlags[dep.Trigger] {
+			continue
+		}
+
+		switch dep.Type {
+		case types.DepMutex:
+			// 互斥依赖：检查是否有目标标志被设置
+			var conflictFlags []string
+			seenConflicts := make(map[string]bool)
+
+			for _, target := range dep.Targets {
+				// 检查目标标志是否存在
+				displayName, ok := p.flagDisplayNames[target]
+				if !ok {
+					return fmt.Errorf("invalid target flag '%s' in dependency '%s'", target, dep.Name)
+				}
+
+				// 如果目标标志被设置, 添加到冲突列表
+				if setFlags[target] {
+					// 添加去重检查，避免同一个标志的多个名称重复显示
+					if !seenConflicts[displayName] {
+						seenConflicts[displayName] = true
+						conflictFlags = append(conflictFlags, displayName)
+					}
+				}
+			}
+
+			// 如果有冲突标志, 返回错误
+			if len(conflictFlags) > 0 {
+				triggerDisplay := p.flagDisplayNames[dep.Trigger]
+				return fmt.Errorf("flag %s cannot be used with %v (dependency: %s)",
+					triggerDisplay, conflictFlags, dep.Name)
+			}
+
+		case types.DepRequired:
+			// 必需依赖：检查所有目标标志是否都被设置
+			var missingFlags []string
+			seenMissing := make(map[string]bool)
+
+			for _, target := range dep.Targets {
+				// 检查目标标志是否存在
+				displayName, ok := p.flagDisplayNames[target]
+				if !ok {
+					return fmt.Errorf("invalid target flag '%s' in dependency '%s'", target, dep.Name)
+				}
+
+				// 如果目标标志未被设置, 添加到缺失列表
+				if !setFlags[target] {
+					// 添加去重检查，避免同一个标志的多个名称重复显示
+					if !seenMissing[displayName] {
+						seenMissing[displayName] = true
+						missingFlags = append(missingFlags, displayName)
+					}
+				}
+			}
+
+			// 如果有缺失标志, 返回错误
+			if len(missingFlags) > 0 {
+				triggerDisplay := p.flagDisplayNames[dep.Trigger]
+				return fmt.Errorf("flag %s requires flags %v to be set (dependency: %s)",
+					triggerDisplay, missingFlags, dep.Name)
+			}
+		}
+	}
+
+	return nil
+}

@@ -1,19 +1,19 @@
 // Package cmd 提供命令实现和命令管理功能
 //
-// cmd_group.go 包含互斥组和必需组相关的功能实现
+// cmd_group.go 包含互斥组、必需组和标志依赖相关的功能实现
 //
 // 本文件提供了以下主要功能:
 //   - 互斥组管理: 限制组内标志最多只能设置一个
 //   - 必需组管理: 要求组内标志全部设置或条件性必需
+//   - 标志依赖管理: 定义标志之间的依赖关系
 //
 // 主要方法列表:
 //   - AddMutexGroup: 添加互斥组
-//   - GetMutexGroup/GetMutexGroups: 获取互斥组
-//   - RemoveMutexGroup: 移除互斥组
 //   - MutexGroups: 获取所有互斥组
 //   - AddRequiredGroup: 添加必需组
-//   - GetRequiredGroup/RequiredGroups: 获取必需组
-//   - RemoveRequiredGroup: 移除必需组
+//   - RequiredGroups: 获取所有必需组
+//   - AddFlagDependency: 添加标志依赖关系
+//   - FlagDependencies: 获取所有标志依赖关系
 //
 // 互斥组特性:
 //   - 组内标志互斥, 只能设置其中一个
@@ -24,6 +24,11 @@
 //   - 支持条件性必需 (Conditional)
 //   - 当 conditional=true 时, 只有组中任一标志被设置才要求全部设置
 //   - 适用于依赖性选项
+//
+// 标志依赖特性:
+//   - 支持互斥依赖: 触发标志设置时, 目标标志不能设置
+//   - 支持必需依赖: 触发标志设置时, 目标标志必须设置
+//   - 适用于条件性约束
 //
 // 线程安全:
 //   - 所有公共方法都使用读写锁保护
@@ -92,76 +97,6 @@ func (c *Cmd) AddMutexGroup(name string, flags []string, allowNone bool) error {
 
 	c.config.MutexGroups = append(c.config.MutexGroups, group)
 	return nil
-}
-
-// GetMutexGroups 获取命令的所有互斥组
-//
-// 返回值:
-//   - []types.MutexGroup: 互斥组列表的副本
-//
-// 功能说明:
-//   - 返回命令中定义的所有互斥组
-//   - 返回副本以防止外部修改内部状态
-//   - 使用读锁保护并发安全
-func (c *Cmd) GetMutexGroups() []types.MutexGroup {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	// 返回副本以防止外部修改
-	groups := make([]types.MutexGroup, len(c.config.MutexGroups))
-	copy(groups, c.config.MutexGroups)
-	return groups
-}
-
-// RemoveMutexGroup 移除指定名称的互斥组
-//
-// 参数:
-//   - name: 要移除的互斥组名称
-//
-// 返回值:
-//   - error: 移除失败时返回错误
-//
-// 功能说明:
-//   - 根据名称查找并移除互斥组
-//   - 使用写锁保护并发安全
-//   - 如果找不到对应名称的互斥组, 返回错误
-func (c *Cmd) RemoveMutexGroup(name string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	for i, group := range c.config.MutexGroups {
-		if group.Name == name {
-			c.config.MutexGroups = append(c.config.MutexGroups[:i], c.config.MutexGroups[i+1:]...)
-			return nil
-		}
-	}
-
-	return fmt.Errorf("mutex group '%s' not found in '%s'", name, c.Name())
-}
-
-// GetMutexGroup 获取指定名称的互斥组
-//
-// 参数:
-//   - name: 要获取的互斥组名称
-//
-// 返回值:
-//   - *types.MutexGroup: 互斥组指针, 如果找到则返回对应的互斥组
-//   - bool: 是否找到, true表示找到
-//
-// 功能说明:
-//   - 根据名称查找互斥组
-//   - 使用读锁保护并发安全
-//   - 如果找不到对应名称的互斥组, 返回nil和false
-func (c *Cmd) GetMutexGroup(name string) (*types.MutexGroup, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	for i := range c.config.MutexGroups {
-		if c.config.MutexGroups[i].Name == name {
-			return &c.config.MutexGroups[i], true
-		}
-	}
-	return nil, false
 }
 
 // MutexGroups 获取所有互斥组
@@ -240,64 +175,15 @@ func (c *Cmd) AddRequiredGroup(name string, flags []string, conditional bool) er
 	return nil
 }
 
-// RemoveRequiredGroup 移除必需组
-//
-// 参数:
-//   - name: 必需组名称
-//
-// 返回值:
-//   - error: 移除失败时返回错误
-//
-// 功能说明:
-//   - 从命令配置中移除指定的必需组
-//   - 如果组不存在，返回错误
-func (c *Cmd) RemoveRequiredGroup(name string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	for i, group := range c.config.RequiredGroups {
-		if group.Name == name {
-			c.config.RequiredGroups = append(c.config.RequiredGroups[:i], c.config.RequiredGroups[i+1:]...)
-			return nil
-		}
-	}
-
-	return fmt.Errorf("required group '%s' not found in '%s'", name, c.Name())
-}
-
-// GetRequiredGroup 获取必需组
-//
-// 参数:
-//   - name: 必需组名称
-//
-// 返回值:
-//   - *types.RequiredGroup: 必需组指针
-//   - bool: 是否找到
-//
-// 功能说明:
-//   - 根据名称获取必需组
-//   - 如果组不存在，返回 nil 和 false
-func (c *Cmd) GetRequiredGroup(name string) (*types.RequiredGroup, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	for i := range c.config.RequiredGroups {
-		if c.config.RequiredGroups[i].Name == name {
-			return &c.config.RequiredGroups[i], true
-		}
-	}
-
-	return nil, false
-}
-
 // RequiredGroups 获取所有必需组
 //
 // 返回值:
-//   - []types.RequiredGroup: 所有必需组列表
+//   - []types.RequiredGroup: 必需组列表的副本
 //
 // 功能说明:
-//   - 返回命令配置中的所有必需组
-//   - 返回的是副本，修改不会影响原配置
+//   - 返回命令中定义的所有必需组
+//   - 返回副本以防止外部修改内部状态
+//   - 使用读锁保护并发安全
 func (c *Cmd) RequiredGroups() []types.RequiredGroup {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -305,7 +191,96 @@ func (c *Cmd) RequiredGroups() []types.RequiredGroup {
 	if len(c.config.RequiredGroups) == 0 {
 		return []types.RequiredGroup{}
 	}
-	result := make([]types.RequiredGroup, len(c.config.RequiredGroups))
-	copy(result, c.config.RequiredGroups)
-	return result
+	groups := make([]types.RequiredGroup, len(c.config.RequiredGroups))
+	copy(groups, c.config.RequiredGroups)
+	return groups
+}
+
+// AddFlagDependency 添加标志依赖关系
+//
+// 参数:
+//   - name: 依赖关系名称
+//   - trigger: 触发标志名称
+//   - targets: 目标标志名称列表
+//   - depType: 依赖关系类型
+//
+// 返回值:
+//   - error: 添加失败时返回错误
+func (c *Cmd) AddFlagDependency(name, trigger string, targets []string, depType types.DepType) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// 验证名称
+	if name == "" {
+		return fmt.Errorf("empty flag dependency name in '%s'", c.Name())
+	}
+
+	// 检查是否已存在
+	for _, dep := range c.config.FlagDependencies {
+		if dep.Name == name {
+			return fmt.Errorf("duplicate flag dependency '%s' in '%s'", name, c.Name())
+		}
+	}
+
+	// 验证触发标志
+	if trigger == "" {
+		return fmt.Errorf("empty trigger flag in '%s'", c.Name())
+	}
+
+	// 验证目标标志列表
+	if len(targets) == 0 {
+		return fmt.Errorf("empty target flags in '%s'", c.Name())
+	}
+
+	// 检查自依赖
+	for _, target := range targets {
+		if target == trigger {
+			return fmt.Errorf("trigger flag '%s' cannot be in targets in '%s'", trigger, c.Name())
+		}
+	}
+
+	// 验证触发标志是否存在
+	if _, exists := c.flagRegistry.Get(trigger); !exists {
+		return fmt.Errorf("trigger flag '%s' not found in '%s'", trigger, c.Name())
+	}
+
+	// 验证目标标志是否存在
+	for _, target := range targets {
+		if _, exists := c.flagRegistry.Get(target); !exists {
+			return fmt.Errorf("target flag '%s' not found in '%s'", target, c.Name())
+		}
+	}
+
+	// 创建依赖关系
+	dep := types.FlagDependency{
+		Name:    name,
+		Trigger: trigger,
+		Targets: targets,
+		Type:    depType,
+	}
+
+	// 添加到配置
+	c.config.FlagDependencies = append(c.config.FlagDependencies, dep)
+	return nil
+}
+
+// FlagDependencies 获取所有标志依赖关系
+//
+// 返回值:
+//   - []types.FlagDependency: 标志依赖关系列表的副本
+//
+// 功能说明:
+//   - 返回命令中定义的所有标志依赖关系
+//   - 返回副本以防止外部修改内部状态
+//   - 使用读锁保护并发安全
+func (c *Cmd) FlagDependencies() []types.FlagDependency {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if len(c.config.FlagDependencies) == 0 {
+		return []types.FlagDependency{}
+	}
+	deps := make([]types.FlagDependency, len(c.config.FlagDependencies))
+	copy(deps, c.config.FlagDependencies)
+	return deps
 }

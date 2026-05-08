@@ -504,7 +504,16 @@ func (c *Cmd) ApplyOpts(opts *CmdOpts) error {
 		}
 	}
 
-	// 6. 添加子命令 - 调用现有方法
+	// 6. 添加标志依赖关系 - 调用现有方法
+	if len(opts.FlagDependencies) > 0 {
+		for _, dep := range opts.FlagDependencies {
+			if err := c.AddFlagDependency(dep.Name, dep.Trigger, dep.Targets, dep.Type); err != nil {
+				return fmt.Errorf("add flag dependency '%s' failed in '%s': %w", dep.Name, c.Name(), err)
+			}
+		}
+	}
+
+	// 7. 添加子命令 - 调用现有方法
 	if len(opts.SubCmds) > 0 {
 		if err := c.AddSubCmds(opts.SubCmds...); err != nil {
 			return fmt.Errorf("add subcommands failed in '%s': %w", c.Name(), err)

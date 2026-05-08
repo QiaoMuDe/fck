@@ -136,68 +136,6 @@ var NewCmdOpts = cmd.NewCmdOpts
 
 ## 函数
 
-### AddMutexGroup
-
-```go
-func AddMutexGroup(name string, flags []string, allowNone bool) error
-```
-
-添加互斥组到命令
-
-**参数:**
-
-- `name`: 互斥组名称, 用于错误提示和标识
-- `flags`: 互斥组中的标志名称列表
-- `allowNone`: 是否允许一个都不设置
-
-**功能说明:**
-
-- 创建新的互斥组并添加到命令配置中
-- 互斥组中的标志最多只能有一个被设置
-- 如果 `allowNone` 为 false, 则必须至少有一个标志被设置
-- 使用写锁保护并发安全
-
-**注意事项:**
-
-- 标志名称必须是已注册的标志
-- 互斥组名称在命令中应该唯一
-- 如果组名已存在，返回错误
-
-**返回值:**
-
-- `error`: 添加失败时返回错误
-
-### AddRequiredGroup
-
-```go
-func AddRequiredGroup(name string, flags []string, conditional bool) error
-```
-
-添加必需组到命令
-
-**参数:**
-
-- `name`: 必需组名称, 用于错误提示和标识
-- `flags`: 必需组中的标志名称列表
-- `conditional`: 是否为条件性必需组，如果为true，则只有当组中任何一个标志被设置时，才要求所有标志都被设置
-
-**功能说明:**
-
-- 创建新的必需组并添加到命令配置中
-- 必需组中的所有标志都必须被设置
-- 如果是条件性必需组，则只有当组中任何一个标志被设置时，才要求所有标志都被设置
-- 使用写锁保护并发安全
-
-**注意事项:**
-
-- 标志名称必须是已注册的标志
-- 必需组名称在命令中应该唯一
-- 如果组名已存在，返回错误
-
-**返回值:**
-
-- `error`: 添加失败时返回错误
-
 ### AddSubCmdFrom
 
 ```go
@@ -750,6 +688,60 @@ type RequiredGroup = types.RequiredGroup
 **RequiredGroup**
 
 定义了一组必需的标志，其中所有标志都必须被设置。当用户没有设置必需组中的某些标志时，解析器会返回错误。
+
+### FlagDependency
+
+```go
+type FlagDependency = types.FlagDependency
+```
+
+**FlagDependency 标志依赖关系**
+
+定义了标志之间的依赖关系。当触发标志被设置时，目标标志会受到约束（互斥或必需）。
+
+**字段说明:**
+  - Name: 依赖关系名称，用于错误提示和标识
+  - Trigger: 触发标志名称，当此标志被设置时触发依赖检查
+  - Targets: 目标标志名称列表，这些标志会受到约束
+  - Type: 依赖关系类型（DepMutex 或 DepRequired）
+
+**使用场景:**
+  - 远程模式与本地路径互斥 (trigger="remote", targets=["local-path"], type=DepMutex)
+  - SSL模式需要证书和密钥 (trigger="ssl", targets=["cert","key"], type=DepRequired)
+  - 配置文件模式与其他配置互斥 (trigger="config", targets=["port","host"], type=DepMutex)
+
+### DepType
+
+```go
+type DepType = types.DepType
+```
+
+**DepType 依赖关系类型**
+
+定义了标志依赖关系的类型，用于区分互斥依赖和必需依赖。
+
+**常量值:**
+  - DepMutex: 互斥依赖，触发标志被设置时，目标标志不能被设置
+  - DepRequired: 必需依赖，触发标志被设置时，目标标志必须被设置
+
+**使用示例:**
+```go
+// 互斥依赖：远程模式与本地路径互斥
+dep := qflag.FlagDependency{
+    Name:    "remote_mutex_local",
+    Trigger: "remote",
+    Targets: []string{"local-path"},
+    Type:    qflag.DepMutex,
+}
+
+// 必需依赖：SSL模式需要证书和密钥
+dep := qflag.FlagDependency{
+    Name:    "ssl_requires_cert_key",
+    Trigger: "ssl",
+    Targets: []string{"cert", "key"},
+    Type:    qflag.DepRequired,
+}
+```
 
 ### SizeFlag
 

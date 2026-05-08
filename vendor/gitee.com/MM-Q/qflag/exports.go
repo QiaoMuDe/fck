@@ -20,6 +20,22 @@ type MutexGroup = types.MutexGroup
 // 当用户没有设置必需组中的某些标志时，解析器会返回错误
 type RequiredGroup = types.RequiredGroup
 
+// FlagDependency 定义了标志之间的依赖关系
+// 当触发标志被设置时，目标标志会受到约束（互斥或必需）
+type FlagDependency = types.FlagDependency
+
+// DepType 依赖关系类型
+type DepType = types.DepType
+
+// 依赖关系类型常量
+const (
+	// DepMutex 互斥依赖：触发标志被设置时，目标标志不能被设置
+	DepMutex = types.DepMutex
+
+	// DepRequired 必需依赖：触发标志被设置时，目标标志必须被设置
+	DepRequired = types.DepRequired
+)
+
 // CmdConfig 包含了命令的各种配置选项, 用于自定义命令的行为和外观
 // 这些配置会影响命令的帮助信息显示、环境变量处理、错误提示等
 type CmdConfig = types.CmdConfig

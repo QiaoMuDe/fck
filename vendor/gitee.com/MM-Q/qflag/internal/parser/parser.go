@@ -123,8 +123,8 @@ func (p *DefaultParser) ParseOnly(cmd types.Command, args []string) error {
 		return err
 	}
 
-	// 如果有互斥组或必需组，需要验证, 则构建已设置标志映射
-	if len(config.MutexGroups) > 0 || len(config.RequiredGroups) > 0 {
+	// 如果有互斥组或必需组或标志依赖关系，需要验证, 则构建已设置标志映射
+	if len(config.MutexGroups) > 0 || len(config.RequiredGroups) > 0 || len(config.FlagDependencies) > 0 {
 		// 构建已设置标志映射（在验证前构建，确保标志状态已确定）
 		p.buildSetFlagsMap(cmd)
 
@@ -135,6 +135,11 @@ func (p *DefaultParser) ParseOnly(cmd types.Command, args []string) error {
 
 		// 验证必需组规则
 		if err := p.validateRequiredGroups(config); err != nil {
+			return err
+		}
+
+		// 验证标志依赖关系
+		if err := p.validateFlagDependencies(config); err != nil {
 			return err
 		}
 	}

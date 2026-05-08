@@ -401,6 +401,8 @@ func (c *Cmd) HasSubCmd(name string) bool {
 // 注意事项:
 //   - 重复解析会覆盖之前的解析结果
 //   - 如果需要确保只解析一次，请使用 ParseOnce
+//   - 建议在解析前完成所有配置（互斥组、必需组、标志依赖等）
+//   - 解析后添加的配置需要重新调用 Parse 才能生效
 func (c *Cmd) Parse(args []string) error {
 	return c.parser.Parse(c, args)
 }
@@ -422,6 +424,8 @@ func (c *Cmd) Parse(args []string) error {
 // 注意事项:
 //   - 如果需要重复解析，请使用 Parse 方法
 //   - 建议在普通场景使用此方法，避免误用
+//   - 必须在解析前完成所有配置（互斥组、必需组、标志依赖等）
+//   - 由于只解析一次，解析后添加的配置不会生效
 func (c *Cmd) ParseOnce(args []string) error {
 	var err error
 	c.parseOnce.Do(func() {
@@ -447,6 +451,8 @@ func (c *Cmd) ParseOnce(args []string) error {
 // 注意事项:
 //   - 重复解析会覆盖之前的解析结果
 //   - 如果需要确保只解析一次，请使用 ParseAndRouteOnce
+//   - 建议在解析前完成所有配置（互斥组、必需组、标志依赖等）
+//   - 解析后添加的配置需要重新调用 ParseAndRoute 才能生效
 func (c *Cmd) ParseAndRoute(args []string) error {
 	return c.parser.ParseAndRoute(c, args)
 }
@@ -468,6 +474,8 @@ func (c *Cmd) ParseAndRoute(args []string) error {
 // 注意事项:
 //   - 如果需要重复解析，请使用 ParseAndRoute 方法
 //   - 建议在普通场景使用此方法，避免误用
+//   - 必须在解析前完成所有配置（互斥组、必需组、标志依赖等）
+//   - 由于只解析一次，解析后添加的配置不会生效
 func (c *Cmd) ParseAndRouteOnce(args []string) error {
 	var err error
 	c.parseOnce.Do(func() {
@@ -493,6 +501,8 @@ func (c *Cmd) ParseAndRouteOnce(args []string) error {
 // 注意事项:
 //   - 重复解析会覆盖之前的解析结果
 //   - 如果需要确保只解析一次，请使用 ParseOnlyOnce
+//   - 建议在解析前完成所有配置（互斥组、必需组、标志依赖等）
+//   - 解析后添加的配置需要重新调用 ParseOnly 才能生效
 func (c *Cmd) ParseOnly(args []string) error {
 	return c.parser.ParseOnly(c, args)
 }
@@ -514,6 +524,8 @@ func (c *Cmd) ParseOnly(args []string) error {
 // 注意事项:
 //   - 如果需要重复解析，请使用 ParseOnly 方法
 //   - 建议在普通场景使用此方法，避免误用
+//   - 必须在解析前完成所有配置（互斥组、必需组、标志依赖等）
+//   - 由于只解析一次，解析后添加的配置不会生效
 func (c *Cmd) ParseOnlyOnce(args []string) error {
 	var err error
 	c.parseOnce.Do(func() {

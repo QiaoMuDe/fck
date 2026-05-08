@@ -484,7 +484,7 @@ func ParseTimeWithCommonFormats(value string) (time.Time, string, error)
 
 ParseTimeWithCommonFormats 尝试使用常见格式解析时间字符串
 
-**函数功能: **
+**函数功能:**
   - 尝试使用常见格式解析时间字符串
 
 **参数:**
@@ -495,7 +495,7 @@ ParseTimeWithCommonFormats 尝试使用常见格式解析时间字符串
   - string: 使用的时间格式
   - error: 如果解析失败返回错误
 
-**说明: **
+**说明:**
   - 使用常见时间格式列表进行解析
   - 返回第一个成功解析的时间和格式
 
@@ -518,7 +518,7 @@ ParseTimeWithFormats 尝试使用多种格式解析时间字符串
   - string: 使用的时间格式
   - error: 如果解析失败返回错误
 
-**功能说明: **
+**功能说明:**
   - 按给定格式列表顺序尝试解析
   - 返回第一个成功解析的时间和格式
   - 如果所有格式都失败, 返回错误
@@ -715,17 +715,18 @@ const (
 
 ```go
 type CmdConfig struct {
-    Version        string            // 版本号
-    UseChinese     bool              // 是否使用中文
-    EnvPrefix      string            // 环境变量前缀
-    UsageSyntax    string            // 命令使用语法
-    Example        map[string]string // 示例使用, key为描述, value为示例命令
-    Notes          []string          // 注意事项
-    LogoText       string            // 命令logo文本
-    MutexGroups    []MutexGroup      // 互斥组列表
-    RequiredGroups []RequiredGroup   // 必需组列表
-    Completion     bool              // 是否启用自动补全标志
-    DynamicCompletion bool           // 是否启用动态补全
+    Version           string            // 版本号
+    UseChinese        bool              // 是否使用中文
+    EnvPrefix         string            // 环境变量前缀
+    UsageSyntax       string            // 命令使用语法
+    Example           map[string]string // 示例使用, key为描述, value为示例命令
+    Notes             []string          // 注意事项
+    LogoText          string            // 命令logo文本
+    MutexGroups       []MutexGroup      // 互斥组列表
+    RequiredGroups    []RequiredGroup   // 必需组列表
+    FlagDependencies  []FlagDependency  // 标志依赖关系列表
+    Completion        bool              // 是否启用自动补全标志
+    DynamicCompletion bool              // 是否启用动态补全
 }
 ```
 
@@ -851,13 +852,13 @@ CmdRegistry 命令注册表接口
 
 CmdRegistry 定义了命令注册和管理的标准接口, 提供了 命令的完整生命周期管理功能。
 
-**核心功能: **
+**核心功能:**
   - 命令的注册和注销
   - 基于名称的查找和检索
   - 批量操作和遍历支持
   - 存在性检查和计数
 
-**设计特点: **
+**设计特点:**
   - 支持长名称和短名称查找
   - 提供统一的错误处理
   - 支持别名管理 (通过具体实现) 
@@ -1086,12 +1087,12 @@ Error 错误类型
 
 Error 是qflag项目的标准错误类型, 提供了结构化的错误信息。 包含错误码、错误消息和原始错误, 便于错误分类和处理。
 
-**字段说明: **
+**字段说明:**
   - Code: 错误码, 用于错误分类和程序化处理
   - Message: 错误消息, 面向用户的描述信息
   - Cause: 原始错误, 包装的底层错误
 
-**特性: **
+**特性:**
   - 实现error接口
   - 支持错误链 (errors.Unwrap) 
   - 支持错误比较 (errors.Is) 
@@ -1113,7 +1114,7 @@ NewError 创建新的错误
 **返回值:**
   - *Error: 新创建的错误实例
 
-**功能说明: **
+**功能说明:**
 
 #### func (e *Error) Error() string
 
@@ -1126,7 +1127,7 @@ Error 实现 error 接口
 **返回值:**
   - string: 格式化的错误字符串
 
-**功能说明: **
+**功能说明:**
   - 返回用户友好的错误信息
   - 包含原始错误信息 (如果有) 
   - 格式: 消息 + ": " + 原始错误
@@ -1145,7 +1146,7 @@ Is 判断错误是否相同
 **返回值:**
   - bool: 是否相同, true表示相同
 
-**功能说明: **
+**功能说明:**
   - 基于错误码进行比较
   - 支持errors.Is函数
   - 忽略错误消息和原始错误
@@ -1161,7 +1162,7 @@ Unwrap 实现 errors.Unwrap 接口
 **返回值:**
   - error: 原始错误
 
-**功能说明: **
+**功能说明:**
   - 支持错误链操作
   - 允许使用errors.Unwrap获取底层错误
   - 支持errors.As和errors.Is
@@ -1178,7 +1179,7 @@ ErrorHandling 错误处理方式枚举
 
 ErrorHandling 定义了解析错误时的处理策略, 直接使用标准库 flag包的错误处理方式, 保持兼容性。
 
-**可选值: **
+**可选值:**
   - ContinueOnError: 解析错误时继续解析并返回错误
   - ExitOnError: 解析错误时退出程序
   - PanicOnError: 解析错误时触发panic
@@ -1391,7 +1392,7 @@ Flag 接口定义了标志的核心行为
 
 Flag 是所有标志类型必须实现的基础接口, 定义了标志的 基本操作和属性。所有具体标志类型都应实现此接口。
 
-**设计原则: **
+**设计原则:**
   - 提供统一的标志操作接口
   - 支持多种数据类型
   - 支持验证和环境变量绑定
@@ -1489,13 +1490,13 @@ FlagRegistry 标志注册表接口
 
 FlagRegistry 定义了标志注册和管理的标准接口, 提供了 标志的完整生命周期管理功能。
 
-**核心功能: **
+**核心功能:**
   - 标志的注册和注销
   - 基于名称的查找和检索
   - 批量操作和遍历支持
   - 存在性检查和计数
 
-**设计特点: **
+**设计特点:**
   - 支持长名称和短名称查找
   - 提供统一的错误处理
   - 支持别名管理 (通过具体实现) 
@@ -1513,7 +1514,7 @@ FlagType 标志类型枚举
 
 FlagType 定义了所有支持的标志类型, 用于类型识别和 特定处理逻辑的实现。
 
-**设计原则: **
+**设计原则:**
   - 每种类型对应一种数据格式
   - 支持基础类型和复合类型
   - 便于类型检查和转换
@@ -1561,7 +1562,7 @@ IsNumericType 检查是否为数值类型
 **返回值:**
   - bool: 是否为数值类型, true表示是
 
-**功能说明: **
+**功能说明:**
   - 识别所有数值类型的标志
   - 包括整数、浮点数和大小类型
   - 用于数值范围验证
@@ -1577,7 +1578,7 @@ IsSliceType 检查是否为切片类型
 **返回值:**
   - bool: 是否为切片类型, true表示是
 
-**功能说明: **
+**功能说明:**
   - 识别所有切片类型的标志
   - 用于特殊处理逻辑
   - 支持多值输入的标志
@@ -1593,7 +1594,7 @@ IsValid 检查标志类型是否有效
 **返回值:**
   - bool: 是否有效, true表示有效
 
-**功能说明: **
+**功能说明:**
   - 排除未知类型
   - 用于类型验证
   - 确保类型在预定义范围内
@@ -1609,12 +1610,12 @@ String 返回标志类型的字符串表示
 **返回值:**
   - string: 类型的可读字符串表示
 
-**功能说明: **
+**功能说明:**
   - 提供人类可读的类型名称
   - 用于错误消息和日志
   - 未知类型返回格式化字符串
 
-**示例: **
+**示例:**
   - FlagTypeString -> "string"
   - FlagTypeIntSlice -> "[]int"
   - FlagType(999) -> "FlagType(999)"
@@ -1635,12 +1636,12 @@ MutexGroup 互斥组定义
 
 MutexGroup 定义了一组互斥的标志, 其中最多只能有一个被设置。 当用户设置了互斥组中的多个标志时, 解析器会返回错误。
 
-**字段说明: **
+**字段说明:**
   - Name: 互斥组名称, 用于错误提示和标识
   - Flags: 互斥组中的标志名称列表
   - AllowNone: 是否允许一个都不设置
 
-**使用场景: **
+**使用场景:**
   - 输出格式互斥 (如 --json 和 --xml 不能同时使用) 
   - 操作模式互斥 (如 --create 和 --update 不能同时使用) 
   - 必选选项 (如必须指定 --file 或 --url 中的一个) 
@@ -1750,6 +1751,83 @@ port.SetValidator(func(value int) error {
 
 ---
 
+### type DepType int
+
+```go
+type DepType int
+```
+
+DepType 依赖关系类型
+
+DepType 定义了标志依赖关系的类型，用于区分互斥依赖和必需依赖。
+
+```go
+const (
+    // DepMutex 互斥依赖
+    // 当触发标志被设置时，目标标志不能被设置
+    DepMutex DepType = iota
+
+    // DepRequired 必需依赖
+    // 当触发标志被设置时，所有目标标志必须被设置
+    DepRequired
+)
+```
+
+**使用场景:**
+  - DepMutex: 远程模式与本地路径互斥 (trigger="remote", targets=["local-path"])
+  - DepRequired: SSL模式需要证书和密钥 (trigger="ssl", targets=["cert","key"])
+  - DepMutex: 配置文件模式与其他配置互斥 (trigger="config", targets=["port","host"])
+
+#### func (d DepType) String() string
+
+```go
+func (d DepType) String() string
+```
+
+String 返回依赖类型的字符串表示
+
+**返回值:**
+  - string: 依赖类型的字符串表示
+    - DepMutex -> "mutex"
+    - DepRequired -> "required"
+    - 其他 -> "unknown"
+
+---
+
+### type FlagDependency struct
+
+```go
+type FlagDependency struct {
+    Name    string   // 依赖关系名称，用于错误提示和标识
+    Trigger string   // 触发标志名称
+    Targets []string // 目标标志名称列表
+    Type    DepType  // 依赖关系类型
+}
+```
+
+FlagDependency 标志依赖关系定义
+
+FlagDependency 定义了当某个标志（触发标志）被设置时，对其他标志（目标标志）的约束条件。
+
+**字段说明:**
+  - Name: 依赖关系名称，用于错误提示和标识
+  - Trigger: 触发标志的名称，当此标志被设置时触发依赖检查
+  - Targets: 目标标志名称列表，这些标志会受到约束
+  - Type: 依赖关系类型（互斥或必需）
+
+**使用场景:**
+  - 远程模式与本地路径互斥 (trigger="remote", targets=["local-path"], type=DepMutex)
+  - SSL模式需要证书和密钥 (trigger="ssl", targets=["cert","key"], type=DepRequired)
+  - 配置文件模式与其他配置互斥 (trigger="config", targets=["port","host"], type=DepMutex)
+
+**注意事项:**
+  - 依赖关系是单向的，从触发标志指向目标标志
+  - 触发标志和目标标志必须都已注册
+  - 触发标志不能在目标标志列表中（不能自依赖）
+  - 依赖关系名称在命令中应该唯一
+
+---
+
 ### type OptionInfo struct
 
 ```go
@@ -1842,12 +1920,12 @@ Parser 解析器接口
 
 Parser 定义了命令行参数解析的标准接口, 提供了不同层次的 解析功能, 从简单的参数解析到完整的命令路由执行。
 
-**设计理念: **
+**设计理念:**
   - 分层设计: 提供不同层次的解析功能
   - 灵活性: 支持仅解析、解析+路由等多种使用模式
   - 可扩展性: 接口设计允许不同的解析策略实现
 
-**使用场景: **
+**使用场景:**
   - 命令行工具的参数解析
   - 子命令系统的路由管理
   - 配置管理和参数验证

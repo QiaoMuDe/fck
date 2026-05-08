@@ -1,5 +1,52 @@
 package types
 
+// DepType 依赖关系类型
+type DepType int
+
+const (
+	// DepMutex 互斥依赖
+	// 当触发标志被设置时，目标标志不能被设置
+	DepMutex DepType = iota
+
+	// DepRequired 必需依赖
+	// 当触发标志被设置时，所有目标标志必须被设置
+	DepRequired
+)
+
+// String 返回依赖类型的字符串表示
+func (d DepType) String() string {
+	switch d {
+	case DepMutex:
+		return "mutex"
+	case DepRequired:
+		return "required"
+	default:
+		return "unknown"
+	}
+}
+
+// FlagDependency 标志依赖关系定义
+//
+// FlagDependency 定义了当某个标志（触发标志）被设置时，
+// 对其他标志（目标标志）的约束条件。
+//
+// 字段说明:
+//   - Name: 依赖关系名称，用于错误提示和标识
+//   - Trigger: 触发标志的名称，当此标志被设置时触发依赖检查
+//   - Targets: 目标标志名称列表，这些标志会受到约束
+//   - Type: 依赖关系类型（互斥或必需）
+//
+// 使用场景:
+//   - 远程模式与本地路径互斥 (trigger="remote", targets=["local-path"], type=DepMutex)
+//   - SSL模式需要证书和密钥 (trigger="ssl", targets=["cert","key"], type=DepRequired)
+//   - 配置文件模式与其他配置互斥 (trigger="config", targets=["port","host"], type=DepMutex)
+type FlagDependency struct {
+	Name    string   // 依赖关系名称，用于错误提示和标识
+	Trigger string   // 触发标志名称
+	Targets []string // 目标标志名称列表
+	Type    DepType  // 依赖关系类型
+}
+
 // MutexGroup 互斥组定义
 //
 // MutexGroup 定义了一组互斥的标志, 其中最多只能有一个被设置。
@@ -52,6 +99,7 @@ type CmdConfig struct {
 	LogoText          string            // 命令logo文本
 	MutexGroups       []MutexGroup      // 互斥组列表
 	RequiredGroups    []RequiredGroup   // 必需组列表
+	FlagDependencies  []FlagDependency  // 标志依赖关系列表
 	Completion        bool              // 是否启用自动补全标志
 	DynamicCompletion bool              // 是否启用动态补全
 }
@@ -71,6 +119,7 @@ func NewCmdConfig() *CmdConfig {
 		LogoText:          "",
 		MutexGroups:       []MutexGroup{},
 		RequiredGroups:    []RequiredGroup{},
+		FlagDependencies:  []FlagDependency{},
 		Completion:        false,
 		DynamicCompletion: false,
 	}
@@ -125,6 +174,12 @@ func (c *CmdConfig) Clone() *CmdConfig {
 	if len(c.RequiredGroups) > 0 {
 		clone.RequiredGroups = make([]RequiredGroup, len(c.RequiredGroups))
 		copy(clone.RequiredGroups, c.RequiredGroups)
+	}
+
+	// 深拷贝 FlagDependencies 切片
+	if len(c.FlagDependencies) > 0 {
+		clone.FlagDependencies = make([]FlagDependency, len(c.FlagDependencies))
+		copy(clone.FlagDependencies, c.FlagDependencies)
 	}
 
 	return clone

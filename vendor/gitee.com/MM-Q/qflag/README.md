@@ -18,55 +18,14 @@ QFlag 是一个专为 Go 语言设计的命令行参数解析库, 提供了丰�
 
 ### ✨ 核心特性
 
-#### 🎯 核心功能
-- **类型安全** - 支持多种标志类型, 确保类型安全
-- **高性能**   - 优化的解析算法, 快速高效
-- **泛型设计** - 基于Go泛型的现代化设计, 类型安全且代码简洁
-- **并发安全** - 使用读写锁保护, 支持并发访问标志和命令
-- **自动路由** - 智能路由子命令, 自动匹配并执行
-
-#### 🛡️ 错误和验证
-- **错误处理** - 使用标准 Go 错误处理, 简洁直观
-- **标志验证** - 丰富的内置验证器和自定义验证器支持
-- **互斥标志** - 支持标志互斥组, 确保组内只有一个标志被设置
-- **必需标志** - 支持标志必需组和条件性必需组, 灵活控制标志依赖关系
-
-#### 🌍 国际化和帮助
-- **国际化** - 支持中文和英文双语
-- **帮助生成** - 自动生成专业的帮助文档
-- **版本信息** - 内置版本信息显示功能
-- **示例展示** - 支持在帮助中显示使用示例
-- **注意事项** - 支持在帮助中显示注意事项
-
-#### 🔄 配置和环境
-- **环境变量** - 自动绑定环境变量, 支持环境变量前缀
-- **配置选项** - 灵活的命令配置选项, 支持Logo、使用语法等自定义
-- **配置优先级** - 命令行参数 > 环境变量 > 默认值
-- **全局根命令** - 提供全局根命令实例, 简化使用方式
-
-#### 📝 补全和文档
-- **Shell 补全** - 支持 Bash、Pwsh 的补全脚本生成
-- **静态补全**   - 生成包含完整命令树的补全脚本，适用于命令结构固定的场景
-- **动态补全**   - 脚本通过调用内部子命令实时获取命令树，适用于频繁变更命令结构的场景
-- **命令别名**   - 支持命令长名和短名, 提供灵活的调用方式
-- **标志别名**   - 支持标志长名和短名, 提供灵活的调用方式
-
-#### 🧠 智能纠错
-- **子命令纠错** - 输入错误的子命令时，自动推荐相似的子命令
-- **标志纠错**   - 输入错误的标志时，自动推荐相似的标志
-- **模糊匹配**   - 使用前缀优先的模糊匹配算法，提供准确的建议
-
-#### 🌳 命令和标志
-- **子命令** - 完整的子命令支持, 支持嵌套子命令
-- **便捷方法** - 简洁的API设计, 减少样板代码
-- **命令选项** - 支持通过选项配置现有命令
-
-#### 📊 标志类型
-- **基础类型** - String, Bool, Int, Int64, Uint, Uint8, Uint16, Uint32, Uint64, Float64
-- **特殊类型** - Enum (枚举类型)
-- **时间类型** - Duration (持续时间), Time (时间点)
-- **大小类型** - Size (支持KB、MB、GB等单位)
-- **集合类型** - Map (键值对), StringSlice, IntSlice, Int64Slice
+| 特性分类 | 功能描述 |
+|---------|---------|
+| **类型系统** | 泛型设计、类型安全、17种标志类型（基础类型、枚举、时间、大小、集合） |
+| **验证机制** | 标志验证、互斥组、必需组、条件性必需组、标志依赖关系 |
+| **命令系统** | 子命令支持、命令/标志别名、嵌套命令、自动路由 |
+| **配置环境** | 环境变量绑定、配置优先级（命令行 > 环境变量 > 默认值）、全局根命令 |
+| **开发体验** | 智能纠错、Shell补全（Bash/Pwsh）、自动生成帮助文档、双语支持 |
+| **工程特性** | 并发安全（读写锁保护）、零外部依赖、标准Go错误处理 |
 
 ---
 
@@ -153,46 +112,6 @@ qflag.ParseAndRoute()   // 解析并路由到子命令
 // 子命令管理
 qflag.AddSubCmds(cmd1, cmd2)           // 添加子命令
 qflag.AddSubCmdFrom([]Command{cmd1, cmd2}) // 从切片添加子命令
-
-// 互斥组
-qflag.AddMutexGroup("format", []string{"json", "xml"}, false)
-
-// 必需组
-qflag.AddRequiredGroup("connection", []string{"host", "port"}, false)  // 普通必需组
-qflag.AddRequiredGroup("database", []string{"dbhost", "dbport"}, true) // 条件性必需组
-```
-
-### 基础用法
-
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    // 创建命令
-    cmd := qflag.NewCmd("myapp", "m", qflag.ContinueOnError)
-    cmd.SetDesc("我的应用程序")
-    cmd.SetVersion("1.0.0")
-
-    // 使用便捷方法创建标志
-    nameFlag := cmd.String("name", "n", "用户名", "guest")
-    verboseFlag := cmd.Bool("verbose", "v", "详细输出", false)
-
-    // 解析参数
-    if err := cmd.Parse(os.Args[1:]); err != nil {
-        fmt.Printf("参数解析错误: %v\n", err)
-        os.Exit(1)
-    }
-
-    // 使用参数
-    fmt.Printf("用户名: %s\n", nameFlag.GetStr())
-    fmt.Printf("详细模式: %v\n", verboseFlag.IsSet())
-}
 ```
 
 ### 高级用法
@@ -264,42 +183,6 @@ func main() {
 }
 ```
 
-#### 传统子命令支持
-
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    // 创建根命令
-    rootCmd := qflag.NewCmd("cli", "", qflag.ContinueOnError)
-    rootCmd.SetDesc("命令行工具")
-
-    // 使用便捷方法创建子命令
-    listCmd := qflag.NewCmd("list", "ls", qflag.ContinueOnError)
-    listCmd.SetDesc("列出所有项目")
-    listCmd.Bool("all", "a", "显示所有项目", false)
-    
-    addCmd := qflag.NewCmd("add", "a", qflag.ContinueOnError)
-    addCmd.SetDesc("添加新项目")
-    addCmd.String("name", "n", "项目名称", "")
-    
-    // 添加子命令
-    rootCmd.AddSubCmds(listCmd, addCmd)
-
-    // 解析并路由
-    if err := rootCmd.ParseAndRoute(os.Args[1:]); err != nil {
-        fmt.Printf("错误: %v\n", err)
-        os.Exit(1)
-    }
-}
-```
-
 #### 便捷方法创建标志
 
 ```go
@@ -345,7 +228,7 @@ func main() {
     yamlFlag := qflag.Root.Bool("yaml", "y", "YAML 格式", false)
 
     // 添加互斥组到全局根命令
-    qflag.AddMutexGroup("format", []string{"json", "xml", "yaml"}, false)
+    qflag.Root.AddMutexGroup("format", []string{"json", "xml", "yaml"}, false)
 
     // 解析参数
     if err := qflag.Parse(); err != nil {
@@ -360,38 +243,6 @@ func main() {
         fmt.Println("使用 XML 格式")
     } else if yamlFlag.Get() {
         fmt.Println("使用 YAML 格式")
-    }
-}
-```
-
-#### 传统互斥标志组
-
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    cmd := qflag.NewCmd("converter", "", qflag.ContinueOnError)
-
-    // 使用便捷方法创建互斥标志
-    jsonFlag := cmd.Bool("json", "j", "JSON 格式", false)
-    xmlFlag := cmd.Bool("xml", "x", "XML 格式", false)
-    yamlFlag := cmd.Bool("yaml", "y", "YAML 格式", false)
-
-    // 创建互斥标志组
-    formatGroup := qflag.NewMutexGroup("format", "输出格式", true)
-    formatGroup.AddFlags(jsonFlag, xmlFlag, yamlFlag)
-    cmd.AddMutexGroup(formatGroup)
-
-    // 解析参数
-    if err := cmd.Parse(os.Args[1:]); err != nil {
-        fmt.Printf("错误: %v\n", err)
-        return
     }
 }
 ```
@@ -415,10 +266,10 @@ func main() {
     portFlag := qflag.Root.Uint("port", "p", "端口号", 0)
 
     // 添加普通必需组到全局根命令 - 所有标志都必须设置
-    qflag.AddRequiredGroup("connection", []string{"host", "port"}, false)
+    qflag.Root.AddRequiredGroup("connection", []string{"host", "port"}, false)
     
     // 添加条件性必需组 - 如果使用其中一个则必须同时使用
-    qflag.AddRequiredGroup("database", []string{"dbhost", "dbport"}, true)
+    qflag.Root.AddRequiredGroup("database", []string{"dbhost", "dbport"}, true)
 
     // 解析参数
     if err := qflag.Parse(); err != nil {
@@ -428,99 +279,39 @@ func main() {
 
     // 使用参数
     fmt.Printf("连接到 %s:%d\n", hostFlag.Get(), portFlag.Get())
-}
-```
-
-#### 传统必需标志组
-
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    cmd := qflag.NewCmd("db-connect", "", qflag.ContinueOnError)
-
-    // 使用便捷方法创建必需标志
-    hostFlag := cmd.String("host", "h", "主机地址", "")
-    portFlag := cmd.Uint("port", "p", "端口号", 0)
-    usernameFlag := cmd.String("username", "u", "用户名", "")
-    passwordFlag := cmd.String("password", "P", "密码", "")
-
-    // 添加普通必需组 - 所有标志都必须设置
-    cmd.AddRequiredGroup("connection", []string{"host", "port"}, false)
-    cmd.AddRequiredGroup("auth", []string{"username", "password"}, false)
-    
-    // 添加条件性必需组 - 如果使用其中一个则必须同时使用
-    cmd.AddRequiredGroup("optional-features", []string{"feature-a", "feature-b"}, true)
-
-    // 解析参数
-    if err := cmd.Parse(os.Args[1:]); err != nil {
-        fmt.Printf("错误: %v\n", err)
-        return
-    }
-
-    // 使用参数
-    fmt.Printf("连接到 %s:%d\n", hostFlag.Get(), portFlag.Get())
-    fmt.Printf("用户: %s\n", usernameFlag.Get())
 }
 ```
 
 #### 条件性必需组
 
-条件性必需组是QFlag提供的一种灵活的标志验证方式，它允许您定义一组标志，如果组中任何一个标志被使用，则所有标志都必须被设置。这与普通必需组不同，普通必需组要求所有标志都必须被设置，无论是否使用了其中任何一个。
+条件性必需组允许定义一组标志，如果组中任何一个标志被使用，则所有标志都必须被设置。
 
 ```go
-package main
+// 创建条件性必需组的标志
+dbHostFlag := qflag.Root.String("dbhost", "dh", "数据库主机", "")
+dbPortFlag := qflag.Root.Uint("dbport", "dp", "数据库端口", 0)
 
-import (
-    "fmt"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    // 配置全局根命令
-    qflag.Root.SetDesc("数据库连接工具")
-    
-    // 创建条件性必需组的标志
-    dbHostFlag := qflag.Root.String("dbhost", "dh", "数据库主机", "")
-    dbPortFlag := qflag.Root.Uint("dbport", "dp", "数据库端口", 0)
-    dbUserFlag := qflag.Root.String("dbuser", "du", "数据库用户", "")
-    dbPassFlag := qflag.Root.String("dbpass", "dp", "数据库密码", "")
-
-    // 添加条件性必需组 - 如果使用其中一个则必须同时使用
-    qflag.AddRequiredGroup("database", []string{"dbhost", "dbport", "dbuser", "dbpass"}, true)
-
-    // 解析参数
-    if err := qflag.Parse(); err != nil {
-        fmt.Printf("错误: %v\n", err)
-        return
-    }
-
-    // 使用参数
-    if dbHostFlag.IsSet() {
-        fmt.Printf("数据库连接: %s:%d, 用户: %s\n", 
-            dbHostFlag.Get(), dbPortFlag.Get(), dbUserFlag.Get())
-    } else {
-        fmt.Println("未使用数据库连接")
-    }
-}
+// 添加条件性必需组 - 第三个参数为 true
+qflag.Root.AddRequiredGroup("database", []string{"dbhost", "dbport"}, true)
 ```
 
-**条件性必需组的使用场景:**
+#### 标志依赖关系
 
-1. **可选功能模块**: 当应用程序有多个可选功能模块，每个模块需要一组相关的配置参数时
-2. **可选连接**: 当应用程序可以连接到多个可选的服务，每个服务需要自己的连接参数时
-3. **可选输出格式**: 当应用程序支持多种输出格式，每种格式需要特定的参数时
+定义标志之间的依赖约束，支持互斥依赖（`DepMutex`）和必需依赖（`DepRequired`）。
 
-**普通必需组 vs 条件性必需组:**
+```go
+// 创建标志
+remoteFlag := qflag.Root.Bool("remote", "r", "使用远程模式", false)
+sslFlag := qflag.Root.Bool("ssl", "s", "启用SSL", false)
+certFlag := qflag.Root.String("cert", "c", "证书路径", "")
+keyFlag := qflag.Root.String("key", "k", "密钥路径", "")
 
-- **普通必需组**: 组中的所有标志都必须被设置，无论是否使用了其中任何一个
-- **条件性必需组**: 只有当组中任何一个标志被设置时，所有标志才必须被设置
+// 互斥依赖：远程模式与本地路径互斥
+qflag.Root.AddFlagDependency("remote_mutex_local", "remote", []string{"local-path"}, qflag.DepMutex)
+
+// 必需依赖：SSL模式需要证书和密钥
+qflag.Root.AddFlagDependency("ssl_requires_cert_key", "ssl", []string{"cert", "key"}, qflag.DepRequired)
+```
 
 #### 环境变量绑定
 
@@ -577,58 +368,13 @@ func main() {
 
 QFlag 提供了简洁而强大的 API, 主要包含以下核心组件: 
 
-### 🚀 全局根命令 (推荐使用方式) 
-
-QFlag 提供了全局根命令 `qflag.Root`, 这是最简单、最直接的使用方式。**推荐优先使用**全局根命令作为命令行工具的入口点。
-
-#### 全局根命令的优势
-
-- 🎯 **简单易用**: 无需手动创建命令实例, 直接使用
-- 🚀 **零配置**: 自动使用可执行文件名作为命令名
-- 🔧 **功能完整**: 支持所有 QFlag 的高级功能
-- 📦 **统一入口**: 所有操作都通过 `qflag.Root` 访问
-
-#### 全局根命令支持的便捷函数
-
-```go
-// 解析函数
-qflag.Parse()          // 解析命令行参数
-qflag.ParseOnly()       // 仅解析当前命令
-qflag.ParseAndRoute()   // 解析并路由到子命令
-
-// 子命令管理
-qflag.AddSubCmds(cmd1, cmd2)           // 添加子命令
-qflag.AddSubCmdFrom([]Command{cmd1, cmd2}) // 从切片添加子命令
-
-// 互斥组
-qflag.AddMutexGroup("format", []string{"json", "xml"}, false)
-```
-
-#### 全局根命令的使用方式
-
-```go
-// 直接使用全局根命令创建标志
-name := qflag.Root.String("name", "n", "用户名", "guest")
-age := qflag.Root.Int("age", "a", "年龄", 18)
-verbose := qflag.Root.Bool("verbose", "v", "详细模式", false)
-
-// 配置全局命令
-qflag.Root.SetDesc("示例应用程序")
-qflag.Root.SetVersion("1.0.0")
-
-// 解析命令行参数
-if err := qflag.Parse(); err != nil {
-    fmt.Printf("解析错误: %v\n", err)
-    return
-}
-```
-
 ### 核心概念
 
 - **Command (命令)** - 命令行工具的核心, 支持标志管理、参数解析、子命令等功能
 - **Flag (标志)** - 命令行参数的抽象, 支持多种数据类型
 - **MutexGroup (互斥组)** - 确保组内只有一个标志被设置
 - **RequiredGroup (必需组)** - 确保组内所有标志都被设置, 支持普通必需组和条件性必需组两种模式
+- **FlagDependency (标志依赖)** - 定义触发标志与目标标志之间的约束关系（互斥或必需）
 - **智能纠错** - 输入错误的子命令或标志时，自动推荐相似的选项
 
 ### 便捷方法
@@ -651,52 +397,12 @@ tagsFlag := cmd.IntSlice("tags", "", "标签列表", []int{})
 
 ### 详细的 API 文档
 
-完整的 API 文档和示例代码, 请参考项目中的 `examples/` 目录和源代码中的注释。
+完整的 API 文档和示例代码, 请参考项目中的 [_examples/](_examples/) 目录和源代码中的注释。
 
-### 📚 标志使用语法
+### 📚 更多文档
 
-详细的标志使用语法和高级功能说明, 请参考 [FLAG_USAGE.md](FLAG_USAGE.md)。
-
----
-
-## 🎯 支持的功能
-
-### 标志功能
-
-- ✅ 短标志名 (单字符, 如 `-v`) 
-- ✅ 长标志名 (多字符, 如 `--verbose`) 
-- ✅ 默认值设置
-- ✅ 必需标志验证
-- ✅ 条件性必需组验证
-- ✅ 标志描述
-- ✅ 环境变量绑定
-- ✅ 标志值验证
-- ✅ 枚举值限制
-- ✅ 切片类型支持
-
-### 命令功能
-
-- ✅ 子命令支持
-- ✅ 命令别名
-- ✅ 命令描述
-- ✅ 版本信息
-- ✅ 帮助信息
-- ✅ 示例展示
-- ✅ 注意事项
-
-### 高级功能
-
-- ✅ 互斥标志组
-- ✅ 必需标志组
-- ✅ 条件性必需组
-- ✅ 自动补全脚本生成
-- ✅ 环境变量前缀
-- ✅ 错误处理策略
-- ✅ 中文/英文双语支持
-- ✅ Logo 文本设置
-- ✅ 使用语法自定义
-- ✅ 禁用标志解析（DisableFlagParsing）
-- ✅ 隐藏命令（Hidden）
+- [API 文档](APIDOC.md) - 完整的 API 参考
+- [qflag-cli](qflag-cli) - CLI 开发技能包，包含快速开始指南、核心概念速查、完整开发规范和示例代码（适用于 AI 技能调用和人类学习） 
 
 ---
 
@@ -717,53 +423,22 @@ QFlag 提供了三种错误处理策略:
 #### 使用示例
 
 ```go
-package main
+// 创建命令并添加标志
+cmd := qflag.NewCmd("myapp", "m", qflag.ExitOnError)
+cmd.String("host", "H", "主机地址", "localhost")
+cmd.Int("port", "p", "端口号", 8080)
 
-import (
-    "fmt"
-    "os"
-    "gitee.com/MM-Q/qflag"
-)
-
-func main() {
-    // 创建命令
-    cmd := qflag.NewCmd("myapp", "m", qflag.ExitOnError)
-    
-    // 添加标志
-    cmd.String("host", "H", "主机地址", "localhost")
-    cmd.Int("port", "p", "端口号", 8080)
-    
-    // 创建配置选项并应用
-    opts := &qflag.CmdOpts{
-        Desc:        "我的应用程序",
-        Version:     "1.0.0",
-        UseChinese:  true,
-        EnvPrefix:   "MYAPP",
-        AutoBindEnv: true,
-        Examples: map[string]string{
-            "启动服务":    "myapp --host 0.0.0.0 --port 8080",
-            "使用环境变量": "MYAPP_HOST=0.0.0.0 MYAPP_PORT=8080 myapp",
-        },
-        Notes: []string{
-            "端口号必须在 1-65535 范围内",
-            "环境变量会自动加上 MYAPP_ 前缀",
-        },
-    }
-    
-    // 应用配置
-    if err := cmd.ApplyOpts(opts); err != nil {
-        fmt.Printf("应用配置失败: %v\n", err)
-        return
-    }
-    
-    // 解析参数
-    if err := cmd.Parse(os.Args[1:]); err != nil {
-        fmt.Printf("解析失败: %v\n", err)
-        return
-    }
-    
-    fmt.Printf("服务启动在 %s:%d\n", cmd.GetString("host"), cmd.GetInt("port"))
+// 创建配置选项
+opts := &qflag.CmdOpts{
+    Desc:        "我的应用程序",
+    Version:     "1.0.0",
+    UseChinese:  true,
+    EnvPrefix:   "MYAPP",
+    AutoBindEnv: true,
 }
+
+// 应用配置
+cmd.ApplyOpts(opts)
 ```
 
 #### 特点
@@ -789,7 +464,7 @@ opts := &qflag.CmdOpts{
 cmd.ApplyOpts(opts)
 ```
 
-完整示例请参考 [examples/cmdopts](examples/cmdopts) 目录。
+完整示例请参考 [_examples/cmdopts](_examples/cmdopts) 目录。
 
 ### 隐藏命令
 
@@ -810,7 +485,7 @@ cmd.ApplyOpts(opts)
 cmd.SetHidden(true)
 ```
 
-完整示例请参考 [examples/cmdopts](examples/cmdopts) 目录。
+完整示例请参考 [_examples/cmdopts](_examples/cmdopts) 目录。
 
 ---
 
