@@ -61,11 +61,11 @@ func ConvertFile(srcPath string, config Config) (ConversionResult, error) {
 		result.Success = true
 		result.Lines = detection.TotalLines()
 		if !config.Quiet {
-			// 单文件只输出类型，多文件输出路径:类型 (行号)
+			// 单文件只输出类型，多文件输出路径:类型
 			if config.FileCount == 1 {
 				fmt.Println(detection.Type)
 			} else {
-				fmt.Printf("%s: %s\n", srcPath, detection.String())
+				fmt.Printf("%s: %s\n", srcPath, detection.Type)
 			}
 		}
 		return result, nil
