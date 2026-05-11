@@ -19,6 +19,7 @@ var (
 	iconvOutput *qflag.StringFlag // -o 输出路径
 	iconvList   *qflag.BoolFlag   // -l 列出支持的编码
 	iconvQuiet  *qflag.BoolFlag   // -q 静默模式
+	iconvShort  *qflag.BoolFlag   // -s 短输出模式（只输出编码，用于脚本）
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 	iconvOutput = IconvCmd.String("output", "o", "输出路径 (默认生成 .converted 后缀文件) ", ".")
 	iconvList = IconvCmd.Bool("list", "l", "列出支持的编码格式", false)
 	iconvQuiet = IconvCmd.Bool("quiet", "q", "静默模式", false)
+	iconvShort = IconvCmd.Bool("short", "s", "短输出模式 (只输出编码, 用于脚本)", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "文件编码转换工具",
@@ -108,6 +110,7 @@ func runIconv(cmd qflag.Command) error {
 		Backup:       iconvBackup.Get(),
 		Output:       iconvOutput.Get(),
 		Quiet:        iconvQuiet.Get(),
+		Short:        iconvShort.Get(),
 	}
 
 	return iconv.IconvCmdMain(config)

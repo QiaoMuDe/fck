@@ -72,8 +72,8 @@ func ConvertFile(srcPath string, config IconvConfig) (ConversionResult, error) {
 		if config.ToEncoding == types.EncodingNone {
 			result.Success = true
 			if !config.Quiet {
-				// 单文件只输出编码，多文件输出路径:编码
-				if config.FileCount == 1 {
+				// 短输出模式只输出编码，否则输出路径:编码
+				if config.Short {
 					fmt.Println(fromEncoding)
 				} else {
 					fmt.Printf("%s: %s\n", srcPath, fromEncoding)

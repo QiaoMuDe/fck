@@ -24,6 +24,7 @@ type IconvConfig struct {
 	// 其他选项
 	List      bool // 列出支持的编码
 	Quiet     bool // 静默模式
+	Short     bool // 短输出模式（只输出编码，用于脚本）
 	FileCount int  // 文件总数（用于控制输出格式）
 }
 
