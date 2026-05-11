@@ -40,7 +40,7 @@ fck/
 | **工具** | echo, watch, xargs, tee, seq | 输出/定时执行/批量处理/分流/序列 | shellx, color |
 | **文本处理** | awk, wc, head, tail, tr | 字段处理/字数统计/文件头尾查看/字符转换 | regexp, go-pretty |
 | **网络工具** | tcp, ping, port, dns, curl | TCP客户端/服务端、ping、端口扫描、DNS、HTTP请求 | readline, pro-bing |
-| **数据转换** | base64, json, iconv | Base64编解码、JSON处理、编码转换 | gjson, golang.org/x/text |
+| **数据转换** | base64, json, iconv, newline | Base64编解码、JSON处理、编码转换、换行符转换 | gjson, golang.org/x/text |
 | **开发辅助** | gm, test, md | Git管理/测试/Markdown预览 | glamour, oviewer |
 
 ---
@@ -200,7 +200,14 @@ Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 - 编码转换功能（支持多种编码互转）
 - 原地写入模式（-w）支持备份（-b）
 - 批量文件处理（支持通配符）
-- 静默模式（-q）
+- 短输出模式（-s）便于脚本使用
+
+### newline 命令
+- 文件换行符自动检测（支持 LF、CRLF、CR、Mixed）
+- 换行符转换功能（支持 LF、CRLF、CR 互转）
+- 原地写入模式（-w）支持备份（-b）
+- 批量文件处理（支持通配符）
+- 短输出模式（-s）便于脚本使用
 
 ---
 
@@ -229,6 +236,7 @@ Vendor层: qflag, color, go-kit, comprx, shellx, verman, go-pretty
 | 2026-05-02 | types 包重构：将 types.go 拆分为 format.go、command.go、types.go |
 | 2026-05-02 | cat 命令修复：管道输出时不再多一个空行 |
 | 2026-05-02 | check 命令修复：使用 SRed/SGreen 返回字符串方法 |
+| 2026-05-11 | 新增 `newline` 命令（文件换行符检测与转换） |
 | 2026-05-11 | 新增 `iconv` 命令（文件编码检测与转换） |
 | 2026-05-02 | list 命令修复：byte 转 string 避免格式化警告 |
 | 2026-05-02 | curl 命令优化：移除 `-p/--pretty` 非功能标志 |

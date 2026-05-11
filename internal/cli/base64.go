@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	Base64Cmd = qflag.NewCmd("base64", "", qflag.ExitOnError)
+	Base64Cmd = qflag.NewCmd("base64", "b64", qflag.ExitOnError)
 
 	base64Decode = Base64Cmd.Bool("decode", "d", "解码模式", false)
 	base64File = Base64Cmd.String("file", "f", "从文件读取输入", "")

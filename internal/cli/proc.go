@@ -26,7 +26,7 @@ var (
 var SortFields = []string{"pid", "name", "cpu", "mem", "time"}
 
 func init() {
-	ProcCmd = qflag.NewCmd("proc", "", qflag.ExitOnError)
+	ProcCmd = qflag.NewCmd("proc", "ps", qflag.ExitOnError)
 
 	procName = ProcCmd.String("name", "n", "按进程名过滤，支持部分匹配", "")
 	procPID = ProcCmd.Int("pid", "p", "指定单个 PID", 0)

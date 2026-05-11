@@ -78,170 +78,98 @@ python3 build.py -batch -z
 go run main.go [命令] [选项]
 ```
 
-### 查看帮助
-```bash
-# 查看所有可用命令
-fck --help
-
-# 查看具体命令帮助
-fck [命令] --help
-```
-
 ---
 
-## � 使用示例
+## 📚 命令帮助
 
-### 文件校验
+执行 `fck --help` 可查看所有可用命令及全局选项：
+
 ```bash
-# 计算文件 MD5
-fck hash file.txt
+👉  fck -h
 
-# 递归计算目录所有文件的 SHA256
-fck hash -r ./mydir
 
-# 验证校验文件
-fck check checksum.hash
+    ________      ________          ___  __       
+   |\  _____\    |\   ____\        |\  \|\  \     
+   \ \  \__/     \ \  \___|        \ \  \/  /|_   
+    \ \   __\     \ \  \            \ \   ___  \  
+     \ \  \_|      \ \  \____        \ \  \\ \  \ 
+      \ \__\        \ \_______\       \ \__\\ \__\
+       \|__|         \|_______|        \|__| \|__|
+                   FCK CLI
+
+名称:
+  fck.exe
+
+描述:
+  一站式文件操作、文本处理与系统管理工具集, 集成40+实用命令, 覆盖文件管理、文本处理、系统监控、开发辅助等多个场景
+
+用法:
+  fck.exe [options] [args...]
+
+选项:
+  -h, --help <bool>                显示帮助信息 (default: false)
+  -v, --version <bool>             显示版本信息 (default: false)
+  --completion <enum>              生成Shell自动补全脚本, 支持的Shell: [bash pwsh powershell] (default: pwsh)
+  --install-completion <enum>      安装Shell自动补全脚本到系统, 支持的Shell: [bash pwsh powershell] (default: pwsh)
+
+子命令:
+  base64, b64          Base64 编解码工具
+  check, chk           校验指定文件的哈希值是否与校验文件中的记录一致
+  curl, c              HTTP 客户端工具
+  find, f              文件目录查找工具
+  grep, g              文本搜索工具
+  iconv, icv           文件编码转换工具
+  json, j              JSON 数据处理工具
+  list, ls             文件目录列表工具
+  newline, nl          文件换行符检测与转换工具
+  pack, pk             智能打包压缩工具
+  port, pt             查看系统端口占用情况
+  preview, pv          压缩包预览工具
+  proc, ps             查看系统进程信息
+  size, sz             文件目录大小计算工具
+  truncate, trunc      文件截断工具
+  unpack, upk          智能解压缩工具
+  watch, wch           命令监控工具 (周期性执行命令并显示输出)
+  which, wh            在环境变量 PATH 中查找命令的可执行文件路径
+  xargs, x             从标准输入或文件读取参数，批量执行指定命令
+  awk                  文本字段处理工具
+  cat                  显示文件内容
+  cp                   文件目录复制工具
+  date                 时间获取和格式化工具
+  df                   查看磁盘空间使用情况
+  dns                  DNS 查询工具
+  echo                 文本输出工具
+  gm                   获取Git仓库的各种元数据信息
+  hash                 文件哈希计算工具
+  head                 显示文件开头内容
+  home                 显示用户主目录
+  md                   预览 Markdown 文件
+  mkdir                目录创建工具
+  mv                   文件移动工具
+  ping                 测试网络连通性
+  pwd                  打印当前工作目录
+  rm                   文件删除工具
+  sed                  文本替换工具
+  seq                  生成数字序列
+  tail                 显示文件结尾内容
+  tcp                  TCP 网络工具，支持端口扫描、客户端通信和服务端监听
+  tee                  从标准输入读取并输出到多个目标
+  test                 路径检测工具
+  touch                文件创建和时间戳更新工具
+  tr                   字符转换工具
+  wc                   统计文件的行数、单词数、字节数和字符数
+
+示例:
+  1. 临时启用
+     fck.exe --completion pwsh | Out-String | Invoke-Expression
+
+  2. 永久启用
+     fck.exe --install-completion pwsh
+
+注意:
+  1. 各子命令有独立帮助文档，可通过 --help/-h 参数查看, 例如 'fck.exe <子命令> -h' 查看各子命令详细帮助
+
 ```
-
-### 文本处理
-```bash
-# 搜索包含 "error" 的行
-fck grep "error" log.txt
-
-# 替换文本
-fck sed -s "old/new/g" file.txt
-
-# 提取第 1、3 列
-fck awk -f 1,3 data.csv
-
-# 查看文件前 20 行
-fck head -n 20 large.log
-```
-
-### 系统监控
-```bash
-# 查看进程列表
-fck proc
-
-# 查看端口占用
-fck port
-
-# 监控磁盘空间
-fck df
-
-# 周期性执行命令（每 2 秒）
-fck watch -n 2 "fck proc"
-```
-
-### 网络工具
-```bash
-# DNS 查询
-fck dns www.example.com
-
-# 查询所有记录类型
-fck dns -a www.example.com
-
-# TCP 连接测试（交互模式）
-fck tcp -i host:port
-
-# Ping 测试
-fck ping 8.8.8.8
-
-# 路由追踪
-fck tracepath www.example.com
-```
-
-### 文件打包
-```bash
-# 打包目录
-fck pack -o backup.zip ./mydir
-
-# 解压文件
-fck unpack archive.zip -d ./output
-
-# 预览压缩包内容
-fck preview archive.zip
-```
-
-### 编码转换
-```bash
-# 检测文件编码
-fck iconv file.txt
-
-# 自动检测并转换为 UTF-8
-fck iconv -t UTF-8 file.txt
-
-# 指定源编码转换
-fck iconv -f GBK -t UTF-8 file.txt
-
-# 原地转换（覆盖原文件）
-fck iconv -t UTF-8 -w file.txt
-
-# 原地转换并创建备份
-fck iconv -t UTF-8 -w -b file.txt
-
-# 批量转换
-fck iconv -t UTF-8 *.txt
-```
-
----
-
-## 🎨 表格样式
-
-FCK 支持 20+ 种表格样式，让输出更美观：
-
-| 样式代码 | 说明 | 样式代码 | 说明 |
-|---------|------|---------|------|
-| `def` | 默认样式 | `l` | 浅色样式 |
-| `r` | 圆角样式 | `bd` | 粗体样式 |
-| `cb` | 彩色亮色样式 | `cd` | 彩色暗色样式 |
-| `db` | 双线样式 | `none` | 禁用样式 |
-| `cbb` | 黑色背景蓝色字体 | `cbc` | 青色背景蓝色字体 |
-| `cbg` | 绿色背景蓝色字体 | `cbm` | 紫色背景蓝色字体 |
-| `cby` | 黄色背景蓝色字体 | `cbr` | 红色背景蓝色字体 |
-| `cwb` | 蓝色背景白色字体 | `ccw` | 青色背景白色字体 |
-| `cgw` | 绿色背景白色字体 | `cmw` | 紫色背景白色字体 |
-| `crw` | 红色背景白色字体 | `cyw` | 黄色背景白色字体 |
-
-使用示例：
-```bash
-fck list -S r          # 使用圆角样式
-fck proc -S cbg        # 使用绿色背景样式
-```
-
----
-
-## 🤝 贡献指南
-
-我们欢迎所有形式的贡献！
-
-### 如何贡献
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-### 开发环境
-```bash
-# 克隆仓库
-git clone https://gitee.com/MM-Q/fck.git
-cd fck
-
-# 安装依赖
-go mod tidy
-
-# 运行测试
-go test ./...
-
-# 构建开发版本
-python3 build.py
-```
-
-### 代码规范
-- 遵循 Go 官方代码规范
-- 添加必要的单元测试
-- 更新相关文档
 
 ---
 

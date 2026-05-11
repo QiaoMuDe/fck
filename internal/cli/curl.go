@@ -32,7 +32,7 @@ var (
 var requestMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
 
 func init() {
-	CurlCmd = qflag.NewCmd("curl", "", qflag.ExitOnError)
+	CurlCmd = qflag.NewCmd("curl", "c", qflag.ExitOnError)
 
 	curlRequest = CurlCmd.Enum("request", "X", fmt.Sprintf("HTTP 方法, 支持: %v", requestMethods), "GET", requestMethods)
 	curlData = CurlCmd.String("data", "d", "请求体数据", "")

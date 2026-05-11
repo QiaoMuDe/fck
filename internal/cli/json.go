@@ -21,7 +21,7 @@ var (
 )
 
 func init() {
-	JsonCmd = qflag.NewCmd("json", "", qflag.ExitOnError)
+	JsonCmd = qflag.NewCmd("json", "j", qflag.ExitOnError)
 
 	jsonPretty = JsonCmd.Bool("pretty", "p", "格式化JSON", false)
 	jsonCompact = JsonCmd.Bool("compact", "c", "压缩JSON", false)

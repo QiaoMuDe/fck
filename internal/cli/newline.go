@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	NewlineCmd = qflag.NewCmd("newline", "", qflag.ExitOnError)
+	NewlineCmd = qflag.NewCmd("newline", "nl", qflag.ExitOnError)
 
 	// 使用 types 包中定义的换行符类型列表
 	newlineTo = NewlineCmd.Enum("to", "t", "目标换行符格式", types.NewlineNone, types.TargetNewlines)

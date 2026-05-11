@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	CheckCmd = qflag.NewCmd("check", "", qflag.ExitOnError)
+	CheckCmd = qflag.NewCmd("check", "chk", qflag.ExitOnError)
 
 	checkFile = CheckCmd.String("file", "f", "指定校验文件路径(默认为checksum.hash)", "")
 	checkBaseDir = CheckCmd.String("base-dir", "b", "手动指定校验基准目录(覆盖自动检测)", "")

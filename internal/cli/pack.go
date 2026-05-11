@@ -26,7 +26,7 @@ var (
 )
 
 func init() {
-	PackCmd = qflag.NewCmd("pack", "", qflag.ExitOnError)
+	PackCmd = qflag.NewCmd("pack", "pk", qflag.ExitOnError)
 
 	packIncludePatterns = PackCmd.StringSlice("include", "i", "包含的文件模式(支持glob语法)", []string{})
 	packExcludePatterns = PackCmd.StringSlice("exclude", "e", "排除的文件模式(支持glob语法)", []string{})

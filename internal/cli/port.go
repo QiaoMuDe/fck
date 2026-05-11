@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	PortCmd = qflag.NewCmd("port", "", qflag.ExitOnError)
+	PortCmd = qflag.NewCmd("port", "pt", qflag.ExitOnError)
 
 	portPorts = PortCmd.IntSlice("port", "P", "指定要查看的端口，多个端口用逗号分隔，如: 80,443,8080", []int{})
 	portTCP = PortCmd.Bool("tcp", "t", "只显示 TCP 连接", false)

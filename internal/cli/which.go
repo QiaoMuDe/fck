@@ -15,7 +15,7 @@ var (
 )
 
 func init() {
-	WhichCmd = qflag.NewCmd("which", "", qflag.ExitOnError)
+	WhichCmd = qflag.NewCmd("which", "wh", qflag.ExitOnError)
 
 	whichAll = WhichCmd.Bool("all", "a", "显示所有匹配的路径 (而不仅是第一个)", false)
 	whichSilent = WhichCmd.Bool("silent", "s", "静默模式，不输出任何内容，只返回退出码", false)

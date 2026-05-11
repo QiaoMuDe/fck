@@ -25,7 +25,7 @@ var (
 )
 
 func init() {
-	XargsCmd = qflag.NewCmd("xargs", "", qflag.ExitOnError)
+	XargsCmd = qflag.NewCmd("xargs", "x", qflag.ExitOnError)
 
 	xargsDelimiter = XargsCmd.String("delimiter", "d", "输入分隔符 (默认空格/换行/制表)", "")
 	xargsNull = XargsCmd.Bool("null", "0", "使用 \\0 作为分隔符", false)

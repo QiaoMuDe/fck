@@ -42,7 +42,7 @@ var (
 )
 
 func init() {
-	GrepCmd = qflag.NewCmd("grep", "", qflag.ExitOnError)
+	GrepCmd = qflag.NewCmd("grep", "g", qflag.ExitOnError)
 
 	grepIgnoreCase = GrepCmd.Bool("ignore-case", "i", "忽略大小写", false)
 	grepInvertMatch = GrepCmd.Bool("invert-match", "v", "显示不匹配的行", false)

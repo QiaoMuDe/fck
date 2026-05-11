@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	IconvCmd = qflag.NewCmd("iconv", "", qflag.ExitOnError)
+	IconvCmd = qflag.NewCmd("iconv", "icv", qflag.ExitOnError)
 
 	// 使用 types 包中定义的编码列表
 	iconvFrom = IconvCmd.Enum("from", "f", "源文件编码", types.EncodingAuto, types.SupportedEncodings)
