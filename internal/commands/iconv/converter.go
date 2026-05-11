@@ -72,7 +72,12 @@ func ConvertFile(srcPath string, config IconvConfig) (ConversionResult, error) {
 		if config.ToEncoding == types.EncodingNone {
 			result.Success = true
 			if !config.Quiet {
-				fmt.Printf("%s: %s\n", srcPath, fromEncoding)
+				// 单文件只输出编码，多文件输出路径:编码
+				if config.FileCount == 1 {
+					fmt.Println(fromEncoding)
+				} else {
+					fmt.Printf("%s: %s\n", srcPath, fromEncoding)
+				}
 			}
 			return result, nil
 		}

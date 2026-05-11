@@ -22,8 +22,9 @@ type IconvConfig struct {
 	Output string // 输出路径（目录或文件，默认当前目录）
 
 	// 其他选项
-	List  bool // 列出支持的编码
-	Quiet bool // 静默模式
+	List      bool // 列出支持的编码
+	Quiet     bool // 静默模式
+	FileCount int  // 文件总数（用于控制输出格式）
 }
 
 // ConversionResult 转换结果
@@ -65,6 +66,9 @@ func IconvCmdMain(config IconvConfig) error {
 		return fmt.Errorf("no files found matching the specified patterns")
 	}
 
+	// 设置文件总数（用于控制输出格式）
+	config.FileCount = len(files)
+
 	// 统计结果
 	var stats struct {
 		total   int // 总文件数
@@ -102,8 +106,8 @@ func IconvCmdMain(config IconvConfig) error {
 		}
 	}
 
-	// 输出统计信息（非静默模式且多个文件）
-	if !config.Quiet && stats.total > 1 {
+	// 输出统计信息（转换模式、非静默模式且多个文件）
+	if !config.Quiet && config.ToEncoding != types.EncodingNone && stats.total > 1 {
 		fmt.Printf("\nTotal: %d files\n", stats.total)
 		if stats.success > 0 {
 			fmt.Printf("Success: %d files\n", stats.success)
