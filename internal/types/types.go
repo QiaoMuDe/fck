@@ -80,6 +80,30 @@ const (
 	IconvBackupExt = ".bak"
 )
 
+// newline 命令相关常量
+const (
+	NewlineAuto = "auto" // 自动检测（默认）
+	NewlineLF   = "lf"   // Unix/Linux/macOS (\n)
+	NewlineCRLF = "crlf" // Windows (\r\n)
+	NewlineCR   = "cr"   // Classic Mac (\r)
+	NewlineNone = "none" // 不转换，仅检测
+
+	// NewlineTempExt 临时文件后缀
+	NewlineTempExt = ".newline.tmp"
+	// NewlineBackupExt 备份文件后缀
+	NewlineBackupExt = ".bak"
+)
+
+// SupportedNewlines 支持的换行符类型列表
+var SupportedNewlines = []string{
+	NewlineAuto, NewlineLF, NewlineCRLF, NewlineCR, NewlineNone,
+}
+
+// TargetNewlines 目标换行符类型列表
+var TargetNewlines = []string{
+	NewlineLF, NewlineCRLF, NewlineCR, NewlineNone,
+}
+
 // 虚拟哈希表条目
 type VirtualHashEntry struct {
 	// 真实路径

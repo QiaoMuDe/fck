@@ -71,6 +71,7 @@ func InitAndRun() (err error) {
 			DnsCmd,
 			TcpCmd,
 			IconvCmd,
+			NewlineCmd,
 			CurlCmd,
 		},
 	}
