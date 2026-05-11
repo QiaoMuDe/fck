@@ -153,7 +153,17 @@ func getSubCommandNames(cmd types.Command) []string {
 	subCmds := cmd.SubCmds()
 	names := make([]string, 0, len(subCmds))
 	for _, subCmd := range subCmds {
-		names = append(names, subCmd.Name())
+		// 添加长名称
+		longName := subCmd.LongName()
+		if longName != "" {
+			names = append(names, longName)
+		}
+
+		// 添加短名称
+		shortName := subCmd.ShortName()
+		if shortName != "" {
+			names = append(names, shortName)
+		}
 	}
 	return names
 }
