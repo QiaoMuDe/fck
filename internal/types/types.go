@@ -40,6 +40,36 @@ const (
 	GrepEncodingCheckSize = 8 * 1024
 )
 
+// 编码格式常量定义
+const (
+	EncodingNone     = "none" // 只检测不转换
+	EncodingAuto     = "auto"
+	EncodingUTF8     = "UTF-8"
+	EncodingUTF8BOM  = "UTF-8-BOM"
+	EncodingUTF16    = "UTF-16"
+	EncodingUTF16LE  = "UTF-16LE"
+	EncodingUTF16BE  = "UTF-16BE"
+	EncodingGBK      = "GBK"
+	EncodingGB2312   = "GB2312"
+	EncodingGB18030  = "GB18030"
+	EncodingBig5     = "Big5"
+	EncodingLatin1   = "Latin1"
+	EncodingShiftJIS = "ShiftJIS"
+	EncodingEUCKR    = "EUC-KR"
+)
+
+// SupportedEncodings 支持的编码格式列表（用于 -f）
+var SupportedEncodings = []string{
+	EncodingAuto, EncodingUTF8, EncodingUTF8BOM, EncodingUTF16, EncodingUTF16LE, EncodingUTF16BE,
+	EncodingGBK, EncodingGB2312, EncodingGB18030, EncodingBig5, EncodingLatin1, EncodingShiftJIS, EncodingEUCKR,
+}
+
+// TargetEncodings 目标编码格式列表（用于 -t，包含 none）
+var TargetEncodings = []string{
+	EncodingNone, EncodingUTF8, EncodingUTF8BOM, EncodingUTF16, EncodingUTF16LE, EncodingUTF16BE,
+	EncodingGBK, EncodingGB2312, EncodingGB18030, EncodingBig5, EncodingLatin1, EncodingShiftJIS, EncodingEUCKR,
+}
+
 // 虚拟哈希表条目
 type VirtualHashEntry struct {
 	// 真实路径

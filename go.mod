@@ -19,6 +19,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/tidwall/gjson v1.18.0
 	golang.org/x/term v0.41.0
+	golang.org/x/text v0.37.0
 )
 
 require (
@@ -77,6 +78,5 @@ require (
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
 	mvdan.cc/sh/v3 v3.12.0 // indirect
 )
