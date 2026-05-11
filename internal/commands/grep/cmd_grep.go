@@ -9,7 +9,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
+	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/go-kit/term"
 )
@@ -199,6 +201,15 @@ func processSingleFileWithError(path string, config *GrepConfig) error {
 		return nil
 	}
 
+	// 检测 UTF-8 编码
+	skip, err = handleEncodingCheck(file, path, config)
+	if err != nil {
+		return err
+	}
+	if skip {
+		return nil
+	}
+
 	config.filename = path
 	return processFile(file, config)
 }
@@ -271,6 +282,63 @@ func handleBinaryFile(file *os.File, path string, config *GrepConfig) (skip bool
 		fmt.Printf("bin file %s matches\n", path)
 	} else {
 		fmt.Println("bin file matches")
+	}
+	return true, nil
+}
+
+// handleEncodingCheck 处理 UTF-8 编码检测
+//
+// 根据 config.Text 和 config.IgnoreBinary 决定如何处理非 UTF-8 文件
+//
+// 参数:
+//   - file: 已打开的文件句柄
+//   - path: 文件路径（用于输出提示）
+//   - config: 命令配置
+//
+// 返回:
+//   - skip: true 表示应跳过此文件, false 表示继续处理
+//   - err: 检测错误 (非静默模式下)
+func handleEncodingCheck(file *os.File, path string, config *GrepConfig) (skip bool, err error) {
+	// 只读取前 GrepEncodingCheckSize 字节用于编码检测
+	data := make([]byte, types.GrepEncodingCheckSize)
+	n, err := file.Read(data)
+	if err != nil && err != io.EOF {
+		if config.NoMessages {
+			return true, nil // 静默模式下跳过错误文件
+		}
+		return true, fmt.Errorf("failed to read file: %w", err)
+	}
+	data = data[:n] // 截取实际读取的字节数
+
+	// 重置文件指针，以便后续读取
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		if config.NoMessages {
+			return true, nil
+		}
+		return true, fmt.Errorf("failed to seek file: %w", err)
+	}
+
+	// 检测是否为有效 UTF-8
+	if utf8.Valid(data) {
+		return false, nil // 有效 UTF-8，继续处理
+	}
+
+	// 非 UTF-8 文件，根据配置处理
+	if config.IgnoreBinary {
+		// -I 模式：静默跳过
+		return true, nil
+	}
+	if config.Text {
+		// -a/--text 模式：强制作为文本处理（不跳过）
+		return false, nil
+	}
+
+	// 默认行为：输出提示并跳过
+	if config.WithFilename {
+		fmt.Printf("non-UTF-8 file %s matches\n", path)
+	} else {
+		fmt.Println("non-UTF-8 file matches")
 	}
 	return true, nil
 }

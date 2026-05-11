@@ -145,13 +145,19 @@ func runGrep(cmd qflag.Command) error {
 	}
 
 	// 准备基础配置
+	// 递归搜索时自动启用显示文件名
+	withFilename := grepWithFilename.Get()
+	if grepRecursive.Get() || grepFollowSymlink.Get() {
+		withFilename = true
+	}
+
 	baseConfig := grep.GrepConfig{
 		Pattern:       pattern,
 		IgnoreCase:    grepIgnoreCase.Get(),
 		InvertMatch:   grepInvertMatch.Get(),
 		LineNumber:    grepLineNumber.Get(),
 		Count:         grepCount.Get(),
-		WithFilename:  grepWithFilename.Get(),
+		WithFilename:  withFilename,
 		Regexp:        grepRegexp.Get(),
 		MaxCount:      grepMaxCount.Get(),
 		BeforeContext: grepBeforeContext.Get(),

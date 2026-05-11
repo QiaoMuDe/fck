@@ -35,6 +35,9 @@ const (
 
 	// Sed 命令临时文件前缀模式
 	SedTempFilePattern = ".sed-*.tmp"
+
+	// GrepEncodingCheckSize UTF-8 编码检测样本大小 (8KB)
+	GrepEncodingCheckSize = 8 * 1024
 )
 
 // 虚拟哈希表条目
