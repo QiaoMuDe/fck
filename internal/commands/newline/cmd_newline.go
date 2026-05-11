@@ -11,9 +11,8 @@ import (
 
 // ListTypes 列出支持的换行符类型
 func ListTypes() error {
-	fmt.Println("Supported newline types:")
 	for _, t := range types.TargetNewlines {
-		fmt.Printf("  %s\n", t)
+		fmt.Println(t)
 	}
 	return nil
 }
@@ -35,6 +34,9 @@ func CmdMain(config Config) error {
 	if len(files) == 0 {
 		return fmt.Errorf("no files to process")
 	}
+
+	// 设置文件总数（用于控制输出格式）
+	config.FileCount = len(files)
 
 	// 统计信息
 	stats := struct {
@@ -67,14 +69,14 @@ func CmdMain(config Config) error {
 				stats.success++
 				if !config.Quiet {
 					fmt.Printf("%s: %s → %s (%d lines)\n",
-						file, result.FromType, result.ToType, Detect([]byte{}).TotalLines())
+						file, result.FromType, result.ToType, result.Lines)
 				}
 			}
 		}
 	}
 
-	// 输出统计信息（非静默模式且多个文件）
-	if !config.Quiet && stats.total > 1 {
+	// 输出统计信息（转换模式、非静默模式且多个文件）
+	if !config.Quiet && config.ToNewline != types.NewlineNone && stats.total > 1 {
 		fmt.Printf("\nTotal: %d files\n", stats.total)
 		if stats.success > 0 {
 			fmt.Printf("Success: %d files\n", stats.success)

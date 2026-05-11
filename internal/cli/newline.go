@@ -28,7 +28,7 @@ func init() {
 	newlineTo = NewlineCmd.Enum("to", "t", "目标换行符格式", types.NewlineNone, types.TargetNewlines)
 	newlineWrite = NewlineCmd.Bool("write", "w", "原地写入 (覆盖原文件)", false)
 	newlineBackup = NewlineCmd.Bool("backup", "b", "原地写入时创建备份 (.bak)", false)
-	newlineOutput = NewlineCmd.String("output", "o", "输出目录或文件路径 (默认生成 .unix/.win/.mac 后缀文件)", ".")
+	newlineOutput = NewlineCmd.String("output", "o", "输出路径 (默认生成 .unix/.win/.mac 后缀文件)", ".")
 	newlineList = NewlineCmd.Bool("list", "l", "列出支持的换行符类型", false)
 	newlineQuiet = NewlineCmd.Bool("quiet", "q", "静默模式", false)
 	newlineForce = NewlineCmd.Bool("force", "f", "强制转换 (即使已经是目标格式)", false)

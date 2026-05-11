@@ -19,6 +19,7 @@ type ConversionResult struct {
 	ToType   Type
 	Success  bool
 	Error    error
+	Lines    int // 文件行数
 }
 
 // Config 换行符转换配置
@@ -30,6 +31,7 @@ type Config struct {
 	Output    string
 	Quiet     bool
 	Force     bool
+	FileCount int // 文件总数（用于控制输出格式）
 }
 
 // ConvertFile 转换单个文件的换行符
@@ -58,8 +60,14 @@ func ConvertFile(srcPath string, config Config) (ConversionResult, error) {
 	// 3. 目标为 none：只检测
 	if config.ToNewline == types.NewlineNone {
 		result.Success = true
+		result.Lines = detection.TotalLines()
 		if !config.Quiet {
-			fmt.Printf("%s: %s\n", srcPath, detection.String())
+			// 单文件只输出类型，多文件输出路径:类型 (行号)
+			if config.FileCount == 1 {
+				fmt.Println(detection.Type)
+			} else {
+				fmt.Printf("%s: %s\n", srcPath, detection.String())
+			}
 		}
 		return result, nil
 	}
@@ -71,6 +79,7 @@ func ConvertFile(srcPath string, config Config) (ConversionResult, error) {
 	// 5. 已经是目标格式且非强制模式
 	if detection.Type == targetType && !config.Force {
 		result.Success = true
+		result.Lines = detection.TotalLines()
 		if !config.Quiet {
 			fmt.Printf("%s: %s (no conversion needed)\n", srcPath, detection.Type)
 		}
@@ -128,6 +137,9 @@ func ConvertFile(srcPath string, config Config) (ConversionResult, error) {
 	}
 
 	result.Success = err == nil
+	if result.Success {
+		result.Lines = detection.TotalLines()
+	}
 	return result, err
 }
 
