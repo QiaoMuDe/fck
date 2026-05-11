@@ -42,8 +42,8 @@ const (
 
 // 编码格式常量定义
 const (
-	EncodingNone     = "none" // 只检测不转换
-	EncodingAuto     = "auto"
+	EncodingNone     = "NONE" // 只检测不转换
+	EncodingAuto     = "AUTO" // 自动检测（默认）
 	EncodingUTF8     = "UTF-8"
 	EncodingUTF8BOM  = "UTF-8-BOM"
 	EncodingUTF16    = "UTF-16"
@@ -82,11 +82,12 @@ const (
 
 // newline 命令相关常量
 const (
-	NewlineAuto = "auto" // 自动检测（默认）
-	NewlineLF   = "lf"   // Unix/Linux/macOS (\n)
-	NewlineCRLF = "crlf" // Windows (\r\n)
-	NewlineCR   = "cr"   // Classic Mac (\r)
-	NewlineNone = "none" // 不转换，仅检测
+	NewlineAuto  = "AUTO"  // 自动检测（默认）
+	NewlineLF    = "LF"    // Unix/Linux/macOS (\n)
+	NewlineCRLF  = "CRLF"  // Windows (\r\n)
+	NewlineCR    = "CR"    // Classic Mac (\r)
+	NewlineNone  = "NONE"  // 不转换，仅检测
+	NewlineMixed = "MIXED" // 混合换行符
 
 	// NewlineTempExt 临时文件后缀
 	NewlineTempExt = ".newline.tmp"

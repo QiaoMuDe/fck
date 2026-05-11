@@ -18,7 +18,6 @@ var (
 	newlineOutput *qflag.StringFlag // -o 输出路径
 	newlineList   *qflag.BoolFlag   // -l 列出支持的换行符类型
 	newlineQuiet  *qflag.BoolFlag   // -q 静默模式
-	newlineForce  *qflag.BoolFlag   // -f 强制转换
 )
 
 func init() {
@@ -31,7 +30,6 @@ func init() {
 	newlineOutput = NewlineCmd.String("output", "o", "输出路径 (默认生成 .unix/.win/.mac 后缀文件)", ".")
 	newlineList = NewlineCmd.Bool("list", "l", "列出支持的换行符类型", false)
 	newlineQuiet = NewlineCmd.Bool("quiet", "q", "静默模式", false)
-	newlineForce = NewlineCmd.Bool("force", "f", "强制转换 (即使已经是目标格式)", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "文件换行符检测与转换工具",
@@ -103,7 +101,6 @@ func runNewline(cmd qflag.Command) error {
 		Backup:    newlineBackup.Get(),
 		Output:    newlineOutput.Get(),
 		Quiet:     newlineQuiet.Get(),
-		Force:     newlineForce.Get(),
 	}
 
 	return newline.CmdMain(config)

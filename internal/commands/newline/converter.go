@@ -15,8 +15,8 @@ import (
 // ConversionResult 转换结果
 type ConversionResult struct {
 	FilePath string
-	FromType Type
-	ToType   Type
+	FromType string
+	ToType   string
 	Success  bool
 	Error    error
 	Lines    int // 文件行数
@@ -30,7 +30,6 @@ type Config struct {
 	Backup    bool
 	Output    string
 	Quiet     bool
-	Force     bool
 	FileCount int // 文件总数（用于控制输出格式）
 }
 
@@ -73,11 +72,11 @@ func ConvertFile(srcPath string, config Config) (ConversionResult, error) {
 	}
 
 	// 4. 确定目标类型
-	targetType := Type(strings.ToUpper(config.ToNewline))
+	targetType := strings.ToUpper(config.ToNewline)
 	result.ToType = targetType
 
-	// 5. 已经是目标格式且非强制模式
-	if detection.Type == targetType && !config.Force {
+	// 5. 已经是目标格式
+	if detection.Type == targetType {
 		result.Success = true
 		result.Lines = detection.TotalLines()
 		if !config.Quiet {
