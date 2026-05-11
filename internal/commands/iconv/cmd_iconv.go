@@ -153,11 +153,21 @@ func expandFileList(patterns []string) ([]string, error) {
 		}
 
 		if len(matches) == 0 {
-			// 如果没有匹配到，保留原路径（可能是具体文件）
+			// 如果没有匹配到，检查是否是目录
+			info, err := os.Stat(pattern)
+			if err == nil && info.IsDir() {
+				return nil, fmt.Errorf("%s is a directory, not a file", pattern)
+			}
+			// 保留原路径（可能是具体文件）
 			matches = []string{pattern}
 		}
 
 		for _, match := range matches {
+			// 跳过目录
+			info, err := os.Stat(match)
+			if err == nil && info.IsDir() {
+				continue
+			}
 			if !seen[match] {
 				seen[match] = true
 				files = append(files, match)

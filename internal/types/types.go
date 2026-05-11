@@ -70,6 +70,16 @@ var TargetEncodings = []string{
 	EncodingGBK, EncodingGB2312, EncodingGB18030, EncodingBig5, EncodingLatin1, EncodingShiftJIS, EncodingEUCKR,
 }
 
+// iconv 命令相关常量
+const (
+	// IconvTempExt 临时文件后缀
+	IconvTempExt = ".iconv.tmp"
+	// IconvConvertedExt 转换后文件后缀
+	IconvConvertedExt = ".converted"
+	// IconvBackupExt 备份文件后缀
+	IconvBackupExt = ".bak"
+)
+
 // 虚拟哈希表条目
 type VirtualHashEntry struct {
 	// 真实路径

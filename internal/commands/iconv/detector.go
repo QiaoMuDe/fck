@@ -2,7 +2,6 @@
 package iconv
 
 import (
-	"fmt"
 	"unicode/utf8"
 
 	"gitee.com/MM-Q/fck/internal/types"
@@ -137,23 +136,4 @@ func detectChineseEncoding(data []byte) (string, float64) {
 
 	// 无法确定，默认 GBK（Windows 中文环境最常见）
 	return types.EncodingGBK, 0.5
-}
-
-// printDetectionResult 打印编码检测结果
-//
-// 参数:
-//   - path: 文件路径
-//   - encoding: 检测到的编码
-//   - confidence: 置信度
-func printDetectionResult(path, encoding string, confidence float64) {
-	if confidence >= 0.9 {
-		// 高置信度
-		fmt.Printf("%s: %s (high confidence)\n", path, encoding)
-	} else if confidence >= 0.7 {
-		// 中置信度
-		fmt.Printf("%s: %s (medium confidence)\n", path, encoding)
-	} else {
-		// 低置信度
-		fmt.Printf("%s: %s (low confidence)\n", path, encoding)
-	}
 }

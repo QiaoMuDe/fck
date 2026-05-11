@@ -29,7 +29,7 @@ func init() {
 	iconvTo = IconvCmd.Enum("to", "t", "目标编码", types.EncodingNone, types.TargetEncodings)
 	iconvWrite = IconvCmd.Bool("write", "w", "原地写入 (覆盖原文件) ", false)
 	iconvBackup = IconvCmd.Bool("backup", "b", "原地写入时创建备份 (.bak) ", false)
-	iconvOutput = IconvCmd.String("output", "o", "输出目录 (默认覆盖原文件或添加 .converted 后缀) ", ".")
+	iconvOutput = IconvCmd.String("output", "o", "输出路径 (默认生成 .converted 后缀文件) ", ".")
 	iconvList = IconvCmd.Bool("list", "l", "列出支持的编码格式", false)
 	iconvQuiet = IconvCmd.Bool("quiet", "q", "静默模式", false)
 
@@ -53,7 +53,7 @@ func init() {
 			"-t 默认为 none (只检测不转换) , 指定目标编码时执行转换",
 			"-f 默认为 auto (自动检测源编码) ",
 			"使用 -w 原地写入会直接覆盖原文件",
-			"使用 -o 可指定输出目录或文件",
+			"使用 -o 可指定输出路径",
 			"建议重要文件使用 -b 创建备份",
 			"不支持递归目录处理, 请使用通配符或管道",
 		},

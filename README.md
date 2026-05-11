@@ -44,8 +44,8 @@ FCK 是一个功能丰富的跨平台命令行工具集，集成了 **40+** 实�
 ### 🌐 网络工具
 TCP 连接测试（支持交互模式）、DNS 查询（多记录类型）、Ping 测试、路由追踪等网络诊断工具。
 
-### �️ 开发辅助
-JSON 处理、Base64 编解码、哈希计算、序列生成等开发常用工具。
+### 🛠️ 开发辅助
+JSON 处理、Base64 编解码、哈希计算、编码转换、序列生成等开发常用工具。
 
 ---
 
@@ -161,6 +161,27 @@ fck unpack archive.zip -d ./output
 
 # 预览压缩包内容
 fck preview archive.zip
+```
+
+### 编码转换
+```bash
+# 检测文件编码
+fck iconv file.txt
+
+# 自动检测并转换为 UTF-8
+fck iconv -t UTF-8 file.txt
+
+# 指定源编码转换
+fck iconv -f GBK -t UTF-8 file.txt
+
+# 原地转换（覆盖原文件）
+fck iconv -t UTF-8 -w file.txt
+
+# 原地转换并创建备份
+fck iconv -t UTF-8 -w -b file.txt
+
+# 批量转换
+fck iconv -t UTF-8 *.txt
 ```
 
 ---

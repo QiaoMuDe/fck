@@ -44,22 +44,35 @@ func ConvertFile(srcPath string, config IconvConfig) (ConversionResult, error) {
 
 	// 2. 读取样本用于编码检测
 	sample := make([]byte, types.GrepEncodingCheckSize)
-	n, _ := srcFile.Read(sample)
+	n, err := srcFile.Read(sample)
+	if err != nil && err != io.EOF {
+		result.Error = err
+		return result, err
+	}
 	sample = sample[:n]
-	_, _ = srcFile.Seek(0, 0)
+	_, err = srcFile.Seek(0, 0)
+	if err != nil {
+		result.Error = err
+		return result, err
+	}
 
 	// 3. 确定源编码
 	fromEncoding := config.FromEncoding
 	if fromEncoding == types.EncodingAuto {
-		detected, confidence, _ := DetectEncoding(sample)
-		fromEncoding = detected
-		result.FromEncoding = fromEncoding
+		detected, _, err := DetectEncoding(sample)
+		if err != nil || detected == "" {
+			// 检测失败，使用默认编码 UTF-8
+			detected = types.EncodingUTF8
+			//confidence = 0
+		}
+		fromEncoding = detected            // 检测到的编码
+		result.FromEncoding = fromEncoding // 记录检测到的编码
 
 		// 目标编码为 none：只检测并打印
 		if config.ToEncoding == types.EncodingNone {
 			result.Success = true
 			if !config.Quiet {
-				printDetectionResult(srcPath, fromEncoding, confidence)
+				fmt.Printf("%s: %s\n", srcPath, fromEncoding)
 			}
 			return result, nil
 		}
@@ -80,22 +93,26 @@ func ConvertFile(srcPath string, config IconvConfig) (ConversionResult, error) {
 	var dstPath string
 	if config.Write {
 		// 原地写入：使用临时文件，后续重命名
-		dstPath = srcPath + ".tmp"
+		dstPath = srcPath + types.IconvTempExt
 	} else {
 		// 非原地写入
 		if config.Output == "." {
 			// 默认：当前目录下生成 原文件名.converted
-			dstPath = srcPath + ".converted"
+			dstPath = srcPath + types.IconvConvertedExt
 		} else {
 			// 检查 -o 指定的是目录还是文件
 			outputInfo, err := os.Stat(config.Output)
 			if err == nil && outputInfo.IsDir() {
 				// 是目录：目录下生成 原文件名.converted
 				baseName := filepath.Base(srcPath)
-				dstPath = filepath.Join(config.Output, baseName+".converted")
-			} else {
-				// 是文件路径（或不存在）：直接写入指定路径
+				dstPath = filepath.Join(config.Output, baseName+types.IconvConvertedExt)
+			} else if err == nil {
+				// 是文件路径：直接写入指定路径
 				dstPath = config.Output
+			} else {
+				// 路径不存在，报错
+				result.Error = fmt.Errorf("output path does not exist: %s", config.Output)
+				return result, result.Error
 			}
 		}
 	}
@@ -121,9 +138,12 @@ func ConvertFile(srcPath string, config IconvConfig) (ConversionResult, error) {
 
 	// 7. 处理输出
 	if config.Write {
-		// 原地写入：备份原文件，重命名临时文件
+		// 原地写入：先关闭源文件（Windows 需要）
+		_ = srcFile.Close()
+
+		// 备份原文件，重命名临时文件
 		if config.Backup {
-			backupPath := srcPath + ".bak"
+			backupPath := srcPath + types.IconvBackupExt
 			_ = fs.MoveEx(srcPath, backupPath, true)
 		} else {
 			_ = os.Remove(srcPath)
