@@ -38,7 +38,7 @@ proxy = 'https://goproxy.cn,https://goproxy.io,direct'
 # --skip-check, -sc: 跳过构建前检查
 skip_check = false
 # --timeout: 构建超时时间(支持单位: ns/us/ms/s/m/h)
-timeout = '60s'
+timeout = '120s'
 # 指定链接器标志
 ldflags = '-s -w'
 
@@ -79,4 +79,3 @@ force = true
 # GOOS = "linux"
 # GOARCH = "amd64"
 # CGO_ENABLED = "1"
-
