@@ -543,3 +543,79 @@ if fs.IsBinaryPath("/path/to/file.txt") {
 }
 ```
 
+### func Expand
+
+```go
+func Expand(patterns []string) ([]string, error)
+```
+
+Expand 展开文件路径列表（支持通配符） 将包含通配符的模式展开为具体路径，返回所有匹配的文件和目录
+
+**参数:**
+- `patterns`: 文件路径模式列表，支持 *、?、[] 等通配符
+
+**返回:**
+- `[]string`: 展开后的路径列表（去重），包含文件和目录
+- `error`: 模式语法错误时返回错误
+
+**行为说明:**
+- 通配符匹配成功: 返回匹配的所有路径（文件和目录）
+- 通配符无匹配: 保留原模式（不报错，由调用者处理）
+- 具体路径: 直接保留
+- 路径清洗: 自动去除 ./ 前缀和多余的分隔符
+
+**示例:**
+
+```go
+paths, err := fs.Expand([]string{"*.go"})                    // [main.go utils.go]
+paths, err := fs.Expand([]string{"src/*"})                   // [src/main.go src/utils src/pkg]
+paths, err := fs.Expand([]string{"config.yaml"})             // [config.yaml]（原样保留）
+paths, err := fs.Expand([]string{"*.notexist"})              // [*.notexist]（无匹配时保留）
+```
+
+### func ExpandFiles
+
+```go
+func ExpandFiles(patterns []string) ([]string, error)
+```
+
+ExpandFiles 展开文件路径列表，只返回文件（排除目录） 与 Expand 类似，但自动过滤掉目录路径
+
+**参数:**
+- `patterns`: 文件路径模式列表，支持 *、?、[] 等通配符
+
+**返回:**
+- `[]string`: 展开后的文件路径列表（去重），只包含文件
+- `error`: 模式语法错误时返回错误
+
+**示例:**
+
+```go
+files, err := fs.ExpandFiles([]string{"*.go"})               // [main.go utils.go]
+files, err := fs.ExpandFiles([]string{"src/*"})              // [src/main.go]（排除 src/utils 目录）
+```
+
+### func ExpandPattern
+
+```go
+func ExpandPattern(pattern string) ([]string, error)
+```
+
+ExpandPattern 展开单个路径模式 与 Expand 类似，但只接收单个模式，返回所有匹配的路径（文件和目录）
+
+**参数:**
+- `pattern`: 文件路径模式，支持 *、?、[] 等通配符
+
+**返回:**
+- `[]string`: 展开后的路径列表，包含文件和目录
+- `error`: 模式语法错误时返回错误，空模式返回错误
+
+**示例:**
+
+```go
+paths, err := fs.ExpandPattern("*.go")                 // [main.go utils.go]
+paths, err := fs.ExpandPattern("src/*")                // [src/main.go src/utils src/pkg]
+paths, err := fs.ExpandPattern("config.yaml")          // [config.yaml]（原样保留）
+paths, err := fs.ExpandPattern("*.notexist")           // [*.notexist]（无匹配时保留）
+```
+

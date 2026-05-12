@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	gitee.com/MM-Q/color v1.0.3
 	gitee.com/MM-Q/comprx v0.1.6
-	gitee.com/MM-Q/go-kit v0.0.19
+	gitee.com/MM-Q/go-kit v0.0.20
 	gitee.com/MM-Q/qflag v0.5.20
 	gitee.com/MM-Q/shellx v1.0.19
 	gitee.com/MM-Q/verman v0.0.19

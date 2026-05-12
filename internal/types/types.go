@@ -144,3 +144,35 @@ var WindowsSymlinkExts = map[string]bool{
 	".lnk": true, // 快捷方式
 	".url": true, // 链接文件
 }
+
+// 定义需要跳过的系统文件和特殊目录
+var SystemFilesAndDirs = map[string]bool{
+	// Windows 系统文件
+	"pagefile.sys":              true,
+	"$RECYCLE.BIN":              true,
+	"System Volume Information": true,
+	"hiberfil.sys":              true,
+	"swapfile.sys":              true,
+	"DumpStack.log.tmp":         true,
+	"Thumbs.db":                 true,
+	"Desktop.ini":               true,
+	"Autorun.inf":               true,
+	"bootmgr":                   true,
+	"BOOTNXT":                   true,
+	"ntldr":                     true,
+	"ntdetect.com":              true,
+	"ntbootdd.sys":              true,
+
+	// 旧版 Windows 系统文件
+	"config.sys":   true,
+	"io.sys":       true,
+	"msdos.sys":    true,
+	"boot.ini":     true,
+	"bootsect.bak": true,
+
+	// Windows 系统目录
+	"Recovery":    true,
+	"Windows.old": true,
+	"PerfLogs":    true,
+	"ProgramData": true,
+}
