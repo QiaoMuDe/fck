@@ -4,9 +4,9 @@ package newline
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/go-kit/fs"
 )
 
 // ListTypes 列出支持的换行符类型
@@ -26,7 +26,7 @@ func ListTypes() error {
 //   - error: 执行错误（如果有）
 func CmdMain(config Config) error {
 	// 展开文件列表（支持通配符）
-	files, err := expandFileList(config.Files)
+	files, err := fs.ExpandFiles(config.Files)
 	if err != nil {
 		return err
 	}
@@ -94,48 +94,4 @@ func CmdMain(config Config) error {
 	}
 
 	return nil
-}
-
-// expandFileList 展开文件列表（支持通配符）
-//
-// 参数:
-//   - patterns: 文件路径模式列表
-//
-// 返回值:
-//   - []string: 展开后的文件路径列表
-//   - error: 执行错误（如果有）
-func expandFileList(patterns []string) ([]string, error) {
-	var files []string
-	seen := make(map[string]bool)
-
-	for _, pattern := range patterns {
-		matches, err := filepath.Glob(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("invalid pattern %s: %w", pattern, err)
-		}
-
-		if len(matches) == 0 {
-			// 如果没有匹配到，检查是否是目录
-			info, err := os.Stat(pattern)
-			if err == nil && info.IsDir() {
-				return nil, fmt.Errorf("%s is a directory, not a file", pattern)
-			}
-			// 保留原路径（可能是具体文件）
-			matches = []string{pattern}
-		}
-
-		for _, match := range matches {
-			// 跳过目录
-			info, err := os.Stat(match)
-			if err == nil && info.IsDir() {
-				continue
-			}
-			if !seen[match] {
-				seen[match] = true
-				files = append(files, match)
-			}
-		}
-	}
-
-	return files, nil
 }

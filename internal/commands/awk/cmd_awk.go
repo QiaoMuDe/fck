@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/go-kit/term"
 )
 
@@ -42,18 +42,9 @@ func AwkCmdMain(config AwkConfig) error {
 	}
 
 	// 展开通配符并收集所有文件
-	var allFiles []string
-	for _, pattern := range config.Files {
-		matches, err := filepath.Glob(pattern)
-		if err != nil {
-			return fmt.Errorf("invalid pattern %s: %w", pattern, err)
-		}
-		if len(matches) == 0 {
-			// 没有匹配到文件，尝试直接作为文件名处理
-			allFiles = append(allFiles, pattern)
-		} else {
-			allFiles = append(allFiles, matches...)
-		}
+	allFiles, err := fs.Expand(config.Files)
+	if err != nil {
+		return err
 	}
 
 	for _, file := range allFiles {

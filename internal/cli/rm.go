@@ -2,9 +2,9 @@ package cli
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"gitee.com/MM-Q/fck/internal/commands/rm"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -48,18 +48,11 @@ func init() {
 
 func runRM(cmd qflag.Command) error {
 	args := cmd.Args()
-	targets := []string{}
 
-	for _, arg := range args {
-		matches, err := filepath.Glob(arg)
-		if err != nil {
-			return fmt.Errorf("glob pattern expansion failed: %w", err)
-		}
-		if len(matches) == 0 {
-			targets = append(targets, arg)
-		} else {
-			targets = append(targets, matches...)
-		}
+	// 展开通配符
+	targets, err := fs.Expand(args)
+	if err != nil {
+		return err
 	}
 
 	config := rm.RMConfig{

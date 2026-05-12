@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
 	"unicode/utf8"
 
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/go-kit/term"
 	"github.com/jedib0t/go-pretty/v6/table"
 )
@@ -55,21 +54,9 @@ func WcCmdMain(config WcConfig) error {
 	}
 
 	// 展开通配符并收集所有文件
-	var allFiles []string
-	for _, pattern := range config.Files {
-		matches, err := filepath.Glob(pattern)
-		if err != nil {
-			return fmt.Errorf("invalid pattern %s: %w", pattern, err)
-		}
-		if len(matches) == 0 {
-			// 检查是否包含通配符字符
-			if strings.ContainsAny(pattern, "*?[") {
-				return fmt.Errorf("no files match pattern: %s", pattern)
-			}
-			allFiles = append(allFiles, pattern)
-		} else {
-			allFiles = append(allFiles, matches...)
-		}
+	allFiles, err := fs.ExpandFiles(config.Files)
+	if err != nil {
+		return err
 	}
 
 	// 处理多个文件

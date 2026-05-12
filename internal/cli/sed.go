@@ -3,10 +3,10 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"gitee.com/MM-Q/fck/internal/commands/sed"
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/go-kit/term"
 	"gitee.com/MM-Q/qflag"
 )
@@ -131,19 +131,9 @@ func runSed(cmd qflag.Command) error {
 	}
 
 	// 展开通配符并收集所有文件
-	var targets []string
-	for _, arg := range args {
-		matches, err := filepath.Glob(arg)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error globbing %s: %v\n", arg, err)
-			continue
-		}
-		if len(matches) == 0 {
-			// 没有匹配，保留原参数（让 core 层处理文件不存在错误）
-			targets = append(targets, arg)
-		} else {
-			targets = append(targets, matches...)
-		}
+	targets, err := fs.Expand(args)
+	if err != nil {
+		return err
 	}
 
 	// 准备基础配置（所有文件共用）
