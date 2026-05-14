@@ -45,7 +45,7 @@ func init() {
 func runPreview(cmd qflag.Command) error {
 	args := cmd.Args()
 	if len(args) < 1 {
-		return fmt.Errorf("缺少压缩包路径参数")
+		return fmt.Errorf("missing archive path")
 	}
 
 	packPath := args[0]

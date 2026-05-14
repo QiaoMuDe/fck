@@ -138,6 +138,7 @@ func runGrep(cmd qflag.Command) error {
 	// 递归搜索时自动启用显示文件名
 	withFilename := grepWithFilename.Get()
 	if grepRecursive.Get() || grepFollowSymlink.Get() {
+		// 递归搜索或者跟随符号链接时，自动显示文件名
 		withFilename = true
 	}
 

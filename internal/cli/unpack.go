@@ -19,6 +19,7 @@ var (
 	unpackProgress        *qflag.BoolFlag        // 启用进度显示
 	unpackProgressStyle   *qflag.EnumFlag        // 进度条样式
 	unpackNoValidate      *qflag.BoolFlag        // 禁用路径验证
+	unpackOutput          *qflag.StringFlag      // 解压目标目录
 )
 
 func init() {
@@ -37,15 +38,24 @@ func init() {
 		"\t\t\t\t\t[unicode] - unicode 样式\n"+
 		"\t\t\t\t\t[ascii  ] - ascii 样式", types.ProgressStyleAscii, types.SupportedProgressStyles)
 	unpackNoValidate = UnpackCmd.Bool("no-validate", "nv", "禁用路径验证", false)
+	unpackOutput = UnpackCmd.String("output", "o", "解压目标目录，默认为当前目录", ".")
 
 	cmdOpts := &qflag.CmdOpts{
-		Desc:        "智能解压缩工具",
-		Notes:       []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
+		Desc: "智能解压缩工具",
+		Notes: []string{
+			"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib",
+			"支持同时解压多个压缩包",
+			"支持通配符匹配 (如 *.zip)",
+			"使用 -o 指定解压目标目录，默认为当前目录",
+		},
 		UseChinese:  true,
-		UsageSyntax: fmt.Sprintf("%s unpack [options] <archive> [dst]", qflag.Root.Name()),
+		UsageSyntax: fmt.Sprintf("%s unpack [options] <archive...>", qflag.Root.Name()),
 		Examples: map[string]string{
-			"解压压缩包":      fmt.Sprintf("%s unpack archive.zip", qflag.Root.Name()),
-			"解压压缩包到指定目录": fmt.Sprintf("%s unpack archive.zip /path/to/dst", qflag.Root.Name()),
+			"解压单个压缩包": fmt.Sprintf("%s unpack archive.zip", qflag.Root.Name()),
+			"解压到指定目录": fmt.Sprintf("%s unpack -o /path/to/dst archive.zip", qflag.Root.Name()),
+			"解压多个压缩包": fmt.Sprintf("%s unpack archive1.zip archive2.tar.gz", qflag.Root.Name()),
+			"使用通配符":   fmt.Sprintf("%s unpack *.zip", qflag.Root.Name()),
+			"批量解压到目录": fmt.Sprintf("%s unpack -o /path/to/dst *.tar.gz", qflag.Root.Name()),
 		},
 	}
 
@@ -59,17 +69,16 @@ func init() {
 func runUnpack(cmd qflag.Command) error {
 	args := cmd.Args()
 	if len(args) < 1 {
-		return fmt.Errorf("archive path is required")
+		return fmt.Errorf("at least one archive path is required")
 	}
 
-	packPath := args[0] // 压缩包路径
-	dstPath := ""       // 解压目标路径
-	if len(args) > 1 {
-		dstPath = args[1]
-	}
+	// 所有位置参数都是压缩包路径（支持通配符）
+	archives := args
+	// 目标路径从 -o 标志获取
+	dstPath := unpackOutput.Get()
 
 	config := unpack.UnpackConfig{
-		PackPath:        packPath,
+		Archives:        archives,
 		DstPath:         dstPath,
 		IncludePatterns: unpackIncludePatterns.Get(),
 		ExcludePatterns: unpackExcludePatterns.Get(),
