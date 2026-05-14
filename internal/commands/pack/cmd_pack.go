@@ -3,10 +3,25 @@ package pack
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"gitee.com/MM-Q/comprx"
 	"gitee.com/MM-Q/fck/internal/types"
 )
+
+// generateDefaultPackPath 根据源路径生成默认压缩包路径
+func generateDefaultPackPath(srcPath string) string {
+	// 获取文件名（不含目录）
+	base := filepath.Base(srcPath)
+
+	// 去掉现有扩展名
+	ext := filepath.Ext(base)
+	name := strings.TrimSuffix(base, ext)
+
+	// 添加 .zip 后缀
+	return name + ".zip"
+}
 
 // PackConfig 打包配置结构体
 type PackConfig struct {
@@ -31,12 +46,14 @@ type PackConfig struct {
 // 返回值:
 //   - error: 打包过程中可能发生的错误
 func PackCmdMain(config PackConfig) error {
-	if config.PackPath == "" {
-		return errors.New("no pack path specified")
+	if config.SrcPath == "" {
+		return errors.New("no source path specified")
 	}
 
-	if config.SrcPath == "" {
-		return errors.New("no src path specified")
+	// 确定压缩包路径
+	packPath := config.PackPath
+	if packPath == "" {
+		packPath = generateDefaultPackPath(config.SrcPath)
 	}
 
 	filter := comprx.FilterOptions{
@@ -65,7 +82,7 @@ func PackCmdMain(config PackConfig) error {
 		Filter:                filter,              //  过滤选项
 	}
 
-	if packErr := comprx.PackOptions(config.PackPath, config.SrcPath, opts); packErr != nil {
+	if packErr := comprx.PackOptions(packPath, config.SrcPath, opts); packErr != nil {
 		return packErr
 	}
 
