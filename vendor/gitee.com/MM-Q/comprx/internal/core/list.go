@@ -59,12 +59,12 @@ func List(archivePath string) (*types.ArchiveInfo, error) {
 	// 智能检测压缩文件格式
 	compressType, err := utils.DetectCompressFormat(archivePath)
 	if err != nil {
-		return nil, fmt.Errorf("检测压缩格式失败: %v", err)
+		return nil, fmt.Errorf("failed to detect compression format: %v", err)
 	}
 
 	// 检查源文件是否存在
 	if !utils.Exists(archivePath) {
-		return nil, fmt.Errorf("压缩包文件 %s 不存在", archivePath)
+		return nil, fmt.Errorf("archive file %s does not exist", archivePath)
 	}
 
 	// 根据压缩格式调用对应的列表函数
@@ -88,7 +88,7 @@ func List(archivePath string) (*types.ArchiveInfo, error) {
 		return cxzlib.ListZlib(archivePath)
 
 	default:
-		return nil, fmt.Errorf("不支持的压缩格式: %s", compressType)
+		return nil, fmt.Errorf("unsupported compression format: %s", compressType)
 	}
 }
 
@@ -105,12 +105,12 @@ func ListLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 	// 智能检测压缩文件格式
 	compressType, err := utils.DetectCompressFormat(archivePath)
 	if err != nil {
-		return nil, fmt.Errorf("检测压缩格式失败: %v", err)
+		return nil, fmt.Errorf("failed to detect compression format: %v", err)
 	}
 
 	// 检查源文件是否存在
 	if !utils.Exists(archivePath) {
-		return nil, fmt.Errorf("压缩包文件 %s 不存在", archivePath)
+		return nil, fmt.Errorf("archive file %s does not exist", archivePath)
 	}
 
 	// 根据压缩格式调用对应的列表函数
@@ -134,7 +134,7 @@ func ListLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 		return cxzlib.ListZlibLimit(archivePath, limit)
 
 	default:
-		return nil, fmt.Errorf("不支持的压缩格式: %s", compressType)
+		return nil, fmt.Errorf("unsupported compression format: %s", compressType)
 	}
 }
 
@@ -151,12 +151,12 @@ func ListMatch(archivePath string, pattern string) (*types.ArchiveInfo, error) {
 	// 智能检测压缩文件格式
 	compressType, err := utils.DetectCompressFormat(archivePath)
 	if err != nil {
-		return nil, fmt.Errorf("检测压缩格式失败: %v", err)
+		return nil, fmt.Errorf("failed to detect compression format: %v", err)
 	}
 
 	// 检查源文件是否存在
 	if !utils.Exists(archivePath) {
-		return nil, fmt.Errorf("压缩包文件 %s 不存在", archivePath)
+		return nil, fmt.Errorf("archive file %s does not exist", archivePath)
 	}
 
 	// 根据压缩格式调用对应的列表函数
@@ -180,6 +180,6 @@ func ListMatch(archivePath string, pattern string) (*types.ArchiveInfo, error) {
 		return cxzlib.ListZlibMatch(archivePath, pattern)
 
 	default:
-		return nil, fmt.Errorf("不支持的压缩格式: %s", compressType)
+		return nil, fmt.Errorf("unsupported compression format: %s", compressType)
 	}
 }

@@ -55,10 +55,10 @@ import (
 func CompressBytes(data []byte, level types.CompressionLevel) (result []byte, err error) {
 	// 参数验证 - 更精确的nil检查
 	if data == nil {
-		return nil, fmt.Errorf("输入数据不能为nil")
+		return nil, fmt.Errorf("input data cannot be nil")
 	}
 	if len(data) == 0 {
-		return nil, fmt.Errorf("输入数据不能为空")
+		return nil, fmt.Errorf("input data cannot be empty")
 	}
 
 	// 创建内存缓冲区 - 预分配容量减少重分配
@@ -72,18 +72,18 @@ func CompressBytes(data []byte, level types.CompressionLevel) (result []byte, er
 	// 创建gzip写入器
 	writer, err := gzip.NewWriterLevel(buf, config.GetCompressionLevel(level))
 	if err != nil {
-		return nil, fmt.Errorf("创建gzip写入器失败: %w", err)
+		return nil, fmt.Errorf("failed to create gzip writer: %w", err)
 	}
 
 	// 直接写入数据，无需额外缓冲区
 	if _, err = writer.Write(data); err != nil {
 		_ = writer.Close() // 确保资源清理
-		return nil, fmt.Errorf("压缩数据失败: %w", err)
+		return nil, fmt.Errorf("failed to compress data: %w", err)
 	}
 
 	// 关闭写入器确保数据完整写入
 	if err = writer.Close(); err != nil {
-		return nil, fmt.Errorf("完成压缩失败: %w", err)
+		return nil, fmt.Errorf("failed to complete compression: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -100,10 +100,10 @@ func CompressBytes(data []byte, level types.CompressionLevel) (result []byte, er
 func DecompressBytes(compressedData []byte) (result []byte, err error) {
 	// 参数验证 - 更精确的nil检查
 	if compressedData == nil {
-		return nil, fmt.Errorf("压缩数据不能为nil")
+		return nil, fmt.Errorf("compressed data cannot be nil")
 	}
 	if len(compressedData) == 0 {
-		return nil, fmt.Errorf("压缩数据不能为空")
+		return nil, fmt.Errorf("compressed data cannot be empty")
 	}
 
 	// 创建字节读取器
@@ -112,7 +112,7 @@ func DecompressBytes(compressedData []byte) (result []byte, err error) {
 	// 创建gzip读取器
 	gzipReader, err := gzip.NewReader(reader)
 	if err != nil {
-		return nil, fmt.Errorf("创建gzip读取器失败: %w", err)
+		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
 
 	// 预分配解压缓冲区 - 解压通常是压缩数据的2-3倍
@@ -125,12 +125,12 @@ func DecompressBytes(compressedData []byte) (result []byte, err error) {
 	// 直接读取解压数据，无需额外缓冲区
 	if _, err = io.Copy(buf, gzipReader); err != nil {
 		_ = gzipReader.Close() // 确保资源清理
-		return nil, fmt.Errorf("解压数据失败: %w", err)
+		return nil, fmt.Errorf("failed to decompress data: %w", err)
 	}
 
 	// 关闭读取器
 	if err = gzipReader.Close(); err != nil {
-		return nil, fmt.Errorf("关闭gzip读取器失败: %w", err)
+		return nil, fmt.Errorf("failed to close gzip reader: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -148,7 +148,7 @@ func DecompressBytes(compressedData []byte) (result []byte, err error) {
 func CompressString(text string, level types.CompressionLevel) ([]byte, error) {
 	// 快速失败判断
 	if text == "" {
-		return nil, fmt.Errorf("输入字符串不能为空")
+		return nil, fmt.Errorf("input string cannot be empty")
 	}
 
 	// 直接复用CompressBytes
@@ -166,10 +166,10 @@ func CompressString(text string, level types.CompressionLevel) ([]byte, error) {
 func DecompressString(compressedData []byte) (string, error) {
 	// 快速失败判断
 	if compressedData == nil {
-		return "", fmt.Errorf("压缩数据不能为nil")
+		return "", fmt.Errorf("compressed data cannot be nil")
 	}
 	if len(compressedData) == 0 {
-		return "", fmt.Errorf("压缩数据不能为空")
+		return "", fmt.Errorf("compressed data cannot be empty")
 	}
 
 	// 先解压为字节
@@ -196,36 +196,36 @@ func DecompressString(compressedData []byte) (string, error) {
 func CompressStream(dst io.Writer, src io.Reader, level types.CompressionLevel) (err error) {
 	// 1. 参数验证
 	if dst == nil {
-		err = fmt.Errorf("目标写入器不能为nil")
+		err = fmt.Errorf("destination writer cannot be nil")
 		return
 	}
 	if src == nil {
-		err = fmt.Errorf("源读取器不能为nil")
+		err = fmt.Errorf("source reader cannot be nil")
 		return
 	}
 
 	// 2. 创建gzip写入器
 	writer, createErr := gzip.NewWriterLevel(dst, config.GetCompressionLevel(level))
 	if createErr != nil {
-		err = fmt.Errorf("创建gzip写入器失败: %w", createErr)
+		err = fmt.Errorf("failed to create gzip writer: %w", createErr)
 		return
 	}
 	defer func() {
 		if closeErr := writer.Close(); closeErr != nil && err == nil {
 			// 只有在没有其他错误时才设置关闭错误
-			err = fmt.Errorf("关闭gzip写入器失败: %w", closeErr)
+			err = fmt.Errorf("failed to close gzip writer: %w", closeErr)
 		}
 	}()
 
 	// 3. 流式复制数据
 	if _, copyErr := io.Copy(writer, src); copyErr != nil {
-		err = fmt.Errorf("压缩数据失败: %w", copyErr)
+		err = fmt.Errorf("failed to compress data: %w", copyErr)
 		return
 	}
 
 	// 4. 确保数据完整写入
 	if closeErr := writer.Close(); closeErr != nil {
-		err = fmt.Errorf("完成压缩失败: %w", closeErr)
+		err = fmt.Errorf("failed to complete compression: %w", closeErr)
 		return
 	}
 
@@ -243,30 +243,30 @@ func CompressStream(dst io.Writer, src io.Reader, level types.CompressionLevel) 
 func DecompressStream(dst io.Writer, src io.Reader) (err error) {
 	// 1. 参数验证
 	if dst == nil {
-		err = fmt.Errorf("目标写入器不能为nil")
+		err = fmt.Errorf("destination writer cannot be nil")
 		return
 	}
 	if src == nil {
-		err = fmt.Errorf("源读取器不能为nil")
+		err = fmt.Errorf("source reader cannot be nil")
 		return
 	}
 
 	// 2. 创建gzip读取器
 	reader, createErr := gzip.NewReader(src)
 	if createErr != nil {
-		err = fmt.Errorf("创建gzip读取器失败: %w", createErr)
+		err = fmt.Errorf("failed to create gzip reader: %w", createErr)
 		return
 	}
 	defer func() {
 		if closeErr := reader.Close(); closeErr != nil && err == nil {
 			// 只有在没有其他错误时才设置关闭错误
-			err = fmt.Errorf("关闭gzip读取器失败: %w", closeErr)
+			err = fmt.Errorf("failed to close gzip reader: %w", closeErr)
 		}
 	}()
 
 	// 3. 流式复制数据
 	if _, copyErr := io.Copy(dst, reader); copyErr != nil {
-		err = fmt.Errorf("解压数据失败: %w", copyErr)
+		err = fmt.Errorf("failed to decompress data: %w", copyErr)
 		return
 	}
 

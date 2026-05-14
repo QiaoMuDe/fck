@@ -78,13 +78,13 @@ func GetSize(path string) (int64, error) {
 	if err != nil {
 		// 判断错误类型，返回精准的错误信息
 		if os.IsNotExist(err) {
-			return 0, fmt.Errorf("路径不存在: %s", path)
+			return 0, fmt.Errorf("path does not exist: %s", path)
 		}
 		if os.IsPermission(err) {
-			return 0, fmt.Errorf("访问路径 '%s' 时权限不足: %w", path, err)
+			return 0, fmt.Errorf("permission denied when accessing path '%s': %w", path, err)
 		}
 		// 其他错误
-		return 0, fmt.Errorf("获取路径 '%s' 信息失败: %w", path, err)
+		return 0, fmt.Errorf("failed to get path info for '%s': %w", path, err)
 	}
 
 	// 如果是普通文件，直接返回文件大小
@@ -108,10 +108,10 @@ func GetSize(path string) (int64, error) {
 			}
 			if os.IsPermission(err) {
 				// 权限错误，返回具体错误信息
-				return fmt.Errorf("访问路径 '%s' 时权限不足: %w", walkPath, err)
+				return fmt.Errorf("permission denied when accessing path '%s': %w", walkPath, err)
 			}
 			// 其他错误，返回通用错误信息
-			return fmt.Errorf("访问路径 '%s' 时出错: %w", walkPath, err)
+			return fmt.Errorf("error accessing path '%s': %w", walkPath, err)
 		}
 
 		// 只计算普通文件的大小
@@ -127,10 +127,10 @@ func GetSize(path string) (int64, error) {
 				}
 				if os.IsPermission(err) {
 					// 权限错误
-					return fmt.Errorf("获取文件 '%s' 信息时权限不足: %w", walkPath, err)
+					return fmt.Errorf("permission denied when getting file info for '%s': %w", walkPath, err)
 				}
 				// 其他错误
-				return fmt.Errorf("获取文件 '%s' 信息时出错: %w", walkPath, err)
+				return fmt.Errorf("error getting file info for '%s': %w", walkPath, err)
 			}
 		}
 
@@ -138,7 +138,7 @@ func GetSize(path string) (int64, error) {
 	})
 
 	if walkDirErr != nil {
-		return 0, fmt.Errorf("遍历目录失败: %w", walkDirErr)
+		return 0, fmt.Errorf("failed to traverse directory: %w", walkDirErr)
 	}
 
 	return totalSize, nil

@@ -68,7 +68,7 @@ func calculateZlibTotalSize(zlibFilePath string, cfg *config.Config) int64 {
 	}
 
 	// 开始扫描进度显示
-	bar := cfg.Progress.StartScan("正在分析内容...")
+	bar := cfg.Progress.StartScan("Analyzing content...")
 	defer func() {
 		_ = cfg.Progress.CloseBar(bar)
 	}()
@@ -114,8 +114,8 @@ func Unzlib(zlibFilePath string, targetPath string, config *config.Config) error
 	totalSize := calculateZlibTotalSize(zlibFilePath, config)
 
 	// 开始进度显示
-	if err := config.Progress.Start(totalSize, zlibFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(zlibFilePath))); err != nil {
-		return fmt.Errorf("开始进度显示失败: %w", err)
+	if err := config.Progress.Start(totalSize, zlibFilePath, fmt.Sprintf("Decompressing '%s'...", filepath.Base(zlibFilePath))); err != nil {
+		return fmt.Errorf("failed to start progress display: %w", err)
 	}
 	defer func() {
 		_ = config.Progress.Close()
@@ -124,20 +124,20 @@ func Unzlib(zlibFilePath string, targetPath string, config *config.Config) error
 	// 打开 ZLIB 文件（同时检查文件是否存在）
 	zlibFile, err := os.Open(zlibFilePath)
 	if err != nil {
-		return fmt.Errorf("打开 ZLIB 文件失败: %w", err)
+		return fmt.Errorf("failed to open ZLIB file: %w", err)
 	}
 	defer func() { _ = zlibFile.Close() }()
 
 	// 获取ZLIB文件信息用于预验证
 	zlibInfo, err := zlibFile.Stat()
 	if err != nil {
-		return fmt.Errorf("获取ZLIB文件信息失败: %w", err)
+		return fmt.Errorf("failed to get ZLIB file info: %w", err)
 	}
 
 	// 创建 ZLIB 读取器
 	zlibReader, err := zlib.NewReader(zlibFile)
 	if err != nil {
-		return fmt.Errorf("创建 ZLIB 读取器失败: %w", err)
+		return fmt.Errorf("failed to create ZLIB reader: %w", err)
 	}
 	defer func() { _ = zlibReader.Close() }()
 
@@ -151,12 +151,12 @@ func Unzlib(zlibFilePath string, targetPath string, config *config.Config) error
 
 			// 重新检查生成的目标文件是否存在
 			if _, statErr := os.Stat(targetPath); statErr == nil && !config.OverwriteExisting {
-				return fmt.Errorf("目标文件已存在且不允许覆盖: %s", targetPath)
+				return fmt.Errorf("target file already exists and overwriting is not allowed: %s", targetPath)
 			}
 		} else {
 			// 目标是文件，检查是否允许覆盖
 			if !config.OverwriteExisting {
-				return fmt.Errorf("目标文件已存在且不允许覆盖: %s", targetPath)
+				return fmt.Errorf("target file already exists and overwriting is not allowed: %s", targetPath)
 			}
 		}
 	}
@@ -164,13 +164,13 @@ func Unzlib(zlibFilePath string, targetPath string, config *config.Config) error
 	// 检查目标文件的父目录是否存在，如果不存在则创建
 	parentDir := filepath.Dir(targetPath)
 	if mkdirErr := utils.EnsureDir(parentDir); mkdirErr != nil {
-		return fmt.Errorf("创建目标文件父目录失败: %w", mkdirErr)
+		return fmt.Errorf("failed to create target file parent directory: %w", mkdirErr)
 	}
 
 	// 创建目标文件
 	targetFile, createErr := os.Create(targetPath)
 	if createErr != nil {
-		return fmt.Errorf("创建目标文件失败: %w", createErr)
+		return fmt.Errorf("failed to create target file: %w", createErr)
 	}
 	defer func() { _ = targetFile.Close() }()
 
@@ -184,7 +184,7 @@ func Unzlib(zlibFilePath string, targetPath string, config *config.Config) error
 
 	// 解压缩文件内容
 	if _, err := config.Progress.CopyBuffer(targetFile, zlibReader, buffer); err != nil {
-		return fmt.Errorf("解压缩文件失败: %w", err)
+		return fmt.Errorf("failed to decompress file: %w", err)
 	}
 
 	return nil

@@ -49,7 +49,7 @@ import (
 // ListGzip 获取GZIP压缩包的文件信息
 func ListGzip(archivePath string) (*types.ArchiveInfo, error) {
 	// 确保路径为绝对路径
-	absPath, err := utils.EnsureAbsPath(archivePath, "GZIP文件路径")
+	absPath, err := utils.EnsureAbsPath(archivePath, "GZIP file path")
 	if err != nil {
 		return nil, err
 	}
@@ -57,26 +57,26 @@ func ListGzip(archivePath string) (*types.ArchiveInfo, error) {
 	// 根据文件名检测压缩格式类型
 	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
+		return nil, fmt.Errorf("failed to detect compression format: %w", err)
 	}
 
 	// 打开GZIP文件
 	file, err := os.Open(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("打开GZIP文件失败: %w", err)
+		return nil, fmt.Errorf("failed to open GZIP file: %w", err)
 	}
 	defer func() { _ = file.Close() }()
 
 	// 获取压缩包文件信息
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("获取GZIP文件信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get GZIP file info: %w", err)
 	}
 
 	// 创建GZIP读取器
 	gzipReader, err := gzip.NewReader(file)
 	if err != nil {
-		return nil, fmt.Errorf("创建GZIP读取器失败: %w", err)
+		return nil, fmt.Errorf("failed to create GZIP reader: %w", err)
 	}
 	defer func() { _ = gzipReader.Close() }()
 

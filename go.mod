@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	gitee.com/MM-Q/color v1.0.3
-	gitee.com/MM-Q/comprx v0.1.6
+	gitee.com/MM-Q/comprx v0.1.7
 	gitee.com/MM-Q/go-kit v0.0.20
 	gitee.com/MM-Q/qflag v0.5.20
 	gitee.com/MM-Q/shellx v1.0.19
@@ -18,7 +18,7 @@ require (
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/tidwall/gjson v1.18.0
-	golang.org/x/term v0.41.0
+	golang.org/x/term v0.43.0
 	golang.org/x/text v0.37.0
 )
 
@@ -77,6 +77,6 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
 	mvdan.cc/sh/v3 v3.12.0 // indirect
 )

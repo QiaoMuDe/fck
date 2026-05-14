@@ -63,7 +63,7 @@ func calculateGzipTotalSize(gzipFilePath string, cfg *config.Config) int64 {
 	}
 
 	// 开始扫描进度显示
-	bar := cfg.Progress.StartScan("正在分析内容...")
+	bar := cfg.Progress.StartScan("Analyzing content...")
 	defer func() {
 		_ = cfg.Progress.CloseBar(bar)
 	}()
@@ -109,8 +109,8 @@ func Ungzip(gzipFilePath string, targetPath string, config *config.Config) error
 	totalSize := calculateGzipTotalSize(gzipFilePath, config)
 
 	// 开始进度显示
-	if err := config.Progress.Start(totalSize, gzipFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(gzipFilePath))); err != nil {
-		return fmt.Errorf("开始进度显示失败: %w", err)
+	if err := config.Progress.Start(totalSize, gzipFilePath, fmt.Sprintf("Extracting '%s'...", filepath.Base(gzipFilePath))); err != nil {
+		return fmt.Errorf("failed to start progress display: %w", err)
 	}
 	defer func() {
 		_ = config.Progress.Close()
@@ -119,20 +119,20 @@ func Ungzip(gzipFilePath string, targetPath string, config *config.Config) error
 	// 打开 GZIP 文件（同时检查文件是否存在）
 	gzipFile, err := os.Open(gzipFilePath)
 	if err != nil {
-		return fmt.Errorf("打开 GZIP 文件失败: %w", err)
+		return fmt.Errorf("failed to open GZIP file: %w", err)
 	}
 	defer func() { _ = gzipFile.Close() }()
 
 	// 获取GZIP文件信息用于预验证
 	gzipInfo, err := gzipFile.Stat()
 	if err != nil {
-		return fmt.Errorf("获取GZIP文件信息失败: %w", err)
+		return fmt.Errorf("failed to get GZIP file info: %w", err)
 	}
 
 	// 创建 GZIP 读取器
 	gzipReader, err := gzip.NewReader(gzipFile)
 	if err != nil {
-		return fmt.Errorf("创建 GZIP 读取器失败: %w", err)
+		return fmt.Errorf("failed to create GZIP reader: %w", err)
 	}
 	defer func() { _ = gzipReader.Close() }()
 
@@ -144,7 +144,7 @@ func Ungzip(gzipFilePath string, targetPath string, config *config.Config) error
 				// 直接验证 GZIP 头部的文件名，并与目标目录合并
 				validatedPath, validateErr := utils.ValidatePathSimple(targetPath, gzipReader.Name, config.DisablePathValidation)
 				if validateErr != nil {
-					return fmt.Errorf("GZIP文件头包含不安全的文件名: %w", validateErr)
+					return fmt.Errorf("GZIP file header contains unsafe filename: %w", validateErr)
 				}
 				targetPath = validatedPath
 			} else {
@@ -156,12 +156,12 @@ func Ungzip(gzipFilePath string, targetPath string, config *config.Config) error
 
 			// 重新检查生成的目标文件是否存在
 			if _, statErr := os.Stat(targetPath); statErr == nil && !config.OverwriteExisting {
-				return fmt.Errorf("目标文件已存在且不允许覆盖: %s", targetPath)
+				return fmt.Errorf("target file already exists and overwriting is not allowed: %s", targetPath)
 			}
 		} else {
 			// 目标是文件，检查是否允许覆盖
 			if !config.OverwriteExisting {
-				return fmt.Errorf("目标文件已存在且不允许覆盖: %s", targetPath)
+				return fmt.Errorf("target file already exists and overwriting is not allowed: %s", targetPath)
 			}
 		}
 	}
@@ -169,13 +169,13 @@ func Ungzip(gzipFilePath string, targetPath string, config *config.Config) error
 	// 检查目标文件的父目录是否存在，如果不存在则创建
 	parentDir := filepath.Dir(targetPath)
 	if mkdirErr := utils.EnsureDir(parentDir); mkdirErr != nil {
-		return fmt.Errorf("创建目标文件父目录失败: %w", mkdirErr)
+		return fmt.Errorf("failed to create target file parent directory: %w", mkdirErr)
 	}
 
 	// 创建目标文件
 	targetFile, createErr := os.Create(targetPath)
 	if createErr != nil {
-		return fmt.Errorf("创建目标文件失败: %w", createErr)
+		return fmt.Errorf("failed to create target file: %w", createErr)
 	}
 	defer func() { _ = targetFile.Close() }()
 
@@ -190,14 +190,14 @@ func Ungzip(gzipFilePath string, targetPath string, config *config.Config) error
 
 	// 解压缩文件内容
 	if _, err := config.Progress.CopyBuffer(targetFile, gzipReader, buffer); err != nil {
-		return fmt.Errorf("解压缩文件失败: %w", err)
+		return fmt.Errorf("failed to decompress file: %w", err)
 	}
 
 	// 如果GZIP文件头中有修改时间信息，则设置目标文件的修改时间
 	if !gzipReader.ModTime.IsZero() {
 		if err := os.Chtimes(targetPath, gzipReader.ModTime, gzipReader.ModTime); err != nil {
 			// 设置时间失败不是致命错误，只记录警告
-			fmt.Printf("警告: 设置文件修改时间失败: %v\n", err)
+			fmt.Printf("Warning: failed to set file modification time: %v\n", err)
 		}
 	}
 

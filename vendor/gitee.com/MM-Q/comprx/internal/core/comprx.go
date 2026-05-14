@@ -89,7 +89,7 @@ func NewComprx() *Comprx {
 func (c *Comprx) Pack(dst string, src string) error {
 	// 检查参数
 	if src == "" || dst == "" {
-		return fmt.Errorf("源路径或目标路径不能为空")
+		return fmt.Errorf("source path or destination path cannot be empty")
 	}
 
 	// 规范化路径
@@ -99,25 +99,25 @@ func (c *Comprx) Pack(dst string, src string) error {
 	// 智能检测压缩文件格式
 	compressType, err := utils.DetectCompressFormat(dst)
 	if err != nil {
-		return fmt.Errorf("检测压缩格式失败: %v", err)
+		return fmt.Errorf("failed to detect compression format: %v", err)
 	}
 
 	// 检查是否为.bz2格式的压缩文件，暂不支持
 	if compressType == types.CompressTypeBz2 || compressType == types.CompressTypeBzip2 {
-		return fmt.Errorf("暂不支持 %s 和 %s 格式的压缩文件", types.CompressTypeBz2.String(), types.CompressTypeBzip2.String())
+		return fmt.Errorf("compression format %s and %s are not currently supported", types.CompressTypeBz2.String(), types.CompressTypeBzip2.String())
 	}
 
 	// 检查目标文件是否存在
 	if utils.Exists(dst) {
 		if !c.Config.OverwriteExisting {
-			return fmt.Errorf("文件 %s 已存在，如需覆盖请设置 OverwriteExisting 为 true", dst)
+			return fmt.Errorf("file %s already exists, set OverwriteExisting to true to overwrite", dst)
 		}
 	}
 
 	// 检查目标目录是否存在, 不存在则创建
 	targetDir := filepath.Dir(dst)
 	if err := utils.EnsureDir(targetDir); err != nil {
-		return fmt.Errorf("创建目标目录失败: %v", err)
+		return fmt.Errorf("failed to create target directory: %v", err)
 	}
 
 	// 根据压缩格式进行打包
@@ -138,7 +138,7 @@ func (c *Comprx) Pack(dst string, src string) error {
 		return cxzlib.Zlib(dst, src, c.Config)
 
 	default:
-		return fmt.Errorf("不支持的压缩格式: %s", compressType)
+		return fmt.Errorf("unsupported compression format: %s", compressType)
 	}
 }
 
@@ -157,7 +157,7 @@ func (c *Comprx) Pack(dst string, src string) error {
 func (c *Comprx) Unpack(src string, dst string) error {
 	// 检查源路径是否为空
 	if src == "" {
-		return fmt.Errorf("源路径不能为空")
+		return fmt.Errorf("source path cannot be empty")
 	}
 
 	// 规范化路径
@@ -169,12 +169,12 @@ func (c *Comprx) Unpack(src string, dst string) error {
 	// 智能检测压缩文件格式
 	compressType, err := utils.DetectCompressFormat(src)
 	if err != nil {
-		return fmt.Errorf("检测压缩格式失败: %v", err)
+		return fmt.Errorf("failed to detect compression format: %v", err)
 	}
 
 	// 检查源文件是否存在
 	if !utils.Exists(src) {
-		return fmt.Errorf("源文件 %s 不存在", src)
+		return fmt.Errorf("source file %s does not exist", src)
 	}
 
 	// 当目标目录为空时，自动生成目标目录, 如: /path/to/file.tar.gz -> /path/to/file
@@ -187,7 +187,7 @@ func (c *Comprx) Unpack(src string, dst string) error {
 
 	// 检查目标目录是否存在, 不存在则创建
 	if err := utils.EnsureDir(dst); err != nil {
-		return fmt.Errorf("创建目标目录失败: %v", err)
+		return fmt.Errorf("failed to create target directory: %v", err)
 	}
 
 	// 根据压缩格式进行解压
@@ -211,6 +211,6 @@ func (c *Comprx) Unpack(src string, dst string) error {
 		return cxzlib.Unzlib(src, dst, c.Config)
 
 	default:
-		return fmt.Errorf("不支持的压缩格式: %s", compressType)
+		return fmt.Errorf("unsupported compression format: %s", compressType)
 	}
 }

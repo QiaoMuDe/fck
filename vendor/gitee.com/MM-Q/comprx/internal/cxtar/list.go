@@ -49,7 +49,7 @@ import (
 // ListTar 获取TAR压缩包的所有文件信息
 func ListTar(archivePath string) (*types.ArchiveInfo, error) {
 	// 确保路径为绝对路径
-	absPath, err := utils.EnsureAbsPath(archivePath, "TAR文件路径")
+	absPath, err := utils.EnsureAbsPath(archivePath, "TAR file path")
 	if err != nil {
 		return nil, err
 	}
@@ -57,14 +57,14 @@ func ListTar(archivePath string) (*types.ArchiveInfo, error) {
 	// 打开TAR文件
 	file, err := os.Open(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("打开TAR文件失败: %w", err)
+		return nil, fmt.Errorf("failed to open TAR file: %w", err)
 	}
 	defer func() { _ = file.Close() }()
 
 	// 获取压缩包文件信息
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("获取TAR文件信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get TAR file info: %w", err)
 	}
 
 	// 创建TAR读取器
@@ -73,7 +73,7 @@ func ListTar(archivePath string) (*types.ArchiveInfo, error) {
 	// 根据文件名检测压缩格式类型
 	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
+		return nil, fmt.Errorf("failed to detect compression format: %w", err)
 	}
 
 	// 创建TAR文件信息
@@ -90,7 +90,7 @@ func ListTar(archivePath string) (*types.ArchiveInfo, error) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("读取TAR条目失败: %w", err)
+			return nil, fmt.Errorf("failed to read TAR entry: %w", err)
 		}
 
 		fileInfo := types.FileInfo{
@@ -119,7 +119,7 @@ func ListTar(archivePath string) (*types.ArchiveInfo, error) {
 // ListTarLimit 获取TAR压缩包指定数量的文件信息
 func ListTarLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 	// 确保路径为绝对路径
-	absPath, err := utils.EnsureAbsPath(archivePath, "TAR文件路径")
+	absPath, err := utils.EnsureAbsPath(archivePath, "TAR file path")
 	if err != nil {
 		return nil, err
 	}
@@ -127,14 +127,14 @@ func ListTarLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 	// 打开TAR文件
 	file, err := os.Open(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("打开TAR文件失败: %w", err)
+		return nil, fmt.Errorf("failed to open TAR file: %w", err)
 	}
 	defer func() { _ = file.Close() }()
 
 	// 获取压缩包文件信息
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("获取TAR文件信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get TAR file info: %w", err)
 	}
 
 	// 创建TAR读取器
@@ -143,7 +143,7 @@ func ListTarLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 	// 根据文件名检测压缩格式类型
 	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
+		return nil, fmt.Errorf("failed to detect compression format: %w", err)
 	}
 
 	// 创建TAR文件信息
@@ -161,7 +161,7 @@ func ListTarLimit(archivePath string, limit int) (*types.ArchiveInfo, error) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("读取TAR条目失败: %w", err)
+			return nil, fmt.Errorf("failed to read TAR entry: %w", err)
 		}
 
 		// 达到限制数量就提前退出

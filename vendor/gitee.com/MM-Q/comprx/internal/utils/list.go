@@ -171,23 +171,23 @@ func PrintFileInfo(info types.FileInfo, showDetails bool) {
 // 参数:
 //   - archiveInfo: 压缩包信息
 func PrintArchiveSummary(archiveInfo *types.ArchiveInfo) {
-	fmt.Println(strings.Repeat("-", 50))                            // 分隔线
-	fmt.Printf("压缩包类型: %s\n", archiveInfo.Type)                     // 压缩包类型
-	fmt.Printf("文件总数: %d\n", archiveInfo.TotalFiles)                // 文件总数
-	fmt.Printf("原始大小: %s\n", FormatFileSize(archiveInfo.TotalSize)) // 原始大小
+	fmt.Println(strings.Repeat("-", 50))                                     // 分隔线
+	fmt.Printf("Archive Type: %s\n", archiveInfo.Type)                       // 压缩包类型
+	fmt.Printf("Total Files: %d\n", archiveInfo.TotalFiles)                  // 文件总数
+	fmt.Printf("Original Size: %s\n", FormatFileSize(archiveInfo.TotalSize)) // 原始大小
 
 	// 如果有压缩大小，则显示压缩大小和压缩率
 	if archiveInfo.CompressedSize > 0 {
-		fmt.Printf("压缩大小: %s\n", FormatFileSize(archiveInfo.CompressedSize)) // 压缩大小
+		fmt.Printf("Compressed Size: %s\n", FormatFileSize(archiveInfo.CompressedSize)) // 压缩大小
 
 		// 计算压缩率，避免负值
 		if archiveInfo.CompressedSize >= archiveInfo.TotalSize {
 			// 当压缩大小大于等于原始大小时，显示0.0%（适用于TAR等归档格式）
-			fmt.Printf("压缩率: 0.0%%\n")
+			fmt.Printf("Compression Ratio: 0.0%%\n")
 		} else {
 			// 正常压缩率计算
 			ratio := (1.0 - float64(archiveInfo.CompressedSize)/float64(archiveInfo.TotalSize)) * 100
-			fmt.Printf("压缩率: %.1f%%\n", ratio)
+			fmt.Printf("Compression Ratio: %.1f%%\n", ratio)
 		}
 	}
 	fmt.Println(strings.Repeat("-", 50)) // 分隔线

@@ -58,7 +58,7 @@ func Unzip(zipFilePath string, targetDir string, cfg *config.Config) error {
 	// 打开 ZIP 文件
 	zipReader, err := zip.OpenReader(zipFilePath)
 	if err != nil {
-		return fmt.Errorf("打开 ZIP 文件失败: %w", err)
+		return fmt.Errorf("failed to open ZIP file: %w", err)
 	}
 	defer func() { _ = zipReader.Close() }()
 
@@ -66,8 +66,8 @@ func Unzip(zipFilePath string, targetDir string, cfg *config.Config) error {
 	totalSize := calculateZipTotalSize(zipReader, cfg)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, zipFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(zipFilePath))); err != nil {
-		return fmt.Errorf("开始进度显示失败: %w", err)
+	if err := cfg.Progress.Start(totalSize, zipFilePath, fmt.Sprintf("Extracting '%s'...", filepath.Base(zipFilePath))); err != nil {
+		return fmt.Errorf("failed to start progress display: %w", err)
 	}
 	defer func() {
 		_ = cfg.Progress.Close()
@@ -75,7 +75,7 @@ func Unzip(zipFilePath string, targetDir string, cfg *config.Config) error {
 
 	// 检查目标目录是否存在, 如果不存在, 则创建
 	if err := utils.EnsureDir(targetDir); err != nil {
-		return fmt.Errorf("创建目标目录失败: %w", err)
+		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 
 	// 遍历 ZIP 文件中的每个文件或目录
@@ -91,7 +91,7 @@ func Unzip(zipFilePath string, targetDir string, cfg *config.Config) error {
 		// 安全的路径验证和拼接
 		targetPath, err := utils.ValidatePathSimple(targetDir, file.Name, cfg.DisablePathValidation)
 		if err != nil {
-			return fmt.Errorf("处理文件 '%s' 时路径验证失败: %w", file.Name, err)
+			return fmt.Errorf("path validation failed for file '%s': %w", file.Name, err)
 		}
 
 		// 获取文件的模式
@@ -142,7 +142,7 @@ func calculateZipTotalSize(zipReader *zip.ReadCloser, cfg *config.Config) int64 
 	}
 
 	// 开始扫描进度显示
-	bar := cfg.Progress.StartScan("正在分析内容...")
+	bar := cfg.Progress.StartScan("Analyzing content...")
 	defer func() {
 		_ = cfg.Progress.CloseBar(bar)
 	}()
@@ -176,7 +176,7 @@ func calculateZipTotalSize(zipReader *zip.ReadCloser, cfg *config.Config) int64 
 //   - error: 操作过程中遇到的错误
 func extractDirectory(targetPath, fileName string) error {
 	if err := utils.EnsureDir(targetPath); err != nil {
-		return fmt.Errorf("处理目录 '%s' 时出错 - 创建目录失败: %w", fileName, err)
+		return fmt.Errorf("error processing directory '%s' - failed to create directory: %w", fileName, err)
 	}
 	return nil
 }
@@ -192,26 +192,26 @@ func extractDirectory(targetPath, fileName string) error {
 func extractSymlink(file *zip.File, targetPath string) error {
 	zipFileReader, err := file.Open()
 	if err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 打开 ZIP 文件中的软链接失败: %w", file.Name, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to open symlink in ZIP file: %w", file.Name, err)
 	}
 	defer func() { _ = zipFileReader.Close() }()
 
 	// 使用 io.ReadAll 读取完整的软链接目标路径
 	targetBytes, err := io.ReadAll(zipFileReader)
 	if err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 读取软链接目标失败: %w", file.Name, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to read symlink target: %w", file.Name, err)
 	}
 	target := string(targetBytes) // 软链接的目标
 
 	// 检查软链接的父目录是否存在，如果不存在，则创建
 	parentDir := filepath.Dir(targetPath)
 	if err := utils.EnsureDir(parentDir); err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 创建软链接父目录失败: %w", file.Name, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to create symlink parent directory: %w", file.Name, err)
 	}
 
 	// 创建软链接
 	if err := os.Symlink(target, targetPath); err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 创建软链接失败: %w", file.Name, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to create symlink: %w", file.Name, err)
 	}
 
 	return nil
@@ -232,14 +232,14 @@ func extractRegularFileWithWriter(file *zip.File, targetPath string, mode os.Fil
 	if _, err := os.Stat(targetPath); err == nil {
 		// 文件已存在，检查是否允许覆盖
 		if !cfg.OverwriteExisting {
-			return fmt.Errorf("目标文件已存在且不允许覆盖: %s", targetPath)
+			return fmt.Errorf("target file already exists and overwriting is not allowed: %s", targetPath)
 		}
 	}
 
 	// 检查file的父目录是否存在, 如果不存在, 则创建
 	parentDir := filepath.Dir(targetPath)
 	if err := utils.EnsureDir(parentDir); err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 创建文件父目录失败: %w", file.Name, err)
+		return fmt.Errorf("error processing file '%s' - failed to create file parent directory: %w", file.Name, err)
 	}
 
 	// 获取文件的大小
@@ -250,7 +250,7 @@ func extractRegularFileWithWriter(file *zip.File, targetPath string, mode os.Fil
 		// 创建空文件
 		emptyFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode.Perm())
 		if err != nil {
-			return fmt.Errorf("处理文件 '%s' 时出错 - 创建空文件失败: %w", file.Name, err)
+			return fmt.Errorf("error processing file '%s' - failed to create empty file: %w", file.Name, err)
 		}
 		defer func() { _ = emptyFile.Close() }()
 		return nil
@@ -259,14 +259,14 @@ func extractRegularFileWithWriter(file *zip.File, targetPath string, mode os.Fil
 	// 创建文件
 	fileWriter, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode.Perm())
 	if err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 创建文件失败: %w", file.Name, err)
+		return fmt.Errorf("error processing file '%s' - failed to create file: %w", file.Name, err)
 	}
 	defer func() { _ = fileWriter.Close() }()
 
 	// 打开 ZIP 文件中的文件
 	zipFileReader, err := file.Open()
 	if err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 打开 zip 文件中的文件失败: %w", file.Name, err)
+		return fmt.Errorf("error processing file '%s' - failed to open file in ZIP archive: %w", file.Name, err)
 	}
 	defer func() { _ = zipFileReader.Close() }()
 
@@ -277,7 +277,7 @@ func extractRegularFileWithWriter(file *zip.File, targetPath string, mode os.Fil
 
 	// 将文件内容写入目标文件
 	if _, err := cfg.Progress.CopyBuffer(fileWriter, zipFileReader, buffer); err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 写入文件失败: %w", file.Name, err)
+		return fmt.Errorf("error processing file '%s' - failed to write file: %w", file.Name, err)
 	}
 
 	return nil

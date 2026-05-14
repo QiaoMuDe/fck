@@ -377,28 +377,28 @@ func (f *FilterOptions) complexMatch(normalizedPattern, path, baseName, slashPat
 func (f *FilterOptions) Validate() error {
 	// 验证文件大小范围
 	if f.MinSize < 0 {
-		return fmt.Errorf("最小文件大小不能为负数: %d", f.MinSize)
+		return fmt.Errorf("minimum file size cannot be negative: %d", f.MinSize)
 	}
 
 	if f.MaxSize < 0 {
-		return fmt.Errorf("最大文件大小不能为负数: %d", f.MaxSize)
+		return fmt.Errorf("maximum file size cannot be negative: %d", f.MaxSize)
 	}
 
 	if f.MinSize > 0 && f.MaxSize > 0 && f.MinSize > f.MaxSize {
-		return fmt.Errorf("最小文件大小 (%d) 不能大于最大文件大小 (%d)", f.MinSize, f.MaxSize)
+		return fmt.Errorf("minimum file size (%d) cannot be greater than maximum file size (%d)", f.MinSize, f.MaxSize)
 	}
 
 	// 验证包含模式
 	for _, pattern := range f.Include {
 		if pattern == "" {
-			return fmt.Errorf("包含模式不能为空字符串")
+			return fmt.Errorf("include pattern cannot be empty string")
 		}
 	}
 
 	// 验证排除模式
 	for _, pattern := range f.Exclude {
 		if pattern == "" {
-			return fmt.Errorf("排除模式不能为空字符串")
+			return fmt.Errorf("exclude pattern cannot be empty string")
 		}
 	}
 

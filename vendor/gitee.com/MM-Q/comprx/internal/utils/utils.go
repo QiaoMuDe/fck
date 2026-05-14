@@ -113,7 +113,7 @@ func EnsureAbsPath(path, pathType string) (string, error) {
 
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return "", fmt.Errorf("转换 %s 为绝对路径失败: %w", pathType, err)
+		return "", fmt.Errorf("failed to convert %s to absolute path: %w", pathType, err)
 	}
 	return absPath, nil
 }
@@ -139,12 +139,12 @@ func ValidatePathSimple(targetDir, filePath string, skipValidation bool) (string
 
 	// 检查路径遍历攻击（最常见的攻击方式）
 	if strings.Contains(filePath, "..") {
-		return "", fmt.Errorf("不安全的路径: %s", filePath)
+		return "", fmt.Errorf("unsafe path: %s", filePath)
 	}
 
 	// 检查协议前缀攻击（如 file:// 等）
 	if strings.Contains(filePath, "://") {
-		return "", fmt.Errorf("不安全的路径: %s", filePath)
+		return "", fmt.Errorf("unsafe path: %s", filePath)
 	}
 
 	// === 第二阶段：清理路径并进行进一步检查 ===
@@ -152,27 +152,27 @@ func ValidatePathSimple(targetDir, filePath string, skipValidation bool) (string
 
 	// 检查绝对路径 - Unix风格
 	if strings.HasPrefix(cleanPath, "/") {
-		return "", fmt.Errorf("不安全的路径: %s", filePath)
+		return "", fmt.Errorf("unsafe path: %s", filePath)
 	}
 
 	// 检查绝对路径 - Windows风格
 	if len(cleanPath) >= 2 && cleanPath[1] == ':' {
-		return "", fmt.Errorf("不安全的路径: %s", filePath)
+		return "", fmt.Errorf("unsafe path: %s", filePath)
 	}
 
 	// 检查UNC路径
 	if strings.HasPrefix(cleanPath, "\\\\") || strings.HasPrefix(cleanPath, "//") {
-		return "", fmt.Errorf("不安全的路径: %s", filePath)
+		return "", fmt.Errorf("unsafe path: %s", filePath)
 	}
 
 	// 检查Windows特殊路径前缀
 	if strings.HasPrefix(cleanPath, "\\\\?\\") || strings.HasPrefix(cleanPath, "//?/") {
-		return "", fmt.Errorf("不安全的路径: %s", filePath)
+		return "", fmt.Errorf("unsafe path: %s", filePath)
 	}
 
 	// 双重检查：确保Clean后没有残留的上级目录引用
 	if strings.Contains(cleanPath, "..") {
-		return "", fmt.Errorf("不安全的路径: %s", filePath)
+		return "", fmt.Errorf("unsafe path: %s", filePath)
 	}
 
 	// === 第三阶段：构建最终安全路径 ===
@@ -200,7 +200,7 @@ func DetectCompressFormat(filename string) (types.CompressType, error) {
 	// 获取文件扩展名并转换为小写
 	ext := strings.ToLower(filepath.Ext(filename))
 	if !types.IsSupportedCompressType(ext) {
-		return "", fmt.Errorf("不支持的压缩文件格式: %s, 支持的格式: %v", ext, types.SupportedCompressTypes())
+		return "", fmt.Errorf("unsupported compression format: %s, supported formats: %v", ext, types.SupportedCompressTypes())
 	}
 
 	return types.CompressType(ext), nil

@@ -56,7 +56,7 @@ import (
 // ListZlib 获取ZLIB压缩包的文件信息
 func ListZlib(archivePath string) (*types.ArchiveInfo, error) {
 	// 确保路径为绝对路径
-	absPath, err := utils.EnsureAbsPath(archivePath, "ZLIB文件路径")
+	absPath, err := utils.EnsureAbsPath(archivePath, "ZLIB file path")
 	if err != nil {
 		return nil, err
 	}
@@ -64,26 +64,26 @@ func ListZlib(archivePath string) (*types.ArchiveInfo, error) {
 	// 根据文件名检测压缩格式类型
 	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
+		return nil, fmt.Errorf("failed to detect compression format: %w", err)
 	}
 
 	// 打开ZLIB文件
 	file, err := os.Open(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("打开ZLIB文件失败: %w", err)
+		return nil, fmt.Errorf("failed to open ZLIB file: %w", err)
 	}
 	defer func() { _ = file.Close() }()
 
 	// 获取压缩包文件信息
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("获取ZLIB文件信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get ZLIB file info: %w", err)
 	}
 
 	// 创建ZLIB读取器
 	zlibReader, err := zlib.NewReader(file)
 	if err != nil {
-		return nil, fmt.Errorf("创建ZLIB读取器失败: %w", err)
+		return nil, fmt.Errorf("failed to create ZLIB reader: %w", err)
 	}
 	defer func() { _ = zlibReader.Close() }()
 

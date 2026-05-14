@@ -120,13 +120,13 @@ func UnpackProgress(src string, dst string) error {
 func UnpackFile(archivePath string, fileName string, outputDir string) error {
 	// 参数验证
 	if archivePath == "" {
-		return fmt.Errorf("压缩包路径不能为空")
+		return fmt.Errorf("archive path cannot be empty")
 	}
 	if fileName == "" {
-		return fmt.Errorf("文件名不能为空")
+		return fmt.Errorf("file name cannot be empty")
 	}
 	if outputDir == "" {
-		return fmt.Errorf("输出目录不能为空")
+		return fmt.Errorf("output directory cannot be empty")
 	}
 
 	// 创建过滤器选项
@@ -157,13 +157,13 @@ func UnpackFile(archivePath string, fileName string, outputDir string) error {
 func UnpackDir(archivePath string, dirName string, outputDir string) error {
 	// 参数验证
 	if archivePath == "" {
-		return fmt.Errorf("压缩包路径不能为空")
+		return fmt.Errorf("archive path cannot be empty")
 	}
 	if dirName == "" {
-		return fmt.Errorf("目录名不能为空")
+		return fmt.Errorf("directory name cannot be empty")
 	}
 	if outputDir == "" {
-		return fmt.Errorf("输出目录不能为空")
+		return fmt.Errorf("output directory cannot be empty")
 	}
 
 	// 创建过滤器选项
@@ -197,13 +197,13 @@ func UnpackDir(archivePath string, dirName string, outputDir string) error {
 func UnpackMatch(archivePath string, keyword string, outputDir string) error {
 	// 参数验证
 	if archivePath == "" {
-		return fmt.Errorf("压缩包路径不能为空")
+		return fmt.Errorf("archive path cannot be empty")
 	}
 	if keyword == "" {
-		return fmt.Errorf("关键字不能为空")
+		return fmt.Errorf("keyword cannot be empty")
 	}
 	if outputDir == "" {
-		return fmt.Errorf("输出目录不能为空")
+		return fmt.Errorf("output directory cannot be empty")
 	}
 
 	// 创建过滤器选项
@@ -246,7 +246,7 @@ func PackOptions(dst string, src string, opts Options) error {
 
 	// 验证压缩等级
 	if !opts.CompressionLevel.IsValid() {
-		return fmt.Errorf("无效的压缩等级: %s，有效范围: -2 到 9", opts.CompressionLevel.String())
+		return fmt.Errorf("invalid compression level: %s, valid range: -2 to 9", opts.CompressionLevel.String())
 	}
 	comprx.Config.CompressionLevel = opts.CompressionLevel
 	comprx.Config.OverwriteExisting = opts.OverwriteExisting

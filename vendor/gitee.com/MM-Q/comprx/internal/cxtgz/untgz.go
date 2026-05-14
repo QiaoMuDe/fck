@@ -76,14 +76,14 @@ func Untgz(tgzFilePath string, targetDir string, cfg *config.Config) error {
 	// 打开 TGZ 文件
 	tgzFile, err := os.Open(tgzFilePath)
 	if err != nil {
-		return fmt.Errorf("打开 TGZ 文件失败: %w", err)
+		return fmt.Errorf("failed to open TGZ file: %w", err)
 	}
 	defer func() { _ = tgzFile.Close() }()
 
 	// 创建 GZIP 读取器
 	gzipReader, err := gzip.NewReader(tgzFile)
 	if err != nil {
-		return fmt.Errorf("创建 GZIP 读取器失败: %w", err)
+		return fmt.Errorf("failed to create GZIP reader: %w", err)
 	}
 	defer func() { _ = gzipReader.Close() }()
 
@@ -91,8 +91,8 @@ func Untgz(tgzFilePath string, targetDir string, cfg *config.Config) error {
 	tarReader := tar.NewReader(gzipReader)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, tgzFilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(tgzFilePath))); err != nil {
-		return fmt.Errorf("开始进度显示失败: %w", err)
+	if err := cfg.Progress.Start(totalSize, tgzFilePath, fmt.Sprintf("Extracting '%s'...", filepath.Base(tgzFilePath))); err != nil {
+		return fmt.Errorf("failed to start progress display: %w", err)
 	}
 	defer func() {
 		_ = cfg.Progress.Close()
@@ -100,7 +100,7 @@ func Untgz(tgzFilePath string, targetDir string, cfg *config.Config) error {
 
 	// 检查目标目录是否存在, 如果不存在, 则创建
 	if err := utils.EnsureDir(targetDir); err != nil {
-		return fmt.Errorf("创建目标目录失败: %w", err)
+		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 
 	// 遍历 TAR 文件中的每个文件或目录
@@ -110,7 +110,7 @@ func Untgz(tgzFilePath string, targetDir string, cfg *config.Config) error {
 			break // 到达文件末尾
 		}
 		if err != nil {
-			return fmt.Errorf("读取 TAR 文件头失败: %w", err)
+			return fmt.Errorf("failed to read TAR header: %w", err)
 		}
 
 		// 检查是否应该跳过此文件
@@ -125,7 +125,7 @@ func Untgz(tgzFilePath string, targetDir string, cfg *config.Config) error {
 		// 安全的路径验证和拼接
 		targetPath, err := utils.ValidatePathSimple(targetDir, header.Name, cfg.DisablePathValidation)
 		if err != nil {
-			return fmt.Errorf("处理文件 '%s' 时路径验证失败: %w", header.Name, err)
+			return fmt.Errorf("path validation failed for file '%s': %w", header.Name, err)
 		}
 
 		// 使用 switch 语句处理不同类型的文件
@@ -156,7 +156,7 @@ func Untgz(tgzFilePath string, targetDir string, cfg *config.Config) error {
 
 		default:
 			// 对于其他类型的文件，我们跳过处理
-			fmt.Printf("跳过不支持的文件类型: %s (类型: %c)\n", header.Name, header.Typeflag)
+			fmt.Printf("Skipping unsupported file type: %s (type: %c)\n", header.Name, header.Typeflag)
 		}
 	}
 
@@ -180,7 +180,7 @@ func calculateTgzTotalSize(tgzFilePath string, cfg *config.Config) int64 {
 	}
 
 	// 开始扫描进度显示
-	bar := cfg.Progress.StartScan("正在分析内容...")
+	bar := cfg.Progress.StartScan("Analyzing content...")
 	defer func() {
 		_ = cfg.Progress.CloseBar(bar)
 	}()
@@ -241,7 +241,7 @@ func calculateTgzTotalSize(tgzFilePath string, cfg *config.Config) int64 {
 //   - error: 操作过程中遇到的错误
 func extractDirectory(targetPath, fileName string) error {
 	if err := utils.EnsureDir(targetPath); err != nil {
-		return fmt.Errorf("处理目录 '%s' 时出错 - 创建目录失败: %w", fileName, err)
+		return fmt.Errorf("error processing directory '%s' - failed to create directory: %w", fileName, err)
 	}
 	return nil
 }
@@ -261,14 +261,14 @@ func extractRegularFile(tarReader *tar.Reader, targetPath string, header *tar.He
 	if _, err := os.Stat(targetPath); err == nil {
 		// 文件已存在，检查是否允许覆盖
 		if !cfg.OverwriteExisting {
-			return fmt.Errorf("目标文件已存在且不允许覆盖: %s", targetPath)
+			return fmt.Errorf("target file already exists and overwriting is not allowed: %s", targetPath)
 		}
 	}
 
 	// 检查文件的父目录是否存在, 如果不存在, 则创建
 	parentDir := filepath.Dir(targetPath)
 	if err := utils.EnsureDir(parentDir); err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 创建文件父目录失败: %w", header.Name, err)
+		return fmt.Errorf("error processing file '%s' - failed to create file parent directory: %w", header.Name, err)
 	}
 
 	// 获取文件的大小
@@ -279,7 +279,7 @@ func extractRegularFile(tarReader *tar.Reader, targetPath string, header *tar.He
 		// 创建空文件
 		emptyFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(header.Mode))
 		if err != nil {
-			return fmt.Errorf("处理文件 '%s' 时出错 - 创建空文件失败: %w", header.Name, err)
+			return fmt.Errorf("error processing file '%s' - failed to create empty file: %w", header.Name, err)
 		}
 		defer func() { _ = emptyFile.Close() }()
 		return nil
@@ -288,7 +288,7 @@ func extractRegularFile(tarReader *tar.Reader, targetPath string, header *tar.He
 	// 创建文件
 	fileWriter, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(header.Mode))
 	if err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 创建文件失败: %w", header.Name, err)
+		return fmt.Errorf("error processing file '%s' - failed to create file: %w", header.Name, err)
 	}
 	defer func() { _ = fileWriter.Close() }()
 
@@ -299,7 +299,7 @@ func extractRegularFile(tarReader *tar.Reader, targetPath string, header *tar.He
 
 	// 将文件内容写入目标文件
 	if _, err := cfg.Progress.CopyBuffer(fileWriter, tarReader, buffer); err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 写入文件失败: %w", header.Name, err)
+		return fmt.Errorf("error processing file '%s' - failed to write file: %w", header.Name, err)
 	}
 
 	return nil
@@ -317,12 +317,12 @@ func extractSymlink(header *tar.Header, targetPath string) error {
 	// 检查软链接的父目录是否存在，如果不存在，则创建
 	parentDir := filepath.Dir(targetPath)
 	if err := utils.EnsureDir(parentDir); err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 创建软链接父目录失败: %w", header.Name, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to create symlink parent directory: %w", header.Name, err)
 	}
 
 	// 创建软链接
 	if err := os.Symlink(header.Linkname, targetPath); err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 创建软链接失败: %w", header.Name, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to create symlink: %w", header.Name, err)
 	}
 
 	return nil
@@ -341,7 +341,7 @@ func extractHardlink(header *tar.Header, targetPath, targetDir string) error {
 	// 检查硬链接的父目录是否存在，如果不存在，则创建
 	parentDir := filepath.Dir(targetPath)
 	if err := utils.EnsureDir(parentDir); err != nil {
-		return fmt.Errorf("处理硬链接 '%s' 时出错 - 创建硬链接父目录失败: %w", header.Name, err)
+		return fmt.Errorf("error processing hardlink '%s' - failed to create hardlink parent directory: %w", header.Name, err)
 	}
 
 	// 获取硬链接的源文件路径
@@ -349,7 +349,7 @@ func extractHardlink(header *tar.Header, targetPath, targetDir string) error {
 
 	// 创建硬链接
 	if err := os.Link(linkSourcePath, targetPath); err != nil {
-		return fmt.Errorf("处理硬链接 '%s' 时出错 - 创建硬链接失败: %w", header.Name, err)
+		return fmt.Errorf("error processing hardlink '%s' - failed to create hardlink: %w", header.Name, err)
 	}
 
 	return nil

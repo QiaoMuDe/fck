@@ -55,28 +55,28 @@ import (
 func LoadExcludeFromFile(ignoreFilePath string) ([]string, error) {
 	// 参数验证
 	if ignoreFilePath == "" {
-		return nil, fmt.Errorf("忽略文件路径不能为空")
+		return nil, fmt.Errorf("ignore file path cannot be empty")
 	}
 
 	// 获取绝对路径用于错误报告
 	absPath, err := filepath.Abs(ignoreFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("获取文件绝对路径失败 '%s': %w", ignoreFilePath, err)
+		return nil, fmt.Errorf("failed to get absolute path for '%s': %w", ignoreFilePath, err)
 	}
 
 	file, err := os.Open(ignoreFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("忽略文件不存在: %s", absPath)
+			return nil, fmt.Errorf("ignore file does not exist: %s", absPath)
 		}
-		return nil, fmt.Errorf("打开忽略文件失败 '%s': %w", absPath, err)
+		return nil, fmt.Errorf("failed to open ignore file '%s': %w", absPath, err)
 	}
 	defer func() { _ = file.Close() }()
 
 	// 预分配切片容量 - 获取文件大小估算行数
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("获取文件信息失败 '%s': %w", absPath, err)
+		return nil, fmt.Errorf("failed to get file info for '%s': %w", absPath, err)
 	}
 
 	// 估算行数：假设平均每行20字符，预分配容量避免频繁扩容
@@ -103,7 +103,7 @@ func LoadExcludeFromFile(ignoreFilePath string) ([]string, error) {
 
 		// 验证模式是否有效
 		if _, err := filepath.Match(line, "test"); err != nil {
-			return nil, fmt.Errorf("文件 '%s' 第 %d 行包含无效的 glob 模式 '%s': %w",
+			return nil, fmt.Errorf("file '%s' line %d contains invalid glob pattern '%s': %w",
 				filepath.Base(absPath), lineNum, line, err)
 		}
 
@@ -115,7 +115,7 @@ func LoadExcludeFromFile(ignoreFilePath string) ([]string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("读取忽略文件失败 '%s': %w", absPath, err)
+		return nil, fmt.Errorf("failed to read ignore file '%s': %w", absPath, err)
 	}
 
 	return patterns, nil
@@ -136,7 +136,7 @@ func LoadExcludeFromFile(ignoreFilePath string) ([]string, error) {
 func LoadExcludeFromFileOrEmpty(ignoreFilePath string) ([]string, error) {
 	// 参数验证
 	if ignoreFilePath == "" {
-		return nil, fmt.Errorf("忽略文件路径不能为空")
+		return nil, fmt.Errorf("ignore file path cannot be empty")
 	}
 
 	// 直接检查文件是否存在，避免包装错误的问题
@@ -144,7 +144,7 @@ func LoadExcludeFromFileOrEmpty(ignoreFilePath string) ([]string, error) {
 		if os.IsNotExist(err) {
 			return []string{}, nil // 文件不存在返回空列表，不是错误
 		}
-		return nil, fmt.Errorf("检查文件状态失败 '%s': %w", ignoreFilePath, err)
+		return nil, fmt.Errorf("failed to check file status for '%s': %w", ignoreFilePath, err)
 	}
 
 	// 文件存在，调用正常的加载函数

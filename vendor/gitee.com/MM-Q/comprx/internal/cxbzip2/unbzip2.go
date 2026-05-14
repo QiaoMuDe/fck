@@ -69,7 +69,7 @@ func calculateBzip2TotalSize(bz2FilePath string, cfg *config.Config) int64 {
 	}
 
 	// 开始扫描进度显示
-	bar := cfg.Progress.StartScan("正在分析内容...")
+	bar := cfg.Progress.StartScan("Analyzing content...")
 	defer func() {
 		_ = cfg.Progress.CloseBar(bar)
 	}()
@@ -111,8 +111,8 @@ func Unbz2(bz2FilePath string, targetPath string, cfg *config.Config) error {
 	totalSize := calculateBzip2TotalSize(bz2FilePath, cfg)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, bz2FilePath, fmt.Sprintf("正在解压'%s'...", filepath.Base(bz2FilePath))); err != nil {
-		return fmt.Errorf("开始进度显示失败: %w", err)
+	if err := cfg.Progress.Start(totalSize, bz2FilePath, fmt.Sprintf("Extracting '%s'...", filepath.Base(bz2FilePath))); err != nil {
+		return fmt.Errorf("failed to start progress display: %w", err)
 	}
 	defer func() {
 		_ = cfg.Progress.Close()
@@ -121,14 +121,14 @@ func Unbz2(bz2FilePath string, targetPath string, cfg *config.Config) error {
 	// 打开 BZIP2 文件（同时检查文件是否存在）
 	bz2File, err := os.Open(bz2FilePath)
 	if err != nil {
-		return fmt.Errorf("打开 BZIP2 文件失败: %w", err)
+		return fmt.Errorf("failed to open BZIP2 file: %w", err)
 	}
 	defer func() { _ = bz2File.Close() }()
 
 	// 获取BZIP2文件信息
 	bz2Info, err := bz2File.Stat()
 	if err != nil {
-		return fmt.Errorf("获取BZIP2文件信息失败: %w", err)
+		return fmt.Errorf("failed to get BZIP2 file info: %w", err)
 	}
 
 	// 创建 BZIP2 读取器
@@ -145,18 +145,18 @@ func Unbz2(bz2FilePath string, targetPath string, cfg *config.Config) error {
 			// 添加安全验证
 			validatedPath, err := utils.ValidatePathSimple(targetPath, baseName, cfg.DisablePathValidation)
 			if err != nil {
-				return fmt.Errorf("BZIP2文件名包含不安全的路径: %w", err)
+				return fmt.Errorf("BZIP2 filename contains unsafe path: %w", err)
 			}
 			targetPath = validatedPath
 
 			// 重新检查生成的目标文件是否存在
 			if _, err := os.Stat(targetPath); err == nil && !cfg.OverwriteExisting {
-				return fmt.Errorf("目标文件已存在且不允许覆盖: %s", targetPath)
+				return fmt.Errorf("target file already exists and overwriting is not allowed: %s", targetPath)
 			}
 		} else {
 			// 目标是文件，检查是否允许覆盖
 			if !cfg.OverwriteExisting {
-				return fmt.Errorf("目标文件已存在且不允许覆盖: %s", targetPath)
+				return fmt.Errorf("target file already exists and overwriting is not allowed: %s", targetPath)
 			}
 		}
 	}
@@ -164,13 +164,13 @@ func Unbz2(bz2FilePath string, targetPath string, cfg *config.Config) error {
 	// 检查目标文件的父目录是否存在，如果不存在则创建
 	parentDir := filepath.Dir(targetPath)
 	if err := utils.EnsureDir(parentDir); err != nil {
-		return fmt.Errorf("创建目标文件父目录失败: %w", err)
+		return fmt.Errorf("failed to create target file parent directory: %w", err)
 	}
 
 	// 创建目标文件
 	targetFile, err := os.Create(targetPath)
 	if err != nil {
-		return fmt.Errorf("创建目标文件失败: %w", err)
+		return fmt.Errorf("failed to create target file: %w", err)
 	}
 	defer func() { _ = targetFile.Close() }()
 
@@ -184,7 +184,7 @@ func Unbz2(bz2FilePath string, targetPath string, cfg *config.Config) error {
 
 	// 解压缩文件内容到目标文件
 	if _, err := cfg.Progress.CopyBuffer(targetFile, bz2Reader, buffer); err != nil {
-		return fmt.Errorf("解压缩文件失败: %w", err)
+		return fmt.Errorf("failed to decompress file: %w", err)
 	}
 
 	return nil

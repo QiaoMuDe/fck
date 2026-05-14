@@ -55,43 +55,43 @@ import (
 func Zlib(dst string, src string, cfg *config.Config) error {
 	// 确保路径为绝对路径
 	var absErr error
-	if dst, absErr = utils.EnsureAbsPath(dst, "ZLIB文件路径"); absErr != nil {
+	if dst, absErr = utils.EnsureAbsPath(dst, "ZLIB file path"); absErr != nil {
 		return absErr
 	}
-	if src, absErr = utils.EnsureAbsPath(src, "源文件路径"); absErr != nil {
+	if src, absErr = utils.EnsureAbsPath(src, "source file path"); absErr != nil {
 		return absErr
 	}
 
 	// 检查源路径是否为文件
 	srcInfo, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("获取源文件信息失败: %w", err)
+		return fmt.Errorf("failed to get source file info: %w", err)
 	}
 
 	// 检查源路径是否为目录
 	if srcInfo.IsDir() {
-		return fmt.Errorf("ZLIB 只支持单文件压缩，不支持目录压缩")
+		return fmt.Errorf("ZLIB only supports single file compression, directory compression is not supported")
 	}
 
 	// 检查目标文件是否已存在
 	if _, err := os.Stat(dst); err == nil {
 		// 文件已存在，检查是否允许覆盖
 		if !cfg.OverwriteExisting {
-			return fmt.Errorf("目标文件已存在且不允许覆盖: %s", dst)
+			return fmt.Errorf("target file already exists and overwriting is not allowed: %s", dst)
 		}
 	}
 
 	// 确保目标目录存在
 	if err := utils.EnsureDir(filepath.Dir(dst)); err != nil {
-		return fmt.Errorf("创建目标目录失败: %w", err)
+		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 
 	// 获取文件大小用于进度条
 	fileSize := srcInfo.Size()
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(fileSize, dst, fmt.Sprintf("正在压缩'%s'...", filepath.Base(dst))); err != nil {
-		return fmt.Errorf("开始进度显示失败: %w", err)
+	if err := cfg.Progress.Start(fileSize, dst, fmt.Sprintf("Compressing '%s'...", filepath.Base(dst))); err != nil {
+		return fmt.Errorf("failed to start progress display: %w", err)
 	}
 	defer func() {
 		_ = cfg.Progress.Close()
@@ -100,21 +100,21 @@ func Zlib(dst string, src string, cfg *config.Config) error {
 	// 创建 ZLIB 文件
 	zlibFile, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("创建 ZLIB 文件失败: %w", err)
+		return fmt.Errorf("failed to create ZLIB file: %w", err)
 	}
 	defer func() { _ = zlibFile.Close() }()
 
 	// 创建 ZLIB 写入器
 	zlibWriter, err := zlib.NewWriterLevel(zlibFile, config.GetCompressionLevel(cfg.CompressionLevel))
 	if err != nil {
-		return fmt.Errorf("创建 ZLIB 写入器失败: %w", err)
+		return fmt.Errorf("failed to create ZLIB writer: %w", err)
 	}
 	defer func() { _ = zlibWriter.Close() }()
 
 	// 打开源文件
 	srcFile, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("打开源文件失败: %w", err)
+		return fmt.Errorf("failed to open source file: %w", err)
 	}
 	defer func() { _ = srcFile.Close() }()
 
@@ -128,7 +128,7 @@ func Zlib(dst string, src string, cfg *config.Config) error {
 
 	// 复制文件内容到ZLIB写入器
 	if _, err := cfg.Progress.CopyBuffer(zlibWriter, srcFile, buffer); err != nil {
-		return fmt.Errorf("压缩文件失败: %w", err)
+		return fmt.Errorf("failed to compress file: %w", err)
 	}
 
 	return nil

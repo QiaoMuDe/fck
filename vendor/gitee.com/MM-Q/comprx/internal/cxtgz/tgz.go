@@ -68,38 +68,38 @@ import (
 func Tgz(dst string, src string, cfg *config.Config) error {
 	// 确保路径为绝对路径
 	var absErr error
-	if dst, absErr = utils.EnsureAbsPath(dst, "TGZ文件路径"); absErr != nil {
+	if dst, absErr = utils.EnsureAbsPath(dst, "TGZ file path"); absErr != nil {
 		return absErr
 	}
-	if src, absErr = utils.EnsureAbsPath(src, "源路径"); absErr != nil {
+	if src, absErr = utils.EnsureAbsPath(src, "source path"); absErr != nil {
 		return absErr
 	}
 
 	// 检查源路径是文件还是目录
 	srcInfo, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("获取源路径信息失败: %w", err)
+		return fmt.Errorf("failed to get source path info: %w", err)
 	}
 
 	// 检查目标文件是否已存在
 	if _, err := os.Stat(dst); err == nil {
 		// 文件已存在，检查是否允许覆盖
 		if !cfg.OverwriteExisting {
-			return fmt.Errorf("目标文件已存在且不允许覆盖: %s", dst)
+			return fmt.Errorf("target file already exists and overwriting is not allowed: %s", dst)
 		}
 	}
 
 	// 确保目标目录存在
 	if err := utils.EnsureDir(filepath.Dir(dst)); err != nil {
-		return fmt.Errorf("创建目标目录失败: %w", err)
+		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 
 	// 在进度条模式下计算源文件总大小
-	totalSize := progress.CalculateSourceTotalSizeWithProgress(src, cfg.Progress, "正在分析内容...", cfg.Filter)
+	totalSize := progress.CalculateSourceTotalSizeWithProgress(src, cfg.Progress, "Analyzing content...", cfg.Filter)
 
 	// 开始进度显示
-	if err := cfg.Progress.Start(totalSize, dst, fmt.Sprintf("正在压缩'%s'...", filepath.Base(dst))); err != nil {
-		return fmt.Errorf("开始进度显示失败: %w", err)
+	if err := cfg.Progress.Start(totalSize, dst, fmt.Sprintf("Compressing '%s'...", filepath.Base(dst))); err != nil {
+		return fmt.Errorf("failed to start progress display: %w", err)
 	}
 	defer func() {
 		_ = cfg.Progress.Close()
@@ -108,14 +108,14 @@ func Tgz(dst string, src string, cfg *config.Config) error {
 	// 创建 TGZ 文件
 	tgzFile, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("创建 TGZ 文件失败: %w", err)
+		return fmt.Errorf("failed to create TGZ file: %w", err)
 	}
 	defer func() { _ = tgzFile.Close() }()
 
 	// 创建 GZIP 写入器
 	gzipWriter, err := gzip.NewWriterLevel(tgzFile, config.GetCompressionLevel(cfg.CompressionLevel))
 	if err != nil {
-		return fmt.Errorf("创建 GZIP 写入器失败: %w", err)
+		return fmt.Errorf("failed to create GZIP writer: %w", err)
 	}
 	defer func() { _ = gzipWriter.Close() }()
 
@@ -140,7 +140,7 @@ func Tgz(dst string, src string, cfg *config.Config) error {
 
 	// 检查是否有错误发生
 	if tgzErr != nil {
-		return fmt.Errorf("打包目录到 TGZ 失败: %w", tgzErr)
+		return fmt.Errorf("failed to pack directory to TGZ: %w", tgzErr)
 	}
 
 	return nil
@@ -161,19 +161,19 @@ func processRegularFile(tarWriter *tar.Writer, path, headerName string, info os.
 	// 创建文件头
 	header, err := tar.FileInfoHeader(info, "")
 	if err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 创建 TAR 文件头失败: %w", path, err)
+		return fmt.Errorf("error processing file '%s' - failed to create TAR file header: %w", path, err)
 	}
 	header.Name = headerName // 设置文件名
 
 	// 写入文件头
 	if err := tarWriter.WriteHeader(header); err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 写入 TAR 文件头失败: %w", path, err)
+		return fmt.Errorf("error processing file '%s' - failed to write TAR file header: %w", path, err)
 	}
 
 	// 打开文件
 	file, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 打开文件失败: %w", path, err)
+		return fmt.Errorf("error processing file '%s' - failed to open file: %w", path, err)
 	}
 	defer func() { _ = file.Close() }()
 
@@ -187,7 +187,7 @@ func processRegularFile(tarWriter *tar.Writer, path, headerName string, info os.
 
 	// 复制文件内容到TAR写入器
 	if _, err := cfg.Progress.CopyBuffer(tarWriter, file, buffer); err != nil {
-		return fmt.Errorf("处理文件 '%s' 时出错 - 写入 TAR 文件失败: %w", path, err)
+		return fmt.Errorf("error processing file '%s' - failed to write TAR file: %w", path, err)
 	}
 
 	return nil
@@ -206,14 +206,14 @@ func processDirectory(tarWriter *tar.Writer, headerName string, info os.FileInfo
 	// 创建目录文件头
 	header, err := tar.FileInfoHeader(info, "")
 	if err != nil {
-		return fmt.Errorf("处理目录 '%s' 时出错 - 创建 TAR 文件头失败: %w", headerName, err)
+		return fmt.Errorf("error processing directory '%s' - failed to create TAR file header: %w", headerName, err)
 	}
 	// 设置目录名
 	header.Name = headerName + "/" // 目录名后添加斜杠
 
 	// 写入目录文件头
 	if err := tarWriter.WriteHeader(header); err != nil {
-		return fmt.Errorf("处理目录 '%s' 时出错 - 写入 TAR 目录头失败: %w", headerName, err)
+		return fmt.Errorf("error processing directory '%s' - failed to write TAR directory header: %w", headerName, err)
 	}
 	return nil
 }
@@ -232,19 +232,19 @@ func processSymlink(tarWriter *tar.Writer, path, headerName string, info os.File
 	// 读取软链接目标
 	target, err := os.Readlink(path)
 	if err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 读取软链接目标失败: %w", path, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to read symlink target: %w", path, err)
 	}
 
 	// 创建软链接文件头
 	header, err := tar.FileInfoHeader(info, target)
 	if err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 创建 TAR 文件头失败: %w", path, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to create TAR file header: %w", path, err)
 	}
 	header.Name = headerName
 
 	// 写入软链接文件头
 	if err := tarWriter.WriteHeader(header); err != nil {
-		return fmt.Errorf("处理软链接 '%s' 时出错 - 写入 TAR 软链接头失败: %w", path, err)
+		return fmt.Errorf("error processing symlink '%s' - failed to write TAR symlink header: %w", path, err)
 	}
 	return nil
 }
@@ -262,13 +262,13 @@ func processSpecialFile(tarWriter *tar.Writer, headerName string, info os.FileIn
 	// 创建 TAR 文件头
 	header, err := tar.FileInfoHeader(info, "")
 	if err != nil {
-		return fmt.Errorf("处理特殊文件 '%s' 时出错 - 创建 TAR 文件头失败: %w", headerName, err)
+		return fmt.Errorf("error processing special file '%s' - failed to create TAR file header: %w", headerName, err)
 	}
 	header.Name = headerName
 
 	// 写入 TAR 文件头
 	if err := tarWriter.WriteHeader(header); err != nil {
-		return fmt.Errorf("处理特殊文件 '%s' 时出错 - 写入 TAR 特殊文件头失败: %w", headerName, err)
+		return fmt.Errorf("error processing special file '%s' - failed to write TAR special file header: %w", headerName, err)
 	}
 	return nil
 }
@@ -290,13 +290,13 @@ func walkDirectoryForTgz(src string, tarWriter *tar.Writer, cfg *config.Config) 
 				return nil
 			}
 			// 其他错误
-			return fmt.Errorf("遍历路径 '%s' 时出错: %w", path, err)
+			return fmt.Errorf("error traversing path '%s': %w", path, err)
 		}
 
 		// 获取文件信息用于过滤检查
 		info, err := entry.Info()
 		if err != nil {
-			return fmt.Errorf("处理路径 '%s' 时出错 - 获取文件信息失败: %w", path, err)
+			return fmt.Errorf("error processing path '%s' - failed to get file info: %w", path, err)
 		}
 
 		// 应用过滤器检查
@@ -310,7 +310,7 @@ func walkDirectoryForTgz(src string, tarWriter *tar.Writer, cfg *config.Config) 
 		// 获取相对路径，保留顶层目录
 		headerName, err := filepath.Rel(filepath.Dir(src), path)
 		if err != nil {
-			return fmt.Errorf("处理路径 '%s' 时出错 - 获取相对路径失败: %w", path, err)
+			return fmt.Errorf("error processing path '%s' - failed to get relative path: %w", path, err)
 		}
 
 		// 替换路径分隔符为正斜杠(TAR 文件格式要求)

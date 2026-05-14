@@ -51,7 +51,7 @@ import (
 // ListZip 获取ZIP压缩包的所有文件信息
 func ListZip(archivePath string) (*types.ArchiveInfo, error) {
 	// 确保路径为绝对路径
-	absPath, err := utils.EnsureAbsPath(archivePath, "ZIP文件路径")
+	absPath, err := utils.EnsureAbsPath(archivePath, "ZIP file path")
 	if err != nil {
 		return nil, err
 	}
@@ -59,20 +59,20 @@ func ListZip(archivePath string) (*types.ArchiveInfo, error) {
 	// 打开ZIP文件
 	reader, err := zip.OpenReader(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("打开ZIP文件失败: %w", err)
+		return nil, fmt.Errorf("failed to open ZIP file: %w", err)
 	}
 	defer func() { _ = reader.Close() }()
 
 	// 获取压缩包文件信息
 	stat, err := os.Stat(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("获取ZIP文件信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get ZIP file info: %w", err)
 	}
 
 	// 根据文件名检测压缩格式类型
 	compressType, err := utils.DetectCompressFormat(absPath)
 	if err != nil {
-		return nil, fmt.Errorf("检测压缩格式失败: %w", err)
+		return nil, fmt.Errorf("failed to detect compression format: %w", err)
 	}
 
 	// 创建 ArchiveInfo 结构体
