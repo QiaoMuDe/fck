@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"gitee.com/MM-Q/comprx"
 	"gitee.com/MM-Q/fck/internal/types"
@@ -47,8 +48,14 @@ func UnpackCmdMain(config UnpackConfig) error {
 		return err
 	}
 
+	// 检查是否有压缩包可处理
 	if len(archives) == 0 {
 		return errors.New("no archives to process")
+	}
+
+	// 清理所有压缩包路径
+	for i, archive := range archives {
+		archives[i] = filepath.Clean(archive)
 	}
 
 	// 统计信息

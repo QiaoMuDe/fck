@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"gitee.com/MM-Q/fck/internal/commands/pack"
 	"gitee.com/MM-Q/fck/internal/types"
@@ -24,6 +25,7 @@ var (
 	packProgressStyle    *qflag.EnumFlag   // 进度条样式
 	packNoValidate       *qflag.BoolFlag   // 禁用路径验证
 	packOutput           *qflag.StringFlag // 压缩包输出路径
+	packTimestamp        *qflag.BoolFlag   // 添加时间戳到压缩包名
 )
 
 func init() {
@@ -49,6 +51,7 @@ func init() {
 		"\t\t\t\t\t[ascii  ] - ascii 样式", types.ProgressStyleAscii, types.SupportedProgressStyles)
 	packNoValidate = PackCmd.Bool("no-validate", "nv", "禁用路径验证", false)
 	packOutput = PackCmd.String("output", "o", "压缩包输出路径，默认为: 源文件名+.zip", "")
+	packTimestamp = PackCmd.Bool("timestamp", "t", "在压缩包名中添加时间戳(格式: YYYYMMDDHHMMSS)", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc: "智能打包压缩工具",
@@ -56,14 +59,17 @@ func init() {
 			"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib",
 			"通过文件后缀指定压缩格式",
 			"不指定 -o 时，自动生成源文件名+.zip",
+			"使用 -t 可在压缩包名中添加时间戳，避免覆盖",
 		},
 		UseChinese:  true,
 		UsageSyntax: fmt.Sprintf("%s pack [options] <source>", qflag.Root.Name()),
 		Examples: map[string]string{
-			"快速打包文件":  fmt.Sprintf("%s pack source.txt", qflag.Root.Name()),
-			"快速打包目录":  fmt.Sprintf("%s pack source/", qflag.Root.Name()),
-			"指定压缩包名称": fmt.Sprintf("%s pack -o backup.zip source.txt", qflag.Root.Name()),
-			"指定压缩格式":  fmt.Sprintf("%s pack -o backup.tar.gz source/", qflag.Root.Name()),
+			"快速打包文件":   fmt.Sprintf("%s pack source.txt", qflag.Root.Name()),
+			"快速打包目录":   fmt.Sprintf("%s pack source/", qflag.Root.Name()),
+			"指定压缩包名称":  fmt.Sprintf("%s pack -o backup.zip source.txt", qflag.Root.Name()),
+			"指定压缩格式":   fmt.Sprintf("%s pack -o backup.tar.gz source/", qflag.Root.Name()),
+			"添加时间戳":    fmt.Sprintf("%s pack -t source.txt", qflag.Root.Name()),
+			"指定名称+时间戳": fmt.Sprintf("%s pack -t -o backup.zip source.txt", qflag.Root.Name()),
 		},
 	}
 
@@ -80,7 +86,7 @@ func runPack(cmd qflag.Command) error {
 		return fmt.Errorf("source path is required")
 	}
 
-	srcPath := args[0] // 源路径
+	srcPath := filepath.Clean(args[0]) // 源路径
 
 	config := pack.PackConfig{
 		SrcPath:          srcPath,
@@ -94,6 +100,7 @@ func runPack(cmd qflag.Command) error {
 		Progress:         packProgress.Get(),
 		ProgressStyle:    packProgressStyle.Get(),
 		NoValidate:       packNoValidate.Get(),
+		Timestamp:        packTimestamp.Get(),
 	}
 
 	return pack.PackCmdMain(config)

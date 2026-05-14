@@ -5,23 +5,11 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gitee.com/MM-Q/comprx"
 	"gitee.com/MM-Q/fck/internal/types"
 )
-
-// generateDefaultPackPath 根据源路径生成默认压缩包路径
-func generateDefaultPackPath(srcPath string) string {
-	// 获取文件名（不含目录）
-	base := filepath.Base(srcPath)
-
-	// 去掉现有扩展名
-	ext := filepath.Ext(base)
-	name := strings.TrimSuffix(base, ext)
-
-	// 添加 .zip 后缀
-	return name + ".zip"
-}
 
 // PackConfig 打包配置结构体
 type PackConfig struct {
@@ -36,6 +24,7 @@ type PackConfig struct {
 	Progress         bool     // 显示进度
 	ProgressStyle    string   // 进度样式
 	NoValidate       bool     // 是否禁用路径验证
+	Timestamp        bool     // 在压缩包名中添加时间戳
 }
 
 // PackCmdMain 执行打包命令
@@ -54,6 +43,11 @@ func PackCmdMain(config PackConfig) error {
 	packPath := config.PackPath
 	if packPath == "" {
 		packPath = generateDefaultPackPath(config.SrcPath)
+	}
+
+	// 如果启用了时间戳，添加时间戳到压缩包名
+	if config.Timestamp {
+		packPath = addTimestampToPackPath(packPath)
 	}
 
 	filter := comprx.FilterOptions{
@@ -87,4 +81,63 @@ func PackCmdMain(config PackConfig) error {
 	}
 
 	return nil
+}
+
+// generateDefaultPackPath 根据源路径生成默认压缩包路径
+//
+// 参数:
+//   - srcPath: 源路径
+//
+// 返回值:
+//   - string: 默认压缩包路径
+func generateDefaultPackPath(srcPath string) string {
+	// 获取文件名（不含目录）
+	base := filepath.Base(srcPath)
+
+	// 去掉现有扩展名
+	ext := filepath.Ext(base)
+	name := strings.TrimSuffix(base, ext)
+
+	// 添加 .zip 后缀
+	return name + ".zip"
+}
+
+// addTimestampToPackPath 在压缩包路径中添加时间戳
+// 格式: 名称_YYYYMMDDHHMMSS.扩展名
+//
+// 参数:
+//   - packPath: 压缩包路径
+//
+// 返回值:
+//   - string: 添加时间戳后的压缩包路径
+func addTimestampToPackPath(packPath string) string {
+	// 获取目录和文件名
+	dir := filepath.Dir(packPath)
+	base := filepath.Base(packPath)
+
+	// 分离文件名和扩展名
+	// 处理多段扩展名如 .tar.gz
+	ext := filepath.Ext(base)
+	name := strings.TrimSuffix(base, ext)
+
+	// 检查是否还有扩展名（如 .tar.gz）
+	if ext != "" {
+		// 检查是否是 .tar 前缀的扩展名
+		if strings.HasSuffix(name, ".tar") {
+			ext = ".tar" + ext
+			name = strings.TrimSuffix(name, ".tar")
+		}
+	}
+
+	// 生成时间戳
+	timestamp := time.Now().Format("20060102150405")
+
+	// 组装新文件名
+	newBase := fmt.Sprintf("%s_%s%s", name, timestamp, ext)
+
+	// 如果原路径包含目录，拼接回去
+	if dir == "." || dir == "" {
+		return newBase
+	}
+	return filepath.Join(dir, newBase)
 }
