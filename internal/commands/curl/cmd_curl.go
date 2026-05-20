@@ -12,7 +12,17 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gitee.com/MM-Q/go-kit/pool"
+	"gitee.com/MM-Q/go-kit/utils"
+	"github.com/schollz/progressbar/v3"
 )
+
+// 最大截断文件名的长度
+const MaxTruncateFilenameLen = 20
+
+// 默认保存文件用的缓冲区大小
+const DefaultSaveBufferSize = 32 * 1024
 
 // Execute 执行 curl 命令
 //
@@ -84,7 +94,13 @@ func Execute(config Config) error {
 		}
 	}()
 
+	// 计算耗时
 	elapsed := time.Since(startTime)
+
+	// 如果指定了输出文件，使用流式下载（支持进度条）
+	if config.Output != "" && !config.Head {
+		return downloadWithProgress(resp, config)
+	}
 
 	// 读取响应体
 	body, err := io.ReadAll(resp.Body)
@@ -233,6 +249,124 @@ func buildFormBody(forms []string) (io.Reader, string) {
 		fmt.Fprintf(os.Stderr, "Warning: failed to close writer: %v\n", err)
 	}
 	return &b, writer.FormDataContentType()
+}
+
+// downloadWithProgress 带进度条的文件下载
+//
+// 参数:
+//   - resp: HTTP 响应
+//   - config: 配置
+//
+// 返回值:
+//   - error: 错误
+func downloadWithProgress(resp *http.Response, config Config) error {
+	// 创建输出文件
+	file, err := os.Create(config.Output)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to close file: %v\n", err)
+		}
+	}()
+
+	// 静默模式：直接下载，不显示进度条
+	if config.Silent {
+		buf := pool.GetByteCap(DefaultSaveBufferSize)
+		defer pool.PutByte(buf)
+		_, err = io.CopyBuffer(file, resp.Body, buf)
+		if err != nil {
+			return fmt.Errorf("download failed: %w", err)
+		}
+		return nil
+	}
+
+	// 获取文件总大小
+	totalSize := resp.ContentLength
+
+	// 打印下载信息（类似 wget）
+	fmt.Printf("Downloading: %s\n", config.URL)
+	if totalSize > 0 {
+		fmt.Printf("Size: %s\n", humanizeBytes(totalSize))
+	} else {
+		fmt.Println("Size: unknown")
+	}
+
+	// 获取文件名并截断
+	filename := filepath.Base(config.Output)
+	displayName := truncateFilename(filename, MaxTruncateFilenameLen)
+
+	// 创建进度条
+	bar := progressbar.NewOptions64(
+		totalSize, // 总字节数
+		progressbar.OptionSetDescription(displayName),      // 进度条描述
+		progressbar.OptionShowBytes(true),                  // 显示已下载字节数
+		progressbar.OptionShowTotalBytes(true),             // 显示总字节数
+		progressbar.OptionSetWidth(50),                     // 进度条宽度
+		progressbar.OptionSetPredictTime(true),             // 显示预测时间
+		progressbar.OptionEnableColorCodes(true),           // 启用颜色编码
+		progressbar.OptionShowElapsedTimeOnFinish(),        // 显示完成时间
+		progressbar.OptionSetTheme(progressbar.ThemeASCII), // 使用 ASCII 样式
+		progressbar.OptionClearOnFinish(),                  // 完成后清除进度条
+		progressbar.OptionUseANSICodes(true),               // 启用 ANSI 编码
+	)
+	defer func() {
+		_ = bar.Finish()
+		_ = bar.Close()
+	}()
+
+	// 使用 MultiWriter 同时写入文件和进度条
+	multiWriter := io.MultiWriter(file, bar)
+	buf := pool.GetByteCap(DefaultSaveBufferSize)
+	defer pool.PutByte(buf)
+	_, err = io.CopyBuffer(multiWriter, resp.Body, buf)
+	if err != nil {
+		return fmt.Errorf("download failed: %w", err)
+	}
+
+	// 完成进度条
+	_ = bar.Finish()
+	_ = bar.Close()
+	fmt.Println()
+
+	// 打印完成信息
+	fmt.Printf("Saved to: %s\n", config.Output)
+
+	return nil
+}
+
+// humanizeBytes 将字节数转换为人类可读的格式
+//
+// 参数:
+//   - bytes: 字节数
+//
+// 返回值:
+//   - string: 格式化后的字符串
+func humanizeBytes(bytes int64) string {
+	if bytes < 0 {
+		return "unknown"
+	}
+
+	return utils.FormatBytes(bytes)
+}
+
+// truncateFilename 截断文件名
+//
+// 参数:
+//   - filename: 文件名字符串
+//   - maxLen: 最大长度
+//
+// 返回值:
+//   - string: 截断后的文件名字符串
+func truncateFilename(filename string, maxLen int) string {
+	if len(filename) <= maxLen {
+		return filename
+	}
+	if maxLen <= 3 {
+		return filename[:maxLen]
+	}
+	return filename[:maxLen-3] + "..."
 }
 
 // outputResponse 输出响应
