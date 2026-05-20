@@ -97,6 +97,11 @@ func Execute(config Config) error {
 	// 计算耗时
 	elapsed := time.Since(startTime)
 
+	// 处理 -O 参数：使用远程文件名
+	if config.RemoteName && !config.Head {
+		config.Output = extractFilenameFromURL(config.URL)
+	}
+
 	// 如果指定了输出文件，使用流式下载（支持进度条）
 	if config.Output != "" && !config.Head {
 		return downloadWithProgress(resp, config)
@@ -367,6 +372,56 @@ func truncateFilename(filename string, maxLen int) string {
 		return filename[:maxLen]
 	}
 	return filename[:maxLen-3] + "..."
+}
+
+// extractFilenameFromURL 从 URL 提取文件名
+//
+// 参数:
+//   - urlStr: URL 字符串
+//
+// 返回值:
+//   - string: 提取的文件名
+func extractFilenameFromURL(urlStr string) string {
+	// 查找最后一个斜杠
+	lastSlash := strings.LastIndex(urlStr, "/")
+	if lastSlash == -1 || lastSlash == len(urlStr)-1 {
+		return "download_" + time.Now().Format("20060102150405")
+	}
+
+	// 提取文件名
+	filename := urlStr[lastSlash+1:]
+
+	// 清理文件名中的不安全字符
+	filename = sanitizeFilename(filename)
+
+	if filename == "" {
+		return "download_" + time.Now().Format("20060102150405")
+	}
+
+	return filename
+}
+
+// sanitizeFilename 清理文件名中的不安全字符
+//
+// 参数:
+//   - name: 原始文件名
+//
+// 返回值:
+//   - string: 清理后的文件名
+func sanitizeFilename(name string) string {
+	// 替换 Windows 和 Unix 的不安全字符
+	replacer := strings.NewReplacer(
+		"\\", "_",
+		"/", "_",
+		":", "_",
+		"*", "_",
+		"?", "_",
+		"\"", "_",
+		"<", "_",
+		">", "_",
+		"|", "_",
+	)
+	return replacer.Replace(name)
 }
 
 // outputResponse 输出响应

@@ -11,21 +11,22 @@ import (
 var CurlCmd *qflag.Cmd
 
 var (
-	curlRequest  *qflag.EnumFlag
-	curlData     *qflag.StringFlag
-	curlHeader   *qflag.StringSliceFlag
-	curlOutput   *qflag.StringFlag
-	curlInclude  *qflag.BoolFlag
-	curlHead     *qflag.BoolFlag
-	curlSilent   *qflag.BoolFlag
-	curlVerbose  *qflag.BoolFlag
-	curlForm     *qflag.StringSliceFlag
-	curlUser     *qflag.StringFlag
-	curlLocation *qflag.BoolFlag
-	curlMaxTime  *qflag.DurationFlag
-	curlRetry    *qflag.IntFlag
-	curlColor    *qflag.BoolFlag
-	curlInsecure *qflag.BoolFlag
+	curlRequest    *qflag.EnumFlag
+	curlData       *qflag.StringFlag
+	curlHeader     *qflag.StringSliceFlag
+	curlOutput     *qflag.StringFlag
+	curlRemoteName *qflag.BoolFlag
+	curlInclude    *qflag.BoolFlag
+	curlHead       *qflag.BoolFlag
+	curlSilent     *qflag.BoolFlag
+	curlVerbose    *qflag.BoolFlag
+	curlForm       *qflag.StringSliceFlag
+	curlUser       *qflag.StringFlag
+	curlLocation   *qflag.BoolFlag
+	curlMaxTime    *qflag.DurationFlag
+	curlRetry      *qflag.IntFlag
+	curlColor      *qflag.BoolFlag
+	curlInsecure   *qflag.BoolFlag
 )
 
 // requestMethods 支持的 HTTP 方法
@@ -38,6 +39,7 @@ func init() {
 	curlData = CurlCmd.String("data", "d", "请求体数据", "")
 	curlHeader = CurlCmd.StringSlice("header", "H", "请求头，多个用逗号分隔", []string{})
 	curlOutput = CurlCmd.String("output", "o", "输出到文件", "")
+	curlRemoteName = CurlCmd.Bool("remote-name", "O", "使用远程文件名保存", false)
 	curlInclude = CurlCmd.Bool("include", "i", "显示响应头", false)
 	curlHead = CurlCmd.Bool("head", "I", "仅显示响应头（使用 HEAD 方法）", false)
 	curlSilent = CurlCmd.Bool("silent", "s", "静默模式，只输出响应体", false)
@@ -60,15 +62,16 @@ func init() {
 			"使用 -s 静默模式，便于管道处理",
 		},
 		Examples: map[string]string{
-			"简单 GET":    fmt.Sprintf("%s curl https://api.example.com/users", qflag.Root.Name()),
-			"POST JSON": fmt.Sprintf("%s curl -X POST -H \"Content-Type: application/json\" -d '{\"name\":\"test\"}' https://api.example.com/users", qflag.Root.Name()),
-			"POST 表单":   fmt.Sprintf("%s curl -X POST -d 'username=admin&password=123' https://api.example.com/login", qflag.Root.Name()),
-			"文件上传":      fmt.Sprintf("%s curl -F \"file=@/path/to/image.jpg\" https://api.example.com/upload", qflag.Root.Name()),
-			"下载文件":      fmt.Sprintf("%s curl -o result.json https://api.example.com/users", qflag.Root.Name()),
-			"显示响应头":     fmt.Sprintf("%s curl -i https://api.example.com/users", qflag.Root.Name()),
-			"完整详情":      fmt.Sprintf("%s curl -v https://api.example.com/users", qflag.Root.Name()),
-			"Basic 认证":  fmt.Sprintf("%s curl -u admin:password https://api.example.com/admin", qflag.Root.Name()),
-			"跟随重定向":     fmt.Sprintf("%s curl -L https://bit.ly/xxx", qflag.Root.Name()),
+			"简单 GET":      fmt.Sprintf("%s curl https://api.example.com/users", qflag.Root.Name()),
+			"POST JSON":   fmt.Sprintf("%s curl -X POST -H \"Content-Type: application/json\" -d '{\"name\":\"test\"}' https://api.example.com/users", qflag.Root.Name()),
+			"POST 表单":     fmt.Sprintf("%s curl -X POST -d 'username=admin&password=123' https://api.example.com/login", qflag.Root.Name()),
+			"文件上传":        fmt.Sprintf("%s curl -F \"file=@/path/to/image.jpg\" https://api.example.com/upload", qflag.Root.Name()),
+			"下载文件":        fmt.Sprintf("%s curl -o result.json https://api.example.com/users", qflag.Root.Name()),
+			"显示响应头":       fmt.Sprintf("%s curl -i https://api.example.com/users", qflag.Root.Name()),
+			"完整详情":        fmt.Sprintf("%s curl -v https://api.example.com/users", qflag.Root.Name()),
+			"Basic 认证":    fmt.Sprintf("%s curl -u admin:password https://api.example.com/admin", qflag.Root.Name()),
+			"跟随重定向":       fmt.Sprintf("%s curl -L https://bit.ly/xxx", qflag.Root.Name()),
+			"自动获取远程名字并保存": fmt.Sprintf("%s curl -O https://bit.ly/xxx.zip", qflag.Root.Name()),
 		},
 	}
 
@@ -93,22 +96,23 @@ func runCurl(cmd qflag.Command) error {
 	}
 
 	config := curl.Config{
-		URL:      args[0],
-		Method:   curlRequest.Get(),
-		Data:     curlData.Get(),
-		Headers:  curlHeader.Get(),
-		Output:   curlOutput.Get(),
-		Include:  curlInclude.Get(),
-		Head:     curlHead.Get(),
-		Silent:   curlSilent.Get(),
-		Verbose:  curlVerbose.Get(),
-		Form:     curlForm.Get(),
-		User:     curlUser.Get(),
-		Location: curlLocation.Get(),
-		MaxTime:  curlMaxTime.Get(),
-		Retry:    curlRetry.Get(),
-		Color:    curlColor.Get(),
-		Insecure: curlInsecure.Get(),
+		URL:        args[0],
+		Method:     curlRequest.Get(),
+		Data:       curlData.Get(),
+		Headers:    curlHeader.Get(),
+		Output:     curlOutput.Get(),
+		RemoteName: curlRemoteName.Get(),
+		Include:    curlInclude.Get(),
+		Head:       curlHead.Get(),
+		Silent:     curlSilent.Get(),
+		Verbose:    curlVerbose.Get(),
+		Form:       curlForm.Get(),
+		User:       curlUser.Get(),
+		Location:   curlLocation.Get(),
+		MaxTime:    curlMaxTime.Get(),
+		Retry:      curlRetry.Get(),
+		Color:      curlColor.Get(),
+		Insecure:   curlInsecure.Get(),
 	}
 
 	return curl.Execute(config)
