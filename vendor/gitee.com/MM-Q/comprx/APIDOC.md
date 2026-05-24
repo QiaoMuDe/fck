@@ -148,6 +148,46 @@ size, err := comprx.GetSize("./myfile.txt")
 
 ## FUNCTIONS
 
+### IsArchive
+
+```go
+func IsArchive(path string) bool
+```
+
+- **描述**: 判断指定路径是否为支持的压缩文件
+- **参数**:
+  - `path`: 文件路径
+- **返回**:
+  - `bool`: `true` 表示是支持的压缩文件，`false` 表示不是
+- **支持的压缩格式**:
+  - `.zip` - ZIP 压缩格式
+  - `.tar` - TAR 归档格式
+  - `.tgz`, `.tar.gz` - GZIP 压缩的 TAR 归档
+  - `.gz` - GZIP 压缩格式
+  - `.bz2`, `.bzip2` - BZIP2 压缩格式
+  - `.zlib` - ZLIB 压缩格式
+- **使用示例**:
+
+```go
+// 判断是否为压缩文件
+if comprx.IsArchive("archive.zip") {
+    fmt.Println("这是一个压缩文件")
+}
+
+// 判断不是压缩文件
+if !comprx.IsArchive("document.txt") {
+    fmt.Println("这不是压缩文件")
+}
+
+// 批量判断
+files := []string{"a.zip", "b.tar.gz", "c.txt", "d.bz2"}
+for _, f := range files {
+    if comprx.IsArchive(f) {
+        fmt.Printf("%s 是压缩文件\n", f)
+    }
+}
+```
+
 ### GetSize
 
 ```go

@@ -14,51 +14,80 @@ import (
 	"strings"
 
 	"gitee.com/MM-Q/go-kit/pool"
+	"gitee.com/MM-Q/go-kit/str"
 	"github.com/schollz/progressbar/v3"
 )
 
+// Algorithm 定义支持的哈希算法类型
+// 使用自定义类型可以在编译时进行类型检查，避免运行时错误
+type Algorithm string
+
+// String 返回算法的字符串表示
+func (a Algorithm) String() string {
+	return string(a)
+}
+
+// 支持的哈希算法常量
+const (
+	MD5    Algorithm = "md5"
+	SHA1   Algorithm = "sha1"
+	SHA256 Algorithm = "sha256"
+	SHA512 Algorithm = "sha512"
+)
+
 // 支持的哈希算法列表
-var supportedAlgorithms = map[string]func() hash.Hash{
-	"md5":    md5.New,
-	"sha1":   sha1.New,
-	"sha256": sha256.New,
-	"sha512": sha512.New,
+var supportedAlgorithms = map[Algorithm]func() hash.Hash{
+	MD5:    md5.New,
+	SHA1:   sha1.New,
+	SHA256: sha256.New,
+	SHA512: sha512.New,
 }
 
 // IsAlgorithmSupported 检查给定的哈希算法名称是否受支持。
-// 匹配时会忽略算法名称的大小写。
 //
 // 参数:
-//   - algorithm: 要检查的哈希算法名称（如 "md5", "sha1", "sha256", "sha512"）。
+//   - algorithm: 要检查的哈希算法名称（字符串形式）。
 //
 // 返回:
 //   - bool: 如果算法受支持则返回 true，否则返回 false。
 func IsAlgorithmSupported(algorithm string) bool {
-	// 如果算法名称为空，则返回 false
-	if algorithm == "" {
-		return false
-	}
-
-	_, ok := supportedAlgorithms[strings.ToLower(algorithm)]
+	_, ok := supportedAlgorithms[Algorithm(algorithm)]
 	return ok
 }
 
-// getHashAlgorithm 根据算法名称获取对应的哈希函数构造器。
-// 匹配时会忽略算法名称的大小写。
+// ParseAlgorithm 将字符串解析为 Algorithm 类型
 //
 // 参数:
-//   - algorithm: 哈希算法名称（如 "md5", "sha1", "sha256", "sha512"）。
+//   - algorithm: 哈希算法名称字符串（如 "md5", "sha256"）。
+//
+// 返回:
+//   - Algorithm: 对应的算法类型常量。
+//   - error: 如果不支持该算法，则返回错误。
+//
+// 使用示例:
+//
+//	algo, err := hash.ParseAlgorithm("sha256")
+//	if err != nil {
+//	    return err
+//	}
+//	result, err := hash.Checksum(filename, algo)
+func ParseAlgorithm(algorithm string) (Algorithm, error) {
+	if !IsAlgorithmSupported(algorithm) {
+		return "", fmt.Errorf("unsupported hash algorithm: %s", algorithm)
+	}
+	return Algorithm(algorithm), nil
+}
+
+// getHashAlgorithm 根据算法名称获取对应的哈希函数构造器。
+//
+// 参数:
+//   - algorithm: 哈希算法名称。
 //
 // 返回:
 //   - func() hash.Hash: 对应的哈希函数构造器。
 //   - error: 如果不支持该算法，则返回错误。
-func getHashAlgorithm(algorithm string) (func() hash.Hash, error) {
-	// 如果算法名称为空，则返回错误
-	if algorithm == "" {
-		return nil, fmt.Errorf("hash algorithm name cannot be empty")
-	}
-
-	algoFunc, ok := supportedAlgorithms[strings.ToLower(algorithm)]
+func getHashAlgorithm(algorithm Algorithm) (func() hash.Hash, error) {
+	algoFunc, ok := supportedAlgorithms[algorithm]
 	if !ok {
 		return nil, fmt.Errorf("unsupported hash algorithm: %s", algorithm)
 	}
@@ -75,7 +104,7 @@ func getHashAlgorithm(algorithm string) (func() hash.Hash, error) {
 // 返回:
 //   - string: 文件的十六进制哈希值
 //   - error: 错误信息，如果计算失败
-func checksumCore(filePath, algorithm string, showProgress bool) (string, error) {
+func checksumCore(filePath string, algorithm Algorithm, showProgress bool) (string, error) {
 	// 检查文件是否存在
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
@@ -113,7 +142,7 @@ func checksumCore(filePath, algorithm string, showProgress bool) (string, error)
 		bar := progressbar.NewOptions64(
 			fileSize,                          // 进度条总长度
 			progressbar.OptionClearOnFinish(), // 结束时清除进度条
-			progressbar.OptionSetDescription(fmt.Sprintf("正在处理'%s'('%s')", filepath.Base(filePath), strings.ToUpper(algorithm))), // 显示描述
+			progressbar.OptionSetDescription(fmt.Sprintf("Hashing %s [%s]", str.Ellipsis(filepath.Base(filePath), 20), strings.ToUpper(algorithm.String()))), // Display description
 			progressbar.OptionSetElapsedTime(true),      // 显示已用时间
 			progressbar.OptionSetPredictTime(true),      // 显示预计剩余时间
 			progressbar.OptionSetRenderBlankState(true), // 在进度条完成之前显示空白状态
@@ -142,7 +171,7 @@ func checksumCore(filePath, algorithm string, showProgress bool) (string, error)
 //
 // 参数:
 //   - filePath: 文件路径
-//   - algorithm: 哈希算法名称（如 "md5", "sha1", "sha256", "sha512"）
+//   - algorithm: 哈希算法名称
 //
 // 返回:
 //   - string: 文件的十六进制哈希值
@@ -152,7 +181,7 @@ func checksumCore(filePath, algorithm string, showProgress bool) (string, error)
 //   - 根据文件大小动态分配缓冲区以提高性能
 //   - 支持任何实现hash.Hash接口的哈希算法
 //   - 使用io.CopyBuffer进行高效的文件读取和哈希计算
-func Checksum(filePath string, algorithm string) (string, error) {
+func Checksum(filePath string, algorithm Algorithm) (string, error) {
 	return checksumCore(filePath, algorithm, false)
 }
 
@@ -160,7 +189,7 @@ func Checksum(filePath string, algorithm string) (string, error) {
 //
 // 参数:
 //   - filePath: 文件路径
-//   - algorithm: 哈希算法名称（如 "md5", "sha1", "sha256", "sha512"）
+//   - algorithm: 哈希算法名称
 //
 // 返回:
 //   - string: 文件的十六进制哈希值
@@ -170,7 +199,7 @@ func Checksum(filePath string, algorithm string) (string, error) {
 //   - 根据文件大小动态分配缓冲区以提高性能
 //   - 支持任何实现hash.Hash接口的哈希算法
 //   - 使用io.CopyBuffer进行高效的文件读取和哈希计算
-func ChecksumProgress(filePath string, algorithm string) (string, error) {
+func ChecksumProgress(filePath string, algorithm Algorithm) (string, error) {
 	return checksumCore(filePath, algorithm, true)
 }
 
@@ -178,7 +207,7 @@ func ChecksumProgress(filePath string, algorithm string) (string, error) {
 //
 // 参数:
 //   - data: 要计算哈希的字节数据
-//   - algorithm: 哈希算法名称（如 "md5", "sha1", "sha256", "sha512"）
+//   - algorithm: 哈希算法名称
 //
 // 返回:
 //   - string: 数据的十六进制哈希值
@@ -188,7 +217,7 @@ func ChecksumProgress(filePath string, algorithm string) (string, error) {
 //   - 直接在内存中计算，无需文件I/O，性能更高
 //   - 支持任何大小的数据，包括空数据
 //   - 使用标准库优化的hash实现，性能最佳
-func HashData(data []byte, algorithm string) (string, error) {
+func HashData(data []byte, algorithm Algorithm) (string, error) {
 	// 参数验证
 	if data == nil {
 		return "", fmt.Errorf("data cannot be nil")
@@ -213,7 +242,7 @@ func HashData(data []byte, algorithm string) (string, error) {
 //
 // 参数:
 //   - data: 要计算哈希的字符串
-//   - algorithm: 哈希算法名称（如 "md5", "sha1", "sha256", "sha512"）
+//   - algorithm: 哈希算法名称
 //
 // 返回:
 //   - string: 字符串的十六进制哈希值
@@ -223,7 +252,7 @@ func HashData(data []byte, algorithm string) (string, error) {
 //   - 这是HashData的便利包装函数
 //   - 内部将字符串转换为字节切片进行处理
 //   - 适用于文本数据、配置字符串等场景
-func HashString(data string, algorithm string) (string, error) {
+func HashString(data string, algorithm Algorithm) (string, error) {
 	return HashData([]byte(data), algorithm)
 }
 
@@ -231,7 +260,7 @@ func HashString(data string, algorithm string) (string, error) {
 //
 // 参数:
 //   - reader: 数据源读取器
-//   - algorithm: 哈希算法名称（如 "md5", "sha1", "sha256", "sha512"）
+//   - algorithm: 哈希算法名称
 //
 // 返回:
 //   - string: 读取数据的十六进制哈希值
@@ -242,7 +271,7 @@ func HashString(data string, algorithm string) (string, error) {
 //   - 使用缓冲区进行高效读取，避免频繁的小块读取
 //   - 会完全消费Reader中的数据
 //   - 使用对象池优化内存分配
-func HashReader(reader io.Reader, algorithm string) (string, error) {
+func HashReader(reader io.Reader, algorithm Algorithm) (string, error) {
 	// 参数验证
 	if reader == nil {
 		return "", fmt.Errorf("reader cannot be nil")

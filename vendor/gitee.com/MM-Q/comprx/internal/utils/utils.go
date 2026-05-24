@@ -197,8 +197,8 @@ func DetectCompressFormat(filename string) (types.CompressType, error) {
 		return types.CompressTypeTarGz, nil
 	}
 
-	// 获取文件扩展名并转换为小写
-	ext := strings.ToLower(filepath.Ext(filename))
+	// 获取文件扩展名 (已从 lowerFilename 转换过小写)
+	ext := filepath.Ext(lowerFilename)
 	if !types.IsSupportedCompressType(ext) {
 		return "", fmt.Errorf("unsupported compression format: %s, supported formats: %v", ext, types.SupportedCompressTypes())
 	}

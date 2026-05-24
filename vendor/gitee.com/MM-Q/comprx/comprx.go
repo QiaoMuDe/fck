@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/comprx/internal/core"
+	"gitee.com/MM-Q/comprx/internal/utils"
 )
 
 // ==============================================
@@ -317,4 +318,33 @@ func UnpackOptions(src string, dst string, opts Options) error {
 	}
 
 	return comprx.Unpack(src, dst)
+}
+
+// ==============================================
+// 工具函数
+// ==============================================
+
+// IsArchive 判断指定路径是否为支持的压缩文件
+//
+// 根据文件扩展名判断是否支持的压缩格式，支持的格式包括:
+//   - .zip, .tar, .tgz, .tar.gz, .gz, .bz2, .bzip2, .zlib
+//
+// 参数:
+//   - path: 文件路径
+//
+// 返回:
+//   - bool: true 表示是支持的压缩文件, false 表示不是
+//
+// 使用示例:
+//
+//	if comprx.IsArchive("archive.zip") {
+//	    fmt.Println("这是一个压缩文件")
+//	}
+//
+//	if !comprx.IsArchive("document.txt") {
+//	    fmt.Println("这不是压缩文件")
+//	}
+func IsArchive(path string) bool {
+	_, err := utils.DetectCompressFormat(path)
+	return err == nil
 }

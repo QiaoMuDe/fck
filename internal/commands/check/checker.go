@@ -96,8 +96,17 @@ func (c *fileChecker) worker(jobs <-chan types.VirtualHashEntry, results chan<- 
 			continue
 		}
 
+		// 解析哈希算法
+		hashType, err := hash.ParseAlgorithm(c.hashType)
+		if err != nil {
+			results <- checkResult{
+				filePath: entry.RealPath,
+				err:      err,
+			}
+		}
+
 		// 计算文件哈希
-		actualHash, err := hash.Checksum(entry.RealPath, c.hashType)
+		actualHash, err := hash.Checksum(entry.RealPath, hashType)
 		if err != nil {
 			result.err = fmt.Errorf("failed to calculate checksum: %v", err)
 		} else {
