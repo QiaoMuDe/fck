@@ -1,0 +1,35 @@
+{
+  "skill_name": "fck",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "file-list-basic",
+      "prompt": "帮我列出当前目录下的所有文件，包括隐藏文件",
+      "expected_output": "Agent 应该使用 fck list 或 fck ls 命令，并添加 -a 参数显示隐藏文件"
+    },
+    {
+      "id": 2,
+      "eval_name": "text-search-recursive",
+      "prompt": "在当前目录下递归搜索包含 'TODO' 的 Go 文件",
+      "expected_output": "Agent 应该使用 fck grep 命令，添加 -r 参数递归搜索，并使用 --include 过滤 Go 文件"
+    },
+    {
+      "id": 3,
+      "eval_name": "compress-files",
+      "prompt": "把这几个文件打包成 zip：file1.txt file2.txt",
+      "expected_output": "Agent 应该使用 fck pack 命令创建 zip 压缩包"
+    },
+    {
+      "id": 4,
+      "eval_name": "json-extract",
+      "prompt": "从 config.json 文件中提取 name 字段的值",
+      "expected_output": "Agent 应该使用 fck json get 命令提取指定字段"
+    },
+    {
+      "id": 5,
+      "eval_name": "view-file-content",
+      "prompt": "查看 README.md 文件的前 20 行",
+      "expected_output": "Agent 应该使用 fck head 命令查看文件前 20 行"
+    }
+  ]
+}
