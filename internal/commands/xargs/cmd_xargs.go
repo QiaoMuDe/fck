@@ -11,6 +11,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"gitee.com/MM-Q/fck/internal/commands/which"
 	"gitee.com/MM-Q/shellx/shx"
 )
 
@@ -402,6 +403,66 @@ func executeBatch(batch []string, config XargsConfig, stats *XargsStats) error {
 	return executeDirectly(batch, config, stats)
 }
 
+// executeReplaceMode 执行替换模式（-i 参数）
+// 每个参数单独替换占位符并执行命令
+//
+// 参数:
+//   - batch: 批次参数列表
+//   - config: 命令配置
+//   - stats: 执行统计
+//
+// 返回:
+//   - error: 执行错误
+func executeReplaceMode(batch []string, config XargsConfig, stats *XargsStats) error {
+	// 确定占位符
+	placeholder := getPlaceholder(config)
+
+	for _, arg := range batch {
+		// 替换 Command 中的占位符
+		cmdStr := strings.ReplaceAll(config.Command, placeholder, arg)
+
+		// 解析命令字符串（按空格分割）
+		cmdParts := strings.Fields(cmdStr)
+		if len(cmdParts) == 0 {
+			stats.Failed++
+			return fmt.Errorf("empty command after replace")
+		}
+
+		// 第一个元素是命令名，剩余的是参数
+		cmdName := cmdParts[0]
+		var args []string
+
+		// 添加解析出的参数
+		if len(cmdParts) > 1 {
+			args = append(args, cmdParts[1:]...)
+		}
+
+		// 处理 CommandArgs 中的占位符
+		for _, fixedArg := range config.CommandArgs {
+			replacedArg := strings.ReplaceAll(fixedArg, placeholder, arg)
+			args = append(args, replacedArg)
+		}
+
+		// 查找命令绝对路径
+		cmdPath := which.FindCommandPath(cmdName)
+
+		cmdDisplay := cmdPath + " " + strings.Join(args, " ")
+		if config.Verbose {
+			fmt.Fprintln(os.Stderr, cmdDisplay)
+		}
+
+		cmd := exec.Command(cmdPath, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		if err := cmd.Run(); err != nil {
+			stats.Failed++
+			return fmt.Errorf("%w", err)
+		}
+	}
+	return nil
+}
+
 // executeDirectly 直接执行命令（安全模式）
 //
 // 参数:
@@ -414,45 +475,42 @@ func executeBatch(batch []string, config XargsConfig, stats *XargsStats) error {
 func executeDirectly(batch []string, config XargsConfig, stats *XargsStats) error {
 	// 替换模式：每个参数单独执行
 	if isReplaceMode(config) {
-		placeholder := getPlaceholder(config)
-
-		for _, arg := range batch {
-			// 构建参数列表
-			var args []string
-
-			// 处理 CommandArgs 中的占位符
-			for _, fixedArg := range config.CommandArgs {
-				replacedArg := strings.ReplaceAll(fixedArg, placeholder, arg)
-				args = append(args, replacedArg)
-			}
-
-			// 替换 Command 中的占位符
-			cmdName := strings.ReplaceAll(config.Command, placeholder, arg)
-			cmdStr := cmdName + " " + strings.Join(args, " ")
-			if config.Verbose {
-				fmt.Fprintln(os.Stderr, cmdStr)
-			}
-
-			cmd := exec.Command(cmdName, args...)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-
-			if err := cmd.Run(); err != nil {
-				stats.Failed++
-				return fmt.Errorf("%w", err)
-			}
-		}
-		return nil
+		return executeReplaceMode(batch, config, stats)
 	}
 
-	// 默认模式：所有参数追加到命令后
-	args := append(config.CommandArgs, batch...)
-	cmdStr := config.Command + " " + strings.Join(args, " ")
+	// 默认模式：解析命令字符串，支持包含空格的命令
+	var cmdName string
+	var baseArgs []string
+
+	// 如果命令包含空格，使用 strings.Fields 解析
+	if strings.Contains(config.Command, " ") {
+		cmdParts := strings.Fields(config.Command)
+		if len(cmdParts) == 0 {
+			return fmt.Errorf("empty command")
+		}
+		cmdName = cmdParts[0]
+		if len(cmdParts) > 1 {
+			baseArgs = cmdParts[1:]
+		}
+	} else {
+		cmdName = config.Command
+	}
+
+	// 合并参数：解析出的参数 + CommandArgs + batch
+	var args []string
+	args = append(args, baseArgs...)
+	args = append(args, config.CommandArgs...)
+	args = append(args, batch...)
+
+	// 查找命令绝对路径
+	cmdPath := which.FindCommandPath(cmdName)
+
+	cmdStr := cmdPath + " " + strings.Join(args, " ")
 	if config.Verbose {
 		fmt.Fprintln(os.Stderr, cmdStr)
 	}
 
-	cmd := exec.Command(config.Command, args...)
+	cmd := exec.Command(cmdPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

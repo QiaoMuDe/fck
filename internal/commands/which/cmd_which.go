@@ -1,8 +1,10 @@
 package which
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -14,6 +16,49 @@ var windowsExts = map[string]bool{
 	".bat": true,
 	".cmd": true,
 	".com": true,
+}
+
+// FindCommandPath 查找单个命令的绝对路径
+// 供其他包复用，只返回第一个匹配的路径
+// 优先使用标准库 exec.LookPath，处理 ErrDot 情况，找不到则返回原命令名
+//
+// 参数:
+//   - name: 命令名称
+//
+// 返回:
+//   - string: 命令的绝对路径，如果找不到则返回原命令名
+func FindCommandPath(name string) string {
+	// 优先使用标准库 exec.LookPath 查找
+	path, err := exec.LookPath(name)
+	if err == nil {
+		// 确保返回绝对路径
+		if filepath.IsAbs(path) {
+			return path
+		}
+		// 相对路径转换为绝对路径
+		if abs, err := filepath.Abs(path); err == nil {
+			return abs
+		}
+		return path
+	}
+
+	// 处理 Go 1.19+ 的 ErrDot 错误（当前目录的程序）
+	if errors.Is(err, exec.ErrDot) {
+		if abs, err := filepath.Abs(name); err == nil {
+			// Windows 需要检查扩展名是否可执行
+			if runtime.GOOS == "windows" {
+				ext := strings.ToLower(filepath.Ext(abs))
+				if windowsExts[ext] && isExecutable(abs) {
+					return abs
+				}
+			} else if isExecutable(abs) {
+				return abs
+			}
+		}
+	}
+
+	// 找不到则返回原命令名
+	return name
 }
 
 // WhichConfig 配置结构体
@@ -69,6 +114,7 @@ func WhichCmdMain(config WhichConfig) error {
 }
 
 // findCommand 查找单个命令的可执行路径
+// 优先使用 FindCommandPath（基于 exec.LookPath），需要 -a 时遍历所有 PATH 目录
 //
 // 参数:
 //   - name: 命令名称
@@ -78,6 +124,17 @@ func WhichCmdMain(config WhichConfig) error {
 //   - []string: 找到的路径列表
 //   - error: 查找过程中的系统错误
 func findCommand(name string, all bool) ([]string, error) {
+	// 如果不需要 -a（所有匹配），直接使用 FindCommandPath
+	if !all {
+		path := FindCommandPath(name)
+		if path == name {
+			// 没找到
+			return nil, nil
+		}
+		return []string{path}, nil
+	}
+
+	// 需要 -a：遍历所有 PATH 目录返回所有匹配
 	var matches []string
 
 	// 如果命令包含路径分隔符，直接检查该路径
@@ -119,11 +176,6 @@ func findCommand(name string, all bool) ([]string, error) {
 				continue
 			}
 			matches = append(matches, abs)
-
-			// 非显示所有匹配路径模式下，返回第一个匹配路径
-			if !all {
-				return matches, nil
-			}
 		}
 	}
 
