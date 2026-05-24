@@ -81,6 +81,25 @@ func IsStdinPipeWithError() (bool, error) {
 	return isPipe, nil
 }
 
+// IsTerminal 检测当前程序是否在终端中运行
+//
+// 该函数用于判断程序是否在真正的终端环境中运行，而不是在后台或通过其他非交互方式启动。
+// 常用于决定是否显示彩色输出、进度条等终端交互元素。
+//
+// 返回:
+//   - bool: true 表示 stdout 是终端; false 表示不是终端（如重定向、管道、后台运行等）
+//
+// 示例:
+//
+//	if term.IsTerminal() {
+//	    fmt.Println("正在终端中运行")
+//	} else {
+//	    fmt.Println("非终端环境，跳过交互式输出")
+//	}
+func IsTerminal() bool {
+	return term.IsTerminal(int(os.Stdout.Fd()))
+}
+
 // GetSafeTerminalWidth 获取当前终端的宽度（字符列数）
 //
 // 该函数会尝试多种方式获取终端宽度，并确保返回的值在合理范围内:

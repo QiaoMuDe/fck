@@ -2,13 +2,12 @@ package cli
 
 import (
 	"fmt"
-	"os"
 
 	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/list"
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/go-kit/term"
 	"gitee.com/MM-Q/qflag"
-	"golang.org/x/term"
 )
 
 var ListCmd *qflag.Cmd
@@ -106,7 +105,7 @@ func runList(cmd qflag.Command) error {
 
 	// 检测是否在管道中（标准输出不是终端）
 	// 如果在管道中，禁用图标显示，避免图标字符干扰管道数据处理
-	isPipe := !term.IsTerminal(int(os.Stdout.Fd()))
+	isPipe := !term.IsTerminal()
 
 	config := list.ListConfig{
 		Args:          cmd.Args(),
