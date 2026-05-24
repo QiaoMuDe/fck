@@ -2,11 +2,13 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/list"
 	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/qflag"
+	"golang.org/x/term"
 )
 
 var ListCmd *qflag.Cmd
@@ -92,8 +94,19 @@ func init() {
 	ListCmd.SetRun(runList)
 }
 
+// runList 执行 list 命令
+//
+// 参数:
+//   - cmd: qflag 命令对象
+//
+// 返回:
+//   - error: 执行错误 (如果有)
 func runList(cmd qflag.Command) error {
 	cl := color.G()
+
+	// 检测是否在管道中（标准输出不是终端）
+	// 如果在管道中，禁用图标显示，避免图标字符干扰管道数据处理
+	isPipe := !term.IsTerminal(int(os.Stdout.Fd()))
 
 	config := list.ListConfig{
 		Args:          cmd.Args(),
@@ -110,7 +123,7 @@ func runList(cmd qflag.Command) error {
 		ShowUserGroup: listShowUserGroup.Get(),
 		TableStyle:    listTableStyle.Get(),
 		Type:          listType.Get(),
-		Icon:          listIcon.Get(),
+		Icon:          listIcon.Get() && !isPipe, // 管道环境下强制禁用图标，避免图标字符干扰后续处理
 		DisableIndex:  listDisableIndex.Get(),
 	}
 
