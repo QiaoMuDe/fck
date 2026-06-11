@@ -122,7 +122,7 @@ import (
 	"strings"
 )
 
-// # RenderBasicMenu 渲染基础菜单为字符串
+// RenderBasicMenu 渲染基础菜单为字符串
 //
 // 参数:
 //   - title: 菜单标题

@@ -18,7 +18,7 @@ gitee.com/MM-Q/comprx/internal/cxzlib
 gitee.com/MM-Q/comprx/internal/progress
 gitee.com/MM-Q/comprx/internal/utils
 gitee.com/MM-Q/comprx/types
-# gitee.com/MM-Q/go-kit v0.0.22
+# gitee.com/MM-Q/go-kit v0.0.24
 ## explicit; go 1.25.0
 gitee.com/MM-Q/go-kit/fs
 gitee.com/MM-Q/go-kit/fuzzy
@@ -43,7 +43,7 @@ gitee.com/MM-Q/qflag/internal/utils
 ## explicit; go 1.25.0
 gitee.com/MM-Q/shellx
 gitee.com/MM-Q/shellx/shx
-# gitee.com/MM-Q/verman v0.0.19
+# gitee.com/MM-Q/verman v0.0.20
 ## explicit; go 1.24.2
 gitee.com/MM-Q/verman
 # github.com/alecthomas/chroma/v2 v2.23.1
@@ -339,13 +339,13 @@ golang.org/x/net/ipv6
 # golang.org/x/sync v0.20.0
 ## explicit; go 1.25.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.45.0
+# golang.org/x/sys v0.46.0
 ## explicit; go 1.25.0
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.43.0
+# golang.org/x/term v0.44.0
 ## explicit; go 1.25.0
 golang.org/x/term
 # golang.org/x/text v0.37.0

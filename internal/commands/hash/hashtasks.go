@@ -210,19 +210,11 @@ func (m *HashTaskManager) processFile(filePath string) {
 		FilePath: filePath,
 	}
 
-	// 解析哈希算法
-	hashType, err := hash.ParseAlgorithm(m.hashType)
-	if err != nil {
-		result.Error = fmt.Errorf("failed to parse hash algorithm %s: %w", m.hashType, err)
-		m.sendResult(result)
-		return
-	}
-
 	// 根据配置选择哈希计算方式
 	if m.config.Progress {
-		result.HashValue, result.Error = hash.ChecksumProgress(filePath, hashType)
+		result.HashValue, result.Error = hash.ChecksumProgress(filePath, m.hashType)
 	} else {
-		result.HashValue, result.Error = hash.Checksum(filePath, hashType)
+		result.HashValue, result.Error = hash.Checksum(filePath, m.hashType)
 	}
 
 	m.sendResult(result)
