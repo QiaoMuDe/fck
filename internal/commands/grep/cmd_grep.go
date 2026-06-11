@@ -58,6 +58,9 @@ type GrepConfig struct {
 	Text         bool // -a, --text 强制将二进制文件视为文本处理
 	IgnoreBinary bool // -I 忽略二进制文件（不输出提示，静默跳过）
 
+	// 缓冲区配置
+	MaxBuffer int64 // --buffer-size 最大行缓冲区大小(字节)
+
 	// 运行时
 	compiledPattern *regexp.Regexp // 编译后的正则
 	matchCount      int            // 当前匹配计数
@@ -353,6 +356,14 @@ func handleEncodingCheck(file *os.File, path string, config *GrepConfig) (skip b
 //   - error: 处理错误 (如果有)
 func processFile(reader io.Reader, config *GrepConfig) error {
 	scanner := bufio.NewScanner(reader)
+
+	// 设置动态缓冲区
+	buf := make([]byte, types.InitialBufferSize)
+	maxBuffer := config.MaxBuffer
+	if maxBuffer <= types.InitialBufferSize {
+		maxBuffer = types.DefaultMaxBufferSize
+	}
+	scanner.Buffer(buf, int(maxBuffer))
 
 	// 用于上下文显示的行缓冲区
 	var beforeLines []lineInfo

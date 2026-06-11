@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gitee.com/MM-Q/fck/internal/commands/grep"
+	"gitee.com/MM-Q/fck/internal/types"
 	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
@@ -39,6 +40,13 @@ var (
 	// 二进制文件处理
 	grepText         *qflag.BoolFlag // -a, --text 强制将二进制文件视为文本处理
 	grepIgnoreBinary *qflag.BoolFlag // -I 忽略二进制文件（不输出提示）
+
+	// 组合标志（便捷调用）
+	grepLineNumWithFile *qflag.BoolFlag // -nh 显示行号和文件名（等效于 -n -H）
+	grepRecursiveIgnore *qflag.BoolFlag // -rin 递归搜索+忽略大小写+显示行号（等效于 -r -i -n）
+
+	// 缓冲区配置
+	grepMaxBuffer *qflag.SizeFlag // --buffer-size 最大行缓冲区大小
 )
 
 func init() {
@@ -72,21 +80,29 @@ func init() {
 	grepText = GrepCmd.Bool("text", "a", "强制将二进制文件视为文本处理", false)
 	grepIgnoreBinary = GrepCmd.Bool("ignore-binary", "I", "完全忽略二进制文件，不输出提示", false)
 
+	// 组合标志
+	grepLineNumWithFile = GrepCmd.Bool("line-num-with-file", "nh", "显示行号和文件名 (等效于 -n -H)", false)
+	grepRecursiveIgnore = GrepCmd.Bool("recursive-ignore", "rin", "递归搜索+忽略大小写+显示行号 (等效于 -r -i -n)", false)
+
+	// 缓冲区配置
+	grepMaxBuffer = GrepCmd.Size("buffer-size", "bs", "最大行缓冲区大小", types.DefaultMaxBufferSize)
+
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "文本搜索工具",
 		UseChinese:  true,
 		UsageSyntax: fmt.Sprintf("%s grep [options] <pattern> [file...]", qflag.Root.Name()),
 		Examples: map[string]string{
-			"基础搜索":       fmt.Sprintf("%s grep \"error\" log.txt", qflag.Root.Name()),
-			"忽略大小写":      fmt.Sprintf("%s grep -i \"error\" log.txt", qflag.Root.Name()),
-			"显示行号":       fmt.Sprintf("%s grep -n \"func\" main.go", qflag.Root.Name()),
-			"显示文件名和行号":   fmt.Sprintf("%s grep -n -H \"TODO\" main.go", qflag.Root.Name()),
-			"只显示计数":      fmt.Sprintf("%s grep -c \"http\" access.log", qflag.Root.Name()),
-			"显示不匹配的行":    fmt.Sprintf("%s grep -v \"^#\" config.txt", qflag.Root.Name()),
-			"正则表达式匹配":    fmt.Sprintf("%s grep -E \"^error|fatal\" log.txt", qflag.Root.Name()),
-			"限制匹配数量":     fmt.Sprintf("%s grep -m 10 \"http\" access.log", qflag.Root.Name()),
-			"显示上下文":      fmt.Sprintf("%s grep -C 3 \"exception\" log.txt", qflag.Root.Name()),
-			"结合 find 使用": fmt.Sprintf("%s find . -name \"*.go\" -exec %s grep -n \"TODO\" {} \\;", qflag.Root.Name(), qflag.Root.Name()),
+			"基础搜索":          fmt.Sprintf("%s grep \"error\" log.txt", qflag.Root.Name()),
+			"忽略大小写":         fmt.Sprintf("%s grep -i \"error\" log.txt", qflag.Root.Name()),
+			"显示行号":          fmt.Sprintf("%s grep -n \"func\" main.go", qflag.Root.Name()),
+			"显示文件名和行号":      fmt.Sprintf("%s grep -nh \"TODO\" main.go", qflag.Root.Name()),
+			"只显示计数":         fmt.Sprintf("%s grep -c \"http\" access.log", qflag.Root.Name()),
+			"显示不匹配的行":       fmt.Sprintf("%s grep -v \"^#\" config.txt", qflag.Root.Name()),
+			"正则表达式匹配":       fmt.Sprintf("%s grep -E \"^error|fatal\" log.txt", qflag.Root.Name()),
+			"限制匹配数量":        fmt.Sprintf("%s grep -m 10 \"http\" access.log", qflag.Root.Name()),
+			"显示上下文":         fmt.Sprintf("%s grep -C 3 \"exception\" log.txt", qflag.Root.Name()),
+			"递归搜索+忽略大小写+行号": fmt.Sprintf("%s grep -rin \"TODO\" .", qflag.Root.Name()),
+			"结合 find 使用":    fmt.Sprintf("%s find . -name \"*.go\" -exec %s grep -n \"TODO\" {} \\;", qflag.Root.Name(), qflag.Root.Name()),
 		},
 		Notes: []string{
 			"默认使用固定字符串匹配，更轻量高效",
@@ -94,6 +110,8 @@ func init() {
 			"不指定 file 时从标准输入读取",
 			"默认跳过隐藏文件/目录，使用 --hidden/-hd 包含",
 			"默认跳过二进制文件并输出提示，使用 -a 强制处理，使用 -I 静默跳过",
+			"组合标志: -nh=显示行号+文件名, -rin=递归+忽略大小写+行号",
+			"默认最大行缓冲区 10MB, 使用 --buffer-size/-bs 自定义",
 		},
 	}
 
@@ -134,19 +152,25 @@ func runGrep(cmd qflag.Command) error {
 		return err
 	}
 
-	// 准备基础配置
-	// 递归搜索时自动启用显示文件名
-	withFilename := grepWithFilename.Get()
-	if grepRecursive.Get() || grepFollowSymlink.Get() {
-		// 递归搜索或者跟随符号链接时，自动显示文件名
+	// 处理组合标志 - 在构建 config 时直接设置
+	// -nh: 显示行号和文件名（等效于 -n -H）
+	lineNum := grepLineNumber.Get() || grepLineNumWithFile.Get()
+	withFilename := grepWithFilename.Get() || grepLineNumWithFile.Get()
+	// -rin: 递归搜索+忽略大小写+显示行号（等效于 -r -i -n）
+	recursive := grepRecursive.Get() || grepRecursiveIgnore.Get()
+	ignoreCase := grepIgnoreCase.Get() || grepRecursiveIgnore.Get()
+	lineNum = lineNum || grepRecursiveIgnore.Get()
+
+	// 递归搜索时强制显示文件名
+	if recursive || grepFollowSymlink.Get() {
 		withFilename = true
 	}
 
 	baseConfig := grep.GrepConfig{
 		Pattern:       pattern,
-		IgnoreCase:    grepIgnoreCase.Get(),
+		IgnoreCase:    ignoreCase,
 		InvertMatch:   grepInvertMatch.Get(),
-		LineNumber:    grepLineNumber.Get(),
+		LineNumber:    lineNum,
 		Count:         grepCount.Get(),
 		WithFilename:  withFilename,
 		Regexp:        grepRegexp.Get(),
@@ -155,7 +179,7 @@ func runGrep(cmd qflag.Command) error {
 		AfterContext:  grepAfterContext.Get(),
 		Context:       grepContext.Get(),
 		NoColor:       grepNoColor.Get(),
-		Recursive:     grepRecursive.Get(),
+		Recursive:     recursive,
 		FollowSymlink: grepFollowSymlink.Get(),
 		Include:       grepInclude.Get(),
 		Exclude:       grepExclude.Get(),
@@ -165,6 +189,7 @@ func runGrep(cmd qflag.Command) error {
 		Hidden:        grepHidden.Get(),
 		Text:          grepText.Get(),
 		IgnoreBinary:  grepIgnoreBinary.Get(),
+		MaxBuffer:     grepMaxBuffer.Get(),
 	}
 
 	// 无文件参数：从 stdin 读取
