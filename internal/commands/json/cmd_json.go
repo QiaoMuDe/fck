@@ -17,19 +17,23 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 // JsonConfig 配置结构体
 type JsonConfig struct {
-	Pretty    bool     // 美化输出
-	Compact   bool     // 压缩输出
-	Validate  bool     // 验证模式
-	Query     string   // 查询路径
-	Highlight bool     // 语法高亮
-	Raw       bool     // 原始字符串输出
-	Write     bool     // 原地写入
-	Backup    bool     // 写入前备份
-	Files     []string // 位置参数（文件路径）
+	Pretty     bool     // 美化输出
+	Compact    bool     // 压缩输出
+	Validate   bool     // 验证模式
+	Query      string   // 查询路径
+	SetValue   []string // 设置值表达式: ["path1=val1", "path2=val2"]
+	DeletePath []string // 删除路径: ["path1", "path2"]
+	ValueType  string   // 值类型: auto/string/number/bool
+	Highlight  bool     // 语法高亮
+	Raw        bool     // 原始字符串输出
+	Write      bool     // 原地写入
+	Backup     bool     // 写入前备份
+	Files      []string // 位置参数（文件路径）
 }
 
 // JsonStats 操作统计
@@ -58,7 +62,33 @@ func JsonCmdMain(config JsonConfig) error {
 		return validateJSON(data)
 	}
 
-	// 3. 查询处理 (优先于解析，直接操作原始数据)
+	// 3. 设置模式 — 使用 sjson 设置字段值
+	if len(config.SetValue) > 0 {
+		result, err := setJSON(data, config.SetValue, config.ValueType)
+		if err != nil {
+			return err
+		}
+		// 如果请求美化输出，重新格式化
+		if config.Pretty {
+			return writeFormatted(result, config)
+		}
+		return writeOutput(result, config)
+	}
+
+	// 4. 删除模式 — 使用 sjson 删除字段
+	if len(config.DeletePath) > 0 {
+		result, err := deleteJSON(data, config.DeletePath)
+		if err != nil {
+			return err
+		}
+		// 如果请求美化输出，重新格式化
+		if config.Pretty {
+			return writeFormatted(result, config)
+		}
+		return writeOutput(result, config)
+	}
+
+	// 5. 查询处理 (优先于解析，直接操作原始数据)
 	if config.Query != "" {
 		result, err := queryJSON(data, config.Query)
 		if err != nil {
@@ -68,19 +98,19 @@ func JsonCmdMain(config JsonConfig) error {
 		return writeOutput([]byte(result.Raw), config)
 	}
 
-	// 4. 解析 JSON
+	// 6. 解析 JSON
 	var jsonData interface{}
 	if err := json.Unmarshal(data, &jsonData); err != nil {
 		return fmt.Errorf("json parse failed: %w", err)
 	}
 
-	// 5. 格式化输出
+	// 7. 格式化输出
 	output, err := formatOutput(jsonData, config)
 	if err != nil {
 		return err
 	}
 
-	// 6. 输出结果
+	// 8. 输出结果
 	return writeOutput(output, config)
 }
 
@@ -155,6 +185,165 @@ func validateJSON(data []byte) error {
 	}
 	fmt.Println("✓ json is valid")
 	return nil
+}
+
+// setJSON 使用路径表达式设置 JSON 字段值
+//
+// 使用 tidwall/sjson 库实现高性能设置
+// 支持多个操作: ["path1=val1", "path2=val2"]
+// 路径语法与 gjson 兼容，支持:
+//   - 对象属性: users.name
+//   - 数组索引: users.0
+//   - 负数索引: users.-1 (追加)
+//   - 嵌套路径: address.city
+//
+// 参数:
+//   - data: JSON 原始数据
+//   - pairs: 设置表达式列表，元素格式为 "path=value"
+//   - valueType: 值类型 (auto/string/number/bool)
+//
+// 返回值:
+//   - []byte: 修改后的 JSON
+//   - error: 设置错误
+func setJSON(data []byte, pairs []string, valueType string) ([]byte, error) {
+	if len(pairs) == 0 {
+		return data, nil
+	}
+
+	result := string(data)
+
+	for _, pair := range pairs {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+
+		idx := strings.Index(pair, "=")
+		if idx < 0 {
+			return nil, fmt.Errorf("invalid set expression (missing '='): %s", pair)
+		}
+
+		path := strings.TrimSpace(pair[:idx])
+		value := strings.TrimSpace(pair[idx+1:])
+
+		if path == "" {
+			return nil, fmt.Errorf("invalid set expression (empty path): %s", pair)
+		}
+
+		var sjsonResult string
+		var err error
+
+		switch valueType {
+		case "number":
+			sjsonResult, err = sjson.Set(result, path, json.Number(value))
+		case "bool":
+			boolVal := value == "true"
+			sjsonResult, err = sjson.Set(result, path, boolVal)
+		case "string":
+			sjsonResult, err = sjson.Set(result, path, value)
+		default: // "auto"
+			// 自动推断：sjson 会根据 Go 类型自动推断
+			// 空值处理
+			if value == "null" {
+				sjsonResult, err = sjson.Set(result, path, nil)
+			} else if value == "true" {
+				sjsonResult, err = sjson.Set(result, path, true)
+			} else if value == "false" {
+				sjsonResult, err = sjson.Set(result, path, false)
+			} else if isNumeric(value) {
+				sjsonResult, err = sjson.Set(result, path, json.Number(value))
+			} else {
+				sjsonResult, err = sjson.Set(result, path, value)
+			}
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("set failed for path '%s': %w", path, err)
+		}
+		result = sjsonResult
+	}
+
+	return []byte(result), nil
+}
+
+// isNumeric 检查字符串是否为有效的数字
+//
+// 参数:
+//   - s: 待检查的字符串
+//
+// 返回值:
+//   - bool: 是否为数字
+func isNumeric(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			if c != '.' && c != '-' && c != '+' {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// deleteJSON 使用路径表达式删除 JSON 字段
+//
+// 使用 tidwall/sjson 库实现
+// 支持多个路径: ["path1", "path2"]
+//
+// 参数:
+//   - data: JSON 原始数据
+//   - paths: 删除路径列表
+//
+// 返回值:
+//   - []byte: 修改后的 JSON
+//   - error: 删除错误
+func deleteJSON(data []byte, paths []string) ([]byte, error) {
+	if len(paths) == 0 {
+		return data, nil
+	}
+
+	result := string(data)
+
+	for _, path := range paths {
+		path = strings.TrimSpace(path)
+		if path == "" {
+			continue
+		}
+
+		var sjsonResult string
+		var err error
+		sjsonResult, err = sjson.Delete(result, path)
+		if err != nil {
+			return nil, fmt.Errorf("delete failed for path '%s': %w", path, err)
+		}
+		result = sjsonResult
+	}
+
+	return []byte(result), nil
+}
+
+// writeFormatted 格式化 JSON 数据并输出
+//
+// 对 set/delete 的结果进行重新格式化（美化或压缩），然后输出
+//
+// 参数:
+//   - data: JSON 原始数据
+//   - config: 命令配置
+//
+// 返回值:
+//   - error: 输出错误
+func writeFormatted(data []byte, config JsonConfig) error {
+	var jsonData interface{}
+	if err := json.Unmarshal(data, &jsonData); err != nil {
+		return fmt.Errorf("json parse failed: %w", err)
+	}
+	output, err := formatOutput(jsonData, config)
+	if err != nil {
+		return err
+	}
+	return writeOutput(output, config)
 }
 
 // queryJSON 使用路径表达式查询 JSON

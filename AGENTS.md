@@ -1,7 +1,7 @@
 # FCK 项目分析报告
 
 > **生成时间**: 2026-05-19  
-> **最近更新**: 2026-06-11 (grep 命令增强)  
+> **最近更新**: 2026-06-11 (json 命令新增 set/delete 功能)  
 > **分析工具**: AI 架构分析引擎  
 > **项目定位**: 跨平台命令行工具集（类 Unix 工具 Windows 替代方案）
 
@@ -102,7 +102,7 @@ fck/
 | | ping | 网络连通测试 | `internal/commands/ping/` |
 | | dns | DNS 查询 | `internal/commands/dns/` |
 | | curl (c) | HTTP 客户端（支持 `-o` 保存文件、`-O` 远程文件名、下载进度条、语法高亮） | `internal/commands/curl/` |
-| **开发辅助** | json (j) | JSON 处理 | `internal/commands/json/` |
+| **开发辅助** | json (j) | JSON 处理（支持格式化、查询、设置字段值、删除字段、语法高亮） | `internal/commands/json/` |
 | | base64 (b64) | Base64 编解码 | `internal/commands/base64/` |
 | | md | Markdown 预览 | `internal/commands/md/` |
 | | seq | 序列生成 | `internal/commands/seq/` |
@@ -128,7 +128,7 @@ fck/
 │  ├── grep/    : 递归搜索 + 二进制处理 + 颜色高亮 + 组合标志(-nh,-rin) │
 │  ├── sed/     : 替换引擎 + 多文件处理 + 可配置缓冲区               │
 │  ├── watch/   : 调度器 + 执行器 + 渲染器                         │
-│  └── json/    : 解析 + 查询(gjson) + 高亮                        │
+│  └── json/    : 解析 + 查询(gjson) + 设置/删除(sjson) + 高亮       │
 ├─────────────────────────────────────────────────────────────────┤
 │  低复杂度（单一功能）                                            │
 │  └── [其他 30+ 命令]  : 单文件实现，功能聚焦                     │
@@ -171,6 +171,7 @@ graph TB
     subgraph 第三方依赖
         Chroma[chroma<br/>语法高亮]
         GJSON[gjson<br/>JSON查询]
+        SJSON[sjson<br/>JSON设置/删除]
         Readline[readline<br/>交互输入]
         ProPing[pro-bing<br/>Ping实现]
     end
@@ -191,6 +192,8 @@ graph TB
     CatCMD --> Chroma
     GrepCMD --> Chroma
     HashCMD --> Chroma
+    JsonCMD --> GJSON
+    JsonCMD --> SJSON
 ```
 
 ### 3.2 核心依赖关系说明
@@ -204,6 +207,7 @@ graph TB
 | **所有命令** → `gitee.com/MM-Q/qflag` | 命令行参数解析 | 强依赖 |
 | **文本处理命令** → `chroma` | 语法高亮 | 可选依赖 |
 | **json 命令** → `gjson` | JSON 路径查询 | 强依赖 |
+| **json 命令** → `sjson` | JSON 字段设置/删除 | 强依赖 |
 | **tcp 命令** → `readline` | 交互式输入 | 功能依赖 |
 | **ping 命令** → `pro-bing` | ICMP Ping 实现 | 强依赖 |
 
@@ -338,6 +342,7 @@ FindCmdMain
 | **版本管理** | verman (MM-Q) | v0.0.19 | 版本信息注入（自研） |
 | **语法高亮** | chroma | v2.23.1 | 代码高亮显示 |
 | **JSON 处理** | gjson | v1.18.0 | JSON 路径查询 |
+| **JSON 设置** | sjson | v1.2.5 | JSON 字段设置/删除（gjson 配套库） |
 | **表格输出** | go-pretty | v6.6.8 | 格式化表格 |
 | **Markdown** | glamour | v0.8.0 | Markdown 渲染 |
 | **交互输入** | readline | v1.5.1 | 交互式命令行 |
@@ -456,7 +461,7 @@ defer func() {
 ├─────────────────────────────────────────────────────────────────┤
 │  技术特点: 纯 Go + vendor + 自研工具链 + 跨平台                  │
 ├─────────────────────────────────────────────────────────────────┤
-│  复杂命令: cat, find, list, tcp, curl(含下载), hash, xargs, watch│
+│  复杂命令: cat, find, list, tcp, curl(含下载), hash, xargs, watch, json(含set/delete)│
 ├─────────────────────────────────────────────────────────────────┤
 │  设计模式: 命令模式 + 策略模式 + 管道模式                        │
 ├─────────────────────────────────────────────────────────────────┤
@@ -464,6 +469,9 @@ defer func() {
 ├─────────────────────────────────────────────────────────────────┤
 │  grep 特性: -nh(行号+文件名), -rin(递归+忽略大小写+行号),       │
 │             --buffer-size(可配置缓冲区, 默认10MB)                │
+├─────────────────────────────────────────────────────────────────┤
+│  json 特性: -s(设置字段值), -D(删除字段), -t(类型推断),          │
+│             -q(查询), -p(美化输出), -w(原地写入), -b(备份)        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
