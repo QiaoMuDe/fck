@@ -1,0 +1,238 @@
+# rnx 任务编排文件
+# 项目地址: https://gitee.com/MM-Q/rnx.git
+# 使用方法: rnx --run <任务名>
+
+# 全局配置
+[global]
+# 工作目录
+work_dir = '.'
+# 超时时间
+timeout = '120s'
+# 是否显示输出
+show_output = true
+# 任务执行失败时是否退出程序
+exit_on_error = true
+# 是否显示执行的命令
+show_cmd = false
+# 命令黑名单
+blacklist = []
+# 并行执行的任务列表
+parallel_tasks = []
+
+# 全局环境变量
+[global.envs]
+CGO_ENABLED = '0'
+
+# 全局变量
+[global.vars]
+app_name = 'fck'
+git_commit = '@fck gm -H'
+git_version = '@fck gm -v'
+ldflags = '-s -w {{verman_flags}}'
+main_path = './cmd/fck/'
+output_dir = 'dist'
+verman_flags = "-X 'gitee.com/MM-Q/verman.appName={{app_name}}' -X 'gitee.com/MM-Q/verman.gitVersion={{git_version}}' -X 'gitee.com/MM-Q/verman.gitCommit={{git_commit}}'"
+
+# 任务定义
+[task]
+[task.all]
+# 任务描述
+desc = '完整流水线: 清理 → 格式化检查 → 测试 → 交叉编译 → 打包'
+# 命令列表
+cmds = [
+    'echo "=== Full pipeline completed ==="'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = [
+    'clean',
+    'fc',
+    'test',
+    'release'
+]
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+[task.build]
+# 任务描述
+desc = '构建当前平台可执行文件'
+# 命令列表
+cmds = [
+    'fck mkdir -p {{output_dir}}',
+    'go build -trimpath -ldflags "{{ldflags}}" -o {{output_dir}}/ {{main_path}}'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = [
+    'test'
+]
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+[task.build_linux_amd64]
+# 任务描述
+desc = '交叉编译 Linux AMD64'
+# 命令列表
+cmds = [
+    'fck mkdir -p {{output_dir}}',
+    'go build -trimpath -ldflags "{{ldflags}}" -o {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}} {{main_path}}',
+    'upx {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = [
+    'test'
+]
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+# 任务环境变量
+[task.build_linux_amd64.envs]
+GOARCH = 'amd64'
+GOOS = 'linux'
+
+[task.build_windows_amd64]
+# 任务描述
+desc = '交叉编译 Windows AMD64'
+# 命令列表
+cmds = [
+    'fck mkdir -p {{output_dir}}',
+    'go build -trimpath -ldflags "{{ldflags}}" -o {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe {{main_path}}',
+    'upx {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = [
+    'test'
+]
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+# 任务环境变量
+[task.build_windows_amd64.envs]
+GOARCH = 'amd64'
+GOOS = 'windows'
+
+[task.clean]
+# 任务描述
+desc = '清理构建产物和缓存'
+# 命令列表
+cmds = [
+    'fck rm -r -f {{output_dir}}',
+    'go clean -cache'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = []
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+[task.fc]
+# 任务描述
+desc = '格式化并检查代码'
+# 命令列表
+cmds = [
+    'golangci-lint cache clean',
+    'golangci-lint fmt ./...',
+    'golangci-lint run ./...'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = []
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+[task.install]
+# 任务描述
+desc = '安装程序'
+# 命令列表
+cmds = [
+    'go install -trimpath -ldflags "{{ldflags}}" {{main_path}}'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = [
+    'fc'
+]
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+[task.release]
+# 任务描述
+desc = '打包分发 (含 Linux/Windows AMD64) '
+# 命令列表
+cmds = [
+    'fck pack -o {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}.tar.gz {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}',
+    'fck pack -o {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.zip {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
+    'fck rm -f {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
+    'fck rm -f {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = [
+    'build_linux_amd64',
+    'build_windows_amd64'
+]
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+[task.run]
+# 任务描述
+desc = '运行程序'
+# 命令列表
+cmds = [
+    'go run {{main_path}}'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = [
+    'fc'
+]
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+[task.test]
+# 任务描述
+desc = '运行单元测试并输出覆盖率'
+# 命令列表
+cmds = [
+    'go clean -testcache',
+    'go test -v -cover ./...'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = [
+    'fc'
+]
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []

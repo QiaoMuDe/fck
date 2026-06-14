@@ -18,7 +18,7 @@ zip = true
 # ==================== 源码配置 ====================
 [build.source]
 # --main, -m: 指定入口文件
-main_file = './cmd/main.go'
+main_file = './cmd/fck/main.go'
 # --use-vendor, -uv: 在编译时使用vendor目录
 use_vendor = true
 

@@ -3,9 +3,8 @@
 
 # 🚀 FCK - 全功能命令行工具集
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/QiaoMuDe/fck)
-[![Go Version](https://img.shields.io/badge/Go-1.24+-blue.svg)](https://golang.org)
-[![License](https://img.shields.io/badge/License-GPL%20v3.0-green.svg)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/QiaoMuDe/fck) [![Go Version](https://img.shields.io/badge/Go-1.24+-blue.svg)](https://golang.org) [![License](https://img.shields.io/badge/License-GPL%20v3.0-green.svg)](LICENSE) [![Platform](https://img.shields.io/badge/Platform-Windows%2CLinux%2CmacOS-green.svg)]()
+
 
 **一站式文件操作、文本处理、系统管理与网络诊断工具集**
 
@@ -73,9 +72,9 @@ python3 build.py -s -ai -f
 python3 build.py -batch -z
 ```
 
-#### 方式二：直接运行
+#### 方式二：通过Go安装
 ```bash
-go run main.go [命令] [选项]
+go install gitee.com/MM-Q/fck/cmd/fck@latest
 ```
 
 ---
