@@ -66,16 +66,17 @@ import (
 // 返回:
 //   - error: 复制失败时返回错误，如果目标已存在则返回错误
 func Copy(src, dst string) error {
-	return CopyEx(src, dst, false)
+	return CopyEx(src, dst, false, false)
 }
 
-// CopyEx 通用复制函数 (可控制是否覆盖)，自动判断源路径类型并调用相应的复制函数
+// CopyEx 通用复制函数 (可控制是否覆盖并输出进度)，自动判断源路径类型并调用相应的复制函数
 // 支持复制普通文件、目录、符号链接和特殊文件 (设备文件、命名管道等)
 //
 // 参数:
 //   - src: 源路径 (支持文件、目录、符号链接、特殊文件)
 //   - dst: 目标路径（支持文件、目录，自动创建父目录）
 //   - overwrite: 是否允许覆盖已存在的目标文件/目录
+//   - verbose: 是否输出进度信息（为 true 时打印每个文件的复制进度）
 //
 // 返回:
 //   - error: 复制失败时返回错误
@@ -84,7 +85,7 @@ func Copy(src, dst string) error {
 //   - 如果 dst 是已存在的目录，会自动追加源文件名/目录名
 //   - 例如: Copy("a.txt", "existingDir") → 创建 existingDir/a.txt
 //   - 例如: Copy("dirA", "existingDir") → 创建 existingDir/dirA/
-func CopyEx(src, dst string, overwrite bool) (err error) {
+func CopyEx(src, dst string, overwrite bool, verbose bool) (err error) {
 	// 捕获 panic 并转换为错误
 	defer func() {
 		if r := recover(); r != nil {
@@ -107,7 +108,7 @@ func CopyEx(src, dst string, overwrite bool) (err error) {
 	dstAbs = resolveDestinationPathAbs(srcAbs, dstAbs)
 
 	// 调用内部复制函数
-	return copyExInternal(srcAbs, dstAbs, overwrite)
+	return copyExInternal(srcAbs, dstAbs, overwrite, verbose)
 }
 
 // copyExInternal 内部复制函数，接受已验证的绝对路径
@@ -117,10 +118,11 @@ func CopyEx(src, dst string, overwrite bool) (err error) {
 //   - srcAbs: 已验证的源绝对路径
 //   - dstAbs: 已验证的目标绝对路径（已通过智能路径处理）
 //   - overwrite: 是否允许覆盖已存在的目标文件/目录
+//   - verbose: 是否输出进度信息
 //
 // 返回:
 //   - error: 复制失败时返回错误
-func copyExInternal(srcAbs, dstAbs string, overwrite bool) error {
+func copyExInternal(srcAbs, dstAbs string, overwrite bool, verbose bool) error {
 	// 获取源路径信息（使用 Lstat 避免跟随符号链接）
 	srcInfo, localErr := os.Lstat(srcAbs)
 	if localErr != nil {
@@ -129,10 +131,10 @@ func copyExInternal(srcAbs, dstAbs string, overwrite bool) error {
 
 	// 根据源路径类型调用相应的复制函数
 	if srcInfo.IsDir() {
-		return copyDir(srcAbs, dstAbs, overwrite)
+		return copyDir(srcAbs, dstAbs, overwrite, verbose)
 	} else {
 		// 处理所有文件类型（普通文件、符号链接、特殊文件等）
-		return copyFileRouter(srcAbs, dstAbs, srcInfo, overwrite)
+		return copyFileRouter(srcAbs, dstAbs, srcInfo, overwrite, verbose)
 	}
 }
 
@@ -279,10 +281,11 @@ func cleanupBackup(backupPath string) {
 //   - dstAbs: 目标文件绝对路径
 //   - srcInfo: 源文件信息（包含 Mode、Size 等）
 //   - overwrite: 是否允许覆盖已存在的目标文件
+//   - verbose: 是否输出进度信息
 //
 // 返回:
 //   - error: 复制失败时返回错误
-func copyFile(srcAbs, dstAbs string, srcInfo os.FileInfo, overwrite bool) error {
+func copyFile(srcAbs, dstAbs string, srcInfo os.FileInfo, overwrite bool, verbose bool) error {
 	// 注意：路径验证已在 CopyEx 入口处统一完成，此处无需重复验证
 
 	// 安全覆盖机制：处理已存在的目标文件
@@ -290,6 +293,9 @@ func copyFile(srcAbs, dstAbs string, srcInfo os.FileInfo, overwrite bool) error 
 	if err != nil {
 		return err
 	}
+
+	// 前置打印进度：告知用户即将开始复制文件
+	printProgress(verbose, srcAbs, dstAbs)
 
 	// 打开源文件
 	in, err := os.Open(srcAbs)
@@ -377,10 +383,11 @@ func copyFile(srcAbs, dstAbs string, srcInfo os.FileInfo, overwrite bool) error 
 //   - srcAbs: 源符号链接绝对路径
 //   - dstAbs: 目标绝对路径
 //   - overwrite: 是否允许覆盖已存在的目标
+//   - verbose: 是否输出进度信息
 //
 // 返回:
 //   - error: 复制失败时返回错误
-func copySymlink(srcAbs, dstAbs string, overwrite bool) error {
+func copySymlink(srcAbs, dstAbs string, overwrite bool, verbose bool) error {
 	// Windows 平台：当作普通文件复制
 	// 注意：Windows 符号链接可能指向目录，需要先获取目标信息
 	if runtime.GOOS == "windows" {
@@ -389,7 +396,7 @@ func copySymlink(srcAbs, dstAbs string, overwrite bool) error {
 		if err != nil {
 			return fmt.Errorf("failed to get symlink target info '%s': %w", srcAbs, err)
 		}
-		return copyFile(srcAbs, dstAbs, targetInfo, overwrite)
+		return copyFile(srcAbs, dstAbs, targetInfo, overwrite, verbose)
 	}
 
 	// 非 Windows 平台：创建符号链接
@@ -398,6 +405,9 @@ func copySymlink(srcAbs, dstAbs string, overwrite bool) error {
 	if err != nil {
 		return err
 	}
+
+	// 前置打印进度：告知用户即将开始复制符号链接
+	printProgress(verbose, srcAbs, dstAbs)
 
 	// 读取符号链接的目标
 	target, err := os.Readlink(srcAbs)
@@ -431,15 +441,19 @@ func copySymlink(srcAbs, dstAbs string, overwrite bool) error {
 //   - srcAbs: 源特殊文件绝对路径
 //   - dstAbs: 目标文件绝对路径
 //   - overwrite: 是否允许覆盖已存在的目标
+//   - verbose: 是否输出进度信息
 //
 // 返回:
 //   - error: 复制失败时返回错误
-func copySpecialFile(srcAbs, dstAbs string, overwrite bool) error {
+func copySpecialFile(srcAbs, dstAbs string, overwrite bool, verbose bool) error {
 	// 安全覆盖机制：处理已存在的目标文件
 	backupPath, err := handleBackupAndRestore(dstAbs, overwrite)
 	if err != nil {
 		return err
 	}
+
+	// 前置打印进度：告知用户即将开始复制特殊文件
+	printProgress(verbose, srcAbs, dstAbs)
 
 	// 获取源文件信息
 	srcInfo, err := os.Lstat(srcAbs)
@@ -483,22 +497,23 @@ func copySpecialFile(srcAbs, dstAbs string, overwrite bool) error {
 //   - dstAbs: 目标文件绝对路径
 //   - srcInfo: 源文件信息（包含 Mode、Size 等）
 //   - overwrite: 是否允许覆盖已存在的目标
+//   - verbose: 是否输出进度信息
 //
 // 返回:
 //   - error: 复制失败时返回错误
-func copyFileRouter(srcAbs, dstAbs string, srcInfo os.FileInfo, overwrite bool) error {
+func copyFileRouter(srcAbs, dstAbs string, srcInfo os.FileInfo, overwrite bool, verbose bool) error {
 	switch {
 	case srcInfo.Mode().IsRegular():
 		// 普通文件
-		return copyFile(srcAbs, dstAbs, srcInfo, overwrite)
+		return copyFile(srcAbs, dstAbs, srcInfo, overwrite, verbose)
 
 	case srcInfo.Mode()&os.ModeSymlink != 0:
 		// 符号链接
-		return copySymlink(srcAbs, dstAbs, overwrite)
+		return copySymlink(srcAbs, dstAbs, overwrite, verbose)
 
 	default:
 		// 其他特殊文件（设备文件、命名管道、套接字等）
-		return copySpecialFile(srcAbs, dstAbs, overwrite)
+		return copySpecialFile(srcAbs, dstAbs, overwrite, verbose)
 	}
 }
 
@@ -509,10 +524,11 @@ func copyFileRouter(srcAbs, dstAbs string, srcInfo os.FileInfo, overwrite bool) 
 //   - srcAbs: 源目录绝对路径
 //   - dstAbs: 目标目录绝对路径
 //   - overwrite: 是否允许覆盖已存在的目标文件
+//   - verbose: 是否输出进度信息
 //
 // 返回:
 //   - error: 复制失败时返回错误
-func copyDir(srcAbs, dstAbs string, overwrite bool) error {
+func copyDir(srcAbs, dstAbs string, overwrite bool, verbose bool) error {
 	// 单独调用子目录检查（避免重复基础验证）
 	if err := validatePathRelations(srcAbs, dstAbs, true); err != nil {
 		return err
@@ -572,6 +588,8 @@ func copyDir(srcAbs, dstAbs string, overwrite bool) error {
 			if err != nil {
 				return fmt.Errorf("failed to get directory info '%s': %w", path, err)
 			}
+			// 前置打印进度：告知用户即将创建子目录
+			printProgress(verbose, path, dstPath)
 			if err := os.MkdirAll(dstPath, info.Mode()); err != nil {
 				return fmt.Errorf("failed to create directory '%s': %w", dstPath, err)
 			}
@@ -584,7 +602,8 @@ func copyDir(srcAbs, dstAbs string, overwrite bool) error {
 		if err != nil {
 			return fmt.Errorf("failed to get file info '%s': %w", path, err)
 		}
-		return copyFileRouter(path, dstPath, info, overwrite)
+		// copyFileRouter 内部已调用 printProgress，此处不再重复调用
+		return copyFileRouter(path, dstPath, info, overwrite, verbose)
 	})
 
 	// 处理复制结果
@@ -603,4 +622,17 @@ func copyDir(srcAbs, dstAbs string, overwrite bool) error {
 	// 复制成功，删除备份目录
 	cleanupBackup(backupPath)
 	return nil
+}
+
+// printProgress 打印复制进度信息
+// 当 verbose 为 true 时，输出源路径到目标路径的复制进度
+//
+// 参数:
+//   - verbose: 是否输出进度信息
+//   - src: 源路径
+//   - dst: 目标路径
+func printProgress(verbose bool, src, dst string) {
+	if verbose {
+		fmt.Printf("'%s' -> '%s'\n", src, dst)
+	}
 }

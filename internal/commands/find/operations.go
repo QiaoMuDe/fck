@@ -83,13 +83,8 @@ func (o *FileOperator) Move(srcPath, targetPath string) error {
 	// 5. 如果目标不存在或不是目录，使用精确路径
 	// 6. 自动创建父目录
 
-	// 打印移动信息
-	if o.printActions {
-		o.cl.Redf("mv: %s -> %s\n", srcPath, targetPath)
-	}
-
 	// 执行移动操作
-	if err := fs.MoveEx(srcPath, targetPath, false); err != nil {
+	if err := fs.MoveEx(srcPath, targetPath, false, o.printActions); err != nil {
 		if os.IsExist(err) {
 			return fmt.Errorf("target file already exists: %s -> %s", srcPath, targetPath)
 		}

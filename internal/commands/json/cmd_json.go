@@ -450,7 +450,7 @@ func writeOutput(data []byte, config JsonConfig) error {
 		// 创建备份（如果启用）
 		if config.Backup {
 			backupFile := targetFile + ".bak"
-			if err := fs.CopyEx(targetFile, backupFile, true); err != nil {
+			if err := fs.CopyEx(targetFile, backupFile, true, false); err != nil {
 				return fmt.Errorf("failed to create backup: %w", err)
 			}
 		}
@@ -460,7 +460,7 @@ func writeOutput(data []byte, config JsonConfig) error {
 		if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
 			return fmt.Errorf("failed to write temp file: %w", err)
 		}
-		if err := fs.MoveEx(tmpFile, targetFile, true); err != nil {
+		if err := fs.MoveEx(tmpFile, targetFile, true, false); err != nil {
 			return fmt.Errorf("failed to move temp file: %w", err)
 		}
 

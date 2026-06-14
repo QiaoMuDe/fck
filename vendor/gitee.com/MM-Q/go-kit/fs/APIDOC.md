@@ -64,10 +64,10 @@ Copy("dirA", "newDir/subDir")    // 创建 newDir/subDir/
 ### func CopyEx
 
 ```go
-func CopyEx(src, dst string, overwrite bool) error
+func CopyEx(src, dst string, overwrite bool, verbose bool) error
 ```
 
-CopyEx 通用复制函数（可控制是否覆盖），自动判断源路径类型并调用相应的复制函数。支持复制普通文件、目录、符号链接和特殊文件（设备文件、命名管道等）。
+CopyEx 通用复制函数（可控制是否覆盖并输出进度），自动判断源路径类型并调用相应的复制函数。支持复制普通文件、目录、符号链接和特殊文件（设备文件、命名管道等）。
 
 **特性:**
 - 自动识别文件类型（普通文件、目录、符号链接、特殊文件）
@@ -76,12 +76,14 @@ CopyEx 通用复制函数（可控制是否覆盖），自动判断源路径类�
 - 对空文件进行性能优化
 - 使用临时文件+原子重命名确保数据安全
 - 可控制覆盖行为
+- 可控制是否输出进度提示（类似 Linux cp -v）
 - 智能路径处理：如果目标是已存在的目录，自动追加源文件名/目录名
 
 **参数:**
 - `src`: 源路径（支持文件、目录、符号链接、特殊文件）
 - `dst`: 目标路径
 - `overwrite`: 是否允许覆盖已存在的目标文件/目录
+- `verbose`: 是否输出进度信息（为 true 时每处理一个项输出一行）
 
 **返回:**
 - `error`: 复制失败时返回错误
@@ -90,14 +92,17 @@ CopyEx 通用复制函数（可控制是否覆盖），自动判断源路径类�
 
 ```go
 // 不覆盖已存在的目标
-CopyEx("a.txt", "b.txt", false)
+CopyEx("a.txt", "b.txt", false, false)
 
-// 覆盖已存在的目标
-CopyEx("a.txt", "b.txt", true)
+// 覆盖已存在的目标，并显示进度
+CopyEx("a.txt", "b.txt", true, true)
 
 // 智能路径处理
-CopyEx("a.txt", "existingDir", true)  // 创建/覆盖 existingDir/a.txt
-CopyEx("dirA", "existingDir", true)   // 创建/覆盖 existingDir/dirA/
+CopyEx("a.txt", "existingDir", true, false)  // 创建/覆盖 existingDir/a.txt
+CopyEx("dirA", "existingDir", true, false)   // 创建/覆盖 existingDir/dirA/
+
+// 显示进度（类似 Linux cp -v）
+CopyEx("dirA", "dirB", false, true)  // 输出每项复制进度
 ```
 
 ### func Move
@@ -141,10 +146,10 @@ Move("dirA", "newDir/subDir")    // 移动到 newDir/subDir/
 ### func MoveEx
 
 ```go
-func MoveEx(src, dst string, overwrite bool) error
+func MoveEx(src, dst string, overwrite bool, verbose bool) error
 ```
 
-MoveEx 通用移动函数（可控制是否覆盖），将文件或目录移动到目标位置。支持移动普通文件、目录、符号链接和特殊文件。优先使用 os.Rename（同文件系统内），失败时降级使用复制+删除（支持跨文件系统）。
+MoveEx 通用移动函数（可控制是否覆盖并输出进度），将文件或目录移动到目标位置。支持移动普通文件、目录、符号链接和特殊文件。优先使用 os.Rename（同文件系统内），失败时降级使用复制+删除（支持跨文件系统）。
 
 **特性:**
 - 自动识别文件类型（普通文件、目录、符号链接、特殊文件）
@@ -152,12 +157,14 @@ MoveEx 通用移动函数（可控制是否覆盖），将文件或目录移动�
 - 优先使用 os.Rename（原子操作，同文件系统内高效）
 - 失败时降级使用 CopyEx + os.RemoveAll（支持跨文件系统）
 - 可控制覆盖行为
+- 可控制是否输出进度提示（类似 Linux mv -v）
 - 智能路径处理：如果目标是已存在的目录，自动追加源文件名/目录名
 
 **参数:**
 - `src`: 源路径（支持文件、目录、符号链接、特殊文件）
 - `dst`: 目标路径
 - `overwrite`: 是否允许覆盖已存在的目标文件/目录
+- `verbose`: 是否输出进度信息（为 true 时每移动一个项输出一行）
 
 **返回:**
 - `error`: 移动失败时返回错误
@@ -166,17 +173,20 @@ MoveEx 通用移动函数（可控制是否覆盖），将文件或目录移动�
 
 ```go
 // 不覆盖已存在的目标
-MoveEx("a.txt", "b.txt", false)
+MoveEx("a.txt", "b.txt", false, false)
 
-// 覆盖已存在的目标
-MoveEx("a.txt", "b.txt", true)
+// 覆盖已存在的目标，并显示进度
+MoveEx("a.txt", "b.txt", true, true)
 
 // 智能路径处理
-MoveEx("a.txt", "existingDir", true)  // 移动/覆盖到 existingDir/a.txt
-MoveEx("dirA", "existingDir", true)   // 移动/覆盖到 existingDir/dirA/
+MoveEx("a.txt", "existingDir", true, false)  // 移动/覆盖到 existingDir/a.txt
+MoveEx("dirA", "existingDir", true, false)   // 移动/覆盖到 existingDir/dirA/
 
 // 跨文件系统移动（自动降级到复制+删除）
-MoveEx("/mnt/disk1/file.txt", "/mnt/disk2/file.txt", true)
+MoveEx("/mnt/disk1/file.txt", "/mnt/disk2/file.txt", true, false)
+
+// 显示进度（类似 Linux mv -v）
+MoveEx("dirA", "dirB", false, true)  // 输出每项移动进度
 ```
 
 ### func Exists

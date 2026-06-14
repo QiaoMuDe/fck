@@ -149,11 +149,11 @@ func ConvertFile(srcPath string, config IconvConfig) (ConversionResult, error) {
 		// 备份原文件，重命名临时文件
 		if config.Backup {
 			backupPath := srcPath + types.IconvBackupExt
-			_ = fs.MoveEx(srcPath, backupPath, true)
+			_ = fs.MoveEx(srcPath, backupPath, true, false)
 		} else {
 			_ = os.Remove(srcPath)
 		}
-		err = fs.MoveEx(dstPath, srcPath, true)
+		err = fs.MoveEx(dstPath, srcPath, true, false)
 	}
 
 	result.Success = err == nil

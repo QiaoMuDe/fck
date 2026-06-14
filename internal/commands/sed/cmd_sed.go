@@ -344,7 +344,7 @@ func processFileInPlace(config *SedConfig) (err error) {
 	// 使用 CopyEx 允许覆盖已存在的备份文件, 与 Linux sed 行为一致
 	if config.Backup {
 		backupPath := config.Target + types.SedBackupSuffix
-		if err := fs.CopyEx(config.Target, backupPath, true); err != nil {
+		if err := fs.CopyEx(config.Target, backupPath, true, false); err != nil {
 			_ = sourceFile.Close()
 			return fmt.Errorf("failed to create backup: %w", err)
 		}

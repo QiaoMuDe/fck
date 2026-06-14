@@ -19,12 +19,6 @@ type CpConfig struct {
 	Target      string
 }
 
-// CpStats 操作统计
-type CpStats struct {
-	Copied int
-	Errors int
-}
-
 // CpCmdMain 主函数
 func CpCmdMain(config CpConfig) error {
 	if len(config.Sources) == 0 {
@@ -35,21 +29,10 @@ func CpCmdMain(config CpConfig) error {
 		return fmt.Errorf("no destination path specified")
 	}
 
-	stats := &CpStats{}
-
 	for _, source := range config.Sources {
-		if config.Verbose {
-			fmt.Printf("%q -> %q\n", source, config.Target)
-		}
-		err := copyItem(source, config.Target, config.Force, config.Interactive, config.Verbose, config.Recursive, stats)
-		if err != nil {
-			stats.Errors++
+		if err := copyItem(source, config.Target, config.Force, config.Interactive, config.Verbose, config.Recursive); err != nil {
 			return err
 		}
-	}
-
-	if config.Verbose && stats.Errors > 0 {
-		fmt.Printf("operation completed with %d errors\n", stats.Errors)
 	}
 
 	return nil
@@ -64,11 +47,10 @@ func CpCmdMain(config CpConfig) error {
 //   - interactive: 是否交互式覆盖（覆盖前提示）
 //   - verbose: 是否显示复制的文件/目录
 //   - recursive: 是否递归复制目录
-//   - stats: 操作统计结构体指针
 //
 // 返回值:
 //   - error: 复制失败时返回错误，否则返回 nil
-func copyItem(src, dst string, force, interactive, verbose bool, recursive bool, stats *CpStats) error {
+func copyItem(src, dst string, force, interactive, verbose bool, recursive bool) error {
 	srcInfo, err := os.Stat(src)
 	if err != nil {
 		return fmt.Errorf("failed to get source file info: %w", err)
@@ -97,11 +79,10 @@ func copyItem(src, dst string, force, interactive, verbose bool, recursive bool,
 		}
 	}
 
-	if err := fs.CopyEx(src, dst, force); err != nil {
+	if err := fs.CopyEx(src, dst, force, verbose); err != nil {
 		return fmt.Errorf("copy failed: '%s' to '%s': %v", src, dst, err)
 	}
 
-	stats.Copied++
 	return nil
 }
 

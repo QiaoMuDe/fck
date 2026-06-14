@@ -18,7 +18,7 @@ gitee.com/MM-Q/comprx/internal/cxzlib
 gitee.com/MM-Q/comprx/internal/progress
 gitee.com/MM-Q/comprx/internal/utils
 gitee.com/MM-Q/comprx/types
-# gitee.com/MM-Q/go-kit v0.0.24
+# gitee.com/MM-Q/go-kit v0.0.25
 ## explicit; go 1.25.0
 gitee.com/MM-Q/go-kit/fs
 gitee.com/MM-Q/go-kit/fuzzy

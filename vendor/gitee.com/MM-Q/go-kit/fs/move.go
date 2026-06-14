@@ -16,7 +16,7 @@ import (
 // 返回:
 //   - error: 移动失败时返回错误，如果目标已存在则返回错误
 func Move(src, dst string) error {
-	return MoveEx(src, dst, false)
+	return MoveEx(src, dst, false, false)
 }
 
 // MoveEx 通用移动函数 (可控制是否覆盖)，将文件或目录移动到目标位置
@@ -27,6 +27,7 @@ func Move(src, dst string) error {
 //   - src: 源路径 (支持文件、目录、符号链接、特殊文件)
 //   - dst: 目标路径（支持文件、目录，自动创建父目录）
 //   - overwrite: 是否允许覆盖已存在的目标文件/目录
+//   - verbose: 是否输出进度信息（为 true 时每处理一个项输出一行 "'src' -> 'dst'"）
 //
 // 返回:
 //   - error: 移动失败时返回错误
@@ -39,7 +40,7 @@ func Move(src, dst string) error {
 // 移动策略:
 //  1. 优先使用 os.Rename（原子操作，同文件系统内高效）
 //  2. rename 失败时降级使用 CopyEx + os.RemoveAll（支持跨文件系统）
-func MoveEx(src, dst string, overwrite bool) (err error) {
+func MoveEx(src, dst string, overwrite, verbose bool) (err error) {
 	// 捕获 panic 并转换为错误
 	defer func() {
 		if r := recover(); r != nil {
@@ -62,17 +63,20 @@ func MoveEx(src, dst string, overwrite bool) (err error) {
 	// 智能路径处理：如果目标是已存在的目录，自动追加源文件名/目录名
 	dstAbs = resolveDestinationPathAbs(srcAbs, dstAbs)
 
+	// 前置打印进度：告知用户即将移动文件/目录
+	printProgress(verbose, srcAbs, dstAbs)
+
 	// 策略1：优先尝试 os.Rename（同文件系统内）
 	// os.Rename 是原子操作，且只改变文件系统的元数据，不复制数据
 	renameErr := tryRename(srcAbs, dstAbs, overwrite)
 	if renameErr == nil {
-		// rename 成功，直接返回
 		return nil
 	}
 
 	// 策略2：rename 失败，降级使用复制+删除（跨文件系统场景）
 	// 先执行复制操作（使用内部函数避免重复验证）
-	if err := copyExInternal(srcAbs, dstAbs, overwrite); err != nil {
+	// 注意：传 false 避免重复打印进度，外层 MoveEx 已在前置打印中输出过
+	if err := copyExInternal(srcAbs, dstAbs, overwrite, false); err != nil {
 		return fmt.Errorf("failed to copy '%s' to '%s': %w", srcAbs, dstAbs, err)
 	}
 

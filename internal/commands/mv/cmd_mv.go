@@ -18,12 +18,6 @@ type MvConfig struct {
 	Target      string
 }
 
-// MvStats 操作统计
-type MvStats struct {
-	Moved  int
-	Errors int
-}
-
 // MvCmdMain 主函数
 func MvCmdMain(config MvConfig) error {
 	if len(config.Sources) == 0 {
@@ -34,28 +28,17 @@ func MvCmdMain(config MvConfig) error {
 		return fmt.Errorf("no target path specified")
 	}
 
-	stats := &MvStats{}
-
 	for _, source := range config.Sources {
-		if config.Verbose {
-			fmt.Printf("%q -> %q\n", source, config.Target)
-		}
-		err := moveItem(source, config.Target, config.Force, config.Interactive, config.Verbose, stats)
-		if err != nil {
-			stats.Errors++
+		if err := moveItem(source, config.Target, config.Force, config.Interactive, config.Verbose); err != nil {
 			return err
 		}
-	}
-
-	if config.Verbose && stats.Errors > 0 {
-		fmt.Printf("operation completed with %d errors\n", stats.Errors)
 	}
 
 	return nil
 }
 
 // moveItem 移动文件或目录
-func moveItem(src, dst string, force, interactive, verbose bool, stats *MvStats) error {
+func moveItem(src, dst string, force, interactive, verbose bool) error {
 	srcInfo, err := os.Stat(src)
 	if err != nil {
 		return fmt.Errorf("get source file info failed: %w", err)
@@ -79,11 +62,10 @@ func moveItem(src, dst string, force, interactive, verbose bool, stats *MvStats)
 		}
 	}
 
-	if err := fs.MoveEx(src, dst, force); err != nil {
+	if err := fs.MoveEx(src, dst, force, verbose); err != nil {
 		return fmt.Errorf("move '%s' to '%s' failed: %v", src, dst, err)
 	}
 
-	stats.Moved++
 	return nil
 }
 
