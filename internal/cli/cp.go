@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/cp"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -56,13 +57,21 @@ func runCp(cmd qflag.Command) error {
 		return fmt.Errorf("insufficient arguments: at least source and destination required")
 	}
 
+	sources := args[:len(args)-1]
+
+	// 展开通配符
+	expanded, err := fs.Expand(sources)
+	if err != nil {
+		return err
+	}
+
 	config := cp.CpConfig{
 		Force:       cpForce.Get(),
 		Interactive: cpInteractive.Get(),
 		Verbose:     cpVerbose.Get(),
 		Recursive:   cpRecursive.Get(),
-		Sources:     args[:len(args)-1], // 所有源文件（除最后一个参数外）
-		Target:      args[len(args)-1],  // 目标路径（最后一个参数）
+		Sources:     expanded,
+		Target:      args[len(args)-1], // 目标路径（最后一个参数）
 	}
 
 	return cp.CpCmdMain(config)

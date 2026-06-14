@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/mv"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -50,11 +51,19 @@ func runMv(cmd qflag.Command) error {
 		return fmt.Errorf("参数不足，至少需要指定源文件和目标路径")
 	}
 
+	sources := args[:len(args)-1]
+
+	// 展开通配符
+	expanded, err := fs.Expand(sources)
+	if err != nil {
+		return err
+	}
+
 	config := mv.MvConfig{
 		Force:       mvForce.Get(),
 		Interactive: mvInteractive.Get(),
 		Verbose:     mvVerbose.Get(),
-		Sources:     args[:len(args)-1],
+		Sources:     expanded,
 		Target:      args[len(args)-1],
 	}
 

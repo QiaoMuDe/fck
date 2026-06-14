@@ -186,7 +186,8 @@ cmds = [
     'fck pack -o {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}.tar.gz {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}',
     'fck pack -o {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.zip {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
     'fck rm -f {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
-    'fck rm -f {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}'
+    'fck rm -f {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}',
+    'fck pack -o {{output_dir}}/fck-slill.zip fck-slill'
 ]
 # 任务工作目录
 work_dir = ''

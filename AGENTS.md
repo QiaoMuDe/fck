@@ -1,7 +1,7 @@
 # FCK 项目分析报告
 
 > **生成时间**: 2026-05-19  
-> **最近更新**: 2026-06-14 (cp/mv 重构: verbose 由 go-kit-fs 库处理)  
+> **最近更新**: 2026-06-14 (cp/mv 支持通配符展开; verbose 由 go-kit-fs 库处理)  
 > **分析工具**: AI 架构分析引擎  
 > **项目定位**: 跨平台命令行工具集（类 Unix 工具 Windows 替代方案）
 
@@ -69,8 +69,8 @@ fck/
 | | unpack | 智能解压缩 | `internal/commands/unpack/` |
 | | find | 文件查找搜索 | `internal/commands/find/` |
 | | list (ls) | 目录列表显示 | `internal/commands/list/` |
-| | cp | 文件复制（使用 fs.CopyEx，verbose 由库层处理） | `internal/commands/cp/` |
-| | mv | 文件移动（使用 fs.MoveEx，verbose 由库层处理） | `internal/commands/mv/` |
+| | cp | 文件复制（fs.CopyEx + 通配符展开） | `internal/commands/cp/` |
+| | mv | 文件移动（fs.MoveEx + 通配符展开） | `internal/commands/mv/` |
 | | rm | 文件删除 | `internal/commands/rm/` |
 | | mkdir | 目录创建 | `internal/commands/mkdir/` |
 | | touch | 文件时间戳修改 | `internal/commands/touch/` |
@@ -474,7 +474,7 @@ defer func() {
 │             -q(查询), -p(美化输出), -w(原地写入), -b(备份)        │
 ├─────────────────────────────────────────────────────────────────┤
 │  cp/mv 特性: 使用 go-kit-fs 的 CopyEx/MoveEx（含 verbose 参数）, │
-│              verbose 打印由库层处理, 应用层不重复实现              │
+│              verbose 打印由库层处理, CLI 层用 fs.Expand 展开通配符 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
