@@ -15,5 +15,5 @@
 # vendor/
 output/
 dist/
+tmp/
 .vscode/
-.trae/

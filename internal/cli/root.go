@@ -74,6 +74,9 @@ func InitAndRun() (err error) {
 			IconvCmd,
 			NewlineCmd,
 			CurlCmd,
+			ShfmtCmd,
+			ShckCmd,
+			ShxCmd,
 		},
 	}
 

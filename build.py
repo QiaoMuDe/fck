@@ -16,7 +16,7 @@ from dataclasses import dataclass
 # 基础输出文件名(指定时无需包含后缀)同时也是注入的appName
 BASE_OUTPUT_NAME = "fck"
 # 默认输出目录
-DEFAULT_OUTPUT_DIR = "output"
+DEFAULT_OUTPUT_DIR = "dist"
 # 默认入口文件的位置
 DEFAULT_ENTRY_FILE = "./cmd/fck/main.go"
 # 默认的 Go 编译器, 使用全局 PATH 中的 go

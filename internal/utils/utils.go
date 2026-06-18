@@ -121,19 +121,19 @@ func CompileRegex(pattern string) (*regexp.Regexp, error) {
 func HandleError(path string, err error) error {
 	// 检查路径是否包含无效字符
 	if errors.Is(err, os.ErrInvalid) {
-		return fmt.Errorf("路径 %s 包含无效字符: %v", path, err)
+		return fmt.Errorf("path %s contains invalid characters: %v", path, err)
 	}
 
 	// 检查是否为权限错误
 	if errors.Is(err, os.ErrPermission) {
-		return fmt.Errorf("检查路径 %s 时发生了权限错误: %v", path, err)
+		return fmt.Errorf("permission denied when checking path %s: %v", path, err)
 	}
 
 	// 检查路径是否不存在
 	if errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("目录 %s 不存在", path)
+		return fmt.Errorf("directory %s does not exist", path)
 	}
 
 	// 其他未知错误的通用处理
-	return fmt.Errorf("检查路径 %s 时发生了错误: %v", path, err)
+	return fmt.Errorf("error when checking path %s: %v", path, err)
 }
