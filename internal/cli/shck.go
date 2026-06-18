@@ -8,9 +8,11 @@ import (
 )
 
 var ShckCmd *qflag.Cmd
+var shckQuiet *qflag.BoolFlag
 
 func init() {
 	ShckCmd = qflag.NewCmd("shck", "", qflag.ExitOnError)
+	shckQuiet = ShckCmd.Bool("quiet", "q", "静默模式: 仅输出语法错误，不显示成功信息", false)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "Shell 脚本语法检查工具",
@@ -40,6 +42,7 @@ func init() {
 func runShck(cmd qflag.Command) error {
 	config := shck.ShckConfig{
 		Files: cmd.Args(),
+		Quiet: shckQuiet.Get(),
 	}
 
 	return shck.ShckCmdMain(config)

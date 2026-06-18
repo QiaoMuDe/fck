@@ -17,6 +17,7 @@ import (
 // ShckConfig shck 命令配置
 type ShckConfig struct {
 	Files []string // 位置参数（文件路径或通配符）
+	Quiet bool     // -q: 静默模式
 }
 
 // ShckCmdMain shck 命令主入口
@@ -29,7 +30,7 @@ type ShckConfig struct {
 func ShckCmdMain(config ShckConfig) error {
 	// 优先处理标准输入（管道模式）
 	if term.IsStdinPipe() {
-		return checkStdin()
+		return checkStdin(config.Quiet)
 	}
 
 	// 展开通配符获取实际文件列表
@@ -47,7 +48,7 @@ func ShckCmdMain(config ShckConfig) error {
 	for _, file := range files {
 		if err := checkFile(file); err != nil {
 			errs = append(errs, fmt.Sprintf("\t✗ %s: %s", file, err.Error()))
-		} else {
+		} else if !config.Quiet {
 			_, _ = color.New(color.FgGreen, color.Bold).Printf("✓ %s — syntax is valid\n", file)
 		}
 	}
@@ -61,7 +62,10 @@ func ShckCmdMain(config ShckConfig) error {
 }
 
 // checkStdin 检查标准输入的语法
-func checkStdin() error {
+//
+// 参数:
+//   - quiet: 静默模式，为 true 时跳过成功信息输出
+func checkStdin(quiet bool) error {
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return fmt.Errorf("read stdin: %w", err)
@@ -71,7 +75,9 @@ func checkStdin() error {
 		return err
 	}
 
-	_, _ = color.New(color.FgGreen, color.Bold).Println("✓ syntax is valid")
+	if !quiet {
+		_, _ = color.New(color.FgGreen, color.Bold).Println("✓ syntax is valid")
+	}
 	return nil
 }
 

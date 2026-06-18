@@ -18,6 +18,7 @@ import (
 type ShfmtConfig struct {
 	Write         bool              // -w: 原地写入
 	Backup        bool              // -b: 写入前备份
+	List          bool              // -l: 列表模式
 	Files         []string          // 位置参数（文件路径或通配符）
 	FormatOptions shx.FormatOptions // 格式化选项
 }
@@ -30,7 +31,7 @@ type ShfmtConfig struct {
 // 返回:
 //   - error: 执行错误
 func ShfmtCmdMain(config ShfmtConfig) error {
-	// 管道输入模式
+	// 优先处理标准输入（管道模式）
 	if term.IsStdinPipe() {
 		return processStdin(config.FormatOptions)
 	}
@@ -47,7 +48,7 @@ func ShfmtCmdMain(config ShfmtConfig) error {
 
 	// 逐文件处理
 	for _, file := range files {
-		if err := processFile(file, config); err != nil {
+		if err := processFile(file, config, config.List); err != nil {
 			return fmt.Errorf("error processing %s: %w", file, err)
 		}
 	}
@@ -79,15 +80,16 @@ func processStdin(opts shx.FormatOptions) error {
 }
 
 // processFile 处理单个文件
-// 读取文件内容，格式化后根据配置选择输出到 stdout 或写回文件
+// 读取文件内容，格式化后根据配置选择输出到 stdout、写回文件或列出差异
 //
 // 参数:
 //   - file: 文件路径
 //   - config: 命令配置
+//   - listMode: 列表模式标志（仅列出需要格式化的文件路径）
 //
 // 返回:
 //   - error: 处理错误
-func processFile(file string, config ShfmtConfig) error {
+func processFile(file string, config ShfmtConfig, listMode bool) error {
 	// 读取文件内容
 	data, err := os.ReadFile(file)
 	if err != nil {
@@ -98,6 +100,14 @@ func processFile(file string, config ShfmtConfig) error {
 	formatted, err := shx.FormatWithOptions(string(data), config.FormatOptions)
 	if err != nil {
 		return fmt.Errorf("failed to format script: %w", err)
+	}
+
+	// 列表模式：比较差异，有变化则输出文件路径（只读，不修改文件）
+	if listMode {
+		if string(data) != formatted {
+			fmt.Println(file)
+		}
+		return nil
 	}
 
 	// 预览模式：输出到 stdout
