@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	TruncateCmd = qflag.NewCmd("truncate", "trunc", qflag.ExitOnError)
+	TruncateCmd = qflag.NewCmd("truncate", "", qflag.ExitOnError)
 
 	truncateSize = TruncateCmd.Size("size", "s", "设置文件大小 (支持单位: B、K、M、G、T)", 0)
 	truncateCreate = TruncateCmd.Bool("create", "c", "如果文件不存在则创建", false)
