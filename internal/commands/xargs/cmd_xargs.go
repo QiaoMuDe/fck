@@ -11,8 +11,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"gitee.com/MM-Q/shellx"
-	"gitee.com/MM-Q/shellx/shx"
+	"gitee.com/MM-Q/shx"
 )
 
 // XargsConfig xargs命令配置
@@ -444,7 +443,7 @@ func executeReplaceMode(batch []string, config XargsConfig, stats *XargsStats) e
 		}
 
 		// 查找命令绝对路径
-		cmdPath := shellx.FindCommandPath(cmdName)
+		cmdPath := shx.FindCommandPath(cmdName)
 
 		if cmdPath == "" {
 			return fmt.Errorf("command not found: %s", cmdName)
@@ -507,7 +506,7 @@ func executeDirectly(batch []string, config XargsConfig, stats *XargsStats) erro
 	args = append(args, batch...)
 
 	// 查找命令绝对路径
-	cmdPath := shellx.FindCommandPath(cmdName)
+	cmdPath := shx.FindCommandPath(cmdName)
 
 	if cmdPath == "" {
 		return fmt.Errorf("command not found: %s", cmdName)

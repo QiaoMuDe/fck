@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"gitee.com/MM-Q/shellx/shx"
+	"gitee.com/MM-Q/shx"
 )
 
 // GmConfig gm命令配置结构体

@@ -10,7 +10,7 @@ import (
 
 	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/go-kit/fs"
-	"gitee.com/MM-Q/shellx/shx"
+	"gitee.com/MM-Q/shx"
 )
 
 // FileOperator 负责所有文件操作：删除、移动、执行命令

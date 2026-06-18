@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"gitee.com/MM-Q/shellx"
+	"gitee.com/MM-Q/shx"
 )
 
 // windowsExts 定义 Windows 可执行文件扩展名集合
@@ -83,7 +83,7 @@ func WhichCmdMain(config WhichConfig) error {
 func findCommand(name string, all bool) ([]string, error) {
 	// 如果不需要 -a（所有匹配），直接使用 FindCommandPath
 	if !all {
-		path := shellx.FindCommandPath(name)
+		path := shx.FindCommandPath(name)
 		if path == "" {
 			// 没找到
 			return nil, nil

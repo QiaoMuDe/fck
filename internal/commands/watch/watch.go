@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"gitee.com/MM-Q/color"
-	"gitee.com/MM-Q/shellx/shx"
+	"gitee.com/MM-Q/shx"
 	"golang.org/x/term"
 )
 
