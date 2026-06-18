@@ -6,7 +6,6 @@ package interp
 import (
 	"bufio"
 	"bytes"
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -24,15 +23,91 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// IsBuiltin returns true if the given word is a shell builtin.
+// TODO: given the categories below, perhaps this should be more like:
+//
+//   func IsBuiltin(lang syntax.LangVariant, name string) bool
+//
+// or perhaps some API that also lets the user iterate through the builtins?
+//
+// Also, should we move this to the syntax package too?
+// It's not a syntactical property strictly speaking,
+// but it's also odd to require importing the interp package for it.
+
+// IsBuiltin returns true if the given word is a POSIX Shell
+// or Bash builtin.
 func IsBuiltin(name string) bool {
 	switch name {
-	case ":", "true", "false", "exit", "set", "shift", "unset",
-		"echo", "printf", "break", "continue", "pwd", "cd",
-		"wait", "builtin", "trap", "type", "source", ".", "command",
-		"dirs", "pushd", "popd", "umask", "alias", "unalias",
-		"fg", "bg", "getopts", "eval", "test", "[", "exec",
-		"return", "read", "mapfile", "readarray", "shopt":
+	case
+		// POSIX Shell builtins, from section 1.d obtained in September 2025 from:
+		// https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_09_01_01
+		"alias",
+		"bg",
+		"cd",
+		"command",
+		"false",
+		"fc",
+		"fg",
+		"getopts",
+		"hash",
+		"jobs",
+		"kill",
+		"newgrp",
+		"pwd",
+		"read",
+		"true",
+		"umask",
+		"unalias",
+		"wait",
+
+		// POSIX Shell special built-ins, obtained in September 2025 from:
+		// https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
+		"break",
+		":",
+		"continue",
+		".",
+		"eval",
+		"exec",
+		"exit",
+		"export",   // NOTE: our parser treats this as a keyword
+		"readonly", // NOTE: our parser treats this as a keyword
+		"return",
+		"set",
+		"shift",
+		"times",
+		"trap",
+		"unset",
+
+		// Bash built-ins which are not present in POSIX, obtained in September 2025 from:
+		// https://man.archlinux.org/man/bash.1.en#SHELL_BUILTIN_COMMANDS
+		"source",
+		"bind",
+		"builtin",
+		"caller",
+		"compgen",
+		"complete",
+		"compopt",
+		"declare", // NOTE: our parser treats this as a keyword
+		"typeset", // NOTE: our parser treats this as a keyword
+		"dirs",
+		"disown",
+		"echo", // TODO: surely this is POSIX? but why is it not in the main POSIX spec page?
+		"enable",
+		"history",
+		"help",
+		"let", // NOTE: our parser treats this as a keyword
+		"local",
+		"logout",
+		"mapfile",
+		"readarray",
+		"popd",
+		"printf", // TODO: surely this is POSIX? but why is it not in the main POSIX spec page?
+		"pushd",
+		"shopt",
+		"suspend",
+		"test",
+		"[", // NOTE: an alias for "test", not explicitly listed
+		"type",
+		"ulimit":
 		return true
 	}
 	return false
@@ -243,7 +318,7 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 		default:
 			return failf(2, "usage: cd [dir]\n")
 		}
-		exit.code = r.changeDir(ctx, path)
+		exit.code = r.changeDir(ctx, "cd", path)
 	case "wait":
 		fp := flagParser{remaining: args}
 		for fp.more() {
@@ -286,9 +361,9 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 		fp := flagParser{remaining: args}
 		for fp.more() {
 			switch flag := fp.flag(); flag {
-			case "-a", "-f", "-P", "--help":
+			case "-a", "-f", "--help":
 				return failf(3, "command: NOT IMPLEMENTED\n")
-			case "-p", "-t":
+			case "-p", "-P", "-t":
 				mode = flag
 			default:
 				return failf(2, "command: invalid option %q\n", flag)
@@ -296,7 +371,7 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 		}
 		args := fp.args()
 		for _, arg := range args {
-			if mode == "-p" {
+			if mode == "-p" || mode == "-P" {
 				if path, err := LookPathDir(r.Dir, r.writeEnv, arg); err == nil {
 					r.outf("%s\n", path)
 				} else {
@@ -362,6 +437,8 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 		if anyNotFound {
 			exit.code = 1
 		}
+	case "hash":
+		// TODO: implement. for now, having this as a no-op is better than nothing.
 	case "eval":
 		src := strings.Join(args, " ")
 		p := syntax.NewParser()
@@ -521,14 +598,14 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 				return failf(1, "pushd: no other directory\n")
 			}
 			newtop := swap()
-			if code := r.changeDir(ctx, newtop); code != 0 {
+			if code := r.changeDir(ctx, "pushd", newtop); code != 0 {
 				exit.code = code
 				return exit
 			}
 			r.builtin(ctx, syntax.Pos{}, "dirs", nil)
 		case 1:
 			if change {
-				if code := r.changeDir(ctx, args[0]); code != 0 {
+				if code := r.changeDir(ctx, "pushd", args[0]); code != 0 {
 					exit.code = code
 					return exit
 				}
@@ -556,7 +633,7 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 			r.dirStack = r.dirStack[:len(r.dirStack)-1]
 			if change {
 				newtop := r.dirStack[len(r.dirStack)-1]
-				if code := r.changeDir(ctx, newtop); code != 0 {
+				if code := r.changeDir(ctx, "popd", newtop); code != 0 {
 					exit.code = code
 					return exit
 				}
@@ -587,6 +664,7 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 		var prompt string
 		raw := false
 		silent := false
+		readArray := false
 		fp := flagParser{remaining: args}
 		for fp.more() {
 			switch flag := fp.flag(); flag {
@@ -594,6 +672,8 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 				silent = true
 			case "-r":
 				raw = true
+			case "-a":
+				readArray = true
 			case "-p":
 				prompt = fp.value()
 				if prompt == "" {
@@ -623,17 +703,32 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 		} else {
 			line, err = r.readLine(ctx, raw)
 		}
-		if len(args) == 0 {
-			args = append(args, shellReplyVar)
-		}
-
-		values := expand.ReadFields(r.ecfg, string(line), len(args), raw)
-		for i, name := range args {
-			val := ""
-			if i < len(values) {
-				val = values[i]
+		if readArray {
+			// read -a arrayname: split line into fields and assign to indexed array.
+			arrayName := shellReplyVar
+			if len(args) > 0 {
+				arrayName = args[0]
 			}
-			r.setVarString(name, val)
+			// Use -1 as max to get all fields without joining the last ones.
+			values := expand.ReadFields(r.ecfg, string(line), -1, raw)
+			r.setVar(arrayName, expand.Variable{
+				Set:  true,
+				Kind: expand.Indexed,
+				List: values,
+			})
+		} else {
+			if len(args) == 0 {
+				args = append(args, shellReplyVar)
+			}
+
+			values := expand.ReadFields(r.ecfg, string(line), len(args), raw)
+			for i, name := range args {
+				val := ""
+				if i < len(values) {
+					val = values[i]
+				}
+				r.setVarString(name, val)
+			}
 		}
 
 		// We can get data back from readLine and an error at the same time, so
@@ -696,44 +791,39 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 			case "-o":
 				posixOpts = true
 			case "-p", "-q":
-				panic(fmt.Sprintf("unhandled shopt flag: %s", flag))
+				return failf(2, "shopt: unsupported option %q\n", flag)
 			default:
 				return failf(2, "shopt: invalid option %q\n", flag)
 			}
 		}
 		args := fp.args()
-		bash := !posixOpts
 		if len(args) == 0 {
-			if bash {
-				for i, opt := range bashOptsTable {
-					r.printOptLine(opt.name, r.opts[len(shellOptsTable)+i], opt.supported)
+			if posixOpts {
+				for i, opt := range &posixOptsTable {
+					r.printOptLine(opt.name, r.opts[i], true)
 				}
-				break
-			}
-			for i, opt := range &shellOptsTable {
-				r.printOptLine(opt.name, r.opts[i], true)
+			} else {
+				for i, opt := range bashOptsTable {
+					r.printOptLine(opt.name, r.opts[len(posixOptsTable)+i], opt.supported)
+				}
 			}
 			break
 		}
 		for _, arg := range args {
-			i, opt := r.optByName(arg, bash)
+			opt, supported := (*bool)(nil), true
+			if posixOpts {
+				opt = r.posixOptByName(arg)
+			} else {
+				opt, supported = r.bashOptByName(arg)
+			}
 			if opt == nil {
 				return failf(1, "shopt: invalid option name %q\n", arg)
 			}
 
-			var (
-				bo        *bashOpt
-				supported = true // default for shell options
-			)
-			if bash {
-				bo = &bashOptsTable[i-len(shellOptsTable)]
-				supported = bo.supported
-			}
-
 			switch mode {
 			case "-s", "-u":
-				if bash && !supported {
-					return failf(1, "shopt: invalid option name %q %q (%q not supported)\n", arg, r.optStatusText(bo.defaultState), r.optStatusText(!bo.defaultState))
+				if !supported {
+					return failf(1, "shopt: unsupported option %q\n", arg)
 				}
 				*opt = mode == "-s"
 			default: // ""
@@ -898,8 +988,7 @@ func (r *Runner) builtin(ctx context.Context, pos syntax.Pos, name string, args 
 		r.setVar(arrayName, vr)
 
 	default:
-		// "umask", "fg", "bg",
-		return failf(2, "%s: unimplemented builtin\n", name)
+		return failf(2, "%s: unsupported builtin\n", name)
 	}
 	return exit
 }
@@ -984,19 +1073,24 @@ func (r *Runner) readLine(ctx context.Context, raw bool) ([]byte, error) {
 	}
 }
 
-func (r *Runner) changeDir(ctx context.Context, path string) uint8 {
-	path = cmp.Or(path, ".")
-	path = r.absPath(path)
-	info, err := r.stat(ctx, path)
+func (r *Runner) changeDir(ctx context.Context, cmd, path string) uint8 {
+	if path == "" {
+		r.errf("%s: empty directory path\n", cmd)
+		return 1
+	}
+	apath := r.absPath(path)
+	info, err := r.stat(ctx, apath)
 	if err != nil || !info.IsDir() {
+		r.errf("%s: no such file or directory: %q\n", cmd, path)
 		return 1
 	}
-	if r.access(ctx, path, access_X_OK) != nil {
+	if r.access(ctx, apath, access_X_OK) != nil {
+		r.errf("%s: permission denied: %q\n", cmd, path)
 		return 1
 	}
-	r.Dir = path
+	r.Dir = apath
 	r.setVarString("OLDPWD", r.envGet("PWD"))
-	r.setVarString("PWD", path)
+	r.setVarString("PWD", apath)
 	return 0
 }
 

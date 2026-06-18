@@ -7,7 +7,7 @@ require (
 	gitee.com/MM-Q/comprx v0.1.9
 	gitee.com/MM-Q/go-kit v0.0.25
 	gitee.com/MM-Q/qflag v0.5.20
-	gitee.com/MM-Q/shx v1.0.0
+	gitee.com/MM-Q/shx v1.0.1
 	gitee.com/MM-Q/verman v0.0.20
 	github.com/alecthomas/chroma/v2 v2.23.1
 	github.com/charmbracelet/glamour v0.8.0
@@ -79,5 +79,5 @@ require (
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
-	mvdan.cc/sh/v3 v3.12.0 // indirect
+	mvdan.cc/sh/v3 v3.13.1 // indirect
 )

@@ -39,7 +39,7 @@ gitee.com/MM-Q/qflag/internal/parser
 gitee.com/MM-Q/qflag/internal/registry
 gitee.com/MM-Q/qflag/internal/types
 gitee.com/MM-Q/qflag/internal/utils
-# gitee.com/MM-Q/shx v1.0.0
+# gitee.com/MM-Q/shx v1.0.1
 ## explicit; go 1.25.0
 gitee.com/MM-Q/shx
 # gitee.com/MM-Q/verman v0.0.20
@@ -366,10 +366,11 @@ golang.org/x/text/runes
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-# mvdan.cc/sh/v3 v3.12.0
-## explicit; go 1.23.0
+# mvdan.cc/sh/v3 v3.13.1
+## explicit; go 1.25.0
 mvdan.cc/sh/v3/expand
 mvdan.cc/sh/v3/fileutil
+mvdan.cc/sh/v3/internal
 mvdan.cc/sh/v3/interp
 mvdan.cc/sh/v3/pattern
 mvdan.cc/sh/v3/syntax

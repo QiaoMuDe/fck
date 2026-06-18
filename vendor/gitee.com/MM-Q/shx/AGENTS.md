@@ -114,7 +114,7 @@ shx/                                       # 项目根目录
 | **执行引擎** | 业务核心 | mvdan.cc/sh 驱动的命令执行（支持命令字符串和脚本文件） | [exec.go](file:///d:/峡谷/Dev/本地项目/shellx/exec.go) | Shx 配置 + 上下文 | 错误/合并输出 |
 | **脚本执行** | 业务扩展 | 从 `.sh` 脚本文件中读取并解析执行 Bash 脚本 | [exec.go](file:///d:/峡谷/Dev/本地项目/shellx/exec.go) | 脚本文件路径 | 错误/合并输出 |
 | **配置方法** | 业务封装 | 链式配置工作目录/环境变量/超时/上下文/标准IO | [option.go](file:///d:/峡谷/Dev/本地项目/shellx/option.go) | 配置参数 | `*Shx`（支持链式调用） |
-| **便捷函数层** | 业务封装 | 22 个包的导出快捷执行函数（含 4 个语法检查与格式化函数） | [funcs.go](file:///d:/峡谷/Dev/本地项目/shellx/funcs.go) | 命令字符串/脚本路径 + 可选超时 | 错误/输出字节流/格式化结果 |
+| **便捷函数层** | 业务封装 | 24 个导出快捷执行函数 + FormatOptions 配置结构体（含 CheckSyntax/Format 等语法检查与格式化函数） | [funcs.go](file:///d:/峡谷/Dev/本地项目/shellx/funcs.go) | 命令字符串/脚本路径 + 可选超时 | 错误/输出字节流/格式化结果 |
 | **错误处理** | 基础支撑 | ExitStatus/SyntaxError 包装与错误分类 | [errors.go](file:///d:/峡谷/Dev/本地项目/shellx/errors.go) | 原始错误 | 分类错误 |
 | **命令分词器** | 工具支撑 | 智能拆分 Shell 命令字符串（选择性转义，Windows 路径原生兼容） | [lexer.go](file:///d:/峡谷/Dev/本地项目/shellx/lexer.go) | 命令字符串 | 拆分后的参数切片 |
 
@@ -177,6 +177,7 @@ graph TD
 | **Template Method（模板方法）** | `funcs.go` 中 `Run/Out/RunWith/OutCtx` 等 | 18 个便捷函数封装了 Shx 的创建→配置→执行流程 |
 | **Exported Fields（导出字段）** | `shx.go` 中 `Shx` 结构体 | 7 个核心字段导出，支持结构体字面量配置与链式 API 双模式 |
 | **Error Wrapping（错误包装）** | `errors.go` 中 `handleError()` | 将底层错误包装为语义明确的用户友好错误 |
+| **Config Object（配置对象）** | `funcs.go` 中 `FormatOptions` + `DefaultFormatOptions()` | 格式化行为配置的结构体封装，提供合理默认值 |
 
 ### 4.2 核心执行流程
 
@@ -322,7 +323,7 @@ splitInternal("git commit -m \"feat: add feature\"")
 | `shx_test.go` | 构造函数 + 执行 + 配置 + 环境变量测试 |
 | `exec_test.go` | Exec/ExecOutput/ExecContext 超时/取消/重复执行测试 |
 | `option_test.go` | WithDir/WithEnv/WithEnvs/WithTimeout/WithContext/WithStdin/WithStdout/WithStderr |
-| `funcs_test.go` | Run/Out/RunWith/OutWith 等便捷函数 + CheckSyntax/CheckScriptSyntax/Format/FormatScript |
+| `funcs_test.go` | Run/Out/RunWith/OutWith 等便捷函数 + CheckSyntax/CheckScriptSyntax/Format/FormatScript + FormatWithOptions/FormatScriptWithOptions |
 | `script_test.go` | 脚本文件执行测试（正常执行、文件不存在、空路径、超时、WithDir、WithEnv、链式配置、Bash 特有语法） |
 | `errors_test.go` | IsExitStatus 识别、handleError 分类 |
 
@@ -363,7 +364,7 @@ splitInternal("git commit -m \"feat: add feature\"")
 6. **重复执行支持**：移除了单次执行保护，每次执行重新创建底层资源
 7. **构造函数简化**：提取 `newShx` 内部构造函数，消除 4 处重复初始化代码
 8. **命令分词器**：智能拆分 Shell 命令字符串，支持选择性转义，Windows 路径原生兼容
-9. **语法检查与格式化**：基于 `mvdan.cc/sh/v3/syntax` 提供 `CheckSyntax`/`Format` 等 4 个函数，支持字符串和文件两种输入模式
+9. **语法检查与格式化**：基于 `mvdan.cc/sh/v3/syntax` 提供 `CheckSyntax`/`Format` 等 6 个函数和 `FormatOptions` 配置结构体，`Format`/`FormatScript` 默认保留注释、2 空格缩进、case 缩进，`FormatWithOptions`/`FormatScriptWithOptions` 支持自定义 8 个格式化选项
 10. **完整测试覆盖**：包含全面的表驱动测试、并发安全测试、模糊测试与 Windows 路径测试
 11. **CLI 工具链**：`shx`（执行）、`shck`（语法检查）、`shfmt`（格式化）三个独立 CLI 工具，帮助信息中均包含项目地址
 12. **错误链支持**：`ExitStatus` 通过 `Unwrap()` 保留原始错误，支持 `errors.Is/As` 穿透
@@ -381,7 +382,7 @@ Go版本: 1.25.0
   ├─ shx.go: 构造函数 (New/NewArgs/NewCmds/NewScript) + newShx 内部构造
   ├─ exec.go: 执行引擎 (字符串/文件双解析路径)
   ├─ option.go: 配置方法 (WithDir/WithEnv/WithEnvs/WithTimeout/WithContext/WithStdin/WithStdout/WithStderr)
-  ├─ funcs.go: 22个便捷函数 (含 Run/RunScript/CheckSyntax/Format 等)
+  ├─ funcs.go: 24个便捷函数 + FormatOptions 结构体 (含 Run/RunScript/CheckSyntax/Format/FormatWithOptions 等)
   ├─ errors.go: handleError + IsExitStatus + SyntaxError
   ├─ lexer.go: 命令分词器 (Split/SplitE) + 命令查找 (FindCmd/FindCommandPath)
   ├─ cmd/shx/main.go:   CLI 执行工具
@@ -389,7 +390,7 @@ Go版本: 1.25.0
   ├─ cmd/shfmt/main.go: CLI 格式化工具（-w 写回）
   └─ shx-skill/: 技能文档 (SKILL.md + api.md + examples.md)
 
-设计模式: 流式构建器 | 模板方法 | 错误包装 | 导出字段
+设计模式: 流式构建器 | 模板方法 | 错误包装 | 导出字段 | 配置对象（FormatOptions + DefaultFormatOptions）
 上下文优先级: WithContext > WithTimeout > context.Background
 执行模式: 每次新建 Runner + 重新解析 AST，支持重复执行
 并发安全: 配置阶段非并发安全, 执行阶段并发安全
@@ -397,6 +398,8 @@ Go版本: 1.25.0
 单次保护: 已移除
 脚本校验: NewScript 要求路径以 .sh 结尾，否则 panic
 错误链: ExitStatus 通过 Unwrap() 保留原始 interp.ExitStatus，支持 errors.Is 穿透
+格式化: FormatOptions 结构体控制 8 个选项，DefaultFormatOptions 返回 {Indent=2, SwitchCaseIndent, KeepComments}
+         FormatWithOptions/FormatScriptWithOptions 接受自定义选项，Format/FormatScript 委托调用默认
 CLI 帮助: 三个工具（shx/shck/shfmt）帮助信息均包含项目地址 https://gitee.com/MM-Q/shx.git
 ```
 
@@ -479,12 +482,32 @@ func CheckScriptSyntax(filePath string) error
 // 格式化
 func Format(script string) (string, error)
 func FormatScript(filePath string) (string, error)
+func FormatWithOptions(script string, opts FormatOptions) (string, error)
+func FormatScriptWithOptions(filePath string, opts FormatOptions) (string, error)
+
+// 格式化选项
+type FormatOptions struct { ... }
+func DefaultFormatOptions() FormatOptions
 
 // 错误类型
 type ExitStatus struct { Code uint8; err error /* 内部字段，用于错误链 */ }
 func (e ExitStatus) Error() string     // "exit status N"
 func (e ExitStatus) Unwrap() error     // 返回原始错误，支持 errors.Is 穿透
 type SyntaxError struct { File string; Line int; Column int; Message string }
+
+// FormatOptions 控制 shell 脚本格式化的行为选项
+//   DefaultFormatOptions() 返回: Indent=2, SwitchCaseIndent=true, KeepComments=true
+//   其余选项默认 false
+type FormatOptions struct {
+    Indent            uint   // 缩进空格数（0 表示使用 tab）
+    SwitchCaseIndent  bool   // case 语句体是否缩进
+    KeepComments      bool   // 是否保留注释
+    BinaryNextLine    bool   // &&、|| 等二元操作符是否换行显示
+    FunctionNextLine  bool   // 函数体 { 是否换行
+    SpaceRedirects    bool   // 重定向符前后是否加空格
+    SingleLine        bool   // 是否单行输出
+    Minify            bool   // 是否最小化输出（压缩模式）
+}
 
 ### CLI 命令行工具
 

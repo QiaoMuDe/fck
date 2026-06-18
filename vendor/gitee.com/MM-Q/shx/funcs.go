@@ -373,7 +373,132 @@ func CheckScriptSyntax(filePath string) error {
 	return CheckSyntax(string(data))
 }
 
-// Format 格式化 shell 命令字符串
+// FormatOptions 控制 shell 脚本格式化的行为选项
+type FormatOptions struct {
+	Indent           uint // 缩进空格数（0 表示使用 tab）
+	SwitchCaseIndent bool // case 语句体是否缩进
+	KeepComments     bool // 是否保留注释
+	BinaryNextLine   bool // &&、|| 等二元操作符是否换行显示
+	FunctionNextLine bool // 函数体 { 是否换行
+	SpaceRedirects   bool // 重定向符前后是否加空格
+	SingleLine       bool // 是否单行输出
+	Minify           bool // 是否最小化输出（压缩模式）
+}
+
+// DefaultFormatOptions 返回默认格式化选项
+//
+// 返回：
+//   - FormatOptions: 默认格式化选项
+//
+// 默认启用：
+//   - 缩进: 2 空格
+//   - case 语句缩进: 启用
+//   - 注释保留: 启用
+func DefaultFormatOptions() FormatOptions {
+	return FormatOptions{
+		Indent:           2,
+		SwitchCaseIndent: true,
+		KeepComments:     true,
+	}
+}
+
+// FormatWithOptions 使用指定选项格式化 shell 命令字符串
+//
+// 参数：
+//   - script: shell 命令字符串
+//   - opts: 格式化选项
+//
+// 返回：
+//   - string: 格式化后的字符串
+//   - error: 解析错误或系统错误
+//
+// 示例：
+//
+//	formatted, err := shx.FormatWithOptions("for i in 1 2 3;do echo $i;done", shx.DefaultFormatOptions())
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(formatted)
+func FormatWithOptions(script string, opts FormatOptions) (string, error) {
+	// 构建解析器选项
+	var parserOpts []syntax.ParserOption
+	parserOpts = append(parserOpts, syntax.Variant(syntax.LangBash))
+	if opts.KeepComments {
+		parserOpts = append(parserOpts, syntax.KeepComments(true))
+	}
+	// 解析 shell 脚本为 AST
+	parser := syntax.NewParser(parserOpts...)
+	file, err := parser.Parse(strings.NewReader(script), "")
+	if err != nil {
+		return "", err
+	}
+
+	// 构建格式化器选项
+	var printerOpts []syntax.PrinterOption
+	if opts.Indent > 0 {
+		// 添加缩进选项
+		printerOpts = append(printerOpts, syntax.Indent(opts.Indent))
+	}
+	if opts.SwitchCaseIndent {
+		// 添加 case 缩进选项
+		printerOpts = append(printerOpts, syntax.SwitchCaseIndent(true))
+	}
+	if opts.BinaryNextLine {
+		// 添加二元操作符换行选项
+		printerOpts = append(printerOpts, syntax.BinaryNextLine(true))
+	}
+	if opts.FunctionNextLine {
+		// 添加函数体 {} 换行选项
+		printerOpts = append(printerOpts, syntax.FunctionNextLine(true))
+	}
+	if opts.SpaceRedirects {
+		// 添加重定向符前后空格选项
+		printerOpts = append(printerOpts, syntax.SpaceRedirects(true))
+	}
+	if opts.SingleLine {
+		// 添加单行输出选项
+		printerOpts = append(printerOpts, syntax.SingleLine(true))
+	}
+	if opts.Minify {
+		// 添加最小化输出选项
+		printerOpts = append(printerOpts, syntax.Minify(true))
+	}
+
+	// 使用构建好的选项创建格式化器并输出
+	var buf bytes.Buffer
+	printer := syntax.NewPrinter(printerOpts...)
+	if err := printer.Print(&buf, file); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// FormatScriptWithOptions 使用指定选项格式化 shell 脚本文件
+//
+// 参数：
+//   - filePath: 脚本文件路径
+//   - opts: 格式化选项
+//
+// 返回：
+//   - string: 格式化后的脚本内容
+//   - error: 解析错误或系统错误
+//
+// 示例：
+//
+//	formatted, err := shx.FormatScriptWithOptions("deploy.sh", shx.DefaultFormatOptions())
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(formatted)
+func FormatScriptWithOptions(filePath string, opts FormatOptions) (string, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+	return FormatWithOptions(string(data), opts)
+}
+
+// Format 使用默认选项格式化 shell 命令字符串
 //
 // 参数：
 //   - script: shell 命令字符串
@@ -393,25 +518,12 @@ func CheckScriptSyntax(filePath string) error {
 // 默认格式：
 //   - 缩进: 2 空格
 //   - case 语句缩进: 启用
+//   - 注释保留: 启用
 func Format(script string) (string, error) {
-	parser := syntax.NewParser(syntax.Variant(syntax.LangBash))
-	file, err := parser.Parse(strings.NewReader(script), "")
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	printer := syntax.NewPrinter(
-		syntax.Indent(2),              // 缩进 2 空格
-		syntax.SwitchCaseIndent(true), // 启用 case 语句缩进
-	)
-	if err := printer.Print(&buf, file); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+	return FormatWithOptions(script, DefaultFormatOptions())
 }
 
-// FormatScript 格式化 shell 脚本文件
+// FormatScript 使用默认选项格式化 shell 脚本文件
 //
 // 参数：
 //   - filePath: 脚本文件路径
@@ -428,11 +540,7 @@ func Format(script string) (string, error) {
 //	}
 //	fmt.Println(formatted)
 func FormatScript(filePath string) (string, error) {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", err
-	}
-	return Format(string(data))
+	return FormatScriptWithOptions(filePath, DefaultFormatOptions())
 }
 
 // convertSyntaxError 将 mvdan 的语法错误转为自定义 SyntaxError 返回

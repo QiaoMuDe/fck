@@ -188,7 +188,9 @@ IsExitStatus 检查错误是否是退出状态错误
 func Format(script string) (string, error)
 ```
 
-Format 格式化 shell 命令字符串
+Format 使用默认选项格式化 shell 命令字符串。
+
+默认启用：缩进 2 空格、case 语句缩进、注释保留。
 
 **参数：**
 
@@ -1181,6 +1183,92 @@ WithTimeout 设置超时时间
 **注意：**
 
 - 如果 d <= 0, 则忽略 (不设置超时)
+
+---
+
+### type FormatOptions
+
+```go
+type FormatOptions struct {
+    Indent            uint // 缩进空格数（0 表示使用 tab）
+    SwitchCaseIndent  bool // case 语句体是否缩进
+    KeepComments      bool // 是否保留注释
+    BinaryNextLine    bool // &&、|| 等二元操作符是否换行显示
+    FunctionNextLine  bool // 函数体 { 是否换行
+    SpaceRedirects    bool // 重定向符前后是否加空格
+    SingleLine        bool // 是否单行输出
+    Minify            bool // 是否最小化输出（压缩模式）
+}
+```
+
+FormatOptions 控制 shell 脚本格式化的行为选项，传递给 `FormatWithOptions`/`FormatScriptWithOptions`。
+
+#### func DefaultFormatOptions
+
+```go
+func DefaultFormatOptions() FormatOptions
+```
+
+DefaultFormatOptions 返回默认格式化选项：
+- 缩进: 2 空格
+- case 语句缩进: 启用
+- 注释保留: 启用
+
+#### func FormatWithOptions
+
+```go
+func FormatWithOptions(script string, opts FormatOptions) (string, error)
+```
+
+FormatWithOptions 使用指定选项格式化 shell 命令字符串。
+
+**参数：**
+
+- `script`: shell 命令字符串
+- `opts`: 格式化选项
+
+**返回：**
+
+- `string`: 格式化后的字符串
+- `error`: 解析错误或系统错误
+
+**示例：**
+
+```go
+formatted, err := shx.FormatWithOptions("for i in 1 2 3;do echo $i;done", shx.DefaultFormatOptions())
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(formatted)
+```
+
+#### func FormatScriptWithOptions
+
+```go
+func FormatScriptWithOptions(filePath string, opts FormatOptions) (string, error)
+```
+
+FormatScriptWithOptions 使用指定选项格式化 shell 脚本文件。
+
+**参数：**
+
+- `filePath`: 脚本文件路径
+- `opts`: 格式化选项
+
+**返回：**
+
+- `string`: 格式化后的脚本内容
+- `error`: 解析错误或系统错误
+
+**示例：**
+
+```go
+formatted, err := shx.FormatScriptWithOptions("deploy.sh", shx.DefaultFormatOptions())
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(formatted)
+```
 
 ---
 

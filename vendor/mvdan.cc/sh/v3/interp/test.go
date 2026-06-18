@@ -116,8 +116,11 @@ func (r *Runner) binTest(ctx context.Context, op syntax.BinTestOperator, x, y st
 		return x != "" || y != ""
 	case syntax.TsBefore:
 		return x < y
-	default: // syntax.TsAfter
+	case syntax.TsAfter:
 		return x > y
+	default:
+		// Should only happen if we forgot a case above.
+		panic(fmt.Sprintf("unexpected binary test operator: %q", op))
 	}
 }
 
@@ -162,9 +165,9 @@ func (r *Runner) unTest(ctx context.Context, op syntax.UnTestOperator, x string)
 		return r.statMode(ctx, x, os.ModeSetuid)
 	case syntax.TsGIDSet:
 		return r.statMode(ctx, x, os.ModeSetgid)
-	// case syntax.TsGrpOwn:
-	// case syntax.TsUsrOwn:
-	// case syntax.TsModif:
+	case syntax.TsModif:
+		r.errf("unsupported unary test op: %v\n", op)
+		return false
 	case syntax.TsRead:
 		return r.access(ctx, r.absPath(x), access_R_OK) == nil
 	case syntax.TsWrite:
@@ -197,7 +200,7 @@ func (r *Runner) unTest(ctx context.Context, op syntax.UnTestOperator, x string)
 	case syntax.TsNempStr:
 		return x != ""
 	case syntax.TsOptSet:
-		if _, opt := r.optByName(x, false); opt != nil {
+		if opt := r.posixOptByName(x); opt != nil {
 			return *opt
 		}
 		return false
@@ -210,6 +213,7 @@ func (r *Runner) unTest(ctx context.Context, op syntax.UnTestOperator, x string)
 	case syntax.TsUsrOwn, syntax.TsGrpOwn:
 		return r.unTestOwnOrGrp(ctx, op, x)
 	default:
-		panic(fmt.Sprintf("unhandled unary test op: %v", op))
+		// Should only happen if we forgot a case above.
+		panic(fmt.Sprintf("unexpected unary test op: %v", op))
 	}
 }

@@ -15,7 +15,6 @@ import (
 	mathrand "math/rand/v2"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"slices"
 	"strconv"
@@ -24,6 +23,7 @@ import (
 	"time"
 
 	"mvdan.cc/sh/v3/expand"
+	"mvdan.cc/sh/v3/internal"
 	"mvdan.cc/sh/v3/pattern"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -129,7 +129,7 @@ func (r *Runner) fillExpandConfig(ctx context.Context) {
 						}
 						os.Remove(path)
 					}()
-				default: // syntax.CmdOut
+				case syntax.CmdOut:
 					f, err := os.OpenFile(path, os.O_RDONLY, 0)
 					if err != nil {
 						r.errf("cannot open fifo for stdin: %v\n", err)
@@ -142,6 +142,9 @@ func (r *Runner) fillExpandConfig(ctx context.Context) {
 						f.Close()
 						os.Remove(path)
 					}()
+				default:
+					// Should only happen if we forgot a case above.
+					panic(fmt.Sprintf("unexpected process substitution operator: %q", ps.Op))
 				}
 				r2.stmts(ctx, ps.Stmts)
 				r2.exit.exiting = false // subshells don't exit the parent shell
@@ -155,7 +158,7 @@ func (r *Runner) fillExpandConfig(ctx context.Context) {
 // catShortcutArg checks if a statement is of the form "$(<file)". The redirect
 // word is returned if there's a match, and nil otherwise.
 func catShortcutArg(stmt *syntax.Stmt) *syntax.Word {
-	if stmt.Cmd != nil || stmt.Negated || stmt.Background || stmt.Coprocess {
+	if stmt.Cmd != nil || stmt.Negated || stmt.Background || stmt.Coprocess || stmt.Disown {
 		return nil
 	}
 	if len(stmt.Redirs) != 1 {
@@ -177,9 +180,11 @@ func (r *Runner) updateExpandOpts() {
 		}
 	}
 	r.ecfg.GlobStar = r.opts[optGlobStar]
+	r.ecfg.DotGlob = r.opts[optDotGlob]
 	r.ecfg.NoCaseGlob = r.opts[optNoCaseGlob]
 	r.ecfg.NullGlob = r.opts[optNullGlob]
 	r.ecfg.NoUnset = r.opts[optNoUnset]
+	r.ecfg.ExtGlob = r.opts[optExtGlob]
 }
 
 func (r *Runner) expandErr(err error) {
@@ -193,9 +198,6 @@ func (r *Runner) expandErr(err error) {
 	case errMsg == "invalid indirect expansion":
 		// TODO: These errors are treated as fatal by bash.
 		// Make the error type reflect that.
-	case strings.HasSuffix(errMsg, "not supported"):
-		// TODO: This "has suffix" is a temporary measure until the expand
-		// package supports all syntax nodes like extended globbing.
 	default:
 		return // other cases do not exit
 	}
@@ -303,10 +305,11 @@ func (r *Runner) stmt(ctx context.Context, st *syntax.Stmt) {
 		return
 	}
 	r.exit = exitStatus{}
-	if st.Background {
+	if st.Background || st.Disown {
 		r2 := r.subshell(true)
 		st2 := *st
 		st2.Background = false
+		st2.Disown = false
 		bg := bgProc{
 			done: make(chan struct{}),
 			exit: new(exitStatus),
@@ -340,8 +343,11 @@ func (r *Runner) stmtSync(ctx context.Context, st *syntax.Stmt) {
 		r.cmd(ctx, st.Cmd)
 	}
 	if st.Negated {
-		// TODO: negate the entire [exitStatus] here, wiping errors
-		r.exit.oneIf(r.exit.ok())
+		if r.exit.ok() {
+			r.exit.code = 1
+		} else {
+			r.exit.clear()
+		}
 	} else if b, ok := st.Cmd.(*syntax.BinaryCmd); ok && (b.Op == syntax.AndStmt || b.Op == syntax.OrStmt) {
 	} else if !r.exit.ok() && !r.noErrExit {
 		r.trapCallback(ctx, r.callbackErr, "error")
@@ -396,15 +402,17 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 		fields := r.fields(args...)
 		if len(fields) == 0 {
 			for _, as := range cm.Assigns {
-				prev := r.lookupVar(as.Name.Value)
+				name := as.Name.Value
+
+				prev := r.lookupVar(name)
 				// Here we have a naked "foo=bar", so if we inherited a local var from a parent
 				// function we want to signal that we are modifying the parent var rather than
 				// creating a new local var via "local foo=bar".
 				// TODO: there is likely a better way to do this.
 				prev.Local = false
 
-				vr := r.assignVal(prev, as, "")
-				r.setVarWithIndex(prev, as.Name.Value, as.Index, vr)
+				name, vr := r.assignVal(name, prev, as, "")
+				r.setVarWithIndex(prev, name, as.Index, vr)
 
 				if !tracingEnabled {
 					continue
@@ -420,7 +428,7 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 					if err != nil { // should never happen
 						panic(err)
 					}
-					trace.stringf("%s=%s", as.Name.Value, val)
+					trace.stringf("%s=%s", name, val)
 				}
 				trace.newLineFlush()
 			}
@@ -442,8 +450,12 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 		for _, as := range cm.Assigns {
 			name := as.Name.Value
 			prev := r.lookupVar(name)
+			// Resolve any nameref so we can restore the original final value later on.
+			if n, v := prev.Resolve(r.writeEnv); n != "" {
+				name, prev = n, v
+			}
 
-			vr := r.assignVal(prev, as, "")
+			name, vr := r.assignVal(name, prev, as, "")
 			// Inline command vars are always exported.
 			vr.Exported = true
 
@@ -484,13 +496,11 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 			}
 			r.stdin = pr
 			var wg sync.WaitGroup
-			wg.Add(1)
-			go func() {
+			wg.Go(func() {
 				r2.stmt(ctx, cm.X)
 				r2.exit.exiting = false // subshells don't exit the parent shell
 				pw.Close()
-				wg.Done()
-			}()
+			})
 			r.stmt(ctx, cm.Y)
 			pr.Close()
 			wg.Wait()
@@ -511,7 +521,7 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 			r.stmts(ctx, cm.Then)
 			break
 		}
-		r.exit.code = 0
+		r.exit.clear()
 		if cm.Else != nil {
 			r.cmd(ctx, cm.Else)
 		}
@@ -523,7 +533,7 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 			r.noErrExit = oldNoErrExit
 
 			stop := r.exit.ok() == cm.Until
-			r.exit.code = 0
+			r.exit.clear()
 			if stop || r.loopStmtsBroken(ctx, cm.Do) {
 				break
 			}
@@ -662,6 +672,7 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 		local, global := false, false
 		var modes []string
 		valType := ""
+		declQuery := "" // "-f" or "-p" for query mode
 		switch cm.Variant.Value {
 		case "declare":
 			// When used in a function, "declare" acts as "local"
@@ -692,6 +703,8 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 					valType = flag
 				case "-g":
 					global = true
+				case "-f", "-p":
+					declQuery = flag
 				default:
 					r.errf("declare: invalid option %q\n", flag)
 					r.exit.code = 2
@@ -705,7 +718,59 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 				r.exit.code = 1
 				return
 			}
-			vr := r.lookupVar(as.Name.Value)
+			if declQuery == "-f" {
+				// declare -f name: print function definition.
+				// Bash silently returns exit 1 for missing functions.
+				if body := r.Funcs[name]; body != nil {
+					r.outf("%s()\n", name)
+					printer := syntax.NewPrinter()
+					var buf bytes.Buffer
+					printer.Print(&buf, body)
+					r.outf("%s\n", buf.String())
+				} else {
+					r.exit.code = 1
+				}
+				continue
+			}
+			if declQuery == "-p" {
+				// declare -p name: print variable with attributes.
+				vr := r.lookupVar(name)
+				if !vr.Declared() {
+					r.errf("declare: %s: not found\n", name)
+					r.exit.code = 1
+					continue
+				}
+				flags := vr.Flags()
+				if flags == "" {
+					flags = "-"
+				}
+				switch vr.Kind {
+				case expand.Indexed:
+					r.outf("declare -%s %s=(", flags, name)
+					for i, v := range vr.List {
+						if i > 0 {
+							r.out(" ")
+						}
+						r.outf("[%d]=%q", i, v)
+					}
+					r.out(")\n")
+				case expand.Associative:
+					r.outf("declare -%s %s=(", flags, name)
+					first := true
+					for k, v := range vr.Map {
+						if !first {
+							r.out(" ")
+						}
+						r.outf("[%s]=%q", k, v)
+						first = false
+					}
+					r.out(")\n")
+				default:
+					r.outf("declare -%s %s=%q\n", flags, name, vr.Str)
+				}
+				continue
+			}
+			vr := r.lookupVar(name)
 			if as.Naked {
 				if valType == "-A" {
 					vr.Kind = expand.Associative
@@ -713,7 +778,7 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 					vr.Kind = expand.KeepValue
 				}
 			} else {
-				vr = r.assignVal(vr, as, valType)
+				name, vr = r.assignVal(name, vr, as, valType)
 			}
 			if global {
 				vr.Local = false
@@ -747,7 +812,9 @@ func (r *Runner) cmd(ctx context.Context, cm syntax.Command) {
 		r.outf(format, "user", elapsedString(0, cm.PosixFormat))
 		r.outf(format, "sys", elapsedString(0, cm.PosixFormat))
 	default:
-		panic(fmt.Sprintf("unhandled command node: %T", cm))
+		// Should only happen if we forgot a case above.
+		r.errf("unhandled command node: %T\n", cm)
+		r.exit.code = 1
 	}
 }
 
@@ -807,12 +874,9 @@ func (r *Runner) flattenAssigns(args []*syntax.Assign) iter.Seq[*syntax.Assign] 
 }
 
 func match(pat, name string) bool {
-	expr, err := pattern.Regexp(pat, pattern.EntireString)
-	if err != nil {
-		return false
-	}
-	rx := regexp.MustCompile(expr)
-	return rx.MatchString(name)
+	matcher, err := internal.ExtendedPatternMatcher(pat, pattern.EntireString|pattern.ExtendedOperators)
+	_ = err // TODO: report these errors
+	return matcher != nil && matcher(name)
 }
 
 func elapsedString(d time.Duration, posix bool) string {
@@ -862,11 +926,13 @@ func (r *Runner) hdocReader(rd *syntax.Redirect) (*os.File, error) {
 			cur = append(cur, wp)
 			continue
 		}
-		for i, part := range strings.Split(lit.Value, "\n") {
-			if i > 0 {
+		first := true
+		for part := range strings.SplitSeq(lit.Value, "\n") {
+			if !first {
 				flushLine()
 				cur = cur[:0]
 			}
+			first = false
 			part = strings.TrimLeft(part, "\t")
 			cur = append(cur, &syntax.Lit{Value: part})
 		}
@@ -900,7 +966,7 @@ func (r *Runner) redir(ctx context.Context, rd *syntax.Redirect) (io.Closer, err
 		case "2":
 			orig = &r.stderr
 		default:
-			panic(fmt.Sprintf("unsupported redirect fd: %v", rd.N.Value))
+			return nil, fmt.Errorf("unsupported redirect fd: %v", rd.N.Value)
 		}
 	}
 	arg := r.literal(rd.Word)
@@ -928,7 +994,7 @@ func (r *Runner) redir(ctx context.Context, rd *syntax.Redirect) (io.Closer, err
 		case "-":
 			*orig = io.Discard // closing the output writer
 		default:
-			panic(fmt.Sprintf("unhandled %v arg: %q", rd.Op, arg))
+			return nil, fmt.Errorf("unhandled %v arg: %q", rd.Op, arg)
 		}
 		return nil, nil
 	case syntax.RdrIn, syntax.RdrOut, syntax.AppOut,
@@ -939,11 +1005,11 @@ func (r *Runner) redir(ctx context.Context, rd *syntax.Redirect) (io.Closer, err
 		case "-":
 			r.stdin = nil // closing the input file
 		default:
-			panic(fmt.Sprintf("unhandled %v arg: %q", rd.Op, arg))
+			return nil, fmt.Errorf("unhandled %v arg: %q", rd.Op, arg)
 		}
 		return nil, nil
 	default:
-		panic(fmt.Sprintf("unhandled redirect op: %v", rd.Op))
+		return nil, fmt.Errorf("unhandled redirect op: %v", rd.Op)
 	}
 	mode := os.O_RDONLY
 	switch rd.Op {
@@ -969,7 +1035,7 @@ func (r *Runner) redir(ctx context.Context, rd *syntax.Redirect) (io.Closer, err
 		r.stdout = f
 		r.stderr = f
 	default:
-		panic(fmt.Sprintf("unhandled redirect op: %v", rd.Op))
+		return nil, fmt.Errorf("unhandled redirect op: %v", rd.Op)
 	}
 	return f, nil
 }

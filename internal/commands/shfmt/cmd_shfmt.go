@@ -16,9 +16,10 @@ import (
 
 // ShfmtConfig shfmt 命令配置
 type ShfmtConfig struct {
-	Write  bool     // -w: 原地写入
-	Backup bool     // -b: 写入前备份
-	Files  []string // 位置参数（文件路径或通配符）
+	Write         bool              // -w: 原地写入
+	Backup        bool              // -b: 写入前备份
+	Files         []string          // 位置参数（文件路径或通配符）
+	FormatOptions shx.FormatOptions // 格式化选项
 }
 
 // ShfmtCmdMain 执行 shfmt 命令
@@ -31,7 +32,7 @@ type ShfmtConfig struct {
 func ShfmtCmdMain(config ShfmtConfig) error {
 	// 管道输入模式
 	if term.IsStdinPipe() {
-		return processStdin()
+		return processStdin(config.FormatOptions)
 	}
 
 	// 展开通配符，获取实际文件列表
@@ -57,15 +58,18 @@ func ShfmtCmdMain(config ShfmtConfig) error {
 // processStdin 处理标准输入
 // 从 stdin 读取 Shell 脚本内容，格式化后输出到 stdout
 //
+// 参数:
+//   - opts: 格式化选项
+//
 // 返回:
 //   - error: 处理错误
-func processStdin() error {
+func processStdin(opts shx.FormatOptions) error {
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return fmt.Errorf("failed to read from stdin: %w", err)
 	}
 
-	formatted, err := shx.Format(string(data))
+	formatted, err := shx.FormatWithOptions(string(data), opts)
 	if err != nil {
 		return fmt.Errorf("failed to format script: %w", err)
 	}
@@ -91,7 +95,7 @@ func processFile(file string, config ShfmtConfig) error {
 	}
 
 	// 格式化
-	formatted, err := shx.Format(string(data))
+	formatted, err := shx.FormatWithOptions(string(data), config.FormatOptions)
 	if err != nil {
 		return fmt.Errorf("failed to format script: %w", err)
 	}

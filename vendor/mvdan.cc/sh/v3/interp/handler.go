@@ -20,7 +20,8 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// HandlerCtx returns HandlerContext value stored in ctx.
+// HandlerCtx returns the [HandlerContext] value stored in ctx,
+// which is used when calling handler functions.
 // It panics if ctx has no HandlerContext stored.
 func HandlerCtx(ctx context.Context) HandlerContext {
 	hc, ok := ctx.Value(handlerCtxKey{}).(HandlerContext)
@@ -77,8 +78,11 @@ type HandlerContext struct {
 
 // CallHandlerFunc is a handler which runs on every [syntax.CallExpr].
 // It is called once variable assignments and field expansion have occurred.
+// The context includes a [HandlerContext] value.
+//
 // The call's arguments are replaced by what the handler returns,
 // and then the call is executed by the Runner as usual.
+// The args slice is never empty.
 // At this time, returning an empty slice without an error is not supported.
 //
 // This handler is similar to [ExecHandlerFunc], but has two major differences:
@@ -99,6 +103,8 @@ type CallHandlerFunc func(ctx context.Context, args []string) ([]string, error)
 // ExecHandlerFunc is a handler which executes simple commands.
 // It is called for all [syntax.CallExpr] nodes
 // where the first argument is neither a declared function nor a builtin.
+// The args slice is never empty.
+// The context includes a [HandlerContext] value.
 //
 // Returning a nil error means a zero exit status.
 // Other exit statuses can be set by returning or wrapping a [NewExitStatus] error,
@@ -289,7 +295,7 @@ func pathExts(env expand.Environ) []string {
 		return []string{".com", ".exe", ".bat", ".cmd"}
 	}
 	var exts []string
-	for _, e := range strings.Split(strings.ToLower(pathext), `;`) {
+	for e := range strings.SplitSeq(strings.ToLower(pathext), `;`) {
 		if e == "" {
 			continue
 		}
@@ -304,6 +310,7 @@ func pathExts(env expand.Environ) []string {
 // OpenHandlerFunc is a handler which opens files.
 // It is called for all files that are opened directly by the shell,
 // such as in redirects, except for named pipes created by process substitutions.
+// The context includes a [HandlerContext] value.
 // Files opened by executed programs are not included.
 //
 // The path parameter may be relative to the current directory,
@@ -328,9 +335,9 @@ func DefaultOpenHandler() OpenHandlerFunc {
 		mc := HandlerCtx(ctx)
 		if runtime.GOOS == "windows" && path == "/dev/null" {
 			path = "NUL"
-			// Work around https://go.dev/issue/71752, where Go 1.24 started giving
-			// "Invalid handle" errors when opening "NUL" with O_TRUNC.
-			// TODO: hopefully remove this in the future once the bug is fixed.
+			// Note that even though https://go.dev/issue/71752 was resolved for Windows,
+			// the workaround here seems to still be required for Wine as of 10.14.
+			// TODO(mvdan): Why? Is this Wine's fault?
 			flag &^= os.O_TRUNC
 		} else if path != "" && !filepath.IsAbs(path) {
 			path = filepath.Join(mc.Dir, path)
@@ -349,6 +356,7 @@ type ReadDirHandlerFunc func(ctx context.Context, path string) ([]fs.FileInfo, e
 
 // ReadDirHandlerFunc2 is a handler which reads directories. It is called during
 // shell globbing, if enabled.
+// The context includes a [HandlerContext] value.
 type ReadDirHandlerFunc2 func(ctx context.Context, path string) ([]fs.DirEntry, error)
 
 // DefaultReadDirHandler returns the [ReadDirHandlerFunc] used by default.
@@ -368,6 +376,7 @@ func DefaultReadDirHandler2() ReadDirHandlerFunc2 {
 }
 
 // StatHandlerFunc is a handler which gets a file's information.
+// The context includes a [HandlerContext] value.
 type StatHandlerFunc func(ctx context.Context, name string, followSymlinks bool) (fs.FileInfo, error)
 
 // DefaultStatHandler returns the [StatHandlerFunc] used by default.
