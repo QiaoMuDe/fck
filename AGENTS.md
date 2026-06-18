@@ -1,7 +1,7 @@
 # FCK 项目分析报告
 
 > **生成时间**: 2026-05-19  
-> **最近更新**: 2026-06-14 (cp/mv 支持通配符展开; verbose 由 go-kit-fs 库处理)  
+> **最近更新**: 2026-06-18 (新增 shfmt/shck/shx 三个 Shell 子命令)  
 > **分析工具**: AI 架构分析引擎  
 > **项目定位**: 跨平台命令行工具集（类 Unix 工具 Windows 替代方案）
 
@@ -18,7 +18,7 @@ fck/
 ├── internal/                     # 内部实现（Go 标准项目布局）
 │   ├── cli/                      # CLI 层：命令定义与参数解析
 │   │   ├── root.go               # 根命令注册中心
-│   │   ├── [40+ 命令定义文件]    # 每个命令一个文件
+│   │   ├── [45+ 命令定义文件]    # 每个命令一个文件
 │   │   └── tcp/                  # 复杂命令子模块
 │   ├── commands/                 # 业务逻辑层：命令核心实现
 │   │   ├── [40+ 命令实现目录]    # 每个命令独立目录
@@ -109,6 +109,9 @@ fck/
 | | date | 时间格式化 | `internal/commands/date/` |
 | | echo | 文本输出 | `internal/commands/echo/` |
 | | gm | Git 元数据 | `internal/commands/gm/` |
+| | shfmt | Shell 脚本格式化（基于 shx 库） | `internal/commands/shfmt/` |
+| | shck | Shell 脚本语法检查（基于 shx 库） | `internal/commands/shck/` |
+| | shx | Shell 命令/脚本执行（基于 shx 库） | `internal/commands/shx/` |
 
 ### 2.2 模块复杂度分级
 
@@ -131,6 +134,9 @@ fck/
 │  └── json/    : 解析 + 查询(gjson) + 设置/删除(sjson) + 高亮       │
 ├─────────────────────────────────────────────────────────────────┤
 │  低复杂度（单一功能）                                            │
+│  ├── shfmt/   : 单文件 - Shell 脚本格式化                       │
+│  ├── shck/    : 单文件 - Shell 脚本语法检查                     │
+│  ├── shx/     : 单文件 - Shell 命令/脚本执行（配置+执行）         │
 │  └── [其他 30+ 命令]  : 单文件实现，功能聚焦                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -150,6 +156,9 @@ graph TB
         GrepCLI[grep.go]
         HashCLI[hash.go]
         ListCLI[list.go]
+        ShfmtCLI[shfmt.go]
+        ShckCLI[shck.go]
+        ShxCLI[shx.go]
     end
 
     subgraph 业务逻辑层
@@ -158,6 +167,9 @@ graph TB
         GrepCMD[grep/cmd_grep.go]
         HashCMD[hash/cmd_hash.go]
         ListCMD[list/cmd_list.go]
+        ShfmtCMD[shfmt/cmd_shfmt.go]
+        ShckCMD[shck/cmd_shck.go]
+        ShxCMD[shx/cmd_shx.go]
     end
 
     subgraph 共享支撑层
@@ -174,20 +186,28 @@ graph TB
         SJSON[sjson<br/>JSON设置/删除]
         Readline[readline<br/>交互输入]
         ProPing[pro-bing<br/>Ping实现]
+        ShxLib[shx<br/>Shell执行/格式化/检查]
     end
 
-    Root --> CatCLI & FindCLI & GrepCLI & HashCLI & ListCLI
+    Root --> CatCLI & FindCLI & GrepCLI & HashCLI & ListCLI & ShfmtCLI & ShckCLI & ShxCLI
     CatCLI --> CatCMD
     FindCLI --> FindCMD
     GrepCLI --> GrepCMD
     HashCLI --> HashCMD
     ListCLI --> ListCMD
+    ShfmtCLI --> ShfmtCMD
+    ShckCLI --> ShckCMD
+    ShxCLI --> ShxCMD
 
     CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> Types
     CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> Utils
     CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> ColorLib
     CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> TermLib
     CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> FSLib
+
+    ShfmtCMD & ShckCMD & ShxCMD --> TermLib
+    ShfmtCMD & ShckCMD & ShxCMD --> FSLib
+    ShfmtCMD & ShckCMD & ShxCMD --> ShxLib
 
     CatCMD --> Chroma
     GrepCMD --> Chroma
@@ -210,6 +230,8 @@ graph TB
 | **json 命令** → `sjson` | JSON 字段设置/删除 | 强依赖 |
 | **tcp 命令** → `readline` | 交互式输入 | 功能依赖 |
 | **ping 命令** → `pro-bing` | ICMP Ping 实现 | 强依赖 |
+| **shfmt/shck/shx 命令** → `gitee.com/MM-Q/shx` | Shell 格式化/语法检查/命令执行 | 强依赖 |
+| **shfmt/shck 命令** → `gitee.com/MM-Q/go-kit/fs` | 通配符展开（fs.ExpandFiles） | 强依赖 |
 
 ### 3.3 潜在依赖问题分析
 
@@ -339,6 +361,7 @@ FindCmdMain
 | **工具库** | go-kit (MM-Q) | v0.0.20 | 文件系统/终端工具（自研） |
 | **压缩库** | comprx (MM-Q) | v0.1.7 | 压缩解压（自研） |
 | **执行库** | shellx (MM-Q) | v1.0.19 | 命令执行（自研） |
+| **Shell 工具库** | shx (MM-Q) | v0.0.1 | Shell 脚本格式化/语法检查/执行（自研，基于 mvdan.cc/sh） |
 | **版本管理** | verman (MM-Q) | v0.0.19 | 版本信息注入（自研） |
 | **语法高亮** | chroma | v2.23.1 | 代码高亮显示 |
 | **JSON 处理** | gjson | v1.18.0 | JSON 路径查询 |
@@ -431,7 +454,7 @@ defer func() {
 
 ### 7.1 项目核心特点
 
-1. **一站式工具集**：40+ 命令覆盖文件、文本、系统、网络、开发全场景
+1. **一站式工具集**：45+ 命令覆盖文件、文本、系统、网络、开发全场景
 2. **跨平台兼容**：Windows/Linux/macOS 统一体验，纯 Go 实现
 3. **现代化体验**：彩色输出、表格样式、进度显示、语法高亮
 4. **下载功能**：curl 命令支持 `-o`/`-O` 文件保存、进度条显示、流式下载
@@ -447,7 +470,6 @@ defer func() {
 | P2 | 常量分散 | 将分散的常量统一迁移到 `types` 包 |
 | P3 | 断点续传 | curl 下载可增加 `-c, --continue` 支持断点续传 |
 | P4 | 性能基准 | 建议添加 Benchmark 测试，量化性能指标 |
-| P5 | 国际化 | 当前中文为主，可考虑 i18n 支持 |
 
 ### 7.3 关键记忆点
 
@@ -457,7 +479,7 @@ defer func() {
 ├─────────────────────────────────────────────────────────────────┤
 │  核心架构: cmd → cli → commands → types/utils                   │
 ├─────────────────────────────────────────────────────────────────┤
-│  命令数量: 40+                                                  │
+│  命令数量: 45+                                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │  技术特点: 纯 Go + vendor + 自研工具链 + 跨平台                  │
 ├─────────────────────────────────────────────────────────────────┤
@@ -475,6 +497,11 @@ defer func() {
 ├─────────────────────────────────────────────────────────────────┤
 │  cp/mv 特性: 使用 go-kit-fs 的 CopyEx/MoveEx（含 verbose 参数）, │
 │              verbose 打印由库层处理, CLI 层用 fs.Expand 展开通配符 │
+├─────────────────────────────────────────────────────────────────┤
+│  shfmt/shck/shx 特性: 基于 shx 库(gitee.com/MM-Q/shx),           │
+│              shfmt: -w(原地写入), -b(备份), 通配符批量格式化     │
+│              shck: 语法检查, 通配符批量检查                       │
+│              shx: 命令/脚本执行, -t(超时), -d(工作目录), -e(环境变量)│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -512,7 +539,7 @@ defer func() {
 - **Go 版本**: 1.25.0
 - **构建脚本**: Python 3 (build.py)
 - **支持平台**: Windows, Linux, macOS
-- **支持架构**: amd64
+- **支持架构**: amd64, arm64
 
 ---
 
