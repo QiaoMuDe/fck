@@ -87,9 +87,7 @@ cmds = [
 # 任务工作目录
 work_dir = ''
 # 依赖任务列表
-depends_on = [
-    'test'
-]
+depends_on = []
 # 后继任务列表
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
@@ -112,9 +110,7 @@ cmds = [
 # 任务工作目录
 work_dir = ''
 # 依赖任务列表
-depends_on = [
-    'test'
-]
+depends_on = []
 # 后继任务列表
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
@@ -124,6 +120,29 @@ platform = []
 [task.build_windows_amd64.envs]
 GOARCH = 'amd64'
 GOOS = 'windows'
+
+[task.build_linux_arm64]
+# 任务描述
+desc = '交叉编译 Linux ARM64'
+# 命令列表
+cmds = [
+    'fck mkdir -p {{output_dir}}',
+    'go build -trimpath -ldflags "{{ldflags}}" -o {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}} {{main_path}}',
+    'upx {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = []
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+
+# 任务环境变量
+[task.build_linux_arm64.envs]
+GOARCH = 'arm64'
+GOOS = 'linux'
 
 [task.clean]
 # 任务描述
@@ -181,20 +200,24 @@ platform = []
 
 [task.release]
 # 任务描述
-desc = '打包分发 (含 Linux/Windows AMD64) '
+desc = '打包分发 (含 Linux/Windows AMD64 + Linux ARM64) '
 # 命令列表
 cmds = [
     'fck pack -o {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}.tar.gz {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}',
+    'fck pack -o {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}.tar.gz {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}',
     'fck pack -o {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.zip {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
     'fck rm -f {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
     'fck rm -f {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}',
+    'fck rm -f {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}',
     'fck pack -o {{output_dir}}/fck-skill.zip fck-skill'
 ]
 # 任务工作目录
 work_dir = ''
 # 依赖任务列表
 depends_on = [
+    'test',
     'build_linux_amd64',
+    'build_linux_arm64',
     'build_windows_amd64'
 ]
 # 后继任务列表
