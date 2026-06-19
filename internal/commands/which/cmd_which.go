@@ -81,7 +81,7 @@ func WhichCmdMain(config WhichConfig) error {
 //   - []string: 找到的路径列表
 //   - error: 查找过程中的系统错误
 func findCommand(name string, all bool) ([]string, error) {
-	// 如果不需要 -a（所有匹配），直接使用 FindCommandPath
+	// 如果不需要 -a (所有匹配), 直接使用 FindCommandPath
 	if !all {
 		path := shx.FindCommandPath(name)
 		if path == "" {

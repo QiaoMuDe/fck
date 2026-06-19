@@ -397,6 +397,8 @@ Go版本: 1.25.0
 默认解析器: syntax.LangBash (支持 Bash 特有语法)
 单次保护: 已移除
 脚本校验: NewScript 要求路径以 .sh 结尾，否则 panic
+FindCmd: 只在 PATH 中查找命令（不主动搜索 CWD）。ErrDot 分支用 path 而非 name 构建绝对路径，避免 Windows 丢失扩展名
+```
 错误链: ExitStatus 通过 Unwrap() 保留原始 interp.ExitStatus，支持 errors.Is 穿透
 格式化: FormatOptions 结构体控制 8 个选项，DefaultFormatOptions 返回 {Indent=2, SwitchCaseIndent, KeepComments}
          FormatWithOptions/FormatScriptWithOptions 接受自定义选项，Format/FormatScript 委托调用默认
