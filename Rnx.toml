@@ -226,7 +226,8 @@ cmds = [
     'fck pack -o {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.zip {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
     'fck rm -f {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
     'fck rm -f {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}',
-    'fck rm -f {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}'
+    'fck rm -f {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}',
+    'fck pack -o {{output_dir}}/fck_skill_{{git_version}}.zip ./fck-skill'
 ]
 # 任务工作目录
 work_dir = ''
