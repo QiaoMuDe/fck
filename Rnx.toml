@@ -26,54 +26,39 @@ CGO_ENABLED = '0'
 # 全局变量
 [global.vars]
 app_name = 'fck'
+exe_name = '{{app_name}}{{exe_suffix}}'
+exe_path = '{{output_dir}}/{{exe_name}}'
+exe_suffix = '@go env GOEXE'
 git_commit = '@fck gm -H'
 git_version = '@fck gm -v'
+gobin = '@go env GOBIN'
 ldflags = '-s -w {{verman_flags}}'
-main_path = './cmd/fck/'
+main_path = './cmd/fck'
 output_dir = 'dist'
 verman_flags = "-X 'gitee.com/MM-Q/verman.appName={{app_name}}' -X 'gitee.com/MM-Q/verman.gitVersion={{git_version}}' -X 'gitee.com/MM-Q/verman.gitCommit={{git_commit}}'"
 
 # 任务定义
 [task]
-[task.all]
-# 任务描述
-desc = '完整流水线: 清理 → 格式化检查 → 测试 → 交叉编译 → 打包'
-# 命令列表
-cmds = [
-    'echo "=== Full pipeline completed ==="'
-]
-# 任务工作目录
-work_dir = ''
-# 依赖任务列表
-depends_on = [
-    'clean',
-    'fc',
-    'test',
-    'release'
-]
-# 后继任务列表
-run_after = []
-# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
-platform = []
-
 [task.build]
 # 任务描述
 desc = '构建当前平台可执行文件'
 # 命令列表
 cmds = [
     'fck mkdir -p {{output_dir}}',
-    'go build -trimpath -ldflags "{{ldflags}}" -o {{output_dir}}/ {{main_path}}'
+    'go build -trimpath -ldflags "{{ldflags}}" -o {{exe_path}} {{main_path}}'
 ]
 # 任务工作目录
 work_dir = ''
 # 依赖任务列表
 depends_on = [
-    'test'
+    'check'
 ]
 # 后继任务列表
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = false
 
 [task.build_linux_amd64]
 # 任务描述
@@ -92,10 +77,37 @@ depends_on = []
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = true
 
 # 任务环境变量
 [task.build_linux_amd64.envs]
 GOARCH = 'amd64'
+GOOS = 'linux'
+
+[task.build_linux_arm64]
+# 任务描述
+desc = '交叉编译 Linux ARM64'
+# 命令列表
+cmds = [
+    'fck mkdir -p {{output_dir}}',
+    'go build -trimpath -ldflags "{{ldflags}}" -o {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}} {{main_path}}',
+    'upx {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}'
+]
+# 任务工作目录
+work_dir = ''
+# 依赖任务列表
+depends_on = []
+# 后继任务列表
+run_after = []
+# 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
+platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = true
+
+# 任务环境变量
+[task.build_linux_arm64.envs]
+GOARCH = 'arm64'
 GOOS = 'linux'
 
 [task.build_windows_amd64]
@@ -115,34 +127,34 @@ depends_on = []
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = true
 
 # 任务环境变量
 [task.build_windows_amd64.envs]
 GOARCH = 'amd64'
 GOOS = 'windows'
 
-[task.build_linux_arm64]
+[task.check]
 # 任务描述
-desc = '交叉编译 Linux ARM64'
+desc = '前置检查'
 # 命令列表
 cmds = [
-    'fck mkdir -p {{output_dir}}',
-    'go build -trimpath -ldflags "{{ldflags}}" -o {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}} {{main_path}}',
-    'upx {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}'
+    'echo "前置检查完成"'
 ]
 # 任务工作目录
 work_dir = ''
 # 依赖任务列表
-depends_on = []
+depends_on = [
+    'fc',
+    'test'
+]
 # 后继任务列表
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
-
-# 任务环境变量
-[task.build_linux_arm64.envs]
-GOARCH = 'arm64'
-GOOS = 'linux'
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = true
 
 [task.clean]
 # 任务描述
@@ -160,6 +172,8 @@ depends_on = []
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = true
 
 [task.fc]
 # 任务描述
@@ -178,6 +192,8 @@ depends_on = []
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = false
 
 [task.install]
 # 任务描述
@@ -191,16 +207,18 @@ cmds = [
 work_dir = ''
 # 依赖任务列表
 depends_on = [
-    'fc'
+    'check'
 ]
 # 后继任务列表
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = false
 
 [task.release]
 # 任务描述
-desc = '打包分发 (含 Linux/Windows AMD64 + Linux ARM64) '
+desc = '发布流水线: 清理 → 格式化检查 → 测试 → 交叉编译 → 打包'
 # 命令列表
 cmds = [
     'fck pack -o {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}.tar.gz {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}',
@@ -208,14 +226,14 @@ cmds = [
     'fck pack -o {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.zip {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
     'fck rm -f {{output_dir}}/{{app_name}}_windows_amd64_{{git_version}}.exe',
     'fck rm -f {{output_dir}}/{{app_name}}_linux_amd64_{{git_version}}',
-    'fck rm -f {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}',
-    'fck pack -o {{output_dir}}/fck-skill.zip fck-skill'
+    'fck rm -f {{output_dir}}/{{app_name}}_linux_arm64_{{git_version}}'
 ]
 # 任务工作目录
 work_dir = ''
 # 依赖任务列表
 depends_on = [
-    'test',
+    'clean',
+    'check',
     'build_linux_amd64',
     'build_linux_arm64',
     'build_windows_amd64'
@@ -224,6 +242,8 @@ depends_on = [
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = false
 
 [task.run]
 # 任务描述
@@ -236,12 +256,14 @@ cmds = [
 work_dir = ''
 # 依赖任务列表
 depends_on = [
-    'fc'
+    'check'
 ]
 # 后继任务列表
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = false
 
 [task.test]
 # 任务描述
@@ -261,3 +283,5 @@ depends_on = [
 run_after = []
 # 支持运行的平台, 为空时表示支持所有平台(支持配置为: windows, linux, darwin)
 platform = []
+# 是否为内部任务 (true 时不显示在任务列表中)
+internal = false
