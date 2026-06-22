@@ -190,7 +190,7 @@ func Format(script string) (string, error)
 
 Format 使用默认选项格式化 shell 命令字符串。
 
-默认启用：缩进 2 空格、case 语句缩进、注释保留。
+默认启用：缩进 4 空格、case 语句缩进、注释保留。
 
 **参数：**
 
@@ -1210,7 +1210,7 @@ func DefaultFormatOptions() FormatOptions
 ```
 
 DefaultFormatOptions 返回默认格式化选项：
-- 缩进: 2 空格
+- 缩进: 4 空格
 - case 语句缩进: 启用
 - 注释保留: 启用
 

@@ -364,7 +364,7 @@ splitInternal("git commit -m \"feat: add feature\"")
 6. **重复执行支持**：移除了单次执行保护，每次执行重新创建底层资源
 7. **构造函数简化**：提取 `newShx` 内部构造函数，消除 4 处重复初始化代码
 8. **命令分词器**：智能拆分 Shell 命令字符串，支持选择性转义，Windows 路径原生兼容
-9. **语法检查与格式化**：基于 `mvdan.cc/sh/v3/syntax` 提供 `CheckSyntax`/`Format` 等 6 个函数和 `FormatOptions` 配置结构体，`Format`/`FormatScript` 默认保留注释、2 空格缩进、case 缩进，`FormatWithOptions`/`FormatScriptWithOptions` 支持自定义 8 个格式化选项
+9. **语法检查与格式化**：基于 `mvdan.cc/sh/v3/syntax` 提供 `CheckSyntax`/`Format` 等 6 个函数和 `FormatOptions` 配置结构体，`Format`/`FormatScript` 默认保留注释、4 空格缩进、case 缩进，`FormatWithOptions`/`FormatScriptWithOptions` 支持自定义 8 个格式化选项
 10. **完整测试覆盖**：包含全面的表驱动测试、并发安全测试、模糊测试与 Windows 路径测试
 11. **CLI 工具链**：`shx`（执行）、`shck`（语法检查）、`shfmt`（格式化）三个独立 CLI 工具，帮助信息中均包含项目地址
 12. **错误链支持**：`ExitStatus` 通过 `Unwrap()` 保留原始错误，支持 `errors.Is/As` 穿透
@@ -400,7 +400,7 @@ Go版本: 1.25.0
 FindCmd: 只在 PATH 中查找命令（不主动搜索 CWD）。ErrDot 分支用 path 而非 name 构建绝对路径，避免 Windows 丢失扩展名
 ```
 错误链: ExitStatus 通过 Unwrap() 保留原始 interp.ExitStatus，支持 errors.Is 穿透
-格式化: FormatOptions 结构体控制 8 个选项，DefaultFormatOptions 返回 {Indent=2, SwitchCaseIndent, KeepComments}
+格式化: FormatOptions 结构体控制 8 个选项，DefaultFormatOptions 返回 {Indent=4, SwitchCaseIndent, KeepComments}
          FormatWithOptions/FormatScriptWithOptions 接受自定义选项，Format/FormatScript 委托调用默认
 CLI 帮助: 三个工具（shx/shck/shfmt）帮助信息均包含项目地址 https://gitee.com/MM-Q/shx.git
 ```
@@ -498,7 +498,7 @@ func (e ExitStatus) Unwrap() error     // 返回原始错误，支持 errors.Is 
 type SyntaxError struct { File string; Line int; Column int; Message string }
 
 // FormatOptions 控制 shell 脚本格式化的行为选项
-//   DefaultFormatOptions() 返回: Indent=2, SwitchCaseIndent=true, KeepComments=true
+//   DefaultFormatOptions() 返回: Indent=4, SwitchCaseIndent=true, KeepComments=true
 //   其余选项默认 false
 type FormatOptions struct {
     Indent            uint   // 缩进空格数（0 表示使用 tab）

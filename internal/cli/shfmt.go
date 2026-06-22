@@ -50,6 +50,7 @@ func init() {
 		Notes: []string{
 			"输入方式: 指定文件路径（支持通配符）或通过管道传递脚本内容",
 			"支持通配符模式，如: *.sh, **/*.sh",
+			"默认格式化策略为: 4 空格缩进, 保留注释, case 语句体缩进",
 		},
 		Examples: map[string]string{
 			"格式化单个文件":    fmt.Sprintf("%s shfmt script.sh", qflag.Root.Name()),

@@ -395,12 +395,12 @@ type FormatOptions struct {
 //   - FormatOptions: 默认格式化选项
 //
 // 默认启用：
-//   - 缩进: 2 空格
+//   - 缩进: 4 空格
 //   - case 语句缩进: 启用
 //   - 注释保留: 启用
 func DefaultFormatOptions() FormatOptions {
 	return FormatOptions{
-		Indent:           2,
+		Indent:           4,
 		SwitchCaseIndent: true,
 		KeepComments:     true,
 	}
@@ -520,7 +520,7 @@ func FormatScriptWithOptions(filePath string, opts FormatOptions) (string, error
 //	fmt.Println(formatted)
 //
 // 默认格式：
-//   - 缩进: 2 空格
+//   - 缩进: 4 空格
 //   - case 语句缩进: 启用
 //   - 注释保留: 启用
 func Format(script string) (string, error) {
