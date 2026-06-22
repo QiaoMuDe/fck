@@ -77,6 +77,7 @@ func InitAndRun() (err error) {
 			ShfmtCmd,
 			ShckCmd,
 			ShxCmd,
+			IfconfigCmd,
 		},
 	}
 
