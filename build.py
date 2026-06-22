@@ -24,7 +24,7 @@ DEFAULT_GO_COMPILER = "go"
 # 默认不使用 vendor 克隆依赖
 DEFAULT_USE_VENDOR = False
 # 默认在构建阶段使用 vendor 目录
-DEFAULT_USE_VENDOR_IN_BUILD = True
+DEFAULT_USE_VENDOR_IN_BUILD = False
 # 是否注入git信息, 默认为True
 DEFAULT_INJECT_GIT_INFO = True
 # 是否使用简单文件名格式, 默认为False
