@@ -1,7 +1,7 @@
 # FCK 项目分析报告
 
 > **生成时间**: 2026-05-19  
-> **最近更新**: 2026-06-18 (shfmt 新增格式化选项标志; 默认值从 shx 库获取)  
+> **最近更新**: 2026-06-18 (新增 ifconfig 网络接口信息命令)  
 > **分析工具**: AI 架构分析引擎  
 > **项目定位**: 跨平台命令行工具集（类 Unix 工具 Windows 替代方案）
 
@@ -18,7 +18,7 @@ fck/
 ├── internal/                     # 内部实现（Go 标准项目布局）
 │   ├── cli/                      # CLI 层：命令定义与参数解析
 │   │   ├── root.go               # 根命令注册中心
-│   │   ├── [45+ 命令定义文件]    # 每个命令一个文件
+│   │   ├── [46+ 命令定义文件]    # 每个命令一个文件
 │   │   └── tcp/                  # 复杂命令子模块
 │   ├── commands/                 # 业务逻辑层：命令核心实现
 │   │   ├── [40+ 命令实现目录]    # 每个命令独立目录
@@ -102,6 +102,7 @@ fck/
 | | ping | 网络连通测试 | `internal/commands/ping/` |
 | | dns | DNS 查询 | `internal/commands/dns/` |
 | | curl (c) | HTTP 客户端（支持 `-o` 保存文件、`-O` 远程文件名、下载进度条、语法高亮） | `internal/commands/curl/` |
+| | ifconfig | 网络接口信息查看（支持 -a/-s/-j/--stats 五种标志，19种表格样式） | `internal/commands/ifconfig/` |
 | **开发辅助** | json (j) | JSON 处理（支持格式化、查询、设置字段值、删除字段、语法高亮） | `internal/commands/json/` |
 | | base64 (b64) | Base64 编解码 | `internal/commands/base64/` |
 | | md | Markdown 预览 | `internal/commands/md/` |
@@ -134,6 +135,7 @@ fck/
 │  └── json/    : 解析 + 查询(gjson) + 设置/删除(sjson) + 高亮       │
 ├─────────────────────────────────────────────────────────────────┤
 │  低复杂度（单一功能）                                            │
+│  ├── ifconfig/: 单文件 - 网络接口信息查看                              │
 │  ├── shfmt/   : 单文件 - Shell 脚本格式化                       │
 │  ├── shck/    : 单文件 - Shell 脚本语法检查                     │
 │  ├── shx/     : 单文件 - Shell 命令/脚本执行（配置+执行）         │
@@ -156,6 +158,7 @@ graph TB
         GrepCLI[grep.go]
         HashCLI[hash.go]
         ListCLI[list.go]
+        IfconfigCLI[ifconfig.go]
         ShfmtCLI[shfmt.go]
         ShckCLI[shck.go]
         ShxCLI[shx.go]
@@ -167,6 +170,7 @@ graph TB
         GrepCMD[grep/cmd_grep.go]
         HashCMD[hash/cmd_hash.go]
         ListCMD[list/cmd_list.go]
+        IfconfigCMD[ifconfig/cmd_ifconfig.go]
         ShfmtCMD[shfmt/cmd_shfmt.go]
         ShckCMD[shck/cmd_shck.go]
         ShxCMD[shx/cmd_shx.go]
@@ -187,23 +191,25 @@ graph TB
         Readline[readline<br/>交互输入]
         ProPing[pro-bing<br/>Ping实现]
         ShxLib[shx<br/>Shell执行/格式化/检查]
+        GoPretty[go-pretty<br/>表格输出]
     end
 
-    Root --> CatCLI & FindCLI & GrepCLI & HashCLI & ListCLI & ShfmtCLI & ShckCLI & ShxCLI
+    Root --> CatCLI & FindCLI & GrepCLI & HashCLI & ListCLI & IfconfigCLI & ShfmtCLI & ShckCLI & ShxCLI
     CatCLI --> CatCMD
     FindCLI --> FindCMD
     GrepCLI --> GrepCMD
     HashCLI --> HashCMD
     ListCLI --> ListCMD
+    IfconfigCLI --> IfconfigCMD
     ShfmtCLI --> ShfmtCMD
     ShckCLI --> ShckCMD
     ShxCLI --> ShxCMD
 
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> Types
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> Utils
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> ColorLib
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> TermLib
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD --> FSLib
+    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> Types
+    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> Utils
+    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> ColorLib
+    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> TermLib
+    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> FSLib
 
     ShfmtCMD & ShckCMD & ShxCMD --> TermLib
     ShfmtCMD & ShckCMD & ShxCMD --> FSLib
@@ -214,6 +220,7 @@ graph TB
     HashCMD --> Chroma
     JsonCMD --> GJSON
     JsonCMD --> SJSON
+    IfconfigCMD --> GoPretty
 ```
 
 ### 3.2 核心依赖关系说明
@@ -232,6 +239,8 @@ graph TB
 | **ping 命令** → `pro-bing` | ICMP Ping 实现 | 强依赖 |
 | **shfmt/shck/shx 命令** → `gitee.com/MM-Q/shx` | Shell 格式化/语法检查/命令执行 | 强依赖 |
 | **shfmt/shck 命令** → `gitee.com/MM-Q/go-kit/fs` | 通配符展开（fs.ExpandFiles） | 强依赖 |
+| **ifconfig 命令** → `gopsutil` | 网络接口流量统计 | 可选依赖 |
+| **ifconfig 命令** → `go-pretty` | 表格输出 | 强依赖 |
 
 ### 3.3 潜在依赖问题分析
 
@@ -507,6 +516,10 @@ defer func() {
 │              shx: 命令/脚本执行, -t(超时), -d(工作目录),          │
 │                   -e(环境变量), 退出码在 main.go 入口透传         │
 │              main.go: 错误信息统一通过 Fprintln 输出到 stderr     │
+├─────────────────────────────────────────────────────────────────┤
+│  ifconfig 特性: 网络接口信息查看, -a(全部接口含虚拟), -s(简略输出),│
+│                 -j(JSON输出), --stats(流量统计), -ts(表格样式),   │
+│                 19种表格样式, 默认过滤虚拟网卡, 零新增外部依赖     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
