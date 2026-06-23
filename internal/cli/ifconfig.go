@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	IfconfigCmd = qflag.NewCmd("ifconfig", "", qflag.ExitOnError)
+	IfconfigCmd = qflag.NewCmd("ifconfig", "ifc", qflag.ExitOnError)
 
 	// 注册命令行标志
 	ifconfigAll = IfconfigCmd.Bool("all", "a", "显示所有接口, 包含虚拟网卡", false)

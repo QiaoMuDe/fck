@@ -34,7 +34,6 @@ type interfaceInfo struct {
 	Status    string // "UP" 或 "DOWN"
 	IPv4      string // 第一个 IPv4 地址（含 CIDR）
 	IPv6      string // 第一个 IPv6 地址（含 CIDR）
-	Speed     string // 链路速度（Mbps），取不到显示 "-"
 	TXBytes   uint64 // 发送字节数
 	RXBytes   uint64 // 接收字节数
 	TXPackets uint64 // 发送包数
@@ -57,7 +56,7 @@ func IfconfigCmdMain(config IfconfigConfig) error {
 	}
 
 	if len(interfaces) == 0 {
-		fmt.Println("No network interfaces found")
+		fmt.Fprintln(os.Stderr, "No network interfaces found")
 		return nil
 	}
 
@@ -147,7 +146,6 @@ func collectInterfaces(config IfconfigConfig) ([]interfaceInfo, error) {
 			Index: iface.Index,
 			MTU:   iface.MTU,
 			MAC:   "N/A",
-			Speed: "-",
 		}
 
 		// 判断接口状态
@@ -208,7 +206,7 @@ func renderTable(interfaces []interfaceInfo, config IfconfigConfig) {
 	t.SetOutputMirror(os.Stdout)
 
 	// 设置表头
-	headers := table.Row{"Name", "MTU", "MAC", "Status", "IPv4", "IPv6", "Speed"}
+	headers := table.Row{"Name", "MTU", "MAC", "Status", "IPv4", "IPv6"}
 	if config.Stats {
 		headers = append(headers,
 			"TX Bytes", "RX Bytes",
@@ -227,7 +225,6 @@ func renderTable(interfaces []interfaceInfo, config IfconfigConfig) {
 			iface.Status,
 			iface.IPv4,
 			iface.IPv6,
-			iface.Speed,
 		}
 		if config.Stats {
 			row = append(row,
