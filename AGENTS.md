@@ -1,7 +1,7 @@
 # FCK 项目分析报告
 
 > **生成时间**: 2026-05-19  
-> **最近更新**: 2026-07-14 (head/hash/size/touch/truncate/iconv/json/preview/tail 支持通配符)  
+> **最近更新**: 2026-07-14 (tail -f 多文件追踪新内容缺少标题 Bug 修复; head/hash/size/touch/truncate/iconv/json/preview/tail 支持通配符)  
 > **分析工具**: AI 架构分析引擎  
 > **项目定位**: 跨平台命令行工具集（类 Unix 工具 Windows 替代方案）
 
@@ -512,6 +512,11 @@ defer func() {
 │              fs.ExpandFiles(args) 展开通配符，只保留文件        │
 │              preview 同时 PackPath string → PackPaths []string  │
 │              支持批量多压缩包预览                                │
+├─────────────────────────────────────────────────────────────────┤
+│  tail -f 多文件追踪: 2026-07-14 修复 followFile 中正常增长      │
+│              路径的标题打印条件 showHeader && tf.Size == 0      │
+│              改为 else if showHeader 挂在增长分支, 确保每次     │
+│              轮询新内容前正确输出 ==> filename <==              │
 ├─────────────────────────────────────────────────────────────────┤
 │  shfmt/shck/shx 特性: 基于 shx 库(gitee.com/MM-Q/shx),           │
 │              shfmt: -w(原地写入), -b(备份), -l(列表模式),         │

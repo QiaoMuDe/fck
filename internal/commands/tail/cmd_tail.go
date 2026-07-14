@@ -314,6 +314,9 @@ func followFile(tf *TailFile, showHeader bool) error {
 	} else if newSize == tf.Size {
 		// 没有新内容
 		return nil
+	} else if showHeader {
+		// 正常增长：多文件模式在新内容前打印文件名标题
+		fmt.Printf("\n==> %s <==\n", tf.Path)
 	}
 
 	// 读取新内容
@@ -324,10 +327,6 @@ func followFile(tf *TailFile, showHeader bool) error {
 				break
 			}
 			return err
-		}
-
-		if showHeader && tf.Size == 0 {
-			fmt.Printf("\n==> %s <==\n", tf.Path)
 		}
 
 		fmt.Print(line)
