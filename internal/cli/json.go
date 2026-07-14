@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/json"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -119,6 +120,14 @@ func runJson(cmd qflag.Command) error {
 		highlight = false
 	}
 
+	args := cmd.Args()
+
+	// 展开通配符
+	targets, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+
 	config := json.JsonConfig{
 		Pretty:     jsonPretty.Get(),
 		Compact:    jsonCompact.Get(),
@@ -131,7 +140,7 @@ func runJson(cmd qflag.Command) error {
 		SetValue:   jsonSet.Get(),
 		DeletePath: jsonDelete.Get(),
 		ValueType:  jsonType.Get(),
-		Files:      cmd.Args(),
+		Files:      targets,
 	}
 
 	return json.JsonCmdMain(config)

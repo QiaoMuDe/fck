@@ -6,6 +6,7 @@ import (
 	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/size"
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -73,8 +74,16 @@ func init() {
 func runSize(cmd qflag.Command) error {
 	cl := color.G()
 
+	args := cmd.Args()
+
+	// 展开通配符
+	targets, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+
 	config := size.SizeConfig{
-		Args:          cmd.Args(),
+		Args:          targets,
 		NoColor:       sizeNoColor.Get(),
 		TableStyle:    sizeTableStyle.Get(),
 		Hidden:        sizeHidden.Get(),

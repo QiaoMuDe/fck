@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/head"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -57,8 +58,16 @@ func init() {
 }
 
 func runHead(cmd qflag.Command) error {
+	args := cmd.Args()
+
+	// 展开通配符，只保留文件
+	targets, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+
 	config := head.HeadConfig{
-		Targets: cmd.Args(),
+		Targets: targets,
 		Lines:   headLines.Get(),
 		Bytes:   headBytes.Get(),
 		Quiet:   headQuiet.Get(),

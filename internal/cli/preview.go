@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/preview"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -28,9 +29,10 @@ func init() {
 		Desc:        "压缩包预览工具",
 		Notes:       []string{"支持的格式有: .zip, .tar, .tar.gz, .tgz, .gz, .bz2, .bzip2, .zlib"},
 		UseChinese:  true,
-		UsageSyntax: fmt.Sprintf("%s preview [options] <archive>", qflag.Root.Name()),
+		UsageSyntax: fmt.Sprintf("%s preview [options] <archive>...", qflag.Root.Name()),
 		Examples: map[string]string{
 			"预览压缩包":     fmt.Sprintf("%s preview archive.zip", qflag.Root.Name()),
+			"预览多个压缩包":   fmt.Sprintf("%s preview archive1.zip archive2.zip", qflag.Root.Name()),
 			"预览压缩包基本信息": fmt.Sprintf("%s preview -i archive.zip", qflag.Root.Name()),
 		},
 	}
@@ -44,18 +46,23 @@ func init() {
 
 func runPreview(cmd qflag.Command) error {
 	args := cmd.Args()
-	if len(args) < 1 {
+
+	// 展开通配符，只保留文件
+	packPaths, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+
+	if len(packPaths) < 1 {
 		return fmt.Errorf("missing archive path")
 	}
 
-	packPath := args[0]
-
 	config := preview.PreviewConfig{
-		PackPath: packPath,
-		Info:     previewInfo.Get(),
-		Ls:       previewLs.Get(),
-		Ll:       previewLl.Get(),
-		Limit:    previewLimit.Get(),
+		PackPaths: packPaths,
+		Info:      previewInfo.Get(),
+		Ls:        previewLs.Get(),
+		Ll:        previewLl.Get(),
+		Limit:     previewLimit.Get(),
 	}
 
 	return preview.PreviewCmdMain(config)

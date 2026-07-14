@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/touch"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -49,8 +50,16 @@ func init() {
 }
 
 func runTouch(cmd qflag.Command) error {
+	args := cmd.Args()
+
+	// 展开通配符
+	targets, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+
 	config := touch.TouchConfig{
-		Targets:  cmd.Args(),
+		Targets:  targets,
 		NoCreate: touchNoCreate.Get(),
 		Time:     touchTime.Get(),
 		Access:   touchAccess.Get(),

@@ -1,7 +1,7 @@
 # FCK 项目分析报告
 
 > **生成时间**: 2026-05-19  
-> **最近更新**: 2026-06-18 (ifconfig 移除 Speed 列, 新增 ifc 别名)  
+> **最近更新**: 2026-07-14 (head/hash/size/touch/truncate/iconv/json/preview/tail 支持通配符)  
 > **分析工具**: AI 架构分析引擎  
 > **项目定位**: 跨平台命令行工具集（类 Unix 工具 Windows 替代方案）
 
@@ -73,15 +73,15 @@ fck/
 | | mv | 文件移动（fs.MoveEx + 通配符展开） | `internal/commands/mv/` |
 | | rm | 文件删除 | `internal/commands/rm/` |
 | | mkdir | 目录创建 | `internal/commands/mkdir/` |
-| | touch | 文件时间戳修改 | `internal/commands/touch/` |
-| | truncate | 文件截断 | `internal/commands/truncate/` |
-| | hash | 文件哈希计算 | `internal/commands/hash/` |
+| | touch | 文件时间戳修改（`fs.ExpandFiles` 通配符展开） | `internal/commands/touch/` |
+| | truncate | 文件截断（`fs.ExpandFiles` 通配符展开） | `internal/commands/truncate/` |
+| | hash | 文件哈希计算（`fs.ExpandFiles` 通配符展开） | `internal/commands/hash/` |
 | | check | 哈希校验 | `internal/commands/check/` |
-| | size (sz) | 文件大小统计 | `internal/commands/size/` |
-| | preview (pv) | 压缩包预览 | `internal/commands/preview/` |
+| | size (sz) | 文件大小统计（`fs.ExpandFiles` 通配符展开） | `internal/commands/size/` |
+| | preview (pv) | 压缩包预览（`fs.ExpandFiles` 通配符展开 + 批量多压缩包） | `internal/commands/preview/` |
 | **文本处理** | cat | 文件内容显示 | `internal/commands/cat/` |
-| | head | 显示文件开头 | `internal/commands/head/` |
-| | tail | 显示文件结尾 | `internal/commands/tail/` |
+| | head | 显示文件开头（`fs.ExpandFiles` 通配符展开） | `internal/commands/head/` |
+| | tail | 显示文件结尾（`fs.ExpandFiles` 通配符展开） | `internal/commands/tail/` |
 | | grep | 文本搜索（支持 `-nh` 组合标志、`-rin` 组合标志、`--buffer-size` 缓冲区配置） | `internal/commands/grep/` |
 | | sed | 流编辑器 | `internal/commands/sed/` |
 | | awk | 字段处理 | `internal/commands/awk/` |
@@ -90,7 +90,7 @@ fck/
 | | xargs | 参数批量执行 | `internal/commands/xargs/` |
 | | tee | 输出分流 | `internal/commands/tee/` |
 | | newline (nl) | 换行符检测转换 | `internal/commands/newline/` |
-| | iconv (icv) | 编码转换 | `internal/commands/iconv/` |
+| | iconv (icv) | 编码转换（`fs.ExpandFiles` 通配符展开） | `internal/commands/iconv/` |
 | **系统监控** | proc (ps) | 进程查看 | `internal/commands/proc/` |
 | | port (pt) | 端口监控 | `internal/commands/port/` |
 | | df | 磁盘空间 | `internal/commands/df/` |
@@ -103,7 +103,7 @@ fck/
 | | dns | DNS 查询 | `internal/commands/dns/` |
 | | curl (c) | HTTP 客户端（支持 `-o` 保存文件、`-O` 远程文件名、下载进度条、语法高亮） | `internal/commands/curl/` |
 | | ifconfig | 网络接口信息查看（支持 -a/-s/-j/--stats 五种标志，19种表格样式） | `internal/commands/ifconfig/` |
-| **开发辅助** | json (j) | JSON 处理（支持格式化、查询、设置字段值、删除字段、语法高亮） | `internal/commands/json/` |
+| **开发辅助** | json (j) | JSON 处理（支持格式化、查询、设置字段值、删除字段、语法高亮、`fs.ExpandFiles` 通配符展开） | `internal/commands/json/` |
 | | base64 (b64) | Base64 编解码 | `internal/commands/base64/` |
 | | md | Markdown 预览 | `internal/commands/md/` |
 | | seq | 序列生成 | `internal/commands/seq/` |
@@ -506,6 +506,12 @@ defer func() {
 ├─────────────────────────────────────────────────────────────────┤
 │  cp/mv 特性: 使用 go-kit-fs 的 CopyEx/MoveEx（含 verbose 参数）, │
 │              verbose 打印由库层处理, CLI 层用 fs.Expand 展开通配符 │
+├─────────────────────────────────────────────────────────────────┤
+│  通配符展开 (fs.ExpandFiles): head/hash/size/touch/truncate/    │
+│              iconv/json/preview/tail 在 CLI 层调用               │
+│              fs.ExpandFiles(args) 展开通配符，只保留文件        │
+│              preview 同时 PackPath string → PackPaths []string  │
+│              支持批量多压缩包预览                                │
 ├─────────────────────────────────────────────────────────────────┤
 │  shfmt/shck/shx 特性: 基于 shx 库(gitee.com/MM-Q/shx),           │
 │              shfmt: -w(原地写入), -b(备份), -l(列表模式),         │

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/tail"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -62,8 +63,16 @@ func init() {
 }
 
 func runTail(cmd qflag.Command) error {
+	args := cmd.Args()
+
+	// 展开通配符，只保留文件
+	targets, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+
 	config := tail.TailConfig{
-		Targets: cmd.Args(),
+		Targets: targets,
 		Lines:   tailLines.Get(),
 		Bytes:   tailBytes.Get(),
 		Follow:  tailFollow.Get(),

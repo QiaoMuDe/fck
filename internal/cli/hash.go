@@ -5,6 +5,7 @@ import (
 
 	"gitee.com/MM-Q/color"
 	"gitee.com/MM-Q/fck/internal/commands/hash"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -59,8 +60,16 @@ func runHash(cmd qflag.Command) error {
 	// 禁用颜色
 	cl.SetNoColor(noColor.Get())
 
+	args := cmd.Args()
+
+	// 展开通配符
+	targets, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+
 	config := hash.HashConfig{
-		TargetPaths: cmd.Args(),
+		TargetPaths: targets,
 		Type:        hashType.Get(),
 		Recursion:   hashRecursion.Get(),
 		Write:       hashWrite.Get(),

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/MM-Q/fck/internal/commands/truncate"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -45,10 +46,18 @@ func init() {
 }
 
 func runTruncate(cmd qflag.Command) error {
+	args := cmd.Args()
+
+	// 展开通配符
+	targets, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+
 	config := truncate.TruncateConfig{
 		Size:      truncateSize.Get(),
 		Reference: truncateRef.Get(),
-		Targets:   cmd.Args(),
+		Targets:   targets,
 		Create:    truncateCreate.Get(),
 		Verbose:   truncateVerbose.Get(),
 	}

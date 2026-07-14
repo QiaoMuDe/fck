@@ -6,6 +6,7 @@ import (
 
 	"gitee.com/MM-Q/fck/internal/commands/iconv"
 	"gitee.com/MM-Q/fck/internal/types"
+	"gitee.com/MM-Q/go-kit/fs"
 	"gitee.com/MM-Q/qflag"
 )
 
@@ -97,13 +98,19 @@ func runIconv(cmd qflag.Command) error {
 	}
 
 	// 检查文件参数
-	files := cmd.Args()
-	if len(files) == 0 {
+	args := cmd.Args()
+
+	// 展开通配符
+	targets, err := fs.ExpandFiles(args)
+	if err != nil {
+		return err
+	}
+	if len(targets) == 0 {
 		return fmt.Errorf("no input files specified")
 	}
 
 	config := iconv.IconvConfig{
-		Files:        files,
+		Files:        targets,
 		FromEncoding: iconvFrom.Get(),
 		ToEncoding:   iconvTo.Get(),
 		Write:        iconvWrite.Get(),
