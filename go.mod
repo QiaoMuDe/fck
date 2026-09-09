@@ -6,7 +6,7 @@ require (
 	gitee.com/MM-Q/color v1.0.3
 	gitee.com/MM-Q/comprx v0.1.9
 	gitee.com/MM-Q/go-kit v0.0.25
-	gitee.com/MM-Q/qflag v0.5.20
+	gitee.com/MM-Q/qflag v0.5.21
 	gitee.com/MM-Q/shx v1.0.3
 	gitee.com/MM-Q/verman v0.0.20
 	github.com/alecthomas/chroma/v2 v2.23.1
