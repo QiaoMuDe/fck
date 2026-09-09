@@ -78,6 +78,7 @@ func InitAndRun() (err error) {
 			ShckCmd,
 			ShxCmd,
 			IfconfigCmd,
+			Doc2mdCmd,
 		},
 	}
 

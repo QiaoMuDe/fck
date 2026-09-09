@@ -250,3 +250,11 @@ flowchart TD
 4. **所有文件引用必须使用项目相对路径**（如 `src/utils/helper.go`），禁止绝对路径
 5. **不要记录文件行数/大小统计**，此类信息变化频繁无维护价值
 6. **详细的变更记录请写入项目内其他文档目录**，本文件仅作快速参考
+
+---
+
+## 九、记忆点
+
+1. **doc2md 命令上线**：新增 `doc2md` 命令（`internal/commands/doc2md/`、`internal/cli/doc2md.go`，依赖自研 `gitee.com/MM-Q/doc2md`），将 docx/xlsx/xls/pptx/pdf/epub/html/csv/ipynb/rss/zip/纯文本转 Markdown；支持文件路径与 stdin 管道；`-o` 写出文件、`--keep-data-uris` 控制图片内嵌。
+2. **doc2md 管道二进制失败根因**：给 `doc2md` 管道输入 PDF 等二进制报「No readable text」是 **Windows PowerShell 文本管道破坏字节**所致，非代码缺陷——doc2md 的 PDF 转换器按内存字节加载、不依赖文件路径；二进制文档应走文件路径而非管道。
+3. **doc2md -x 枚举化**：`-x/--extension` 为 qflag `Enum` 标志，枚举首项哨兵 `DocExtNone("none")` 作默认值（在 `internal/commands/doc2md/types.go`），管道输入未显式指定 `-x` 时命中 none 即报错；枚举自带值限制 + 补全、免手写校验，与 `iconv`/`newline` 的 `*None` 哨兵模式一致。

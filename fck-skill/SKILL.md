@@ -27,6 +27,7 @@ FCK 是一个功能丰富的跨平台命令行工具集，提供文件操作、�
 | 文本查看 | `fck cat` / `fck head` / `fck tail` |
 | 文本处理 | `fck sed` / `fck awk` / `fck tr` |
 | 编码转换 | `fck base64` / `fck hex2str` / `fck iconv` |
+| 文档转 Markdown | `fck doc2md` |
 | JSON 处理 | `fck json` |
 | 系统信息 | `fck df` / `fck proc` / `fck port` |
 | 网络工具 | `fck ping` / `fck dns` / `fck curl` / `fck tcp` |
@@ -177,6 +178,24 @@ fck cat -H main.go
 
 # 分页器+语法高亮
 fck cat -l -H main.go
+```
+
+### 示例 6：文档转 Markdown
+```bash
+# 查看帮助
+fck doc2md --help
+
+# 转换 Word 文档（默认输出到终端）
+fck doc2md input.docx
+
+# 输出到文件
+fck doc2md -o out.md input.docx
+
+# 管道输入（需用 -x 提示扩展名）
+cat input.docx | fck doc2md -x .docx
+
+# 保留完整图片数据 URI
+fck doc2md --keep-data-uris input.pdf
 ```
 
 ## 注意事项
