@@ -1,576 +1,252 @@
 # FCK 项目分析报告
 
-> **生成时间**: 2026-05-19  
-> **最近更新**: 2026-07-14 (tail -f 多文件追踪新内容缺少标题 Bug 修复; head/hash/size/touch/truncate/iconv/json/preview/tail 支持通配符)  
-> **分析工具**: AI 架构分析引擎  
-> **项目定位**: 跨平台命令行工具集（类 Unix 工具 Windows 替代方案）
+> 本文件为 `gitee.com/MM-Q/fck`（一站式跨平台命令行工具集）的静态架构分析，用于快速回忆项目核心信息。
+> 分析基于当前工作区实际代码与目录，未运行程序验证，部分运行行为标注【推断】【待确认】。
 
 ---
 
 ## 一、目录结构梳理
 
-### 1.1 整体架构概览
+### 1.1 总体目录树
 
 ```
-fck/
-├── cmd/                          # 应用程序入口
-│   └── main.go                   # 主入口文件（仅 15 行，极简设计）
-├── internal/                     # 内部实现（Go 标准项目布局）
-│   ├── cli/                      # CLI 层：命令定义与参数解析
-│   │   ├── root.go               # 根命令注册中心
-│   │   ├── [46+ 命令定义文件]    # 每个命令一个文件
-│   │   └── tcp/                  # 复杂命令子模块
-│   ├── commands/                 # 业务逻辑层：命令核心实现
-│   │   ├── [40+ 命令实现目录]    # 每个命令独立目录
-│   │   │   ├── cat/              # 复杂命令多文件组织
-│   │   │   │   ├── cmd_cat.go    # 主逻辑
-│   │   │   │   ├── processor.go  # 内容处理器
-│   │   │   │   ├── output.go     # 输出管理
-│   │   │   │   └── types.go      # 类型定义
-│   │   │   └── ...               # 其他命令目录
-│   ├── types/                    # 共享类型与常量定义
-│   │   ├── types.go              # 核心常量（编码、换行符等）
-│   │   ├── command.go            # 查找类型常量
-│   │   ├── format.go             # 表格样式映射
-│   │   ├── logo.go               # CLI Logo 定义
-│   │   └── ...                   # 其他类型定义
-│   └── utils/                    # 工具函数库
-│       ├── utils.go              # 通用工具函数
-│       ├── color.go              # 颜色输出工具
-│       └── color_ext.go          # 颜色扩展
-├── docs/                         # 设计文档（每个功能独立文档）
-│   └── [80+ 设计文档]            # 详细的设计决策记录
-├── vendor/                       # 依赖库（Go 1.14+ vendor 模式）
-│   └── [第三方依赖]              # 完整依赖副本
-├── build.py                      # Python 构建脚本（跨平台编译）
-├── go.mod / go.sum               # Go 模块定义
-└── README.md                     # 项目文档
+fck/                                  # 项目根
+├── cmd/
+│   └── fck/main.go                   # 程序唯一入口：调用 cli.InitAndRun()，错误着色输出 + shx 退出码透传
+├── internal/
+│   ├── cli/                          # 【命令定义层】每个命令一个文件，qflag 命令注册与参数声明
+│   │   ├── root.go                   # 根命令：汇总全部 49 个顶层子命令、logo、completion、版本
+│   │   ├── <cmd>.go                  # 约 49 个子命令定义（pack/preview/unpack/grep/sed/awk/...）
+│   │   └── tcp/                      # tcp 命令的内部组件（client.go / scan.go / server.go）
+│   ├── commands/                     # 【业务实现层】每个命令一个子目录，遵循 cmd_<cmd>.go + types.go 命名
+│   │   ├── awk/    ├── grep/         # 文本处理类实现
+│   │   ├── tcp/                      # 网络工具实现（cmd_tcp.go + client/server/scanner 组件）
+│   │   └── ...                       # 共 50 个子命令目录
+│   ├── types/                        # 【类型/常量层】集中管理命令共享常量、类型、映射
+│   │   ├── types.go                  # 通用常量：编码/换行/哈希/缓冲区、系统文件过滤表
+│   │   ├── command.go                # 各命令类型常量：find 类型、DNS 类型、TCP 输出格式
+│   │   ├── format.go                 # 语法高亮常量、表格样式映射
+│   │   ├── compress_type.go          # 压缩格式类型
+│   │   ├── checksum_header.go        # 校验头
+│   │   └── logo.go                   # ASCII Logo
+│   └── utils/                        # 【通用工具层】跨模块共享函数
+│       ├── utils.go                  # 正则构建、错误包装、系统文件判断
+│       ├── color.go                  # 按文件类型/扩展名着色输出
+│       └── color_ext.go              # 扩展颜色工具（约 15KB）
+├── docs/                             # 命令设计文档库（90+ 份 *_design.md / 重构计划），设计驱动开发痕迹明显
+├── fck-skill/                        # AI 技能包（SKILL.md + evals/evals.json），随 release 打包分发
+├── .trae/
+│   ├── rules/                        # git-commit-message.md 提交规范
+│   ├── specs/<功能>/                 # 每功能 spec.md + checklist.md + tasks.md 三件套
+│   ├── plans/ 和 documents/          # 方案文档与缺陷/变更记录
+├── build.py                          # Python 构建脚本：多平台交叉编译、版本注入、打包 zip
+├── Rnx.toml                          # rnx 任务编排：build/clean/test/release 等任务
+├── CLAUDE.md                         # AI 编码协作通用规范
+├── go.mod / go.sum                   # Go 模块定义
+├── README.md                         # 项目说明与命令帮助
+└── LICENSE                           # GPL-3.0
 ```
 
-### 1.2 目录规范评估
+### 1.2 目录规范程度评估
 
-| 维度 | 评估 | 说明 |
-|------|------|------|
-| **项目布局** | ✅ 优秀 | 遵循 Go 标准项目布局（Standard Go Project Layout） |
-| **代码组织** | ✅ 优秀 | 清晰的分层：cli（接口层）→ commands（业务层）→ types/utils（支撑层） |
-| **命令隔离** | ✅ 优秀 | 每个命令独立目录，高内聚低耦合 |
-| **文档管理** | ✅ 良好 | 每个功能有独立设计文档，便于追溯决策 |
-| **依赖管理** | ✅ 优秀 | 使用 vendor 模式，保证构建可重现性 |
+- **分层清晰**：`cli`（定义）→ `commands`（实现）→ `types`/`utils`（支撑）三层职责边界明确，符合 Go CLI 工程常见实践（类似 Cobra 的 cmd/internal 布局）。
+- **命名规范统一**：`internal/cli` 下每个命令文件、变量名（`XCmd`、run 函数）高度一致；`commands` 下统一 `cmd_xx.go` + `types.go`。
+- **文档规范度高**：`docs/` 与 `.trae/specs/` 形成「设计文档 + spec/checklist/tasks」的报告式开发流程，规范程度超出一般项目【标准偏高】。
+- **冗余点**：`internal/types/command.go` 中 `ListTypeLimits`、`FindLimits` 存在大量被注释掉的重复条目（冗余代码）；`internal/utils/utils.go:72-74` 的 `regexp.QuoteMeta` 转义逻辑被注释。规范程度：整体良好，局部有清理空间。
 
 ---
 
 ## 二、核心功能模块识别
 
-### 2.1 模块分类矩阵
+### 2.1 模块清单（模块 - 核心功能 - 对应代码）
 
-| 类别 | 模块名称 | 核心功能 | 对应代码路径 |
-|------|----------|----------|--------------|
-| **文件操作** | pack | 智能打包压缩 | `internal/commands/pack/` |
-| | unpack | 智能解压缩 | `internal/commands/unpack/` |
-| | find | 文件查找搜索 | `internal/commands/find/` |
-| | list (ls) | 目录列表显示 | `internal/commands/list/` |
-| | cp | 文件复制（fs.CopyEx + 通配符展开） | `internal/commands/cp/` |
-| | mv | 文件移动（fs.MoveEx + 通配符展开） | `internal/commands/mv/` |
-| | rm | 文件删除 | `internal/commands/rm/` |
-| | mkdir | 目录创建 | `internal/commands/mkdir/` |
-| | touch | 文件时间戳修改（`fs.ExpandFiles` 通配符展开） | `internal/commands/touch/` |
-| | truncate | 文件截断（`fs.ExpandFiles` 通配符展开） | `internal/commands/truncate/` |
-| | hash | 文件哈希计算（`fs.ExpandFiles` 通配符展开） | `internal/commands/hash/` |
-| | check | 哈希校验 | `internal/commands/check/` |
-| | size (sz) | 文件大小统计（`fs.ExpandFiles` 通配符展开） | `internal/commands/size/` |
-| | preview (pv) | 压缩包预览（`fs.ExpandFiles` 通配符展开 + 批量多压缩包） | `internal/commands/preview/` |
-| **文本处理** | cat | 文件内容显示 | `internal/commands/cat/` |
-| | head | 显示文件开头（`fs.ExpandFiles` 通配符展开） | `internal/commands/head/` |
-| | tail | 显示文件结尾（`fs.ExpandFiles` 通配符展开） | `internal/commands/tail/` |
-| | grep | 文本搜索（支持 `-nh` 组合标志、`-rin` 组合标志、`--buffer-size` 缓冲区配置） | `internal/commands/grep/` |
-| | sed | 流编辑器 | `internal/commands/sed/` |
-| | awk | 字段处理 | `internal/commands/awk/` |
-| | wc | 字数统计 | `internal/commands/wc/` |
-| | tr | 字符转换 | `internal/commands/tr/` |
-| | xargs | 参数批量执行 | `internal/commands/xargs/` |
-| | tee | 输出分流 | `internal/commands/tee/` |
-| | newline (nl) | 换行符检测转换 | `internal/commands/newline/` |
-| | iconv (icv) | 编码转换（`fs.ExpandFiles` 通配符展开） | `internal/commands/iconv/` |
-| **系统监控** | proc (ps) | 进程查看 | `internal/commands/proc/` |
-| | port (pt) | 端口监控 | `internal/commands/port/` |
-| | df | 磁盘空间 | `internal/commands/df/` |
-| | watch (wch) | 命令监控 | `internal/commands/watch/` |
-| | which (wh) | 命令查找 | `internal/commands/which/` |
-| | pwd | 当前目录 | `internal/commands/pwd/` |
-| | home | 用户主目录 | `internal/commands/home/` |
-| **网络工具** | tcp | TCP 客户端/服务端/扫描 | `internal/commands/tcp/` |
-| | ping | 网络连通测试 | `internal/commands/ping/` |
-| | dns | DNS 查询 | `internal/commands/dns/` |
-| | curl (c) | HTTP 客户端（支持 `-o` 保存文件、`-O` 远程文件名、下载进度条、语法高亮） | `internal/commands/curl/` |
-| | ifconfig | 网络接口信息查看（支持 -a/-s/-j/--stats 五种标志，19种表格样式） | `internal/commands/ifconfig/` |
-| **开发辅助** | json (j) | JSON 处理（支持格式化、查询、设置字段值、删除字段、语法高亮、`fs.ExpandFiles` 通配符展开） | `internal/commands/json/` |
-| | base64 (b64) | Base64 编解码 | `internal/commands/base64/` |
-| | md | Markdown 预览 | `internal/commands/md/` |
-| | seq | 序列生成 | `internal/commands/seq/` |
-| | date | 时间格式化 | `internal/commands/date/` |
-| | echo | 文本输出 | `internal/commands/echo/` |
-| | gm | Git 元数据 | `internal/commands/gm/` |
-| | shfmt | Shell 脚本格式化（基于 shx 库） | `internal/commands/shfmt/` |
-| | shck | Shell 脚本语法检查（基于 shx 库） | `internal/commands/shck/` |
-| | shx | Shell 命令/脚本执行（基于 shx 库） | `internal/commands/shx/` |
+| 编号 | 模块 | 核心功能 | 核心代码 |
+|------|------|----------|----------|
+| M1 | 入口编排 | 初始化、panic 兜底、错误着色输出、退出码透传 | `cmd/fck/main.go`、`internal/cli/root.go` |
+| M2 | 文本处理 | grep/sed/awk/wc/tr/head/tail 类 Unix 文本操作 | `internal/commands/grep|sed|awk|wc|tr|head|tail/` |
+| M3 | 文件操作 | pack/unpack/preview/check/find/list/size/cp/mv/rm 等 | `internal/commands/pack|unpack|preview|check|find|list|size/` 等 |
+| M4 | 网络工具 | ping/dns/tcp(scan/client/server)/curl | `internal/commands/ping|dns|tcp/`、`internal/cli/tcp.go` |
+| M5 | 系统监控 | proc/port/df/size/watch | `internal/commands/proc|port|df|watch/` |
+| M6 | 开发辅助 | json/base64/hex2str/iconv/newline/hash/seq | `internal/commands/json|base64|hex2str|iconv|newline|hash/` |
+| M7 | Shell 工具 | shx 执行、shfmt/shck 格式化检查 | `internal/commands/shx|shfmt|shck/` |
+| M8 | Git 元数据 | 解析 Git 仓库版本/提交/状态（用于版本注入） | `internal/commands/gm/`、`internal/cli/gm.go` |
+| M9 | 基础支撑 | 类型常量、共享工具、彩色输出、编码转换 | `internal/types/`、`internal/utils/` |
 
-### 2.2 模块复杂度分级
+### 2.2 基础支撑模块 vs 业务核心模块
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  高复杂度（多文件组织）                                          │
-│  ├── cat/     : 4 文件 - 内容源抽象 + 处理器 + 输出管理          │
-│  ├── find/    : 7 文件 - 验证器 + 匹配器 + 操作器 + 搜索器       │
-│  ├── list/    : 9 文件 - 扫描器 + 处理器 + 格式化器 + 模型       │
-│  ├── hash/    : 3 文件 - 文件收集 + 哈希任务管理                 │
-│  ├── tcp/     : 5 文件 - 客户端 + 服务端 + 扫描器 + 交互模式     │
-│  ├── curl/    : 4 文件 - 请求构建 + 进度下载 + 响应格式化 + 语法高亮 │
-│  ├── iconv/   : 3 文件 - 编码检测 + 转换器                       │
-│  └── xargs/   : 1 文件 - 但内部逻辑复杂（并行/串行执行）         │
-├─────────────────────────────────────────────────────────────────┤
-│  中复杂度（核心逻辑独立）                                        │
-│  ├── grep/    : 递归搜索 + 二进制处理 + 颜色高亮 + 组合标志(-nh,-rin) │
-│  ├── sed/     : 替换引擎 + 多文件处理 + 可配置缓冲区               │
-│  ├── watch/   : 调度器 + 执行器 + 渲染器                         │
-│  └── json/    : 解析 + 查询(gjson) + 设置/删除(sjson) + 高亮       │
-├─────────────────────────────────────────────────────────────────┤
-│  低复杂度（单一功能）                                            │
-│  ├── ifconfig/: 单文件 - 网络接口信息查看                              │
-│  ├── shfmt/   : 单文件 - Shell 脚本格式化                       │
-│  ├── shck/    : 单文件 - Shell 脚本语法检查                     │
-│  ├── shx/     : 单文件 - Shell 命令/脚本执行（配置+执行）         │
-│  └── [其他 30+ 命令]  : 单文件实现，功能聚焦                     │
-└─────────────────────────────────────────────────────────────────┘
-```
+- **基础支撑**：M9（types/utils 支撑层）、M7 的 `internal/cli/tcp/`（组件库，可被 tcp 命令复用）。
+- **业务核心**：M2–M8，其中 M4 网络、M2 文本处理为复杂度与实现量最高的模块（grep 实现约 18KB、tcp 组件达 6 个文件）。
+
+### 2.3 模块输入/输出与核心依赖
+
+- 均以「标准输入（管道）或文件路径」为输入，尊重 Unix 管道范式（多个命令判断 `term.IsStdinPipe()` 优先读管道，如 `commands/awk/cmd_awk.go`），以着色的标准输出为输出。
+- 核心资源依赖：第三方库（详见第四章）、自研 gitee.com/MM-Q 系列库；tcp 模块存在内部组件依赖（`internal/cli/tcp.go` 依赖 `internal/cli/tcp/{Scan,Client,Server}Cmd`）。
+- 无外部数据库、无独立配置/持久化存储【仅有命令行参数与文件交互】。
 
 ---
 
 ## 三、模块间依赖关系分析
 
-### 3.1 依赖关系图（Mermaid 语法）
+### 3.1 依赖层级（自上而下单向依赖，无明显反向）
 
-```mermaid
-graph TB
-    subgraph CLI层
-        Root[root.go<br/>命令注册中心]
-        CatCLI[cat.go]
-        FindCLI[find.go]
-        GrepCLI[grep.go]
-        HashCLI[hash.go]
-        ListCLI[list.go]
-        IfconfigCLI[ifconfig.go]
-        ShfmtCLI[shfmt.go]
-        ShckCLI[shck.go]
-        ShxCLI[shx.go]
-    end
-
-    subgraph 业务逻辑层
-        CatCMD[cat/cmd_cat.go]
-        FindCMD[find/cmd_find.go]
-        GrepCMD[grep/cmd_grep.go]
-        HashCMD[hash/cmd_hash.go]
-        ListCMD[list/cmd_list.go]
-        IfconfigCMD[ifconfig/cmd_ifconfig.go]
-        ShfmtCMD[shfmt/cmd_shfmt.go]
-        ShckCMD[shck/cmd_shck.go]
-        ShxCMD[shx/cmd_shx.go]
-    end
-
-    subgraph 共享支撑层
-        Types[types/<br/>常量与类型定义]
-        Utils[utils/<br/>工具函数]
-        ColorLib[gitee.com/MM-Q/color<br/>颜色库]
-        TermLib[gitee.com/MM-Q/go-kit/term<br/>终端工具]
-        FSLib[gitee.com/MM-Q/go-kit/fs<br/>文件系统]
-    end
-
-    subgraph 第三方依赖
-        Chroma[chroma<br/>语法高亮]
-        GJSON[gjson<br/>JSON查询]
-        SJSON[sjson<br/>JSON设置/删除]
-        Readline[readline<br/>交互输入]
-        ProPing[pro-bing<br/>Ping实现]
-        ShxLib[shx<br/>Shell执行/格式化/检查]
-        GoPretty[go-pretty<br/>表格输出]
-    end
-
-    Root --> CatCLI & FindCLI & GrepCLI & HashCLI & ListCLI & IfconfigCLI & ShfmtCLI & ShckCLI & ShxCLI
-    CatCLI --> CatCMD
-    FindCLI --> FindCMD
-    GrepCLI --> GrepCMD
-    HashCLI --> HashCMD
-    ListCLI --> ListCMD
-    IfconfigCLI --> IfconfigCMD
-    ShfmtCLI --> ShfmtCMD
-    ShckCLI --> ShckCMD
-    ShxCLI --> ShxCMD
-
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> Types
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> Utils
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> ColorLib
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> TermLib
-    CatCMD & FindCMD & GrepCMD & HashCMD & ListCMD & IfconfigCMD --> FSLib
-
-    ShfmtCMD & ShckCMD & ShxCMD --> TermLib
-    ShfmtCMD & ShckCMD & ShxCMD --> FSLib
-    ShfmtCMD & ShckCMD & ShxCMD --> ShxLib
-
-    CatCMD --> Chroma
-    GrepCMD --> Chroma
-    HashCMD --> Chroma
-    JsonCMD --> GJSON
-    JsonCMD --> SJSON
-    IfconfigCMD --> GoPretty
+```
+cmd/fck/main.go
+      │ 调用
+      ▼
+internal/cli · root.go ──► qflag 框架 + verman（版本）+ types（logo）
+      │ 每个命令 init() 注册 XCmd，root.go 汇总
+      ▼
+internal/commands/<cmd>/     ◄── cli 层仅完成参数→config 映射后委托
+      │
+      ├─► internal/types      （常量/类型/映射）
+      ├─► internal/utils      （着色/正则/错误包装）
+      ├─► gitee.com/MM-Q/go-kit（fs 通配符展开、term 管道检测）
+      └─► 各类第三方库
 ```
 
-### 3.2 核心依赖关系说明
+### 3.2 依赖关系 Mermaid 图
 
-| 依赖方向 | 依赖内容 | 依赖强度 |
-|----------|----------|----------|
-| **所有命令** → `internal/types` | 共享常量（编码、换行符、表格样式等） | 强依赖 |
-| **所有命令** → `internal/utils` | 颜色输出、正则构建、系统文件检测 | 强依赖 |
-| **所有命令** → `gitee.com/MM-Q/color` | 彩色终端输出 | 强依赖 |
-| **所有命令** → `gitee.com/MM-Q/go-kit` | 终端检测、文件系统操作 | 中强依赖 |
-| **所有命令** → `gitee.com/MM-Q/qflag` | 命令行参数解析 | 强依赖 |
-| **文本处理命令** → `chroma` | 语法高亮 | 可选依赖 |
-| **json 命令** → `gjson` | JSON 路径查询 | 强依赖 |
-| **json 命令** → `sjson` | JSON 字段设置/删除 | 强依赖 |
-| **tcp 命令** → `readline` | 交互式输入 | 功能依赖 |
-| **ping 命令** → `pro-bing` | ICMP Ping 实现 | 强依赖 |
-| **shfmt/shck/shx 命令** → `gitee.com/MM-Q/shx` | Shell 格式化/语法检查/命令执行 | 强依赖 |
-| **shfmt/shck 命令** → `gitee.com/MM-Q/go-kit/fs` | 通配符展开（fs.ExpandFiles） | 强依赖 |
-| **ifconfig 命令** → `gopsutil` | 网络接口流量统计 | 可选依赖 |
-| **ifconfig 命令** → `go-pretty` | 表格输出 | 强依赖 |
+```mermaid
+flowchart TD
+    main[cmd/fck/main.go] --> cli[internal/cli 命令定义层]
+    cli --> qflag[qflag 参数框架]
+    cli --> verman[verman 版本注入]
+    cli --> impl[internal/commands 业务实现层]
+    impl --> types[internal/types 常量类型]
+    impl --> utils[internal/utils 通用工具]
+    impl --> gokit[go-kit: fs/term]
+    impl --> third[第三方库: chroma/glamour/gopsutil/pro-bing等]
+    utils --> types
+```
 
-### 3.3 潜在依赖问题分析
+### 3.3 依赖问题识别
 
-| 问题类型 | 具体表现 | 风险等级 |
-|----------|----------|----------|
-| **循环依赖** | 未发现明显循环依赖 | ✅ 无风险 |
-| **过度依赖** | 所有命令都依赖 color/go-kit，无法单独使用 | ⚠️ 低 |
-| **版本锁定** | vendor 模式锁定依赖版本，更新需手动 | ⚠️ 中 |
-| **外部库依赖** | 核心功能强依赖 MM-Q 组织下的私有库 | ⚠️ 中 |
+- **依赖层级合理**：`types` 被 `utils` 与 `commands` 共同依赖，但 `types` 不反向依赖上层，无循环依赖【确认：types 仅引 os/embedded/第三方表格库】。
+- **高耦合于自研框架**：命令定义深度依赖自研 `qflag`（命令/参数/互斥组/中英文帮助均由它完成），若框架 API 变更将波及全部 50 个命令定义文件【潜在风险】。
+- **同名命令多处引用**：`tcp` 出现于顶层命令（`internal/cli/tcp.go`）与实现包（`internal/commands/tcp/`）及组件包（`internal/cli/tcp/`），包名 `tcp` 复用，需注意导入路径区分【已有包冲突隐患，靠不同 import 路径规避】。
 
 ---
 
 ## 四、设计模式与实现逻辑
 
-### 4.1 设计模式识别
+### 4.1 识别到的设计模式
 
-| 设计模式 | 应用场景 | 代码位置 |
-|----------|----------|----------|
-| **命令模式 (Command)** | 每个 CLI 命令封装为独立对象 | `internal/cli/*.go` |
-| **策略模式 (Strategy)** | cat 命令的内容源抽象（文件/管道） | `internal/commands/cat/processor.go` |
-| **模板方法 (Template Method)** | find 命令的搜索流程 | `internal/commands/find/searcher.go` |
-| **建造者模式 (Builder)** | curl 命令的请求构建 | `internal/commands/cmd_curl.go` |
-| **观察者模式 (Observer)** | watch 命令的定时执行 | `internal/commands/watch/watch.go` |
-| **工厂模式 (Factory)** | 表格样式创建 | `internal/types/format.go` |
-| **管道模式 (Pipeline)** | xargs 的批量执行流程 | `internal/commands/xargs/cmd_xargs.go` |
+| 模式 | 应用场景 | 代码位置 |
+|------|----------|----------|
+| 命令模式 | 每个子命令封装为 `qflag.Command` 并 `SetRun(runXxx)` | `internal/cli/*.go`（如 `awk.go:70`） |
+| 注册表/收集器 | `init()` 中实例化命令变量并汇总到根命令 `SubCmds` | `internal/cli/awk.go:21-71`、`root.go:30-81` |
+| 适配器模式 | 包装 `os.DirEntry` 复用 find 处理逻辑 | `internal/types/types.go:121-130`（`DirEntryWrapper`） |
+| 控制器+服务分离（分层） | cli 层仅做参数解析/映射，commands 层做纯业务 | `awk.go` run 函数与 `commands/awk/cmd_awk.go` |
+| 配置中心/常量集中 | 共享常量、可变映射集中管理 | `internal/types/*.go` |
+| Mutex 互斥组 | 显式声明互斥参数（awk 的 field/chars） | `internal/cli/awk.go:57-63` |
 
-### 4.2 核心实现逻辑拆解
+### 4.2 核心业务逻辑流程示例（awk 命令）
 
-#### 4.2.1 命令执行流程（以 cat 为例）
+典型命令实现遵循「注册 → 参数映射 → 业务实现 → 流式处理」链路：
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  1. 入口层 (cli/cat.go)                                         │
-│     └── 定义命令标志（-n, -b, -E, -T, -A, -H, -l 等）            │
-│     └── 构建配置对象 (CatConfig)                                 │
-├─────────────────────────────────────────────────────────────────┤
-│  2. 业务层 (commands/cat/cmd_cat.go)                            │
-│     └── CatCmdMain(config)                                      │
-│         ├── 处理标志冲突（-b 优先级高于 -n）                     │
-│         ├── 检测输入类型（管道/文件）                            │
-│         ├── 创建内容源 (ContentSource)                           │
-│         │   ├── 管道输入 → StdinSource                          │
-│         │   └── 文件输入 → FileSource                           │
-│         ├── 创建处理器 (Processor)                               │
-│         ├── 处理内容 → 返回字节数组                              │
-│         └── 输出内容                                             │
-│             ├── 分页模式 → OutputWithPager()                    │
-│             └── 直接输出 → OutputDirectly()                     │
-├─────────────────────────────────────────────────────────────────┤
-│  3. 输出层 (commands/cat/output.go)                             │
-│     └── 支持语法高亮（chroma 库）                                │
-│     └── 支持分页器（ov 库）                                      │
-└─────────────────────────────────────────────────────────────────┘
-```
+1. **命令注册**：`init()` 中 `qflag.NewCmd("awk", ...)`，声明 `-p/-f/-c/-F/-O/-n` 参数，注册互斥组。
+2. **入参映射**：`runAwk` 将 qflag 参数读取后组装为 `awk.AwkConfig`（`internal/cli/awk.go:73-98`）。
+3. **输入分流**：`AwkCmdMain` 优先识别管道（`term.IsStdinPipe()`），否则通配符展开文件（`fs.Expand`）（`internal/commands/awk/cmd_awk.go:23-57`）。
+4. **流式处理**：`bufio.NewReader` 逐行读取（支持任意行长度，避免 `Scanner` 的 64KB 限制），逐行正则匹配 → 字段/字符提取 → 拼接输出（`cmd_awk.go:91-122`）。
 
-#### 4.2.2 复杂命令架构（以 find 为例）
+### 4.3 逻辑质量评估
 
-```go
-// 核心组件协作关系
-FindCmdMain
-    ├── ConfigValidator    // 配置验证器
-    ├── PatternMatcher     // 模式匹配器（正则/通配符）
-    ├── FileOperator       // 文件操作器（打印/删除/移动）
-    └── FileSearcher       // 文件搜索器（遍历目录树）
-```
-
-#### 4.2.3 下载执行流程（以 curl -O 为例）
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  1. 入口层 (cli/curl.go)                                        │
-│     └── 定义命令标志（-X, -d, -H, -o, -O, -L, -v 等）           │
-│     └── 构建配置对象 (Config)                                    │
-├─────────────────────────────────────────────────────────────────┤
-│  2. 业务层 (commands/curl/cmd_curl.go)                          │
-│     └── Execute(config)                                         │
-│         ├── 创建 HTTP 客户端（支持超时、重定向、TLS）             │
-│         ├── buildRequest(ctx, config) → 构建 HTTP 请求           │
-│         │   ├── 处理表单数据 (multipart/form-data)               │
-│         │   └── 设置请求头、认证、User-Agent                     │
-│         ├── 执行请求（带重试机制）                               │
-│         ├── 处理 -O 标志：extractFilenameFromURL()              │
-│         │   ├── 从 URL 路径提取文件名                            │
-│         │   ├── sanitizeFilename() → 清理不安全字符              │
-│         │   └── 无法提取时 generateDefaultFilename() → 时间戳    │
-│         ├── 有 -o/-O 时 → downloadWithProgress(resp, config)   │
-│         │   ├── 静默模式：直接 io.CopyBuffer 写入文件            │
-│         │   ├── 正常模式：显示下载信息 + 进度条                  │
-│         │   │   ├── progressbar.NewOptions64()                  │
-│         │   │   ├── io.MultiWriter(file, bar)                   │
-│         │   │   └── io.CopyBuffer() → 流式写入                  │
-│         │   └── 下载完成 → "Saved to: ..."                     │
-│         └── 无 -o/-O 时 → outputResponse(response, config)     │
-│             ├── Head 模式 → 仅显示响应头                         │
-│             ├── 静默模式 → 只输出响应体                          │
-│             ├── Verbose 模式 → 显示请求/响应详情                  │
-│             └── 正常模式 → 格式化输出（含语法高亮）              │
-├─────────────────────────────────────────────────────────────────┤
-│  3. 格式化层 (commands/curl/formatter.go + highlight.go)        │
-│     └── PrintHeaders() → 响应头格式化                            │
-│     └── PrintBody() → 响应体输出（支持 chroma 语法高亮）         │
-│     └── PrintVerbose() → 详细输出                                │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 4.3 代码质量评估
-
-| 维度 | 评估 | 说明 |
-|------|------|------|
-| **逻辑清晰度** | ✅ 优秀 | 每个函数职责单一，流程清晰 |
-| **命名规范** | ✅ 优秀 | 遵循 Go 命名规范，语义明确 |
-| **注释完整性** | ✅ 优秀 | 函数级注释完整（符合用户要求） |
-| **硬编码问题** | ⚠️ 轻微 | 部分常量分散在各文件中，建议统一 |
-| **错误处理** | ✅ 良好 | 使用 Go 标准错误处理模式 |
+- **流式与内存优化到位**：核心命令多采用 `bufio` 流式逐行处理，配合 `types.go` 中的缓冲区上限常量（默认 10MB），大文件友好【优点】。
+- **管道范式统一**：多命令统一支持 stdin 管道，符合 Unix 工具心智。
+- **硬编码/冗余**：`types/command.go` 大量注释残留；部分错误提示沿用英文（`invalid pattern`、`cannot open file`）与中文帮助混杂，本地化不完全一致【待优化】。
 
 ---
 
 ## 五、技术栈评估
 
-### 5.1 核心技术栈清单
+### 5.1 技术栈清单
 
-| 层级 | 技术组件 | 版本 | 用途 |
-|------|----------|------|------|
-| **语言** | Go | 1.25.0 | 核心开发语言 |
-| **CLI 框架** | qflag (MM-Q) | v0.5.20 | 命令行解析（自研） |
-| **颜色输出** | color (MM-Q) | v1.0.3 | 终端彩色输出（自研） |
-| **工具库** | go-kit (MM-Q) | v0.0.20 | 文件系统/终端工具（自研） |
-| **压缩库** | comprx (MM-Q) | v0.1.7 | 压缩解压（自研） |
-| **执行库** | shellx (MM-Q) | v1.0.19 | 命令执行（自研） |
-| **Shell 工具库** | shx (MM-Q) | v0.0.1 | Shell 脚本格式化/语法检查/执行（自研，基于 mvdan.cc/sh） |
-| **版本管理** | verman (MM-Q) | v0.0.19 | 版本信息注入（自研） |
-| **语法高亮** | chroma | v2.23.1 | 代码高亮显示 |
-| **JSON 处理** | gjson | v1.18.0 | JSON 路径查询 |
-| **JSON 设置** | sjson | v1.2.5 | JSON 字段设置/删除（gjson 配套库） |
-| **表格输出** | go-pretty | v6.6.8 | 格式化表格 |
-| **Markdown** | glamour | v0.8.0 | Markdown 渲染 |
-| **交互输入** | readline | v1.5.1 | 交互式命令行 |
-| **Ping 实现** | pro-bing | v0.8.0 | ICMP Ping |
-| **系统信息** | gopsutil | v3.24.5 | 系统/进程信息 |
-| **进度条** | progressbar | v3.19.0 | 进度显示（curl 下载进度条、size 统计） |
-| **缓冲池** | go-kit/pool (MM-Q) | v0.0.20 | 字节缓冲区对象池（curl 流式下载、文件操作） |
-| **终端控制** | term (golang.org/x) | v0.43.0 | 终端能力检测 |
-| **编码处理** | text (golang.org/x) | v0.37.0 | 字符编码转换 |
+| 类别 | 技术 | 版本 | 说明 |
+|------|------|------|------|
+| 语言 | Go | `go 1.25.0`（go.mod 声明） | 跨平台（Windows/Linux/macOS） |
+| CLI 框架 | **gitee.com/MM-Q/qflag**（自研） | v0.5.21 | 参数解析、子命令、互斥组、completion、中英文帮助 |
+| 彩色输出 | gitee.com/MM-Q/color（自研） | v1.0.3 | ANSI 彩色输出 |
+| 压缩 | gitee.com/MM-Q/comprx（自研） | v0.1.9 | pack/unpack 底层 |
+| Shell 执行 | gitee.com/MM-Q/shx（自研） | v1.0.3 | `shx` 命令、退出码透传 |
+| 版本注入 | gitee.com/MM-Q/verman（自研） | v0.0.20 | `-ldflags -X` 注入版本/提交/时间 |
+| 通用工具 | gitee.com/MM-Q/go-kit（自研） | v0.0.25 | fs 通配符、term 管道检测 |
+| 语法高亮 | alecthomas/chroma/v2 | v2.23.1 | cat/md 高亮 |
+| Markdown 渲染 | charmbracelet/glamour | v0.8.0 | `md` 命令 |
+| 终端表格 | jedib0t/go-pretty/v6 | v6.6.8 | 表格输出 |
+| 终端分页/输入 | noborus/ov、chzyer/readline | v0.51.1 / v1.5.1 | 分页查看、交互输入 |
+| Ping | prometheus-community/pro-bing | v0.8.0 | ICMP |
+| 系统监控 | shirou/gopsutil/v3 | v3.24.5 | proc/df/cpu 等 |
+| 进度条 | schollz/progressbar/v3 | v3.19.0 | 进度显示 |
+| JSON | tidwall/gjson、sjson | v1.18.0 / v1.2.5 | `json` 命令 |
+| Shell 解析 | mvdan.cc/sh/v3 | v3.13.1 | shfmt/shck |
+| 编码转换 | golang.org/x/text | v0.37.0 | iconv |
+| 构建 | build.py + **rnx**（Rnx.toml）+ upx + golangci-lint | — | 双轨构建/检查 |
 
-### 5.2 技术栈评估
+### 5.2 技术栈适配性评估
 
-| 评估维度 | 评分 | 分析 |
-|----------|------|------|
-| **技术适配性** | ⭐⭐⭐⭐⭐ | 技术栈高度适配 CLI 工具场景 |
-| **社区活跃度** | ⭐⭐⭐⭐☆ | 主流第三方库活跃，自研库待确认 |
-| **维护状态** | ⭐⭐⭐⭐☆ | 依赖版本较新，维护良好 |
-| **版本兼容性** | ⭐⭐⭐⭐⭐ | Go 1.25，使用 vendor 锁定版本 |
-| **学习成本** | ⭐⭐⭐☆☆ | 大量使用自研库，外部贡献者需学习 |
-
-### 5.3 技术选型亮点
-
-1. **自研工具链生态**：MM-Q 组织下 6 个自研库形成完整工具链
-2. **vendor 模式**：保证构建可重现性，适合分发场景
-3. **跨平台设计**：CGO_ENABLED=0，纯 Go 实现
-4. **现代化 CLI**：支持自动补全、彩色输出、进度显示
+- **适配良好**：Go 非常适合此类 Cross-platform CLI 工具集；流式 IO + 纯内存处理契合文本工具场景。
+- **依赖生态自研化集中**【需关注】：约 7 个核心依赖为作者自研库（`gitee.com/MM-Q/*`），社区风险与文档维护风险集中于个人/小团队；若关注可持续性需评估这些库的测试与发布节奏【待确认维护活跃度】。
+- **可选简化点**：并行存在两套构建方案（`build.py` 与 `Rnx.toml`），功能重叠，存在维护双份成本【待优化】。
+- 依赖整体为活跃开源生态组件（chroma/glamour/gopsutil 等），无明确已停止维护的组件【gopsutil 已被作者归档维护，属可接受的稳定库】。
 
 ---
 
 ## 六、补充分析项
 
 ### 6.1 代码规范
-
-| 规范项 | 状态 | 说明 |
-|--------|------|------|
-| **命名规范** | ✅ 符合 | 遵循 Go 官方命名规范 |
-| **包结构** | ✅ 符合 | 按功能分层，职责清晰 |
-| **注释规范** | ✅ 优秀 | 函数级注释完整，含参数/返回值说明 |
-| **错误处理** | ✅ 符合 | 使用 `if err != nil` 标准模式 |
-| **导入规范** | ✅ 符合 | 分组导入，标准库在前 |
-| **代码风格** | ✅ 一致 | 使用 gofmt 标准格式 |
+- 命名规范统一（命令变量 `XCmd`、config 结构、`runXxx` 函数）。
+- 注释规范：函数级中文注释格式高度统一（含参数/返回值/注意事项分块），质量高，符合「函数级注释」要求。
+- 代码风格：依赖 `golangci-lint fmt/run`（Rnx.toml 的 fc 任务），有 CI 级强制。
 
 ### 6.2 异常处理
+- 顶层 `panic` 兜底：`root.go` 的 `defer recover` 捕获 panic 并转错误输出【good】。
+- 命令层错误统一向调用方冒泡，支持 `shx` 退出码透传（`main.go:17`）。
+- 边缘场景：管道/文件分流、EOF 末行处理、二进制/编码检测均有考虑。
 
-```go
-// 典型错误处理模式（来自 cat/cmd_cat.go）
-content, err := processor.Process(source)
-if err != nil {
-    return err  // 直接返回，由上层处理
-}
-
-// panic 恢复（来自 cli/root.go）
-defer func() {
-    if r := recover(); r != nil {
-        err = fmt.Errorf("panic: %v\n%s", r, debug.Stack())
-    }
-}()
-```
-
-**评估**：异常处理完善，核心流程有 panic 恢复机制。
-
-### 6.3 扩展性分析
-
-| 扩展点 | 扩展方式 | 难度 |
-|--------|----------|------|
-| **新增命令** | 在 `cli/` 和 `commands/` 添加文件，在 `root.go` 注册 | 低 |
-| **修改现有命令** | 修改对应命令目录下的文件 | 低 |
-| **添加新表格样式** | 在 `types/format.go` 的 `TableStyleMap` 添加 | 极低 |
-| **添加新编码支持** | 在 `types/types.go` 添加编码常量 | 极低 |
-| **修改颜色方案** | 修改 `utils/color.go` 中的映射 | 中 |
+### 6.3 扩展性
+- 新增命令成本低：在 `commands/<cmd>/` 实现 + 在 `cli/<cmd>.go` 定义并挂入 `root.go` 的 `SubCmds` 即可，符合「命令模式」扩展范式。
+- 大量设计文档（docs/）保证重构可追溯，扩展有章可循。
 
 ### 6.4 性能关键点
-
-| 关注点 | 位置 | 优化措施 |
-|--------|------|----------|
-| **大文件处理** | cat/grep/sed | 流式读取，支持可配置缓冲区大小（默认10MB） |
-| **长行处理** | grep/sed | `--buffer-size` 标志，避免 `bufio.Scanner: token too long` 错误 |
-| **并发执行** | hash/xargs | 支持并发任务，可配置并发数 |
-| **内存使用** | watch | 限制输出缓冲区大小 |
-| **递归遍历** | find | 使用通道异步处理 |
-| **正则编译** | grep/find | 预编译正则表达式，缓存复用 |
+- 文本命令以 `bufio` 流式逐行为主，避免整文件载入【良好】。
+- 需关注点：`grep`/`sed` 等对每个匹配行即时 `fmt.Println` 行级输出，高频小输出在极大数据集下可能成为 IO 瓶颈【待评估】。
+- 端口扫描（tcp/scanner.go）已含并发设置字段（`Concurrent`），采用并发扫描【良好】。
 
 ---
 
-## 七、总结
+## 七、总结与结论
 
 ### 7.1 项目核心特点
-
-1. **一站式工具集**：45+ 命令覆盖文件、文本、系统、网络、开发全场景
-2. **跨平台兼容**：Windows/Linux/macOS 统一体验，纯 Go 实现
-3. **现代化体验**：彩色输出、表格样式、进度显示、语法高亮
-4. **下载功能**：curl 命令支持 `-o`/`-O` 文件保存、进度条显示、流式下载
-5. **管道友好**：所有命令支持标准输入输出，便于脚本集成
-6. **架构清晰**：分层设计，命令隔离，易于维护和扩展
-7. **自研生态**：依赖 MM-Q 组织工具链，高度定制化
+1. 纯 Go 构建的跨平台一站式 CLI 工具集，覆盖文本/文件/网络/系统/开发辅助五大类，顶层命令 49 个。
+2. 架构分层清晰：命令定义层（`internal/cli`）与业务实现层（`internal/commands`）解耦，扩展命令成本低。
+3. 深度自研生态：CLI 框架 qflag、着色 color、压缩 comprx、shell 执行 shx、版本 verman、工具包 go-kit 均为自研，形成个人工具链。
+4. 设计驱动开发：90+ 设计文档 + spec/checklist/tasks 三件套，文档规范度显著高于一般项目。
+5. 工程基建完善：`Rnx.toml` + `build.py` 双构建、交叉编译、upx 压缩、`golangci-lint`、版本 ldflags 注入、中英文帮助与 completion。
 
 ### 7.2 待优化点
+1. 测试覆盖薄弱：50 个命令子目录仅 5 个 `*_test.go`（约集中在 tcp 等核心），核心命令缺单元/集成测试。
+2. 自研库依赖集中（qflag 等），框架变更波及面大，建议评估长期维护与替代方案。
+3. 冗余代码残留：`types/command.go` 与 `utils/utils.go` 存在被注释代码与重复结构。
+4. 双构建方案（build.py 与 Rnx.toml）功能重叠，宜收敛为一套。
+5. 交互式/网络类命令（tcp、curl、ping）复杂度高，缺少统一超时与取消语义的集中封装（部分在前端配置体现）。
 
-| 优先级 | 优化项 | 建议 |
-|--------|--------|------|
-| P1 | 单测覆盖 | 当前仅 list/find 有测试，建议补充核心命令测试（如 curl 下载流程） |
-| P2 | 常量分散 | 将分散的常量统一迁移到 `types` 包 |
-| P3 | 断点续传 | curl 下载可增加 `-c, --continue` 支持断点续传 |
-| P4 | 性能基准 | 建议添加 Benchmark 测试，量化性能指标 |
-
-### 7.3 关键记忆点
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  FCK = Full-featured Command Kit（全功能命令行工具集）            │
-├─────────────────────────────────────────────────────────────────┤
-│  核心架构: cmd → cli → commands → types/utils                   │
-├─────────────────────────────────────────────────────────────────┤
-│  命令数量: 45+                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│  技术特点: 纯 Go + vendor + 自研工具链 + 跨平台                  │
-├─────────────────────────────────────────────────────────────────┤
-│  复杂命令: cat, find, list, tcp, curl(含下载), hash, xargs, watch, json(含set/delete)│
-├─────────────────────────────────────────────────────────────────┤
-│  设计模式: 命令模式 + 策略模式 + 管道模式                        │
-├─────────────────────────────────────────────────────────────────┤
-│  构建方式: Python 脚本 (build.py) 支持批量跨平台编译             │
-├─────────────────────────────────────────────────────────────────┤
-│  grep 特性: -nh(行号+文件名), -rin(递归+忽略大小写+行号),       │
-│             --buffer-size(可配置缓冲区, 默认10MB)                │
-├─────────────────────────────────────────────────────────────────┤
-│  json 特性: -s(设置字段值), -D(删除字段), -t(类型推断),          │
-│             -q(查询), -p(美化输出), -w(原地写入), -b(备份)        │
-├─────────────────────────────────────────────────────────────────┤
-│  cp/mv 特性: 使用 go-kit-fs 的 CopyEx/MoveEx（含 verbose 参数）, │
-│              verbose 打印由库层处理, CLI 层用 fs.Expand 展开通配符 │
-├─────────────────────────────────────────────────────────────────┤
-│  通配符展开 (fs.ExpandFiles): head/hash/size/touch/truncate/    │
-│              iconv/json/preview/tail 在 CLI 层调用               │
-│              fs.ExpandFiles(args) 展开通配符，只保留文件        │
-│              preview 同时 PackPath string → PackPaths []string  │
-│              支持批量多压缩包预览                                │
-├─────────────────────────────────────────────────────────────────┤
-│  tail -f 多文件追踪: 2026-07-14 修复 followFile 中正常增长      │
-│              路径的标题打印条件 showHeader && tf.Size == 0      │
-│              改为 else if showHeader 挂在增长分支, 确保每次     │
-│              轮询新内容前正确输出 ==> filename <==              │
-├─────────────────────────────────────────────────────────────────┤
-│  shfmt/shck/shx 特性: 基于 shx 库(gitee.com/MM-Q/shx),           │
-│              shfmt: -w(原地写入), -b(备份), -l(列表模式),         │
-│                     通配符批量格式化, list/write 互斥组,          │
-│                     -i(缩进空格), -m(最小化), 8 个格式化选项标志  │
-│                     默认值从 shx.DefaultFormatOptions() 获取      │
-│              shck: 语法检查, 通配符批量检查, -q(静默模式)          │
-│              shx: 命令/脚本执行, -t(超时), -d(工作目录),          │
-│                   -e(环境变量), 退出码在 main.go 入口透传         │
-│              main.go: 错误信息统一通过 Fprintln 输出到 stderr     │
-├─────────────────────────────────────────────────────────────────┤
-│  ifconfig/ifc 特性: 6 列表格(无 Speed), 默认过滤虚拟网卡,         │
-│                 -j(JSON输出), --stats(流量统计), -ts(表格样式),   │
-│                 19种表格样式, 默认过滤虚拟网卡, 零新增外部依赖     │
-└─────────────────────────────────────────────────────────────────┘
-```
+### 7.3 初始静态分析关键结论（非变更记录）
+- 命令注册范式：`internal/cli/<cmd>.go` 的 `init()` 定义 `XCmd`，`root.go` 收集入 `SubCmds`，委托 `internal/commands/<cmd>/` 实现。
+- 文本处理统一范式：优先 stdin 管道（`term.IsStdinPipe`）→ 通配符展开（`fs.Expand`）→ `bufio` 流式逐行。
+- 常量/类型集中在 `internal/types`，跨命令共享；`internal/utils` 提供着色与正则等通用能力。
+- 版本信息经 `verman` + `-ldflags -X` 注入；`gm` 命令负责读取 Git 元数据供注入。
+- 依赖关系为单向分层，无循环依赖；`types` 为最底层被依赖的公共基础。
 
 ---
 
-## 八、附录
+## 八、维护规范
 
-### 8.1 命令别名映射
-
-| 完整命令 | 别名 | 类别 |
-|----------|------|------|
-| base64 | b64 | 开发辅助 |
-| check | chk | 文件操作 |
-| curl | c | 网络工具 |
-| find | f | 文件操作 |
-| grep | g | 文本处理 |
-| iconv | icv | 文本处理 |
-| json | j | 开发辅助 |
-| list | ls | 文件操作 |
-| newline | nl | 文本处理 |
-| pack | pk | 文件操作 |
-| port | pt | 系统监控 |
-| preview | pv | 文件操作 |
-| proc | ps | 系统监控 |
-| size | sz | 文件操作 |
-| truncate | trunc | 文件操作 |
-| unpack | upk | 文件操作 |
-| watch | wch | 系统监控 |
-| which | wh | 系统监控 |
-| xargs | x | 文本处理 |
-
-### 8.2 项目元数据
-
-- **模块路径**: `gitee.com/MM-Q/fck`
-- **Go 版本**: 1.25.0
-- **构建脚本**: Python 3 (build.py)
-- **支持平台**: Windows, Linux, macOS
-- **支持架构**: amd64, arm64
-
----
-
-> **报告状态**: ✅ 已完成项目记忆建立  
-> **后续支持**: 可基于此报告回答项目相关的细节问题
+1. **第 1-9 章反映项目当前状态**，代码发生结构性变化时更新（新增模块、架构重构、重要功能等）
+2. **记忆点顺序**：编号 1（最旧）→ 10（最新），从上到下按时间升序排列。新增记忆点时严格执行以下三步：
+   - **第一步**：删除最旧的条目（即 `记忆点 1`）
+   - **第二步**：将剩余条目顺移重新编号（原 2→1、原 3→2、……、原 10→9）
+   - **第三步**：在末尾追加新条目作为 `记忆点 10`
+3. **上限 10 条**，不得超出。禁止在顶部或中间插入新条目，新条目只追加在末尾
+4. **所有文件引用必须使用项目相对路径**（如 `src/utils/helper.go`），禁止绝对路径
+5. **不要记录文件行数/大小统计**，此类信息变化频繁无维护价值
+6. **详细的变更记录请写入项目内其他文档目录**，本文件仅作快速参考
