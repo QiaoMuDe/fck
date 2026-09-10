@@ -27,27 +27,7 @@ func init() {
 	sizeHidden = SizeCmd.Bool("hidden", "H", "包含隐藏文件或目录进行大小计算，默认过滤", false)
 	sizeHuman = SizeCmd.Bool("human", "u", "以人类可读格式显示大小(如KB/MB/GB)", false)
 	sizeFollowSymlink = SizeCmd.Bool("follow-symlinks", "L", "跟随符号链接计算目标大小", false)
-	sizeTableStyle = SizeCmd.Enum("table-style", "ts", "指定表格样式，支持以下选项：\n"+
-		"\t\t\t\t\t[def ]   - 默认样式\n"+
-		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
-		"\t\t\t\t\t[r   ]   - 圆角样式\n"+
-		"\t\t\t\t\t[bd  ]   - 粗体样式\n"+
-		"\t\t\t\t\t[cb  ]   - 亮色彩色样式\n"+
-		"\t\t\t\t\t[cd  ]   - 暗色彩色样式\n"+
-		"\t\t\t\t\t[db  ]   - 双线样式\n"+
-		"\t\t\t\t\t[cbb ]   - 黑色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbc ]   - 青色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbg ]   - 绿色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbm ]   - 紫色背景蓝色字体\n"+
-		"\t\t\t\t\t[cby ]   - 黄色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbr ]   - 红色背景蓝色字体\n"+
-		"\t\t\t\t\t[cwb ]   - 蓝色背景白色字体\n"+
-		"\t\t\t\t\t[ccw ]   - 青色背景白色字体\n"+
-		"\t\t\t\t\t[cgw ]   - 绿色背景白色字体\n"+
-		"\t\t\t\t\t[cmw ]   - 紫色背景白色字体\n"+
-		"\t\t\t\t\t[crw ]   - 红色背景白色字体\n"+
-		"\t\t\t\t\t[cyw ]   - 黄色背景白色字体\n"+
-		"\t\t\t\t\t[none]   - 禁用表格样式", "def", types.TableStyles)
+	sizeTableStyle = SizeCmd.Enum("table-style", "ts", qflag.EnumHelp("指定表格样式，支持以下选项:", types.TableStyleOptions, "\t\t\t\t\t"), "def", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "文件目录大小计算工具",

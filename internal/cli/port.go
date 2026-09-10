@@ -32,27 +32,7 @@ func init() {
 	portPID = PortCmd.Int("pid", "", "指定进程 ID 查看该进程的端口", 0)
 	portProcessName = PortCmd.String("name", "n", "按进程名过滤，支持部分匹配", "")
 	portList = PortCmd.Bool("list", "l", "简洁模式，只显示地址和进程信息", false)
-	portTableStyle = PortCmd.Enum("table-style", "ts", "指定表格样式，支持以下选项：\n"+
-		"\t\t\t\t\t[def ]   - 默认样式\n"+
-		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
-		"\t\t\t\t\t[r   ]   - 圆角样式\n"+
-		"\t\t\t\t\t[bd  ]   - 粗体样式\n"+
-		"\t\t\t\t\t[cb  ]   - 亮色彩色样式\n"+
-		"\t\t\t\t\t[cd  ]   - 暗色彩色样式\n"+
-		"\t\t\t\t\t[db  ]   - 双线样式\n"+
-		"\t\t\t\t\t[cbb ]   - 黑色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbc ]   - 青色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbg ]   - 绿色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbm ]   - 紫色背景蓝色字体\n"+
-		"\t\t\t\t\t[cby ]   - 黄色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbr ]   - 红色背景蓝色字体\n"+
-		"\t\t\t\t\t[cwb ]   - 蓝色背景白色字体\n"+
-		"\t\t\t\t\t[ccw ]   - 青色背景白色字体\n"+
-		"\t\t\t\t\t[cgw ]   - 绿色背景白色字体\n"+
-		"\t\t\t\t\t[cmw ]   - 紫色背景白色字体\n"+
-		"\t\t\t\t\t[crw ]   - 红色背景白色字体\n"+
-		"\t\t\t\t\t[cyw ]   - 黄色背景白色字体\n"+
-		"\t\t\t\t\t[none]   - 禁用边框样式", "none", types.TableStyles)
+	portTableStyle = PortCmd.Enum("table-style", "ts", qflag.EnumHelp("指定表格样式，支持以下选项:", types.TableStyleOptions, "\t\t\t\t\t"), "none", types.TableStyles)
 	portListening = PortCmd.Bool("listening", "L", "只显示监听状态的端口", false)
 
 	cmdOpts := &qflag.CmdOpts{

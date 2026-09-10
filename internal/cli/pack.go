@@ -36,19 +36,10 @@ func init() {
 	packMinSize = PackCmd.Int64("min-size", "ms", "最小文件大小限制(单位字节, 0表示不限制)", 0)
 	packMaxSize = PackCmd.Int64("max-size", "mx", "最大文件大小限制(单位字节, 0表示不限制)", 0)
 
-	packCompressionLevel = PackCmd.Enum("compression", "c", "压缩级别，支持以下选项：\n"+
-		"\t\t\t\t\t[default ] - 默认压缩级别\n"+
-		"\t\t\t\t\t[none    ] - 不压缩\n"+
-		"\t\t\t\t\t[fast    ] - 快速压缩\n"+
-		"\t\t\t\t\t[best    ] - 最佳压缩\n"+
-		"\t\t\t\t\t[huffman ] - huffman 压缩", types.CompressionLevelDefault, types.SupportedCompressionLevels)
+	packCompressionLevel = PackCmd.Enum("compression", "c", qflag.EnumHelp("压缩级别，支持以下选项:", types.CompressionLevelOptions, "\t\t\t\t\t"), types.CompressionLevelDefault, types.SupportedCompressionLevels)
 	packOverwrite = PackCmd.Bool("overwrite", "f", "覆盖已存在的压缩文件", false)
 	packProgress = PackCmd.Bool("progress", "p", "显示压缩进度", false)
-	packProgressStyle = PackCmd.Enum("progress-style", "ps", "进度条样式，支持以下选项：\n"+
-		"\t\t\t\t\t[text   ] - 文本样式\n"+
-		"\t\t\t\t\t[default] - 默认样式\n"+
-		"\t\t\t\t\t[unicode] - unicode 样式\n"+
-		"\t\t\t\t\t[ascii  ] - ascii 样式", types.ProgressStyleAscii, types.SupportedProgressStyles)
+	packProgressStyle = PackCmd.Enum("progress-style", "ps", qflag.EnumHelp("进度条样式，支持以下选项:", types.ProgressStyleOptions, "\t\t\t\t\t"), types.ProgressStyleAscii, types.SupportedProgressStyles)
 	packNoValidate = PackCmd.Bool("no-validate", "nv", "禁用路径验证", false)
 	packOutput = PackCmd.String("output", "o", "压缩包输出路径，默认为: 源文件名+.zip", "")
 	packTimestamp = PackCmd.Bool("timestamp", "t", "在压缩包名中添加时间戳(格式: YYYYMMDDHHMMSS)", false)

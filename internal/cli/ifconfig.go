@@ -26,27 +26,7 @@ func init() {
 	ifconfigShort = IfconfigCmd.Bool("short", "s", "简略输出 (名称、状态、IP)", false)
 	ifconfigJSON = IfconfigCmd.Bool("json", "j", "JSON 格式输出", false)
 	ifconfigStats = IfconfigCmd.Bool("stats", "", "显示接口流量统计信息", false)
-	ifconfigTableStyle = IfconfigCmd.Enum("table-style", "ts", "指定表格样式, 支持以下选项：\n"+
-		"\t\t\t\t\t[def ]   - 默认样式\n"+
-		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
-		"\t\t\t\t\t[r   ]   - 圆角样式\n"+
-		"\t\t\t\t\t[bd  ]   - 粗体样式\n"+
-		"\t\t\t\t\t[cb  ]   - 亮色彩色样式\n"+
-		"\t\t\t\t\t[cd  ]   - 暗色彩色样式\n"+
-		"\t\t\t\t\t[db  ]   - 双线样式\n"+
-		"\t\t\t\t\t[cbb ]   - 黑色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbc ]   - 青色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbg ]   - 绿色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbm ]   - 紫色背景蓝色字体\n"+
-		"\t\t\t\t\t[cby ]   - 黄色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbr ]   - 红色背景蓝色字体\n"+
-		"\t\t\t\t\t[cwb ]   - 蓝色背景白色字体\n"+
-		"\t\t\t\t\t[ccw ]   - 青色背景白色字体\n"+
-		"\t\t\t\t\t[cgw ]   - 绿色背景白色字体\n"+
-		"\t\t\t\t\t[cmw ]   - 紫色背景白色字体\n"+
-		"\t\t\t\t\t[crw ]   - 红色背景白色字体\n"+
-		"\t\t\t\t\t[cyw ]   - 黄色背景白色字体\n"+
-		"\t\t\t\t\t[none]   - 禁用表格样式", "none", types.TableStyles)
+	ifconfigTableStyle = IfconfigCmd.Enum("table-style", "ts", qflag.EnumHelp("指定表格样式，支持以下选项:", types.TableStyleOptions, "\t\t\t\t\t"), "none", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:        "网络接口信息查看工具",

@@ -29,27 +29,7 @@ func init() {
 	wcChars = WcCmd.Bool("chars", "m", "仅统计字符数", false)
 	wcMaxLine = WcCmd.Bool("max-line-length", "L", "仅统计最大行长度", false)
 	wcAll = WcCmd.Bool("all", "a", "显示所有统计项 (行数、单词数、字符数、字节数、最大行宽)", false)
-	wcTableStyle = WcCmd.Enum("table-style", "ts", "指定表格样式，支持以下选项：\n"+
-		"\t\t\t\t\t[def ]   - 默认样式\n"+
-		"\t\t\t\t\t[l   ]   - 浅色样式\n"+
-		"\t\t\t\t\t[r   ]   - 圆角样式\n"+
-		"\t\t\t\t\t[bd  ]   - 粗体样式\n"+
-		"\t\t\t\t\t[cb  ]   - 亮色彩色样式\n"+
-		"\t\t\t\t\t[cd  ]   - 暗色彩色样式\n"+
-		"\t\t\t\t\t[db  ]   - 双线样式\n"+
-		"\t\t\t\t\t[cbb ]   - 黑色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbc ]   - 青色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbg ]   - 绿色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbm ]   - 紫色背景蓝色字体\n"+
-		"\t\t\t\t\t[cby ]   - 黄色背景蓝色字体\n"+
-		"\t\t\t\t\t[cbr ]   - 红色背景蓝色字体\n"+
-		"\t\t\t\t\t[cwb ]   - 蓝色背景白色字体\n"+
-		"\t\t\t\t\t[ccw ]   - 青色背景白色字体\n"+
-		"\t\t\t\t\t[cgw ]   - 绿色背景白色字体\n"+
-		"\t\t\t\t\t[cmw ]   - 紫色背景白色字体\n"+
-		"\t\t\t\t\t[crw ]   - 红色背景白色字体\n"+
-		"\t\t\t\t\t[cyw ]   - 黄色背景白色字体\n"+
-		"\t\t\t\t\t[none]   - 禁用边框样式", "none", types.TableStyles)
+	wcTableStyle = WcCmd.Enum("table-style", "ts", qflag.EnumHelp("指定表格样式，支持以下选项:", types.TableStyleOptions, "\t\t\t\t\t"), "none", types.TableStyles)
 
 	cmdOpts := &qflag.CmdOpts{
 		Desc:       "统计文件的行数、单词数、字节数和字符数",

@@ -55,6 +55,23 @@ var CompressionLevelMap = map[string]comprx.CompressionLevel{
 	CompressionLevelHuffman: comprx.CompressionLevelHuffmanOnly, //  Huffman
 }
 
+// CompressionLevelOptions 压缩级别的帮助选项（值: 描述），供 qflag.EnumHelp 生成 enum 帮助
+var CompressionLevelOptions = []string{
+	CompressionLevelDefault + ": 默认压缩级别",
+	CompressionLevelNone + ":   不压缩",
+	CompressionLevelFast + ":   快速压缩",
+	CompressionLevelBest + ":   最佳压缩",
+	CompressionLevelHuffman + ": huffman 压缩",
+}
+
+// ProgressStyleOptions 进度条样式的帮助选项（值: 描述），供 qflag.EnumHelp 生成 enum 帮助
+var ProgressStyleOptions = []string{
+	ProgressStyleText + ":    文本样式",
+	ProgressStyleDefault + ": 默认样式",
+	ProgressStyleUnicode + ": unicode 样式",
+	ProgressStyleAscii + ":   ascii 样式",
+}
+
 // GetCompressionLevel 获取压缩级别，如果无效则返回默认级别
 //
 // 参数:

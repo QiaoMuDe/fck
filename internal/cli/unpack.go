@@ -32,11 +32,7 @@ func init() {
 
 	unpackOverwrite = UnpackCmd.Bool("overwrite", "f", "覆盖已存在的文件", false)
 	unpackProgress = UnpackCmd.Bool("progress", "p", "显示解压进度", false)
-	unpackProgressStyle = UnpackCmd.Enum("progress-style", "ps", "进度条样式，支持以下选项：\n"+
-		"\t\t\t\t\t[text   ] - 文本样式\n"+
-		"\t\t\t\t\t[default] - 默认样式\n"+
-		"\t\t\t\t\t[unicode] - unicode 样式\n"+
-		"\t\t\t\t\t[ascii  ] - ascii 样式", types.ProgressStyleAscii, types.SupportedProgressStyles)
+	unpackProgressStyle = UnpackCmd.Enum("progress-style", "ps", qflag.EnumHelp("进度条样式，支持以下选项:", types.ProgressStyleOptions, "\t\t\t\t\t"), types.ProgressStyleAscii, types.SupportedProgressStyles)
 	unpackNoValidate = UnpackCmd.Bool("no-validate", "nv", "禁用路径验证", false)
 	unpackOutput = UnpackCmd.String("output", "o", "解压目标目录，默认为当前目录", ".")
 

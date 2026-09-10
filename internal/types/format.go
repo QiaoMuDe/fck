@@ -62,6 +62,30 @@ var TableStyles = []string{
 	"none", // 禁用样式
 }
 
+// TableStyleOptions 表格样式的帮助选项（值: 描述），供 qflag.EnumHelp 生成 enum 帮助
+var TableStyleOptions = []string{
+	"def:  默认样式",
+	"l:    浅色样式",
+	"r:    圆角样式",
+	"bd:   粗体样式",
+	"cb:   亮色彩色样式",
+	"cd:   暗色彩色样式",
+	"db:   双线样式",
+	"cbb:  黑色背景蓝色字体",
+	"cbc:  青色背景蓝色字体",
+	"cbg:  绿色背景蓝色字体",
+	"cbm:  紫色背景蓝色字体",
+	"cby:  黄色背景蓝色字体",
+	"cbr:  红色背景蓝色字体",
+	"cwb:  蓝色背景白色字体",
+	"ccw:  青色背景白色字体",
+	"cgw:  绿色背景白色字体",
+	"cmw:  紫色背景白色字体",
+	"crw:  红色背景白色字体",
+	"cyw:  黄色背景白色字体",
+	"none: 禁用边框样式",
+}
+
 // 定义禁用样式
 var StyleNone = table.Style{
 	Box: table.BoxStyle{
