@@ -5,8 +5,9 @@ go 1.25.0
 require (
 	gitee.com/MM-Q/color v1.0.3
 	gitee.com/MM-Q/comprx v0.1.9
+	gitee.com/MM-Q/doc2md v1.0.0
 	gitee.com/MM-Q/go-kit v0.0.25
-	gitee.com/MM-Q/qflag v0.5.21
+	gitee.com/MM-Q/qflag v0.5.22
 	gitee.com/MM-Q/shx v1.0.3
 	gitee.com/MM-Q/verman v0.0.20
 	github.com/alecthomas/chroma/v2 v2.23.1
@@ -25,7 +26,6 @@ require (
 
 require (
 	codeberg.org/tslocum/cbind v0.1.7 // indirect
-	gitee.com/MM-Q/doc2md v1.0.0 // indirect
 	github.com/JohannesKaufmann/dom v0.2.0 // indirect
 	github.com/JohannesKaufmann/html-to-markdown/v2 v2.3.3 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect

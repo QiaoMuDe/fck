@@ -51,7 +51,7 @@ cmds = [
 work_dir = ''
 # 依赖任务列表
 depends_on = [
-    'check'
+    'fc'
 ]
 # 后继任务列表
 run_after = []
@@ -257,7 +257,7 @@ cmds = [
 work_dir = ''
 # 依赖任务列表
 depends_on = [
-    'check'
+    'fc'
 ]
 # 后继任务列表
 run_after = []

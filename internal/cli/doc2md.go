@@ -26,20 +26,7 @@ func init() {
 	Doc2mdCmd = qflag.NewCmd("doc2md", "", qflag.ExitOnError)
 
 	doc2mdOutput = Doc2mdCmd.String("output", "o", "输出 Markdown 文件路径（默认输出到终端）", "")
-	doc2mdExt = Doc2mdCmd.Enum("extension", "x", "输入文档扩展名（stdin 管道输入时必填，none 表示未指定）, 支持:\n"+
-		"\t\t\t\t\t[.csv  ]\n"+
-		"\t\t\t\t\t[.docx ]\n"+
-		"\t\t\t\t\t[.epub ]\n"+
-		"\t\t\t\t\t[.html ]\n"+
-		"\t\t\t\t\t[.ipynb]\n"+
-		"\t\t\t\t\t[.md   ]\n"+
-		"\t\t\t\t\t[.pdf  ]\n"+
-		"\t\t\t\t\t[.pptx ]\n"+
-		"\t\t\t\t\t[.rss  ]\n"+
-		"\t\t\t\t\t[.txt  ]\n"+
-		"\t\t\t\t\t[.xls  ]\n"+
-		"\t\t\t\t\t[.xlsx ]\n"+
-		"\t\t\t\t\t[.zip  ]", doc2md.DocExtNone, supportedDocExtensions)
+	doc2mdExt = Doc2mdCmd.Enum("extension", "x", qflag.EnumHelp("输入文档扩展名（stdin 管道输入时必填，none 表示未指定），支持:", supportedDocExtensions, "\t\t\t\t\t"), doc2md.DocExtNone, supportedDocExtensions)
 	doc2mdMime = Doc2mdCmd.String("mime-type", "m", "输入文档 MIME 类型提示", "")
 	doc2mdCharset = Doc2mdCmd.String("charset", "c", "输入文档字符集提示（如: gbk）", "")
 	doc2mdKeepData = Doc2mdCmd.Bool("keep-data-uris", "", "保留完整 base64 图片数据 URI（默认截断）", false)
